@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(dotnet --version)",
+      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\",\"C:\\\\Program Files \\(x86\\)\\\\dotnet\\\\dotnet.exe\",\"$env:LOCALAPPDATA\\\\Microsoft\\\\dotnet\\\\dotnet.exe\",\"$env:USERPROFILE\\\\.dotnet\\\\dotnet.exe\"\\); foreach\\($p in $paths\\){ if\\(Test-Path $p\\){ Write-Output \"FOUND: $p\" } }; Write-Output \"---\"; Get-Command dotnet -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command winget -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command choco -ErrorAction SilentlyContinue)",
+      "PowerShell(winget install --id Microsoft.DotNet.SDK.8 --silent --accept-package-agreements --accept-source-agreements)",
+      "PowerShell($dotnet = \"$env:ProgramFiles\\\\dotnet\\\\dotnet.exe\"; if\\(Test-Path $dotnet\\){ & $dotnet --version } else { Write-Output \"not at default path\"; \\(Get-Command dotnet -ErrorAction SilentlyContinue\\).Source })",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(winget search PostgreSQL.PostgreSQL --accept-source-agreements 2>&1)",
+      "PowerShell(winget install --id PostgreSQL.PostgreSQL.16 --silent --accept-package-agreements --accept-source-agreements --override \"--mode unattended --unattendedmodeui none --superpassword postgres --serverport 5432 --enable-components server,commandlinetools\" 2>&1)",
+      "PowerShell(\"deleted\")"
+    ]
+  }
+}

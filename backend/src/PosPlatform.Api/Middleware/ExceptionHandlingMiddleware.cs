@@ -1,0 +1,57 @@
+using System.Net;
+using System.Text.Json;
+using PosPlatform.Application.Common.Exceptions;
+
+namespace PosPlatform.Api.Middleware;
+
+/// <summary>
+/// Application qatlami exceptionlarini mos HTTP status kodlariga aylantiradi.
+/// </summary>
+public class ExceptionHandlingMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            var statusCode = ex switch
+            {
+                NotFoundException => HttpStatusCode.NotFound,
+                ConflictException => HttpStatusCode.Conflict,
+                ValidationException => HttpStatusCode.BadRequest,
+                UnauthorizedException => HttpStatusCode.Unauthorized,
+                _ => HttpStatusCode.InternalServerError
+            };
+
+            if (statusCode == HttpStatusCode.InternalServerError)
+            {
+                _logger.LogError(ex, "Kutilmagan xatolik");
+            }
+
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)statusCode;
+
+            var payload = JsonSerializer.Serialize(new
+            {
+                status = (int)statusCode,
+                error = statusCode == HttpStatusCode.InternalServerError
+                    ? "Serverda kutilmagan xatolik yuz berdi."
+                    : ex.Message
+            });
+
+            await context.Response.WriteAsync(payload);
+        }
+    }
+}

@@ -1,0 +1,38 @@
+using System.ComponentModel.DataAnnotations;
+using PosPlatform.Domain.Enums;
+
+namespace PosPlatform.Application.Features.Sales.Dtos;
+
+public class CreateSaleRequest
+{
+    /// <summary>Filial. Bo'sh bo'lsa, joriy kassirning filiali olinadi.</summary>
+    public Guid? BranchId { get; set; }
+
+    public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+
+    /// <summary>Mijoz bergan summa (naqd uchun qaytim hisoblanadi).</summary>
+    [Range(0, double.MaxValue)]
+    public decimal PaidAmount { get; set; }
+
+    [Required]
+    [MinLength(1)]
+    public List<CreateSaleItemRequest> Items { get; set; } = new();
+}
+
+public class CreateSaleItemRequest
+{
+    [Required]
+    public Guid ProductId { get; set; }
+
+    [Range(0.001, double.MaxValue)]
+    public decimal Quantity { get; set; }
+
+    /// <summary>Narxni qo'lda o'zgartirish (bo'sh bo'lsa mahsulot narxi olinadi).</summary>
+    public decimal? UnitPriceOverride { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal DiscountAmount { get; set; }
+
+    /// <summary>QQS stavkasi (%). Bo'sh bo'lsa standart stavka qo'llanadi.</summary>
+    public decimal? VatPercent { get; set; }
+}
