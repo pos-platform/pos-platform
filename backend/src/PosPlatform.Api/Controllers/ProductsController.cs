@@ -67,6 +67,37 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
+    private const string XlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+    /// <summary>Excel (.xlsx) dan mahsulotlarni import qiladi.</summary>
+    [HttpPost("import")]
+    [Authorize(Roles = "Admin,Manager")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    [ProducesResponseType(typeof(ImportResultDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ImportResultDto>> Import(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { error = "Fayl bo'sh." });
+        }
+        await using var stream = file.OpenReadStream();
+        var result = await _productService.ImportAsync(stream, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>Mahsulotlarni Excel'ga eksport qiladi.</summary>
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(CancellationToken cancellationToken)
+    {
+        var bytes = await _productService.ExportAsync(cancellationToken);
+        return File(bytes, XlsxMime, "mahsulotlar.xlsx");
+    }
+
+    /// <summary>Import shablonini yuklab beradi.</summary>
+    [HttpGet("import-template")]
+    public IActionResult ImportTemplate()
+        => File(_productService.GetImportTemplate(), XlsxMime, "mahsulot-shablon.xlsx");
+
     /// <summary>Noyob shtrix-kod (kod tovara) generatsiya qiladi.</summary>
     [HttpGet("generate-barcode")]
     public async Task<ActionResult<object>> GenerateBarcode(CancellationToken cancellationToken)

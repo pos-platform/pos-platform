@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue'
-import { productsApi, categoriesApi, suppliersApi } from '../api/catalog'
+import { productsApi, categoriesApi, suppliersApi, downloadBlob } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
 
 const products = ref([])
@@ -16,6 +16,51 @@ const filterCategory = ref('')
 const showModal = ref(false)
 const editId = ref(null) // null = yaratish, aks holda tahrir
 const newCategory = ref('')
+
+// Excel
+const importInput = ref(null)
+const importing = ref(false)
+const importResult = ref(null)
+
+function triggerImport() {
+  importResult.value = null
+  importInput.value?.click()
+}
+
+async function onImportFile(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  error.value = ''
+  success.value = ''
+  importResult.value = null
+  importing.value = true
+  try {
+    importResult.value = await productsApi.importExcel(file)
+    success.value = `Import: ${importResult.value.created} ta qo'shildi, ${importResult.value.failed} ta xato`
+    await loadAll()
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    importing.value = false
+    event.target.value = '' // bir xil faylni qayta tanlash uchun
+  }
+}
+
+async function downloadTemplate() {
+  try {
+    downloadBlob(await productsApi.importTemplate(), 'mahsulot-shablon.xlsx')
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
+
+async function exportExcel() {
+  try {
+    downloadBlob(await productsApi.exportExcel(), 'mahsulotlar.xlsx')
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
 
 const blankForm = () => ({
   name: '',
@@ -201,14 +246,26 @@ onMounted(loadAll)
 <template>
   <div class="page-head">
     <h1>Mahsulotlar</h1>
-    <div style="display:flex; gap:12px; align-items:center">
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
       <span class="muted">{{ visibleProducts.length }} / {{ products.length }} ta</span>
+      <button class="btn btn-ghost btn-sm" @click="downloadTemplate">📄 Shablon</button>
+      <button class="btn btn-ghost btn-sm" :disabled="importing" @click="triggerImport">
+        {{ importing ? '⏳ Import...' : '📥 Excel import' }}
+      </button>
+      <button class="btn btn-ghost btn-sm" @click="exportExcel">📤 Eksport</button>
       <button class="btn" @click="openCreate">+ Mahsulot qo'shish</button>
+      <input ref="importInput" type="file" accept=".xlsx" style="display:none" @change="onImportFile" />
     </div>
   </div>
 
   <div v-if="error && !showModal" class="alert alert-error">{{ error }}</div>
   <div v-if="success" class="alert alert-success">{{ success }}</div>
+  <div v-if="importResult && importResult.errors.length" class="alert alert-error">
+    <strong>Import xatolari ({{ importResult.errors.length }}):</strong>
+    <ul style="margin:6px 0 0; padding-left:18px">
+      <li v-for="(e, i) in importResult.errors.slice(0, 10)" :key="i">{{ e }}</li>
+    </ul>
+  </div>
 
   <div class="card">
     <div class="field" style="max-width:260px; margin-bottom:12px">

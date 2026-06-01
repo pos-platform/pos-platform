@@ -3,16 +3,19 @@ using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.Products.Dtos;
 using PosPlatform.Domain.Entities;
+using PosPlatform.Domain.Enums;
 
 namespace PosPlatform.Application.Features.Products;
 
 public class ProductService : IProductService
 {
     private readonly IApplicationDbContext _db;
+    private readonly IProductExcelService _excel;
 
-    public ProductService(IApplicationDbContext db)
+    public ProductService(IApplicationDbContext db, IProductExcelService excel)
     {
         _db = db;
+        _excel = excel;
     }
 
     public async Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -147,4 +150,86 @@ public class ProductService : IProductService
         var max = await _db.Products.MaxAsync(p => (int?)p.PluNumber, cancellationToken) ?? 0;
         return max + 1;
     }
+
+    public async Task<ImportResultDto> ImportAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        var rows = _excel.Parse(stream);
+        var result = new ImportResultDto();
+        if (rows.Count == 0) return result;
+
+        // Kategoriyalarni nom bo'yicha keshlaymiz (yangi kategoriyalar yo'lda yaratiladi).
+        var categories = await _db.Categories.ToListAsync(cancellationToken);
+        var byName = categories.ToDictionary(c => c.Name.ToLowerInvariant(), c => c);
+
+        foreach (var row in rows)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(row.Name))
+                    throw new Exception("Nomi bo'sh");
+                if (string.IsNullOrWhiteSpace(row.MxikCode))
+                    throw new Exception("MXIK bo'sh");
+
+                var catName = string.IsNullOrWhiteSpace(row.CategoryName) ? "Umumiy" : row.CategoryName!.Trim();
+                var key = catName.ToLowerInvariant();
+                if (!byName.TryGetValue(key, out var category))
+                {
+                    category = new Category { Name = catName };
+                    _db.Categories.Add(category);
+                    byName[key] = category;
+                }
+
+                var unit = (row.Unit ?? "").Trim().ToLowerInvariant() is "kg" or "kilogram" or "кг"
+                    ? Unit.Kilogram
+                    : Unit.Piece;
+
+                _db.Products.Add(new Product
+                {
+                    Name = row.Name!.Trim(),
+                    MxikCode = row.MxikCode!.Trim(),
+                    Barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode!.Trim(),
+                    CostPrice = row.CostPrice ?? 0,
+                    Price = row.Price ?? 0,
+                    Quantity = row.Quantity ?? 0,
+                    IsVat = row.IsVat ?? true,
+                    Unit = unit,
+                    CategoryId = category.Id
+                });
+                result.Created++;
+            }
+            catch (Exception ex)
+            {
+                result.Failed++;
+                result.Errors.Add($"Qator {row.RowNumber}: {ex.Message}");
+            }
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return result;
+    }
+
+    public async Task<byte[]> ExportAsync(CancellationToken cancellationToken = default)
+    {
+        var products = await _db.Products
+            .AsNoTracking()
+            .Include(p => p.Category)
+            .OrderBy(p => p.Name)
+            .ToListAsync(cancellationToken);
+
+        var rows = products.Select(p => new ProductExportRow
+        {
+            Name = p.Name,
+            MxikCode = p.MxikCode,
+            Barcode = p.Barcode,
+            CostPrice = p.CostPrice,
+            Price = p.Price,
+            Quantity = p.Quantity,
+            Unit = p.Unit == Unit.Kilogram ? "Kg" : "Dona",
+            Category = p.Category?.Name ?? ""
+        });
+
+        return _excel.Export(rows);
+    }
+
+    public byte[] GetImportTemplate() => _excel.BuildTemplate();
 }

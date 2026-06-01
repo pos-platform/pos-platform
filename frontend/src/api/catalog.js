@@ -12,7 +12,26 @@ export const productsApi = {
     return http.post('/api/products/image', fd).then((r) => r.data) // { url }
   },
   generateBarcode: () => http.get('/api/products/generate-barcode').then((r) => r.data.barcode),
-  nextPlu: () => http.get('/api/products/next-plu').then((r) => r.data.plu)
+  nextPlu: () => http.get('/api/products/next-plu').then((r) => r.data.plu),
+  importExcel: (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return http.post('/api/products/import', fd).then((r) => r.data) // { created, failed, errors }
+  },
+  exportExcel: () => http.get('/api/products/export', { responseType: 'blob' }).then((r) => r.data),
+  importTemplate: () => http.get('/api/products/import-template', { responseType: 'blob' }).then((r) => r.data)
+}
+
+// Blob'ni fayl sifatida yuklab olish.
+export function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
 
 export const categoriesApi = {

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Infrastructure.Authentication;
+using PosPlatform.Infrastructure.Excel;
 using PosPlatform.Infrastructure.Fiscal;
 using PosPlatform.Infrastructure.Persistence;
 
@@ -34,6 +35,8 @@ public static class DependencyInjection
         // Fiskalizatsiya seam'i — hozir placeholder. Keyin lokal agent (FDS/Rahmat MK)
         // bilan ishlaydigan implementatsiya bilan almashtiriladi.
         services.AddScoped<IFiscalReceiptService, PendingFiscalReceiptService>();
+
+        services.AddSingleton<IProductExcelService, ProductExcelService>();
 
         return services;
     }

@@ -19,4 +19,13 @@ public interface IProductService
 
     /// <summary>Keyingi bo'sh PLU raqami (mavjud maksimal + 1).</summary>
     Task<int> GetNextPluAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Excel (.xlsx) dan mahsulotlarni import qiladi.</summary>
+    Task<ImportResultDto> ImportAsync(Stream stream, CancellationToken cancellationToken = default);
+
+    /// <summary>Mahsulotlarni .xlsx ga eksport qiladi.</summary>
+    Task<byte[]> ExportAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Import shabloni (.xlsx).</summary>
+    byte[] GetImportTemplate();
 }
