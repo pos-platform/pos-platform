@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { productsApi, categoriesApi } from '../api/catalog'
-import { errorMessage } from '../api/http'
+import { errorMessage, mediaUrl } from '../api/http'
 
 const products = ref([])
 const categories = ref([])
@@ -9,12 +9,17 @@ const loading = ref(false)
 const error = ref('')
 const success = ref('')
 const saving = ref(false)
+const uploading = ref(false)
+const filterCategory = ref('')
 
 const blankForm = () => ({
   name: '',
   mxikCode: '',
   barcode: '',
+  costPrice: 0,
+  markupPercent: 0,
   price: 0,
+  imageUrl: '',
   unit: 'Piece',
   isWeighed: false,
   pluNumber: null,
@@ -24,6 +29,29 @@ const blankForm = () => ({
 const form = reactive(blankForm())
 
 const newCategory = ref('')
+
+const visibleProducts = computed(() =>
+  filterCategory.value
+    ? products.value.filter((p) => p.categoryId === filterCategory.value)
+    : products.value
+)
+
+function round2(n) {
+  return Math.round((Number(n) || 0) * 100) / 100
+}
+
+// Tannarx yoki ustama o'zgarsa -> sotish narxini hisoblaymiz.
+function recalcPrice() {
+  const cost = Number(form.costPrice) || 0
+  const markup = Number(form.markupPercent) || 0
+  form.price = round2(cost * (1 + markup / 100))
+}
+// Sotish narxi qo'lda o'zgarsa -> ustama foizni hisoblaymiz.
+function recalcMarkup() {
+  const cost = Number(form.costPrice) || 0
+  const price = Number(form.price) || 0
+  form.markupPercent = cost > 0 ? round2(((price - cost) / cost) * 100) : 0
+}
 
 async function loadAll() {
   loading.value = true
@@ -42,6 +70,21 @@ async function loadAll() {
 
 function categoryName(id) {
   return categories.value.find((c) => c.id === id)?.name || '—'
+}
+
+async function onImageChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  error.value = ''
+  uploading.value = true
+  try {
+    const res = await productsApi.uploadImage(file)
+    form.imageUrl = res.url
+  } catch (e) {
+    error.value = errorMessage(e, 'Rasm yuklanmadi')
+  } finally {
+    uploading.value = false
+  }
 }
 
 async function addCategory() {
@@ -65,7 +108,9 @@ async function submit() {
       name: form.name.trim(),
       mxikCode: form.mxikCode.trim(),
       barcode: form.barcode?.trim() || null,
-      price: Number(form.price),
+      costPrice: Number(form.costPrice) || 0,
+      price: Number(form.price) || 0,
+      imageUrl: form.imageUrl || null,
       unit: form.unit,
       isWeighed: form.isWeighed,
       pluNumber: form.pluNumber ? Number(form.pluNumber) : null,
@@ -74,8 +119,9 @@ async function submit() {
     }
     await productsApi.create(payload)
     success.value = `"${payload.name}" qo'shildi`
+    const keepCat = form.categoryId
     Object.assign(form, blankForm())
-    if (categories.value.length) form.categoryId = categories.value[0].id
+    form.categoryId = keepCat
     await loadAll()
   } catch (e) {
     error.value = errorMessage(e)
@@ -90,7 +136,7 @@ onMounted(loadAll)
 <template>
   <div class="page-head">
     <h1>Mahsulotlar</h1>
-    <span class="muted">{{ products.length }} ta</span>
+    <span class="muted">{{ visibleProducts.length }} / {{ products.length }} ta</span>
   </div>
 
   <div v-if="error" class="alert alert-error">{{ error }}</div>
@@ -98,8 +144,23 @@ onMounted(loadAll)
 
   <div class="row" style="align-items: flex-start">
     <!-- Yangi mahsulot formasi -->
-    <form class="card" style="flex: 1; min-width: 320px; max-width: 420px" @submit.prevent="submit">
+    <form class="card" style="flex: 1; min-width: 340px; max-width: 440px" @submit.prevent="submit">
       <h3 style="margin-top: 0">Yangi mahsulot</h3>
+
+      <!-- Rasm -->
+      <div class="field">
+        <label>Rasm</label>
+        <div class="img-upload">
+          <div class="img-preview">
+            <img v-if="form.imageUrl" :src="mediaUrl(form.imageUrl)" alt="" />
+            <span v-else class="muted">rasm yo'q</span>
+          </div>
+          <div>
+            <input type="file" accept="image/*" @change="onImageChange" />
+            <div v-if="uploading" class="muted" style="font-size: 12px">Yuklanmoqda...</div>
+          </div>
+        </div>
+      </div>
 
       <div class="field">
         <label>Nomi</label>
@@ -117,11 +178,26 @@ onMounted(loadAll)
         </div>
       </div>
 
+      <!-- Narxlar: tannarx -> ustama % -> sotish narxi -->
       <div class="row">
         <div class="field">
-          <label>Narx</label>
-          <input v-model="form.price" type="number" min="0" step="0.01" class="input" required />
+          <label>Olingan narx (tannarx)</label>
+          <input v-model="form.costPrice" type="number" min="0" step="0.01" class="input" @input="recalcPrice" />
         </div>
+        <div class="field">
+          <label>Ustama %</label>
+          <input v-model="form.markupPercent" type="number" step="0.1" class="input" @input="recalcPrice" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Sotish narxi</label>
+        <input v-model="form.price" type="number" min="0" step="0.01" class="input" required @input="recalcMarkup" />
+        <span class="muted" style="font-size: 12px">
+          Foyda: {{ (Number(form.price) - Number(form.costPrice)).toLocaleString() }} so'm
+        </span>
+      </div>
+
+      <div class="row">
         <div class="field">
           <label>Birlik</label>
           <select v-model="form.unit" class="select">
@@ -129,13 +205,12 @@ onMounted(loadAll)
             <option value="Kilogram">Kilogramm</option>
           </select>
         </div>
-      </div>
-
-      <div class="field">
-        <label>Kategoriya</label>
-        <select v-model="form.categoryId" class="select" required>
-          <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
+        <div class="field">
+          <label>Kategoriya</label>
+          <select v-model="form.categoryId" class="select" required>
+            <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+        </div>
       </div>
 
       <div class="checkbox">
@@ -154,7 +229,7 @@ onMounted(loadAll)
         </div>
       </div>
 
-      <button class="btn" style="width: 100%; margin-top: 8px" :disabled="saving">
+      <button class="btn" style="width: 100%; margin-top: 8px" :disabled="saving || uploading">
         {{ saving ? 'Saqlanmoqda...' : 'Qo\'shish' }}
       </button>
 
@@ -168,31 +243,48 @@ onMounted(loadAll)
     </form>
 
     <!-- Ro'yxat -->
-    <div class="card" style="flex: 2; min-width: 360px">
+    <div class="card" style="flex: 2; min-width: 380px">
+      <div class="field" style="max-width: 260px; margin-bottom: 12px">
+        <label>Kategoriya bo'yicha filtr</label>
+        <select v-model="filterCategory" class="select">
+          <option value="">Barchasi</option>
+          <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+        </select>
+      </div>
+
       <table class="table">
         <thead>
           <tr>
+            <th></th>
             <th>Nomi</th>
-            <th>MXIK</th>
             <th>Kategoriya</th>
-            <th class="text-right">Narx</th>
-            <th>Birlik</th>
+            <th class="text-right">Tannarx</th>
+            <th class="text-right">Sotish</th>
+            <th class="text-right">Ustama</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="p in products" :key="p.id">
+          <tr v-for="p in visibleProducts" :key="p.id">
+            <td>
+              <div class="thumb">
+                <img v-if="p.imageUrl" :src="mediaUrl(p.imageUrl)" alt="" />
+              </div>
+            </td>
             <td>
               {{ p.name }}
               <span v-if="p.isWeighed" class="pill pill-amber" style="margin-left: 6px">tarozi</span>
+              <div class="muted" style="font-size: 12px">MXIK: {{ p.mxikCode }}</div>
             </td>
-            <td class="muted">{{ p.mxikCode }}</td>
             <td>{{ categoryName(p.categoryId) }}</td>
+            <td class="text-right muted">{{ Number(p.costPrice).toLocaleString() }}</td>
             <td class="text-right">{{ Number(p.price).toLocaleString() }}</td>
-            <td>{{ p.unit === 'Kilogram' ? 'kg' : 'dona' }}</td>
+            <td class="text-right">
+              <span class="pill pill-green">{{ Number(p.markupPercent).toFixed(1) }}%</span>
+            </td>
           </tr>
-          <tr v-if="!products.length && !loading">
-            <td colspan="5" class="muted" style="text-align: center; padding: 24px">
-              Hozircha mahsulot yo'q
+          <tr v-if="!visibleProducts.length && !loading">
+            <td colspan="6" class="muted" style="text-align: center; padding: 24px">
+              Mahsulot yo'q
             </td>
           </tr>
         </tbody>

@@ -14,8 +14,15 @@ public class CreateProductDto
 
     public string? Barcode { get; set; }
 
+    /// <summary>Olingan narx (tannarx).</summary>
+    [Range(0, double.MaxValue)]
+    public decimal CostPrice { get; set; }
+
+    /// <summary>Sotish narxi.</summary>
     [Range(0, double.MaxValue)]
     public decimal Price { get; set; }
+
+    public string? ImageUrl { get; set; }
 
     public Unit Unit { get; set; } = Unit.Piece;
 

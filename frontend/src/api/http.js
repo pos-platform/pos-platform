@@ -2,9 +2,18 @@ import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 import router from '../router'
 
+export const apiBase = (import.meta.env.VITE_API_BASE || 'http://localhost:5000').replace(/\/$/, '')
+
 const http = axios.create({
-  baseURL: (import.meta.env.VITE_API_BASE || 'http://localhost:5000').replace(/\/$/, '')
+  baseURL: apiBase
 })
+
+// Backenddan kelgan nisbiy rasm yo'lini to'liq URL'ga aylantiradi.
+export function mediaUrl(path) {
+  if (!path) return ''
+  if (/^https?:\/\//.test(path)) return path
+  return apiBase + path
+}
 
 // Har bir so'rovga JWT tokenni qo'shamiz.
 http.interceptors.request.use((config) => {

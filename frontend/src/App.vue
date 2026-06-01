@@ -21,9 +21,11 @@ function logout() {
       <div class="brand">PosPlatform</div>
       <nav class="nav">
         <RouterLink :to="{ name: 'pos' }" class="nav-link">Savdo</RouterLink>
+        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'stores' }" class="nav-link">Do'konlar</RouterLink>
         <RouterLink :to="{ name: 'products' }" class="nav-link">Mahsulotlar</RouterLink>
         <RouterLink :to="{ name: 'sales' }" class="nav-link">Savdolar</RouterLink>
         <RouterLink :to="{ name: 'shifts' }" class="nav-link">Smena</RouterLink>
+        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'promotions' }" class="nav-link">Aksiyalar</RouterLink>
         <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'users' }" class="nav-link">Foydalanuvchilar</RouterLink>
       </nav>
       <div class="user">

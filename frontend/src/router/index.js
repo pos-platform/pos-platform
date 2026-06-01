@@ -13,6 +13,18 @@ const routes = [
     name: 'users',
     component: () => import('../views/UsersView.vue'),
     meta: { adminOnly: true }
+  },
+  {
+    path: '/promotions',
+    name: 'promotions',
+    component: () => import('../views/PromotionsView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
+    path: '/stores',
+    name: 'stores',
+    component: () => import('../views/StoresView.vue'),
+    meta: { adminOnly: true }
   }
 ]
 

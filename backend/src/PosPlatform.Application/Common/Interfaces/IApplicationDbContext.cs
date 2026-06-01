@@ -13,11 +13,13 @@ public interface IApplicationDbContext
     DbSet<Product> Products { get; }
     DbSet<Category> Categories { get; }
     DbSet<Branch> Branches { get; }
+    DbSet<Cashbox> Cashboxes { get; }
     DbSet<User> Users { get; }
     DbSet<Sale> Sales { get; }
     DbSet<SaleItem> SaleItems { get; }
     DbSet<Receipt> Receipts { get; }
     DbSet<CashShift> CashShifts { get; }
+    DbSet<Promotion> Promotions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

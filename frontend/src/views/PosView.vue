@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { productsApi, salesApi, shiftsApi } from '../api/catalog'
-import { errorMessage } from '../api/http'
+import { productsApi, salesApi, shiftsApi, promotionsApi, discountPercentFor } from '../api/catalog'
+import { errorMessage, mediaUrl } from '../api/http'
 
 const products = ref([])
+const activePromos = ref([])
 const search = ref('')
 const cart = ref([]) // { product, quantity }
 const paymentMethod = ref('Cash')
@@ -19,6 +20,23 @@ const shift = ref(null)
 const openingCash = ref(0)
 const shiftBusy = ref(false)
 
+function round2(n) {
+  return Math.round((Number(n) || 0) * 100) / 100
+}
+
+// --- Aksiya (chegirma) ---
+function discPct(product) {
+  return discountPercentFor(product, activePromos.value)
+}
+function effUnitPrice(product) {
+  return round2(Number(product.price) * (1 - discPct(product) / 100))
+}
+function lineTotal(line) {
+  const gross = Number(line.product.price) * Number(line.quantity || 0)
+  const discount = round2((gross * discPct(line.product)) / 100)
+  return round2(gross - discount)
+}
+
 const filtered = computed(() => {
   const q = search.value.trim().toLowerCase()
   if (!q) return products.value
@@ -30,9 +48,7 @@ const filtered = computed(() => {
   )
 })
 
-const total = computed(() =>
-  cart.value.reduce((sum, l) => sum + Number(l.product.price) * Number(l.quantity || 0), 0)
-)
+const total = computed(() => cart.value.reduce((sum, l) => sum + lineTotal(l), 0))
 const change = computed(() => Math.max(0, Number(paidAmount.value || 0) - total.value))
 
 function addToCart(product) {
@@ -40,12 +56,36 @@ function addToCart(product) {
   if (existing) existing.quantity = Number(existing.quantity) + 1
   else cart.value.push({ product, quantity: 1 })
 }
+function inc(line) {
+  line.quantity = round2(Number(line.quantity) + 1)
+}
+function dec(line) {
+  const q = round2(Number(line.quantity) - 1)
+  if (q <= 0) removeLine(line.product.id)
+  else line.quantity = q
+}
 function removeLine(id) {
   cart.value = cart.value.filter((l) => l.product.id !== id)
 }
 function clearCart() {
   cart.value = []
   paidAmount.value = 0
+}
+
+// Shtrix-kod skaner: barcode + Enter -> mahsulotni savatga qo'shadi.
+function onScan() {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return
+  const exact =
+    products.value.find((p) => p.barcode && p.barcode.toLowerCase() === q) ||
+    products.value.find((p) => p.name.toLowerCase() === q) ||
+    filtered.value[0]
+  if (exact) {
+    addToCart(exact)
+    search.value = ''
+  } else {
+    error.value = `Mahsulot topilmadi: ${search.value}`
+  }
 }
 
 async function loadShift() {
@@ -68,11 +108,13 @@ async function openShift() {
   }
 }
 
-async function loadProducts() {
+async function loadData() {
   loading.value = true
   error.value = ''
   try {
-    products.value = await productsApi.list()
+    const [p, promos] = await Promise.all([productsApi.list(), promotionsApi.active()])
+    products.value = p
+    activePromos.value = promos
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -112,7 +154,7 @@ async function checkout() {
 }
 
 onMounted(() => {
-  loadProducts()
+  loadData()
   loadShift()
 })
 </script>
@@ -155,11 +197,23 @@ onMounted(() => {
 
   <div class="pos">
     <div>
-      <input v-model="search" class="input" placeholder="Qidirish: nom, shtrix-kod, MXIK..." style="margin-bottom: 12px" />
+      <input
+        v-model="search"
+        class="input"
+        placeholder="Shtrix-kodni urang (Enter) yoki qidiring: nom, MXIK..."
+        style="margin-bottom: 12px"
+        @keyup.enter="onScan"
+      />
       <div class="pos-products">
         <button v-for="p in filtered" :key="p.id" class="prod-card" :disabled="!shift" @click="addToCart(p)">
+          <span v-if="discPct(p) > 0" class="promo-badge">−{{ Number(discPct(p)).toFixed(0) }}%</span>
+          <img v-if="p.imageUrl" :src="mediaUrl(p.imageUrl)" class="prod-img" alt="" />
           <div class="name">{{ p.name }}</div>
-          <div class="price">{{ Number(p.price).toLocaleString() }} so'm</div>
+          <div v-if="discPct(p) > 0">
+            <span class="old-price">{{ Number(p.price).toLocaleString() }}</span>
+            <span class="price">{{ effUnitPrice(p).toLocaleString() }} so'm</span>
+          </div>
+          <div v-else class="price">{{ Number(p.price).toLocaleString() }} so'm</div>
           <div class="muted" style="font-size: 12px">{{ p.unit === 'Kilogram' ? 'kg' : 'dona' }}</div>
         </button>
         <p v-if="!filtered.length && !loading" class="muted">Mahsulot topilmadi</p>
@@ -168,21 +222,28 @@ onMounted(() => {
 
     <div class="card">
       <h3 style="margin-top: 0">Savatcha</h3>
-      <div v-if="!cart.length" class="muted" style="padding: 16px 0">Mahsulot tanlang</div>
+      <div v-if="!cart.length" class="muted" style="padding: 16px 0">Mahsulot tanlang yoki shtrix-kod urang</div>
 
       <div v-for="line in cart" :key="line.product.id" class="cart-line">
-        <span class="cl-name">{{ line.product.name }}</span>
-        <input
-          v-model="line.quantity"
-          type="number"
-          min="0"
-          :step="line.product.unit === 'Kilogram' ? '0.001' : '1'"
-          class="input qty-input"
-        />
-        <span class="text-right" style="width: 90px">
-          {{ (Number(line.product.price) * Number(line.quantity || 0)).toLocaleString() }}
-        </span>
-        <button class="btn btn-ghost btn-sm" @click="removeLine(line.product.id)">✕</button>
+        <div class="cl-name">
+          {{ line.product.name }}
+          <span v-if="discPct(line.product) > 0" class="pill pill-red" style="font-size: 10px">
+            −{{ Number(discPct(line.product)).toFixed(0) }}%
+          </span>
+        </div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" @click="dec(line)">−</button>
+          <input
+            v-model="line.quantity"
+            type="number"
+            min="0"
+            :step="line.product.unit === 'Kilogram' ? '0.001' : '1'"
+            class="input qty-input"
+          />
+          <button class="qty-btn" @click="inc(line)">+</button>
+        </div>
+        <span class="text-right" style="width: 86px">{{ lineTotal(line).toLocaleString() }}</span>
+        <button class="btn btn-ghost btn-sm" title="O'chirish" @click="removeLine(line.product.id)">✕</button>
       </div>
 
       <div class="totals">

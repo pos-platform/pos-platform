@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
+using PosPlatform.Application.Features.Promotions;
 using PosPlatform.Application.Features.Sales.Dtos;
 using PosPlatform.Domain.Entities;
 using PosPlatform.Domain.Enums;
@@ -74,6 +75,12 @@ public class SaleService : ISaleService
             .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
+        // Amaldagi aksiyalar — chegirma server tomonida hisoblanadi (mijozga ishonmaymiz).
+        var nowUtc = DateTime.UtcNow;
+        var activePromotions = await _db.Promotions
+            .Where(p => p.IsActive && p.StartDate <= nowUtc && p.EndDate >= nowUtc)
+            .ToListAsync(cancellationToken);
+
         var sale = new Sale
         {
             BranchId = request.BranchId ?? _currentUser.BranchId,
@@ -100,7 +107,14 @@ public class SaleService : ISaleService
             var vatPercent = line.VatPercent ?? DefaultVatPercent;
 
             var gross = Round2(unitPrice * line.Quantity);
-            var lineTotal = Round2(gross - line.DiscountAmount);
+
+            // Aksiya chegirmasi (avtomatik) + mijoz yuborgan qo'lda chegirma (agar bo'lsa).
+            var promoPercent = PromotionCalculator.GetDiscountPercent(
+                activePromotions, product.Id, product.CategoryId);
+            var promoDiscount = Round2(gross * promoPercent / 100m);
+            var discount = Round2(promoDiscount + line.DiscountAmount);
+
+            var lineTotal = Round2(gross - discount);
             if (lineTotal < 0)
             {
                 throw new ValidationException($"'{product.Name}' uchun chegirma qator summasidan katta.");
@@ -118,7 +132,7 @@ public class SaleService : ISaleService
                 Unit = product.Unit,
                 Quantity = line.Quantity,
                 UnitPrice = unitPrice,
-                DiscountAmount = line.DiscountAmount,
+                DiscountAmount = discount,
                 VatPercent = vatPercent,
                 VatAmount = vatAmount,
                 LineTotal = lineTotal

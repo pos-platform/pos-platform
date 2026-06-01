@@ -3,7 +3,12 @@ import http from './http'
 export const productsApi = {
   list: () => http.get('/api/products').then((r) => r.data),
   get: (id) => http.get(`/api/products/${id}`).then((r) => r.data),
-  create: (payload) => http.post('/api/products', payload).then((r) => r.data)
+  create: (payload) => http.post('/api/products', payload).then((r) => r.data),
+  uploadImage: (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return http.post('/api/products/image', fd).then((r) => r.data) // { url }
+  }
 }
 
 export const categoriesApi = {
@@ -34,4 +39,37 @@ export const shiftsApi = {
   close: (payload) => http.post('/api/shifts/close', payload).then((r) => r.data),
   list: () => http.get('/api/shifts').then((r) => r.data),
   get: (id) => http.get(`/api/shifts/${id}`).then((r) => r.data)
+}
+
+export const storesApi = {
+  list: () => http.get('/api/stores').then((r) => r.data),
+  createStore: (payload) => http.post('/api/stores', payload).then((r) => r.data),
+  activateStore: (id) => http.post(`/api/stores/${id}/activate`).then((r) => r.data),
+  deactivateStore: (id) => http.post(`/api/stores/${id}/deactivate`).then((r) => r.data),
+  addCashbox: (payload) => http.post('/api/stores/cashboxes', payload).then((r) => r.data),
+  activateCashbox: (id) => http.post(`/api/stores/cashboxes/${id}/activate`).then((r) => r.data),
+  deactivateCashbox: (id) => http.post(`/api/stores/cashboxes/${id}/deactivate`).then((r) => r.data)
+}
+
+export const promotionsApi = {
+  active: () => http.get('/api/promotions/active').then((r) => r.data),
+  list: () => http.get('/api/promotions').then((r) => r.data),
+  create: (payload) => http.post('/api/promotions', payload).then((r) => r.data),
+  activate: (id) => http.post(`/api/promotions/${id}/activate`).then((r) => r.data),
+  deactivate: (id) => http.post(`/api/promotions/${id}/deactivate`).then((r) => r.data),
+  remove: (id) => http.delete(`/api/promotions/${id}`).then((r) => r.data)
+}
+
+// Mahsulot uchun amaldagi aksiyalardan eng katta chegirma foizini topadi
+// (backend mantiqining nusxasi — faqat ko'rsatish uchun; rasmiy hisob serverda).
+export function discountPercentFor(product, activePromos) {
+  let best = 0
+  for (const p of activePromos || []) {
+    const applies =
+      p.productId === product.id ||
+      p.categoryId === product.categoryId ||
+      (!p.productId && !p.categoryId)
+    if (applies && p.discountPercent > best) best = p.discountPercent
+  }
+  return best
 }

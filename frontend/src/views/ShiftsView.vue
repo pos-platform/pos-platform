@@ -6,6 +6,7 @@ import { errorMessage } from '../api/http'
 const current = ref(null)
 const shifts = ref([])
 const countedCash = ref(0)
+const openingCash = ref(0)
 const loading = ref(false)
 const busy = ref(false)
 const error = ref('')
@@ -29,6 +30,21 @@ async function load() {
     error.value = errorMessage(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function openShift() {
+  error.value = ''
+  busy.value = true
+  try {
+    await shiftsApi.open({ openingCash: Number(openingCash.value) || 0 })
+    openingCash.value = 0
+    closedReport.value = null
+    await load()
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    busy.value = false
   }
 }
 
@@ -75,7 +91,17 @@ onMounted(load)
     </div>
   </div>
   <div v-else class="card" style="margin-bottom: 16px">
-    <span class="muted">Ochiq smena yo'q. Savdo sahifasida smena oching.</span>
+    <h3 style="margin-top: 0">Smena ochish</h3>
+    <p class="muted">Ochiq smena yo'q. Savdo qilish uchun smenani oching.</p>
+    <div class="row" style="align-items: flex-end">
+      <div class="field" style="margin: 0">
+        <label>Boshlang'ich naqd (kassadagi pul)</label>
+        <input v-model="openingCash" type="number" min="0" class="input" style="width: 220px" />
+      </div>
+      <button class="btn" :disabled="busy" @click="openShift">
+        {{ busy ? '...' : 'Smenani ochish' }}
+      </button>
+    </div>
   </div>
 
   <!-- Yopilgan smena hisoboti -->

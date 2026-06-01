@@ -65,12 +65,23 @@ dotnet run --project src/PosPlatform.Api
 
 Swagger: <http://localhost:5000/swagger>
 
+## Foydalanuvchilar va rollar
+
+Ochiq ro'yxatdan o'tish (`register`) **yo'q** — bu xavfsizlik uchun. Boshlang'ich
+**admin** seed orqali yaratiladi; keyin admin boshqa foydalanuvchilarni
+(`Cashier`/`Manager`/`Admin`) `/api/users` orqali yaratadi. Foydalanuvchilarni
+o'chirmasdan **bloklash** mumkin (`IsActive=false`) — bloklangan hisob login qila
+olmaydi. `/api/users/*` faqat **Admin** roli uchun (`[Authorize(Roles="Admin")]`).
+
 ## Endpointlar
 
 | Metod | Yo'l                   | Himoya       | Tavsif                                |
 |-------|------------------------|--------------|---------------------------------------|
-| POST  | `/api/auth/register`   | ochiq        | Ro'yxatdan o'tish → JWT qaytaradi     |
 | POST  | `/api/auth/login`      | ochiq        | Kirish → JWT qaytaradi                |
+| GET   | `/api/users`           | **Admin**    | Foydalanuvchilar ro'yxati             |
+| POST  | `/api/users`           | **Admin**    | Yangi foydalanuvchi (kassir/menejer/admin) |
+| POST  | `/api/users/{id}/reset-password` | **Admin** | Parol tiklash                  |
+| POST  | `/api/users/{id}/activate` · `/deactivate` | **Admin** | Hisobni faollashtirish/bloklash |
 | GET   | `/api/products`        | `[Authorize]`| Barcha mahsulotlar                    |
 | GET   | `/api/products/{id}`   | `[Authorize]`| Id bo'yicha mahsulot                  |
 | POST  | `/api/products`        | `[Authorize]`| Yangi mahsulot                        |

@@ -45,6 +45,16 @@ public class ApplicationDbContextInitializer
             _logger.LogInformation("Standart 'Umumiy' kategoriyasi yaratildi.");
         }
 
+        // Standart do'kon + kassa (FENIXdagi Магазин/Касса kabi).
+        if (!await _db.Branches.AnyAsync())
+        {
+            var store = new Branch { Name = "Asosiy do'kon", IsActive = true };
+            store.Cashboxes.Add(new Cashbox { Name = "Kassa 1", IsActive = true });
+            _db.Branches.Add(store);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Standart do'kon va kassa yaratildi.");
+        }
+
         // Boshlang'ich admin (login qilish uchun).
         var adminUsername = _configuration["Seed:AdminUsername"] ?? "admin";
         var adminPassword = _configuration["Seed:AdminPassword"] ?? "Admin12345!";

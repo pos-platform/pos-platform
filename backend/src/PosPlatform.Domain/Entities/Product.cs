@@ -16,7 +16,14 @@ public class Product : BaseEntity
     /// <summary>Shtrix-kod (ixtiyoriy).</summary>
     public string? Barcode { get; set; }
 
+    /// <summary>Olingan narx (tannarx).</summary>
+    public decimal CostPrice { get; set; }
+
+    /// <summary>Sotish narxi.</summary>
     public decimal Price { get; set; }
+
+    /// <summary>Mahsulot rasmi manzili (ixtiyoriy).</summary>
+    public string? ImageUrl { get; set; }
 
     public Unit Unit { get; set; } = Unit.Piece;
 

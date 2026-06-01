@@ -11,7 +11,12 @@ using PosPlatform.Infrastructure;
 using PosPlatform.Infrastructure.Authentication;
 using PosPlatform.Infrastructure.Persistence;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    // Frontend (Vue) build'i shu papkadan SPA sifatida xizmat qilinadi.
+    WebRootPath = "wwwroot"
+});
 
 const string CorsPolicy = "WebClient";
 
@@ -106,6 +111,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Statik fayllar: Vue SPA build'i + yuklangan rasmlar (wwwroot, wwwroot/uploads).
+Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads"));
+app.UseStaticFiles();
+
 app.UseHttpsRedirection();
 
 app.UseCors(CorsPolicy);
@@ -114,5 +123,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// SPA fallback: API/statik fayllarga tushmagan so'rovlar Vue index.html'ga (client routing).
+app.MapFallbackToFile("index.html");
 
 app.Run();

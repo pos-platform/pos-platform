@@ -32,8 +32,14 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -108,6 +114,40 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("CashShifts");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Cashbox", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Cashboxes");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -145,8 +185,15 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("CostPrice")
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<bool>("IsWeighed")
                         .HasColumnType("boolean");
@@ -185,6 +232,54 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("PluNumber");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Promotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("StartDate", "EndDate");
+
+                    b.ToTable("Promotions");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Receipt", b =>
@@ -431,6 +526,17 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Cashier");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Cashbox", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany("Cashboxes")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Product", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Category", "Category")
@@ -440,6 +546,23 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Promotion", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Receipt", b =>
@@ -516,6 +639,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Branch", b =>
                 {
+                    b.Navigation("Cashboxes");
+
                     b.Navigation("Users");
                 });
 

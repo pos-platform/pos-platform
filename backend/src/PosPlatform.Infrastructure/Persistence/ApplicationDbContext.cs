@@ -15,11 +15,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<Cashbox> Cashboxes => Set<Cashbox>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
     public DbSet<Receipt> Receipts => Set<Receipt>();
     public DbSet<CashShift> CashShifts => Set<CashShift>();
+    public DbSet<Promotion> Promotions => Set<Promotion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

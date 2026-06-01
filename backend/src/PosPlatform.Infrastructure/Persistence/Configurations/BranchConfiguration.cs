@@ -10,5 +10,6 @@ public class BranchConfiguration : IEntityTypeConfiguration<Branch>
     {
         builder.Property(b => b.Name).IsRequired().HasMaxLength(256);
         builder.Property(b => b.Address).HasMaxLength(512);
+        builder.Property(b => b.Balance).HasColumnType("numeric(18,2)");
     }
 }
