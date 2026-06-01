@@ -25,6 +25,12 @@ const routes = [
     name: 'stores',
     component: () => import('../views/StoresView.vue'),
     meta: { adminOnly: true }
+  },
+  {
+    path: '/suppliers',
+    name: 'suppliers',
+    component: () => import('../views/SuppliersView.vue'),
+    meta: { adminOnly: true }
   }
 ]
 

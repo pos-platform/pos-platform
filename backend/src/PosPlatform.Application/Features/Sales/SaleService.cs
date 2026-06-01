@@ -137,6 +137,9 @@ public class SaleService : ISaleService
                 VatAmount = vatAmount,
                 LineTotal = lineTotal
             });
+
+            // Ombor qoldig'idan ayiramiz.
+            product.Quantity -= line.Quantity;
         }
 
         sale.TotalAmount = sale.Items.Sum(i => i.LineTotal);
@@ -231,6 +234,20 @@ public class SaleService : ISaleService
         refund.Receipt = new Receipt { FiscalStatus = FiscalStatus.NotSent };
 
         original.Status = SaleStatus.Refunded;
+
+        // Qaytarilgan tovarlar ombor qoldig'iga qaytadi.
+        var productIds = original.Items.Select(i => i.ProductId).Distinct().ToList();
+        var products = await _db.Products
+            .Where(p => productIds.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+        foreach (var item in original.Items)
+        {
+            var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+            if (product is not null)
+            {
+                product.Quantity += item.Quantity;
+            }
+        }
 
         _db.Sales.Add(refund);
         await _db.SaveChangesAsync(cancellationToken);

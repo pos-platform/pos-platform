@@ -22,6 +22,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Receipt> Receipts => Set<Receipt>();
     public DbSet<CashShift> CashShifts => Set<CashShift>();
     public DbSet<Promotion> Promotions => Set<Promotion>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<StockReceipt> StockReceipts => Set<StockReceipt>();
+    public DbSet<StockReceiptItem> StockReceiptItems => Set<StockReceiptItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

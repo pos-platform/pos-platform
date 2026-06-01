@@ -22,6 +22,9 @@ public class Product : BaseEntity
     /// <summary>Sotish narxi.</summary>
     public decimal Price { get; set; }
 
+    /// <summary>Ombordagi qoldiq (kirimda oshadi, sotuvda kamayadi).</summary>
+    public decimal Quantity { get; set; }
+
     /// <summary>Mahsulot rasmi manzili (ixtiyoriy).</summary>
     public string? ImageUrl { get; set; }
 

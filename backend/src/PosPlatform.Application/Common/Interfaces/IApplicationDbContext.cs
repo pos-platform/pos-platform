@@ -20,6 +20,9 @@ public interface IApplicationDbContext
     DbSet<Receipt> Receipts { get; }
     DbSet<CashShift> CashShifts { get; }
     DbSet<Promotion> Promotions { get; }
+    DbSet<Supplier> Suppliers { get; }
+    DbSet<StockReceipt> StockReceipts { get; }
+    DbSet<StockReceiptItem> StockReceiptItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

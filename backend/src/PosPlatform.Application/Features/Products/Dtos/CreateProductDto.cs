@@ -24,6 +24,10 @@ public class CreateProductDto
 
     public string? ImageUrl { get; set; }
 
+    /// <summary>Boshlang'ich ombor qoldig'i.</summary>
+    [Range(0, double.MaxValue)]
+    public decimal Quantity { get; set; }
+
     public Unit Unit { get; set; } = Unit.Piece;
 
     public bool IsWeighed { get; set; }

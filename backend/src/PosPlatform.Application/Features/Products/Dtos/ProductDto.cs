@@ -11,6 +11,7 @@ public class ProductDto
     public string? Barcode { get; set; }
     public decimal CostPrice { get; set; }
     public decimal Price { get; set; }
+    public decimal Quantity { get; set; }
     /// <summary>Ustama foiz = (Price - CostPrice) / CostPrice * 100.</summary>
     public decimal MarkupPercent { get; set; }
     public string? ImageUrl { get; set; }
@@ -30,6 +31,7 @@ public class ProductDto
         Barcode = p.Barcode,
         CostPrice = p.CostPrice,
         Price = p.Price,
+        Quantity = p.Quantity,
         MarkupPercent = p.CostPrice > 0
             ? Math.Round((p.Price - p.CostPrice) / p.CostPrice * 100m, 2)
             : 0m,

@@ -214,6 +214,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
                     b.Property<decimal?>("Tare")
                         .HasColumnType("numeric(18,3)");
 
@@ -468,6 +471,124 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("SaleItems");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.StockReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("StockReceipts");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.StockReceiptItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CostPrice")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<Guid>("StockReceiptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("StockReceiptId");
+
+                    b.ToTable("StockReceiptItems");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Supplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Suppliers");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -627,6 +748,43 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.StockReceipt", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("PosPlatform.Domain.Entities.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.StockReceiptItem", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PosPlatform.Domain.Entities.StockReceipt", "StockReceipt")
+                        .WithMany("Items")
+                        .HasForeignKey("StockReceiptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("StockReceipt");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.User", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
@@ -659,6 +817,11 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("Receipt");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.StockReceipt", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

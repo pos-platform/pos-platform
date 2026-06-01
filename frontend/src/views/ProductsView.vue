@@ -19,6 +19,7 @@ const blankForm = () => ({
   costPrice: 0,
   markupPercent: 0,
   price: 0,
+  quantity: 0,
   imageUrl: '',
   unit: 'Piece',
   isWeighed: false,
@@ -110,6 +111,7 @@ async function submit() {
       barcode: form.barcode?.trim() || null,
       costPrice: Number(form.costPrice) || 0,
       price: Number(form.price) || 0,
+      quantity: Number(form.quantity) || 0,
       imageUrl: form.imageUrl || null,
       unit: form.unit,
       isWeighed: form.isWeighed,
@@ -189,12 +191,18 @@ onMounted(loadAll)
           <input v-model="form.markupPercent" type="number" step="0.1" class="input" @input="recalcPrice" />
         </div>
       </div>
-      <div class="field">
-        <label>Sotish narxi</label>
-        <input v-model="form.price" type="number" min="0" step="0.01" class="input" required @input="recalcMarkup" />
-        <span class="muted" style="font-size: 12px">
-          Foyda: {{ (Number(form.price) - Number(form.costPrice)).toLocaleString() }} so'm
-        </span>
+      <div class="row">
+        <div class="field">
+          <label>Sotish narxi</label>
+          <input v-model="form.price" type="number" min="0" step="0.01" class="input" required @input="recalcMarkup" />
+          <span class="muted" style="font-size: 12px">
+            Foyda: {{ (Number(form.price) - Number(form.costPrice)).toLocaleString() }} so'm
+          </span>
+        </div>
+        <div class="field">
+          <label>Boshlang'ich qoldiq</label>
+          <input v-model="form.quantity" type="number" min="0" step="0.001" class="input" />
+        </div>
       </div>
 
       <div class="row">

@@ -54,6 +54,7 @@ public class ProductService : IProductService
             Barcode = dto.Barcode,
             CostPrice = dto.CostPrice,
             Price = dto.Price,
+            Quantity = dto.Quantity,
             ImageUrl = dto.ImageUrl,
             Unit = dto.Unit,
             IsWeighed = dto.IsWeighed,

@@ -13,6 +13,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Barcode).HasMaxLength(64);
         builder.Property(p => p.CostPrice).HasColumnType("numeric(18,2)");
         builder.Property(p => p.Price).HasColumnType("numeric(18,2)");
+        builder.Property(p => p.Quantity).HasColumnType("numeric(18,3)");
         builder.Property(p => p.Tare).HasColumnType("numeric(18,3)");
         builder.Property(p => p.ImageUrl).HasMaxLength(512);
 

@@ -51,6 +51,14 @@ export const storesApi = {
   deactivateCashbox: (id) => http.post(`/api/stores/cashboxes/${id}/deactivate`).then((r) => r.data)
 }
 
+export const suppliersApi = {
+  list: () => http.get('/api/suppliers').then((r) => r.data),
+  create: (payload) => http.post('/api/suppliers', payload).then((r) => r.data),
+  update: (id, payload) => http.put(`/api/suppliers/${id}`, payload).then((r) => r.data),
+  activate: (id) => http.post(`/api/suppliers/${id}/activate`).then((r) => r.data),
+  deactivate: (id) => http.post(`/api/suppliers/${id}/deactivate`).then((r) => r.data)
+}
+
 export const promotionsApi = {
   active: () => http.get('/api/promotions/active').then((r) => r.data),
   list: () => http.get('/api/promotions').then((r) => r.data),
