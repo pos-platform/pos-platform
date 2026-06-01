@@ -18,7 +18,7 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(username.value, password.value)
-    const redirect = route.query.redirect || { name: 'pos' }
+    const redirect = route.query.redirect || '/'
     router.push(redirect)
   } catch (e) {
     error.value = errorMessage(e, 'Kirib bo\'lmadi')

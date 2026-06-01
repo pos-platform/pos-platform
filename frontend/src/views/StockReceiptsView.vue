@@ -1,0 +1,198 @@
+<script setup>
+import { ref, reactive, computed, onMounted } from 'vue'
+import { stockReceiptsApi, suppliersApi, productsApi } from '../api/catalog'
+import { errorMessage } from '../api/http'
+
+const receipts = ref([])
+const suppliers = ref([])
+const products = ref([])
+const loading = ref(false)
+const err = ref('')
+const success = ref('')
+const saving = ref(false)
+
+const showForm = ref(false)
+const form = reactive({ supplierId: '', comment: '' })
+const lines = ref([]) // { product, quantity, costPrice }
+const productSearch = ref('')
+const expanded = ref(null)
+
+const searchResults = computed(() => {
+  const q = productSearch.value.trim().toLowerCase()
+  if (!q) return []
+  return products.value
+    .filter((p) => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)))
+    .slice(0, 8)
+})
+
+const total = computed(() =>
+  lines.value.reduce((sum, l) => sum + Number(l.quantity || 0) * Number(l.costPrice || 0), 0)
+)
+
+function fmt(n) { return Number(n || 0).toLocaleString() }
+function fmtDate(d) { return new Date(d).toLocaleString('uz-UZ') }
+
+function addLine(product) {
+  if (lines.value.find((l) => l.product.id === product.id)) {
+    productSearch.value = ''
+    return
+  }
+  lines.value.push({ product, quantity: 1, costPrice: Number(product.costPrice) || 0 })
+  productSearch.value = ''
+}
+function removeLine(id) {
+  lines.value = lines.value.filter((l) => l.product.id !== id)
+}
+
+async function load() {
+  loading.value = true
+  err.value = ''
+  try {
+    const [r, s, p] = await Promise.all([stockReceiptsApi.list(), suppliersApi.list(), productsApi.list()])
+    receipts.value = r
+    suppliers.value = s.filter((x) => x.isActive)
+    products.value = p
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function submit() {
+  err.value = ''
+  success.value = ''
+  if (!form.supplierId) { err.value = 'Yetkazib beruvchini tanlang'; return }
+  if (!lines.value.length) { err.value = 'Kamida bitta tovar qo\'shing'; return }
+  saving.value = true
+  try {
+    const r = await stockReceiptsApi.create({
+      supplierId: form.supplierId,
+      comment: form.comment.trim() || null,
+      items: lines.value.map((l) => ({
+        productId: l.product.id,
+        quantity: Number(l.quantity),
+        costPrice: Number(l.costPrice)
+      }))
+    })
+    success.value = `Накладная ${r.number} yaratildi — ombor yangilandi`
+    form.supplierId = ''
+    form.comment = ''
+    lines.value = []
+    showForm.value = false
+    await load()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(load)
+</script>
+
+<template>
+  <div class="page-head">
+    <h1>Накладная (tovar kirimi)</h1>
+    <button class="btn" @click="showForm = !showForm">+ Yangi kirim</button>
+  </div>
+
+  <div v-if="err" class="alert alert-error">{{ err }}</div>
+  <div v-if="success" class="alert alert-success">{{ success }}</div>
+
+  <!-- Yangi kirim formasi -->
+  <form v-if="showForm" class="card" style="margin-bottom: 16px" @submit.prevent="submit">
+    <h3 style="margin-top: 0">Yangi kirim</h3>
+    <div class="row">
+      <div class="field">
+        <label>Yetkazib beruvchi *</label>
+        <select v-model="form.supplierId" class="select" required>
+          <option value="" disabled>Tanlang...</option>
+          <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Izoh</label>
+        <input v-model="form.comment" class="input" />
+      </div>
+    </div>
+
+    <!-- Tovar qidirish -->
+    <div class="field" style="position: relative; max-width: 480px">
+      <label>Tovar qo'shish (nom yoki shtrix-kod)</label>
+      <input v-model="productSearch" class="input" placeholder="Qidirish..." />
+      <div v-if="searchResults.length" class="search-pop">
+        <div v-for="p in searchResults" :key="p.id" class="search-item" @click="addLine(p)">
+          {{ p.name }} <span class="muted">— qoldiq {{ fmt(p.quantity) }}, tannarx {{ fmt(p.costPrice) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <table class="table" style="margin: 12px 0">
+      <thead>
+        <tr><th>Tovar</th><th style="width:120px">Miqdor</th><th style="width:140px">Tannarx</th><th class="text-right">Summa</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr v-for="l in lines" :key="l.product.id">
+          <td>{{ l.product.name }}</td>
+          <td><input v-model="l.quantity" type="number" min="0" step="0.001" class="input" /></td>
+          <td><input v-model="l.costPrice" type="number" min="0" step="0.01" class="input" /></td>
+          <td class="text-right">{{ fmt(Number(l.quantity) * Number(l.costPrice)) }}</td>
+          <td class="text-right"><button type="button" class="btn btn-ghost btn-sm" @click="removeLine(l.product.id)">✕</button></td>
+        </tr>
+        <tr v-if="!lines.length"><td colspan="5" class="muted">Tovar qo'shilmagan</td></tr>
+      </tbody>
+    </table>
+
+    <div class="row" style="justify-content: space-between; align-items: center">
+      <strong style="font-size: 16px">Jami: {{ fmt(total) }} so'm</strong>
+      <button class="btn btn-success" :disabled="saving">{{ saving ? 'Saqlanmoqda...' : 'Saqlash (omborga qo\'shish)' }}</button>
+    </div>
+  </form>
+
+  <!-- Kirimlar ro'yxati -->
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr><th>№</th><th>Yetkazib beruvchi</th><th>Sana</th><th class="text-right">Summa</th><th>Izoh</th></tr>
+      </thead>
+      <tbody>
+        <template v-for="r in receipts" :key="r.id">
+          <tr style="cursor:pointer" @click="expanded = expanded === r.id ? null : r.id">
+            <td><strong>{{ r.number }}</strong></td>
+            <td>{{ r.supplierName }}</td>
+            <td class="muted">{{ fmtDate(r.createdAt) }}</td>
+            <td class="text-right">{{ fmt(r.totalAmount) }}</td>
+            <td class="muted">{{ r.comment || '—' }}</td>
+          </tr>
+          <tr v-if="expanded === r.id">
+            <td colspan="5" style="background:#fafbfc">
+              <table class="table">
+                <thead><tr><th>Tovar</th><th class="text-right">Miqdor</th><th class="text-right">Tannarx</th><th class="text-right">Summa</th></tr></thead>
+                <tbody>
+                  <tr v-for="(i, idx) in r.items" :key="idx">
+                    <td>{{ i.productName }}</td>
+                    <td class="text-right">{{ fmt(i.quantity) }}</td>
+                    <td class="text-right">{{ fmt(i.costPrice) }}</td>
+                    <td class="text-right">{{ fmt(i.lineTotal) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </template>
+        <tr v-if="!receipts.length && !loading"><td colspan="5" class="muted" style="text-align:center;padding:24px">Kirim yo'q</td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<style scoped>
+.search-pop {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 5;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: var(--shadow); max-height: 260px; overflow: auto;
+}
+.search-item { padding: 9px 12px; cursor: pointer; }
+.search-item:hover { background: var(--bg); }
+</style>

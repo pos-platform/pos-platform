@@ -25,6 +25,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<StockReceipt> StockReceipts => Set<StockReceipt>();
     public DbSet<StockReceiptItem> StockReceiptItems => Set<StockReceiptItem>();
+    public DbSet<Debtor> Debtors => Set<Debtor>();
+    public DbSet<DebtorTransaction> DebtorTransactions => Set<DebtorTransaction>();
+    public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<WriteOff> WriteOffs => Set<WriteOff>();
+    public DbSet<WriteOffItem> WriteOffItems => Set<WriteOffItem>();
+    public DbSet<SupplierPayment> SupplierPayments => Set<SupplierPayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -23,6 +23,12 @@ public interface IApplicationDbContext
     DbSet<Supplier> Suppliers { get; }
     DbSet<StockReceipt> StockReceipts { get; }
     DbSet<StockReceiptItem> StockReceiptItems { get; }
+    DbSet<Debtor> Debtors { get; }
+    DbSet<DebtorTransaction> DebtorTransactions { get; }
+    DbSet<Expense> Expenses { get; }
+    DbSet<WriteOff> WriteOffs { get; }
+    DbSet<WriteOffItem> WriteOffItems { get; }
+    DbSet<SupplierPayment> SupplierPayments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

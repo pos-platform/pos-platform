@@ -266,6 +266,7 @@ onMounted(loadAll)
             <th></th>
             <th>Nomi</th>
             <th>Kategoriya</th>
+            <th class="text-right">Qoldiq</th>
             <th class="text-right">Tannarx</th>
             <th class="text-right">Sotish</th>
             <th class="text-right">Ustama</th>
@@ -284,6 +285,9 @@ onMounted(loadAll)
               <div class="muted" style="font-size: 12px">MXIK: {{ p.mxikCode }}</div>
             </td>
             <td>{{ categoryName(p.categoryId) }}</td>
+            <td class="text-right" :style="{ color: Number(p.quantity) <= 0 ? 'var(--danger)' : 'inherit' }">
+              {{ Number(p.quantity).toLocaleString() }}
+            </td>
             <td class="text-right muted">{{ Number(p.costPrice).toLocaleString() }}</td>
             <td class="text-right">{{ Number(p.price).toLocaleString() }}</td>
             <td class="text-right">
@@ -291,7 +295,7 @@ onMounted(loadAll)
             </td>
           </tr>
           <tr v-if="!visibleProducts.length && !loading">
-            <td colspan="6" class="muted" style="text-align: center; padding: 24px">
+            <td colspan="7" class="muted" style="text-align: center; padding: 24px">
               Mahsulot yo'q
             </td>
           </tr>

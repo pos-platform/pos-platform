@@ -41,6 +41,10 @@ export const shiftsApi = {
   get: (id) => http.get(`/api/shifts/${id}`).then((r) => r.data)
 }
 
+export const dashboardApi = {
+  summary: (params) => http.get('/api/dashboard/summary', { params }).then((r) => r.data)
+}
+
 export const storesApi = {
   list: () => http.get('/api/stores').then((r) => r.data),
   createStore: (payload) => http.post('/api/stores', payload).then((r) => r.data),
@@ -57,6 +61,35 @@ export const suppliersApi = {
   update: (id, payload) => http.put(`/api/suppliers/${id}`, payload).then((r) => r.data),
   activate: (id) => http.post(`/api/suppliers/${id}/activate`).then((r) => r.data),
   deactivate: (id) => http.post(`/api/suppliers/${id}/deactivate`).then((r) => r.data)
+}
+
+export const stockReceiptsApi = {
+  list: () => http.get('/api/stock-receipts').then((r) => r.data),
+  get: (id) => http.get(`/api/stock-receipts/${id}`).then((r) => r.data),
+  create: (payload) => http.post('/api/stock-receipts', payload).then((r) => r.data)
+}
+
+export const writeOffsApi = {
+  list: () => http.get('/api/write-offs').then((r) => r.data),
+  create: (payload) => http.post('/api/write-offs', payload).then((r) => r.data)
+}
+
+export const paymentsApi = {
+  list: () => http.get('/api/payments').then((r) => r.data),
+  create: (payload) => http.post('/api/payments', payload).then((r) => r.data)
+}
+
+export const debtorsApi = {
+  list: () => http.get('/api/debtors').then((r) => r.data),
+  get: (id) => http.get(`/api/debtors/${id}`).then((r) => r.data),
+  create: (payload) => http.post('/api/debtors', payload).then((r) => r.data),
+  addTransaction: (id, payload) => http.post(`/api/debtors/${id}/transactions`, payload).then((r) => r.data)
+}
+
+export const expensesApi = {
+  list: () => http.get('/api/expenses').then((r) => r.data),
+  create: (payload) => http.post('/api/expenses', payload).then((r) => r.data),
+  remove: (id) => http.delete(`/api/expenses/${id}`).then((r) => r.data)
 }
 
 export const promotionsApi = {

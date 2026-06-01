@@ -3,7 +3,8 @@ import { useAuthStore } from '../stores/auth'
 
 const routes = [
   { path: '/login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { public: true } },
-  { path: '/', redirect: { name: 'pos' } },
+  { path: '/', redirect: { name: 'dashboard' } },
+  { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { adminOnly: true } },
   { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue') },
   { path: '/products', name: 'products', component: () => import('../views/ProductsView.vue') },
   { path: '/sales', name: 'sales', component: () => import('../views/SalesView.vue') },
@@ -30,6 +31,36 @@ const routes = [
     path: '/suppliers',
     name: 'suppliers',
     component: () => import('../views/SuppliersView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
+    path: '/stock-receipts',
+    name: 'stock-receipts',
+    component: () => import('../views/StockReceiptsView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
+    path: '/debtors',
+    name: 'debtors',
+    component: () => import('../views/DebtorsView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
+    path: '/expenses',
+    name: 'expenses',
+    component: () => import('../views/ExpensesView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
+    path: '/write-offs',
+    name: 'write-offs',
+    component: () => import('../views/WriteOffsView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
+    path: '/payments',
+    name: 'payments',
+    component: () => import('../views/PaymentsView.vue'),
     meta: { adminOnly: true }
   }
 ]

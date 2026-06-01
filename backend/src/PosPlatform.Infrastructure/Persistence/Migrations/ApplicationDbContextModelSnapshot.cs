@@ -172,6 +172,117 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Debtor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Debtors");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.DebtorTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("BalanceAfter")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DebtorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DebtorId");
+
+                    b.ToTable("DebtorTransactions");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Expense", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("Expenses");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -589,6 +700,37 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("Suppliers");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.SupplierPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("SupplierPayments");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -629,6 +771,81 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.WriteOff", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.ToTable("WriteOffs");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.WriteOffItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CostPrice")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WriteOffId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("WriteOffId");
+
+                    b.ToTable("WriteOffItems");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.CashShift", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
@@ -654,6 +871,27 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.DebtorTransaction", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Debtor", "Debtor")
+                        .WithMany("Transactions")
+                        .HasForeignKey("DebtorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Debtor");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Expense", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Branch");
                 });
@@ -785,6 +1023,17 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("StockReceipt");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.SupplierPayment", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Supplier");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.User", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
@@ -793,6 +1042,35 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.WriteOff", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.WriteOffItem", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PosPlatform.Domain.Entities.WriteOff", "WriteOff")
+                        .WithMany("Items")
+                        .HasForeignKey("WriteOffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("WriteOff");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Branch", b =>
@@ -812,6 +1090,11 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Debtor", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Sale", b =>
                 {
                     b.Navigation("Items");
@@ -820,6 +1103,11 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.StockReceipt", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.WriteOff", b =>
                 {
                     b.Navigation("Items");
                 });
