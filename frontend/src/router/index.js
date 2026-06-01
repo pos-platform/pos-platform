@@ -62,6 +62,12 @@ const routes = [
     name: 'payments',
     component: () => import('../views/PaymentsView.vue'),
     meta: { adminOnly: true }
+  },
+  {
+    path: '/analytics',
+    name: 'analytics',
+    component: () => import('../views/AnalyticsView.vue'),
+    meta: { adminOnly: true }
   }
 ]
 

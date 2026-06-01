@@ -50,6 +50,33 @@ public class ProductsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
     }
 
+    /// <summary>Mahsulotni tahrirlaydi.</summary>
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductDto>> Update(Guid id, UpdateProductDto dto, CancellationToken cancellationToken)
+        => Ok(await _productService.UpdateAsync(id, dto, cancellationToken));
+
+    /// <summary>Mahsulotni o'chiradi (ishlatilmagan bo'lsa).</summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await _productService.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Noyob shtrix-kod (kod tovara) generatsiya qiladi.</summary>
+    [HttpGet("generate-barcode")]
+    public async Task<ActionResult<object>> GenerateBarcode(CancellationToken cancellationToken)
+        => Ok(new { barcode = await _productService.GenerateBarcodeAsync(cancellationToken) });
+
+    /// <summary>Keyingi bo'sh PLU raqami.</summary>
+    [HttpGet("next-plu")]
+    public async Task<ActionResult<object>> NextPlu(CancellationToken cancellationToken)
+        => Ok(new { plu = await _productService.GetNextPluAsync(cancellationToken) });
+
     /// <summary>Mahsulot rasmini yuklaydi va URL qaytaradi.</summary>
     [HttpPost("image")]
     [ProducesResponseType(typeof(UploadImageResponse), StatusCodes.Status200OK)]

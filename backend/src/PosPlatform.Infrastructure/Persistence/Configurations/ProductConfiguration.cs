@@ -16,6 +16,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Quantity).HasColumnType("numeric(18,3)");
         builder.Property(p => p.Tare).HasColumnType("numeric(18,3)");
         builder.Property(p => p.ImageUrl).HasMaxLength(512);
+        builder.Property(p => p.Description).HasMaxLength(1024);
 
         builder.HasIndex(p => p.Barcode);
         builder.HasIndex(p => p.PluNumber);
@@ -24,5 +25,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Supplier)
+            .WithMany()
+            .HasForeignKey(p => p.SupplierId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

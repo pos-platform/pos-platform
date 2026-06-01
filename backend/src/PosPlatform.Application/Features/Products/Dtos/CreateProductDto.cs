@@ -24,6 +24,16 @@ public class CreateProductDto
 
     public string? ImageUrl { get; set; }
 
+    public string? Description { get; set; }
+
+    /// <summary>QQS (НДС) bilanmi.</summary>
+    public bool IsVat { get; set; } = true;
+
+    /// <summary>Markirovka (маркировка).</summary>
+    public bool IsMarked { get; set; }
+
+    public Guid? SupplierId { get; set; }
+
     /// <summary>Boshlang'ich ombor qoldig'i.</summary>
     [Range(0, double.MaxValue)]
     public decimal Quantity { get; set; }
@@ -38,4 +48,9 @@ public class CreateProductDto
 
     [Required]
     public Guid CategoryId { get; set; }
+}
+
+/// <summary>Mahsulotni tahrirlash (yaratish bilan bir xil maydonlar).</summary>
+public class UpdateProductDto : CreateProductDto
+{
 }

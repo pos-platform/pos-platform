@@ -4,11 +4,15 @@ export const productsApi = {
   list: () => http.get('/api/products').then((r) => r.data),
   get: (id) => http.get(`/api/products/${id}`).then((r) => r.data),
   create: (payload) => http.post('/api/products', payload).then((r) => r.data),
+  update: (id, payload) => http.put(`/api/products/${id}`, payload).then((r) => r.data),
+  remove: (id) => http.delete(`/api/products/${id}`).then((r) => r.data),
   uploadImage: (file) => {
     const fd = new FormData()
     fd.append('file', file)
     return http.post('/api/products/image', fd).then((r) => r.data) // { url }
-  }
+  },
+  generateBarcode: () => http.get('/api/products/generate-barcode').then((r) => r.data.barcode),
+  nextPlu: () => http.get('/api/products/next-plu').then((r) => r.data.plu)
 }
 
 export const categoriesApi = {
@@ -43,6 +47,10 @@ export const shiftsApi = {
 
 export const dashboardApi = {
   summary: (params) => http.get('/api/dashboard/summary', { params }).then((r) => r.data)
+}
+
+export const analyticsApi = {
+  get: (params) => http.get('/api/analytics', { params }).then((r) => r.data)
 }
 
 export const storesApi = {

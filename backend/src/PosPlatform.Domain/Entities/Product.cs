@@ -13,8 +13,21 @@ public class Product : BaseEntity
     /// </summary>
     public string MxikCode { get; set; } = string.Empty;
 
-    /// <summary>Shtrix-kod (ixtiyoriy).</summary>
+    /// <summary>Shtrix-kod / kod tovara (ixtiyoriy).</summary>
     public string? Barcode { get; set; }
+
+    /// <summary>Tavsif (ixtiyoriy).</summary>
+    public string? Description { get; set; }
+
+    /// <summary>QQS (НДС) bilanmi.</summary>
+    public bool IsVat { get; set; } = true;
+
+    /// <summary>Markirovka (маркировка) qilinadimi.</summary>
+    public bool IsMarked { get; set; }
+
+    /// <summary>Yetkazib beruvchi (ixtiyoriy).</summary>
+    public Guid? SupplierId { get; set; }
+    public Supplier? Supplier { get; set; }
 
     /// <summary>Olingan narx (tannarx).</summary>
     public decimal CostPrice { get; set; }

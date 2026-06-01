@@ -9,6 +9,29 @@ const router = useRouter()
 
 const showNav = computed(() => auth.isAuthenticated && route.name !== 'login')
 
+// Sidebar menyu. admin: true bo'lsa faqat Admin ko'radi.
+const navItems = [
+  { name: 'dashboard', label: 'Главный', icon: '📊', admin: true },
+  { name: 'pos', label: 'Savdo', icon: '🛒' },
+  { name: 'stores', label: "Do'konlar", icon: '🏪', admin: true },
+  { name: 'products', label: 'Mahsulotlar', icon: '📦' },
+  { name: 'sales', label: 'Savdolar', icon: '🧾' },
+  { name: 'shifts', label: 'Smena', icon: '⏱️' },
+  { name: 'suppliers', label: 'Yetkazib beruvchilar', icon: '🚚', admin: true },
+  { name: 'stock-receipts', label: 'Накладная', icon: '📥', admin: true },
+  { name: 'debtors', label: 'Qarzdorlar', icon: '📕', admin: true },
+  { name: 'expenses', label: 'Xarajatlar', icon: '💸', admin: true },
+  { name: 'payments', label: 'Платежи', icon: '💳', admin: true },
+  { name: 'write-offs', label: 'Списание', icon: '🗑️', admin: true },
+  { name: 'analytics', label: 'Аналитика', icon: '📈', admin: true },
+  { name: 'promotions', label: 'Aksiyalar', icon: '🏷️', admin: true },
+  { name: 'users', label: 'Foydalanuvchilar', icon: '👥', admin: true }
+]
+
+const visibleNav = computed(() =>
+  navItems.filter((i) => !i.admin || auth.role === 'Admin')
+)
+
 function logout() {
   auth.logout()
   router.push({ name: 'login' })
@@ -16,31 +39,30 @@ function logout() {
 </script>
 
 <template>
-  <div class="app">
-    <header v-if="showNav" class="topbar">
-      <div class="brand">PosPlatform</div>
-      <nav class="nav">
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'dashboard' }" class="nav-link">Главный</RouterLink>
-        <RouterLink :to="{ name: 'pos' }" class="nav-link">Savdo</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'stores' }" class="nav-link">Do'konlar</RouterLink>
-        <RouterLink :to="{ name: 'products' }" class="nav-link">Mahsulotlar</RouterLink>
-        <RouterLink :to="{ name: 'sales' }" class="nav-link">Savdolar</RouterLink>
-        <RouterLink :to="{ name: 'shifts' }" class="nav-link">Smena</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'suppliers' }" class="nav-link">Yetkazib beruvchilar</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'stock-receipts' }" class="nav-link">Накладная</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'debtors' }" class="nav-link">Qarzdorlar</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'expenses' }" class="nav-link">Xarajatlar</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'payments' }" class="nav-link">Платежи</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'write-offs' }" class="nav-link">Списание</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'promotions' }" class="nav-link">Aksiyalar</RouterLink>
-        <RouterLink v-if="auth.role === 'Admin'" :to="{ name: 'users' }" class="nav-link">Foydalanuvchilar</RouterLink>
+  <div class="app-shell" :class="{ 'no-nav': !showNav }">
+    <aside v-if="showNav" class="sidebar">
+      <div class="sidebar-brand">PosPlatform</div>
+
+      <nav class="side-nav">
+        <RouterLink
+          v-for="item in visibleNav"
+          :key="item.name"
+          :to="{ name: item.name }"
+          class="side-link"
+        >
+          <span class="side-ico">{{ item.icon }}</span>
+          <span class="side-label">{{ item.label }}</span>
+        </RouterLink>
       </nav>
-      <div class="user">
-        <span class="user-name">{{ auth.username }}</span>
-        <span class="badge">{{ auth.role }}</span>
-        <button class="btn btn-ghost" @click="logout">Chiqish</button>
+
+      <div class="sidebar-foot">
+        <div class="side-user">
+          <div class="side-username">{{ auth.username }}</div>
+          <span class="badge">{{ auth.role }}</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="width:100%; margin-top:8px" @click="logout">Chiqish</button>
       </div>
-    </header>
+    </aside>
 
     <main class="content">
       <RouterView />
