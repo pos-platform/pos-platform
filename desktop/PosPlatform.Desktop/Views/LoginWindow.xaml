@@ -1,0 +1,33 @@
+<Window x:Class="PosPlatform.Desktop.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PosPlatform — Kirish" Height="320" Width="380"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Background="#F4F5F7">
+    <Border Background="White" CornerRadius="12" Margin="24" Padding="28">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.15" />
+        </Border.Effect>
+        <StackPanel>
+            <TextBlock Text="PosPlatform" FontSize="22" FontWeight="Bold"
+                       Foreground="#2563EB" HorizontalAlignment="Center" />
+            <TextBlock Text="Kassir kirishi" Foreground="#6B7480"
+                       HorizontalAlignment="Center" Margin="0,2,0,18" />
+
+            <TextBlock Text="Foydalanuvchi" Foreground="#6B7480" FontWeight="SemiBold" />
+            <TextBox x:Name="UsernameBox" Height="34" Padding="8,6" Margin="0,4,0,10"
+                     Text="admin" VerticalContentAlignment="Center" />
+
+            <TextBlock Text="Parol" Foreground="#6B7480" FontWeight="SemiBold" />
+            <PasswordBox x:Name="PasswordBox" Height="34" Padding="8,6" Margin="0,4,0,14"
+                         VerticalContentAlignment="Center"
+                         KeyDown="PasswordBox_KeyDown" />
+
+            <TextBlock x:Name="ErrorText" Foreground="#DC2626" TextWrapping="Wrap"
+                       Margin="0,0,0,8" Visibility="Collapsed" />
+
+            <Button x:Name="LoginButton" Content="Kirish" Height="40"
+                    Background="#2563EB" Foreground="White" FontWeight="Bold"
+                    BorderThickness="0" Cursor="Hand" Click="LoginButton_Click" />
+        </StackPanel>
+    </Border>
+</Window>

@@ -10,7 +10,8 @@
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
       "PowerShell(winget search PostgreSQL.PostgreSQL --accept-source-agreements 2>&1)",
       "PowerShell(winget install --id PostgreSQL.PostgreSQL.16 --silent --accept-package-agreements --accept-source-agreements --override \"--mode unattended --unattendedmodeui none --superpassword postgres --serverport 5432 --enable-components server,commandlinetools\" 2>&1)",
-      "PowerShell(\"deleted\")"
+      "PowerShell(\"deleted\")",
+      "PowerShell(\"Backend \\(5000\\): $\\(\\(Test-NetConnection -ComputerName localhost -Port 5000 -WarningAction SilentlyContinue\\).TcpTestSucceeded\\)\")"
     ]
   }
 }

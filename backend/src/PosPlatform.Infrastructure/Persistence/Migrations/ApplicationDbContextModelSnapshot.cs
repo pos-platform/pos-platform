@@ -483,6 +483,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("DebtorId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("numeric(18,2)");
 
@@ -524,6 +527,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("CashierId");
 
                     b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DebtorId");
 
                     b.HasIndex("OriginalSaleId");
 
@@ -975,6 +980,11 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PosPlatform.Domain.Entities.Debtor", "Debtor")
+                        .WithMany()
+                        .HasForeignKey("DebtorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("PosPlatform.Domain.Entities.Sale", "OriginalSale")
                         .WithMany()
                         .HasForeignKey("OriginalSaleId")
@@ -985,6 +995,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("CashShift");
 
                     b.Navigation("Cashier");
+
+                    b.Navigation("Debtor");
 
                     b.Navigation("OriginalSale");
                 });

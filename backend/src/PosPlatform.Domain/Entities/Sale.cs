@@ -26,6 +26,10 @@ public class Sale : BaseEntity
     public Guid? OriginalSaleId { get; set; }
     public Sale? OriginalSale { get; set; }
 
+    /// <summary>Nasiya (Debt) sotuvda — qaysi qarzdorga yozilgani.</summary>
+    public Guid? DebtorId { get; set; }
+    public Debtor? Debtor { get; set; }
+
     public SaleStatus Status { get; set; } = SaleStatus.Completed;
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;

@@ -44,6 +44,12 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
             .HasForeignKey(s => s.OriginalSaleId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Nasiya — qarzdorga bog'lanish.
+        builder.HasOne(s => s.Debtor)
+            .WithMany()
+            .HasForeignKey(s => s.DebtorId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(s => s.OriginalSaleId);
         builder.HasIndex(s => s.Type);
     }

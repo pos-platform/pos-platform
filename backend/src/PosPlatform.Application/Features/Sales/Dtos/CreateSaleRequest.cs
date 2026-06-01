@@ -10,6 +10,9 @@ public class CreateSaleRequest
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
 
+    /// <summary>Nasiya (Debt) sotuvda majburiy — qaysi qarzdorga.</summary>
+    public Guid? DebtorId { get; set; }
+
     /// <summary>Mijoz bergan summa (naqd uchun qaytim hisoblanadi).</summary>
     [Range(0, double.MaxValue)]
     public decimal PaidAmount { get; set; }

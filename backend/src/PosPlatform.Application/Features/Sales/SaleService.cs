@@ -69,6 +69,16 @@ public class SaleService : ISaleService
                 cancellationToken)
             ?? throw new ValidationException("Avval smenani oching (kassa sessiyasi).");
 
+        // Nasiya (Debt) bo'lsa — qarzdor majburiy.
+        Debtor? debtor = null;
+        if (request.PaymentMethod == PaymentMethod.Debt)
+        {
+            if (request.DebtorId is null)
+                throw new ValidationException("Nasiya uchun qarzdorni tanlang.");
+            debtor = await _db.Debtors.FirstOrDefaultAsync(d => d.Id == request.DebtorId, cancellationToken)
+                ?? throw new NotFoundException("Qarzdor topilmadi.");
+        }
+
         // Mahsulotlarni bitta so'rovda yuklaymiz.
         var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
         var products = await _db.Products
@@ -88,6 +98,7 @@ public class SaleService : ISaleService
             CashShiftId = shift.Id,
             Type = SaleType.Sale,
             PaymentMethod = request.PaymentMethod,
+            DebtorId = debtor?.Id,
             Status = SaleStatus.Completed
         };
 
@@ -151,14 +162,38 @@ public class SaleService : ISaleService
             throw new ValidationException("Berilgan summa savdo summasidan kam.");
         }
 
-        sale.PaidAmount = request.PaidAmount;
-        sale.ChangeAmount = Math.Max(0, Round2(request.PaidAmount - sale.TotalAmount));
+        if (request.PaymentMethod == PaymentMethod.Debt)
+        {
+            // Nasiya — to'lov yo'q, hammasi qarzga yoziladi.
+            sale.PaidAmount = 0;
+            sale.ChangeAmount = 0;
+        }
+        else
+        {
+            sale.PaidAmount = request.PaidAmount;
+            sale.ChangeAmount = Math.Max(0, Round2(request.PaidAmount - sale.TotalAmount));
+        }
 
         sale.ReceiptNumber = await GenerateReceiptNumberAsync("R", cancellationToken);
 
         sale.Receipt = new Receipt { FiscalStatus = FiscalStatus.NotSent };
 
         _db.Sales.Add(sale);
+
+        // Nasiya — qarzdor balansiga qo'shamiz va harakat yozamiz.
+        if (debtor is not null)
+        {
+            debtor.Balance += sale.TotalAmount;
+            _db.DebtorTransactions.Add(new DebtorTransaction
+            {
+                DebtorId = debtor.Id,
+                Type = DebtTransactionType.Debt,
+                Amount = sale.TotalAmount,
+                BalanceAfter = debtor.Balance,
+                Comment = $"Savdo {sale.ReceiptNumber}"
+            });
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
 
         // Fiskalizatsiya seam'i — hozir placeholder, keyin lokal agent ulanadi.
