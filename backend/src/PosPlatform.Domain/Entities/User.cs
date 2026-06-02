@@ -19,9 +19,7 @@ public class User : BaseEntity
 
     public Branch? Branch { get; set; }
 
-    /// <summary>Foydalanuvchi tegishli tashkilot. SuperAdmin uchun null.</summary>
-    public Guid? OrganizationId { get; set; }
-
+    /// <summary>Foydalanuvchi tegishli tashkilot (OrganizationId BaseEntity'da). SuperAdmin uchun null.</summary>
     public Organization? Organization { get; set; }
 
     /// <summary>

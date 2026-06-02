@@ -39,6 +39,25 @@ export const categoriesApi = {
   create: (payload) => http.post('/api/categories', payload).then((r) => r.data)
 }
 
+export const organizationsApi = {
+  list: () => http.get('/api/organizations').then((r) => r.data),
+  get: (id) => http.get(`/api/organizations/${id}`).then((r) => r.data),
+  create: (payload) => http.post('/api/organizations', payload).then((r) => r.data),
+  update: (id, payload) => http.put(`/api/organizations/${id}`, payload).then((r) => r.data),
+  activate: (id) => http.post(`/api/organizations/${id}/activate`).then((r) => r.data),
+  deactivate: (id) => http.post(`/api/organizations/${id}/deactivate`).then((r) => r.data),
+  createUser: (id, payload) =>
+    http.post(`/api/organizations/${id}/users`, payload).then((r) => r.data),
+  extendLicense: (userId, months) =>
+    http.post(`/api/organizations/users/${userId}/extend-license`, { months }).then((r) => r.data),
+  revokeLicense: (userId) =>
+    http.post(`/api/organizations/users/${userId}/revoke-license`).then((r) => r.data),
+  activateUser: (userId) =>
+    http.post(`/api/organizations/users/${userId}/activate`).then((r) => r.data),
+  deactivateUser: (userId) =>
+    http.post(`/api/organizations/users/${userId}/deactivate`).then((r) => r.data)
+}
+
 export const usersApi = {
   list: () => http.get('/api/users').then((r) => r.data),
   create: (payload) => http.post('/api/users', payload).then((r) => r.data),

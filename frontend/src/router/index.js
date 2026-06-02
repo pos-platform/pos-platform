@@ -3,6 +3,12 @@ import { useAuthStore } from '../stores/auth'
 
 const routes = [
   { path: '/login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { public: true } },
+  {
+    path: '/admin/organizations',
+    name: 'organizations',
+    component: () => import('../views/OrganizationsView.vue'),
+    meta: { superAdmin: true }
+  },
   { path: '/', redirect: { name: 'dashboard' } },
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { adminOnly: true } },
   { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue') },
@@ -82,6 +88,20 @@ router.beforeEach((to) => {
   if (!to.meta.public && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
+
+  // SuperAdmin faqat tashkilotlar sahifasida ishlaydi — boshqa hamma yo'l shu yerga yo'naltiriladi.
+  if (auth.isSuperAdmin) {
+    if (to.name === 'login' || !to.meta.superAdmin) {
+      return to.name === 'organizations' ? true : { name: 'organizations' }
+    }
+    return true
+  }
+
+  // SuperAdmin bo'lmaganlar super-admin sahifasiga kira olmaydi.
+  if (to.meta.superAdmin) {
+    return { name: 'pos' }
+  }
+
   if (to.name === 'login' && auth.isAuthenticated) {
     return { name: 'pos' }
   }

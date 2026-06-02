@@ -10,4 +10,7 @@ public interface ICurrentUser
     string? Username { get; }
     Guid? BranchId { get; }
     Guid? OrganizationId { get; }
+
+    /// <summary>So'rov kelgan IP manzil (reverse proxy ortida X-Forwarded-For hisobga olinadi).</summary>
+    string? IpAddress { get; }
 }

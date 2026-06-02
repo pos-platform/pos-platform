@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using PosPlatform.Application.Common.Interfaces;
 
 namespace PosPlatform.Infrastructure.Persistence;
 
@@ -28,6 +29,16 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         optionsBuilder.UseNpgsql(connectionString);
 
-        return new ApplicationDbContext(optionsBuilder.Options);
+        // Design-time'da foydalanuvchi konteksti yo'q — tashkilotsiz (filtr o'chiq).
+        return new ApplicationDbContext(optionsBuilder.Options, new DesignTimeCurrentUser());
+    }
+
+    /// <summary>Design-time uchun bo'sh ICurrentUser (hammasi null).</summary>
+    private sealed class DesignTimeCurrentUser : ICurrentUser
+    {
+        public Guid? UserId => null;
+        public string? Username => null;
+        public Guid? BranchId => null;
+        public Guid? OrganizationId => null;
     }
 }

@@ -14,9 +14,7 @@ public class Branch : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
-    /// <summary>Do'kon tegishli tashkilot (ixtiyoriy — eski ma'lumotlar uchun null bo'lishi mumkin).</summary>
-    public Guid? OrganizationId { get; set; }
-
+    /// <summary>Do'kon tegishli tashkilot (OrganizationId BaseEntity'da).</summary>
     public Organization? Organization { get; set; }
 
     public ICollection<Cashbox> Cashboxes { get; set; } = new List<Cashbox>();

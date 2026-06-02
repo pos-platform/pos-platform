@@ -66,6 +66,31 @@ builder.Services.AddSwaggerGen(options =>
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? throw new InvalidOperationException("appsettings.json da 'Jwt' bo'limi topilmadi.");
 
+// --- Production maxfiylik tekshiruvi: standart/placeholder sirlar bilan ishga tushmaymiz ---
+// Bu sozlamalarni production'da muhit o'zgaruvchilari (env) orqali bering, masalan Jwt__Key.
+if (builder.Environment.IsProduction())
+{
+    var problems = new List<string>();
+    var jwtKey = jwtSettings.Key ?? string.Empty;
+    if (jwtKey.Contains("CHANGE_ME") || jwtKey.Length < 32)
+        problems.Add("Jwt:Key kuchli, tasodifiy va kamida 32 belgi bo'lishi kerak");
+    if ((builder.Configuration["Agent:ApiKey"] ?? string.Empty).Contains("CHANGE_ME"))
+        problems.Add("Agent:ApiKey ni kuchli qiymatga almashtiring");
+    if (builder.Configuration["Seed:AdminPassword"] is null or "Admin12345!")
+        problems.Add("Seed:AdminPassword standart qiymatda — almashtiring");
+    if (builder.Configuration["Seed:SuperAdminPassword"] is null or "Super12345!")
+        problems.Add("Seed:SuperAdminPassword ni o'rnating/almashtiring");
+    if ((builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty).Contains("Password=postgres"))
+        problems.Add("PostgreSQL paroli standart 'postgres' — almashtiring");
+
+    if (problems.Count > 0)
+    {
+        throw new InvalidOperationException(
+            "Production muhitida xavfsiz emas — quyidagi maxfiy sozlamalarni to'g'rilang:\n - "
+            + string.Join("\n - ", problems));
+    }
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

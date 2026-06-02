@@ -25,4 +25,7 @@ public class CurrentUser : ICurrentUser
 
     public Guid? OrganizationId =>
         Guid.TryParse(Principal?.FindFirstValue("organizationId"), out var id) ? id : null;
+
+    public string? IpAddress =>
+        _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 }

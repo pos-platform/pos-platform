@@ -37,15 +37,8 @@ public class ApplicationDbContextInitializer
 
     public async Task SeedAsync()
     {
-        // Standart kategoriya.
-        if (!await _db.Categories.AnyAsync())
-        {
-            _db.Categories.Add(new Category { Name = "Umumiy" });
-            await _db.SaveChangesAsync();
-            _logger.LogInformation("Standart 'Umumiy' kategoriyasi yaratildi.");
-        }
-
         // Standart tashkilot (mijoz) — toza bazada ham, eski bazada ham bo'lishini ta'minlaymiz.
+        // BIRINCHI yaratiladi, chunki qolgan standart yozuvlar shunga biriktiriladi.
         var org = await _db.Organizations.FirstOrDefaultAsync(o => o.Name == "Asosiy tashkilot");
         if (org is null)
         {
@@ -55,23 +48,27 @@ public class ApplicationDbContextInitializer
             _logger.LogInformation("Standart tashkilot yaratildi.");
         }
 
+        // Standart kategoriya.
+        if (!await _db.Categories.AnyAsync())
+        {
+            _db.Categories.Add(new Category { Name = "Umumiy", OrganizationId = org.Id });
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Standart 'Umumiy' kategoriyasi yaratildi.");
+        }
+
         // Standart do'kon + kassa (FENIXdagi Магазин/Касса kabi).
         if (!await _db.Branches.AnyAsync())
         {
             var store = new Branch { Name = "Asosiy do'kon", IsActive = true, OrganizationId = org.Id };
-            store.Cashboxes.Add(new Cashbox { Name = "Kassa 1", IsActive = true });
+            store.Cashboxes.Add(new Cashbox { Name = "Kassa 1", IsActive = true, OrganizationId = org.Id });
             _db.Branches.Add(store);
             await _db.SaveChangesAsync();
             _logger.LogInformation("Standart do'kon va kassa yaratildi.");
         }
 
-        // Tashkilotsiz qolgan eski do'konlarni standart tashkilotga biriktiramiz.
-        var orphanBranches = await _db.Branches.Where(b => b.OrganizationId == null).ToListAsync();
-        if (orphanBranches.Count > 0)
-        {
-            foreach (var b in orphanBranches) b.OrganizationId = org.Id;
-            await _db.SaveChangesAsync();
-        }
+        // Eski (tashkilotsiz) ma'lumotlarni standart tashkilotga biriktiramiz — bir martalik backfill.
+        // SuperAdmin foydalanuvchidan tashqari (u tashkilotsiz qoladi).
+        await BackfillOrganizationAsync(org.Id);
 
         // Far-future = obuna amalda. Boshlang'ich admin uchun ishlatamiz (dev login uzilmasligi uchun).
         var farFuture = DateTime.UtcNow.Date.AddYears(50);
@@ -122,5 +119,31 @@ public class ApplicationDbContextInitializer
                 "Platforma egasi (SuperAdmin) yaratildi: '{Username}'. DIQQAT: parolni almashtiring.",
                 superUsername);
         }
+    }
+
+    /// <summary>
+    /// Tashkilotsiz (OrganizationId = NULL) qolgan eski yozuvlarni standart tashkilotga biriktiradi.
+    /// Idempotent: keyingi ishga tushishlarda 0 qator yangilaydi. SuperAdmin foydalanuvchi tegilmaydi.
+    /// </summary>
+    private async Task BackfillOrganizationAsync(Guid orgId)
+    {
+        // Barcha ijaraga tegishli jadvallar (Organizations va Users'dan tashqari).
+        var tables = new[]
+        {
+            "Categories", "Products", "Branches", "Cashboxes", "Sales", "SaleItems", "Receipts",
+            "CashShifts", "Promotions", "Suppliers", "StockReceipts", "StockReceiptItems",
+            "Debtors", "DebtorTransactions", "Expenses", "WriteOffs", "WriteOffItems", "SupplierPayments"
+        };
+
+        // Jadval nomlari qattiq kodlangan (injection yo'q), orgId esa parametr sifatida uzatiladi.
+        foreach (var t in tables)
+        {
+            await _db.Database.ExecuteSqlRawAsync(
+                $"UPDATE \"{t}\" SET \"OrganizationId\" = {{0}} WHERE \"OrganizationId\" IS NULL;", orgId);
+        }
+
+        // Foydalanuvchilar: SuperAdmin (Role=3) tashkilotsiz qoladi, qolganlar standartga.
+        await _db.Database.ExecuteSqlRawAsync(
+            "UPDATE \"Users\" SET \"OrganizationId\" = {0} WHERE \"OrganizationId\" IS NULL AND \"Role\" <> 3;", orgId);
     }
 }

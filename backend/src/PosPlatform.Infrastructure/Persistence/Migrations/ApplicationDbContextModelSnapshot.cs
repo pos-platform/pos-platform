@@ -98,6 +98,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("OpeningCash")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -142,6 +145,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -166,6 +172,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -200,6 +209,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(32)
@@ -237,6 +249,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("DebtorId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
@@ -270,6 +285,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -367,6 +385,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<int?>("PluNumber")
                         .HasColumnType("integer");
 
@@ -427,6 +448,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uuid");
 
@@ -480,6 +504,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("FiscalizedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("QrCodeUrl")
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
@@ -526,6 +553,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("OriginalSaleId")
                         .HasColumnType("uuid");
@@ -602,6 +632,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -661,6 +694,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uuid");
 
@@ -698,6 +734,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("LineTotal")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
@@ -744,6 +783,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
@@ -773,6 +815,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uuid");
@@ -854,6 +899,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Reason")
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
@@ -890,6 +938,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("LineTotal")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");

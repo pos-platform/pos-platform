@@ -27,7 +27,11 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\backend\" -Directory)",
       "Bash(Select-Object Name)",
       "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\backend\\\\src\\\\PosPlatform.Api\\\\PosPlatform.Api.csproj\" -v q --nologo 2>&1)",
-      "PowerShell($env:PATH += \";$env:USERPROFILE\\\\.dotnet\\\\tools\"; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" ef --version 2>&1 | Select-Object -First 3)"
+      "PowerShell($env:PATH += \";$env:USERPROFILE\\\\.dotnet\\\\tools\"; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" ef --version 2>&1 | Select-Object -First 3)",
+      "PowerShell(Get-Process -Name PosPlatform.Api,dotnet -ErrorAction SilentlyContinue)",
+      "PowerShell(Test-NetConnection -ComputerName localhost -Port 5000 -InformationLevel Quiet -WarningAction SilentlyContinue)",
+      "PowerShell(\"---\")",
+      "PowerShell(Get-Process PosPlatform.Api -ErrorAction SilentlyContinue)"
     ]
   }
 }

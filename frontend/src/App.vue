@@ -28,9 +28,15 @@ const navItems = [
   { name: 'users', label: 'Foydalanuvchilar', icon: '👥', admin: true }
 ]
 
-const visibleNav = computed(() =>
-  navItems.filter((i) => !i.admin || auth.role === 'Admin')
-)
+// SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
+const superNavItems = [
+  { name: 'organizations', label: 'Tashkilotlar', icon: '🏢' }
+]
+
+const visibleNav = computed(() => {
+  if (auth.isSuperAdmin) return superNavItems
+  return navItems.filter((i) => !i.admin || auth.role === 'Admin')
+})
 
 function logout() {
   auth.logout()
@@ -41,7 +47,7 @@ function logout() {
 <template>
   <div class="app-shell" :class="{ 'no-nav': !showNav }">
     <aside v-if="showNav" class="sidebar">
-      <div class="sidebar-brand">PosPlatform</div>
+      <div class="sidebar-brand">{{ auth.isSuperAdmin ? 'Platforma' : 'PosPlatform' }}</div>
 
       <nav class="side-nav">
         <RouterLink

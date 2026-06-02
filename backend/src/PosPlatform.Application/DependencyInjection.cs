@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using PosPlatform.Application.Features.Analytics;
+using PosPlatform.Application.Features.Audit;
 using PosPlatform.Application.Features.Auth;
 using PosPlatform.Application.Features.Categories;
 using PosPlatform.Application.Features.Dashboard;
@@ -28,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IOrganizationService, OrganizationService>();
+        services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IStoreService, StoreService>();
         services.AddScoped<ISupplierService, SupplierService>();
         services.AddScoped<IStockReceiptService, StockReceiptService>();

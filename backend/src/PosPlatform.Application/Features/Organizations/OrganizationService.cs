@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
+using PosPlatform.Application.Features.Audit;
 using PosPlatform.Application.Features.Organizations.Dtos;
 using PosPlatform.Domain.Entities;
 using PosPlatform.Domain.Enums;
@@ -11,11 +12,13 @@ public class OrganizationService : IOrganizationService
 {
     private readonly IApplicationDbContext _db;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IAuditService _audit;
 
-    public OrganizationService(IApplicationDbContext db, IPasswordHasher passwordHasher)
+    public OrganizationService(IApplicationDbContext db, IPasswordHasher passwordHasher, IAuditService audit)
     {
         _db = db;
         _passwordHasher = passwordHasher;
+        _audit = audit;
     }
 
     private static DateTime Today => DateTime.UtcNow.Date;
