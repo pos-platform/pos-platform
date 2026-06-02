@@ -150,10 +150,10 @@ async function toggleUser(u) {
 }
 
 function statusOf(u) {
-  if (!u.isActive) return { text: 'Bloklangan', cls: 'st-blocked' }
-  if (u.isLicensed) return { text: `${u.daysLeft} kun qoldi`, cls: u.daysLeft <= 5 ? 'st-soon' : 'st-ok' }
-  if (u.licensedUntil) return { text: 'Muddati tugagan', cls: 'st-expired' }
-  return { text: 'Faollashtirilmagan', cls: 'st-none' }
+  if (!u.isActive) return { text: 'Passiv (kira olmaydi)', cls: 'st-blocked' }
+  if (u.isLicensed) return { text: `To'langan · ${u.daysLeft} kun qoldi`, cls: u.daysLeft <= 5 ? 'st-soon' : 'st-ok' }
+  if (u.licensedUntil) return { text: "To'lov muddati tugagan", cls: 'st-expired' }
+  return { text: "Hali to'lanmagan", cls: 'st-none' }
 }
 
 onMounted(load)
@@ -178,7 +178,7 @@ onMounted(load)
     <!-- Tashkilotlar ro'yxati -->
     <div class="card list-card">
       <table class="table">
-        <thead><tr><th>Tashkilot</th><th>Telefon</th><th class="text-center">Obuna</th><th></th></tr></thead>
+        <thead><tr><th>Tashkilot</th><th>Telefon</th><th class="text-center">To'lagan kassir</th><th></th></tr></thead>
         <tbody>
           <tr v-for="o in orgs" :key="o.id"
               :class="{ 'row-active': selected && selected.id === o.id }"
@@ -188,7 +188,11 @@ onMounted(load)
               <span v-if="!o.isActive" class="pill pill-red" style="margin-left:6px">bloklangan</span>
             </td>
             <td class="muted">{{ o.phone || '—' }}</td>
-            <td class="text-center"><span class="bal-tag ok">{{ o.licensedCount }}/{{ o.userCount }}</span></td>
+            <td class="text-center">
+              <span class="bal-tag" :class="o.licensedCount >= o.userCount ? 'ok' : 'warn'">
+                {{ o.licensedCount }} / {{ o.userCount }}
+              </span>
+            </td>
             <td class="text-right"><button class="btn btn-ghost btn-sm" @click.stop="openOrg(o)">Boshqarish →</button></td>
           </tr>
           <tr v-if="!orgs.length && !loading"><td colspan="4" class="muted" style="text-align:center;padding:24px">Tashkilot yo'q</td></tr>
@@ -215,10 +219,11 @@ onMounted(load)
       </div>
 
       <div class="muted" style="font-weight:600;font-size:13px;margin:16px 0 8px">
-        Foydalanuvchilar ({{ selected.users.length }})
+        Kassirlar va foydalanuvchilar ({{ selected.users.length }})
       </div>
+      <p class="hint">Kassir oylik to'lov qilsa <b>«💵 To'lov +1 oy»</b> bosing. To'lamasa <b>«Passiv»</b> qiling — u tizimga kira olmaydi.</p>
 
-      <div v-for="u in selected.users" :key="u.id" class="user-row">
+      <div v-for="u in selected.users" :key="u.id" class="user-row" :class="{ 'row-off': !u.isActive }">
         <div class="user-main">
           <div class="user-name">
             {{ u.username }}
@@ -231,11 +236,13 @@ onMounted(load)
           </div>
         </div>
         <div class="user-acts">
-          <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)" title="1 oyga faollashtirish/uzaytirish">+1 oy</button>
-          <button class="btn btn-ghost btn-xs" :disabled="busy" @click="extend(u, 3)">+3 oy</button>
+          <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)"
+                  title="Oylik to'lovni kiritish — 1 oyga faollashtirish/uzaytirish">💵 To'lov +1 oy</button>
+          <button class="btn btn-ghost btn-xs" :disabled="busy" @click="extend(u, 3)" title="3 oylik to'lov">+3 oy</button>
           <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)" title="Obunani bekor qilish">⨯</button>
-          <button class="btn btn-ghost btn-xs" :disabled="busy" @click="toggleUser(u)">
-            {{ u.isActive ? 'Bloklash' : 'Faollashtirish' }}
+          <button class="btn btn-xs" :class="u.isActive ? 'btn-danger' : 'btn-success'" :disabled="busy" @click="toggleUser(u)"
+                  :title="u.isActive ? 'Passiv qilish — kira olmaydi' : 'Aktivlashtirish'">
+            {{ u.isActive ? 'Passiv' : 'Aktiv' }}
           </button>
         </div>
       </div>
@@ -313,6 +320,10 @@ onMounted(load)
 .row-active { background: #eff6ff; }
 .bal-tag { font-weight: 700; padding: 3px 10px; border-radius: 20px; font-size: 13px; }
 .bal-tag.ok { background: #dcfce7; color: #15803d; }
+.bal-tag.warn { background: #fef3c7; color: #92400e; }
+
+.hint { font-size: 12.5px; color: var(--muted); background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin: 0 0 10px; }
+.row-off { opacity: 0.6; }
 
 .detail-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 .org-actions { display: flex; gap: 8px; flex-wrap: wrap; }
