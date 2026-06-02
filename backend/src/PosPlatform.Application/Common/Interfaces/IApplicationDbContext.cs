@@ -10,6 +10,7 @@ namespace PosPlatform.Application.Common.Interfaces;
 /// </summary>
 public interface IApplicationDbContext
 {
+    DbSet<Organization> Organizations { get; }
     DbSet<Product> Products { get; }
     DbSet<Category> Categories { get; }
     DbSet<Branch> Branches { get; }

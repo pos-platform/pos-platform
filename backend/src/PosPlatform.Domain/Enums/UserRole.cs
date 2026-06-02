@@ -7,5 +7,8 @@ public enum UserRole
 {
     Admin = 0,
     Manager = 1,
-    Cashier = 2
+    Cashier = 2,
+
+    /// <summary>Platforma egasi — barcha tashkilotlarni va obunalarni boshqaradi. Litsenziyaga bog'liq emas.</summary>
+    SuperAdmin = 3
 }

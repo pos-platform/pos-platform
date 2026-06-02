@@ -46,10 +46,15 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
 
                     b.ToTable("Branches");
                 });
@@ -281,6 +286,39 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.ToTable("Expenses");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Organization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Organizations");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Product", b =>
@@ -766,6 +804,12 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("LicensedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
@@ -784,6 +828,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -864,6 +910,16 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("WriteOffId");
 
                     b.ToTable("WriteOffItems");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Branch", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Organization", "Organization")
+                        .WithMany("Branches")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.CashShift", b =>
@@ -1075,7 +1131,14 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("PosPlatform.Domain.Entities.Organization", "Organization")
+                        .WithMany("Users")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Branch");
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.WriteOff", b =>
@@ -1127,6 +1190,13 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("PosPlatform.Domain.Entities.Debtor", b =>
                 {
                     b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Organization", b =>
+                {
+                    b.Navigation("Branches");
+
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Sale", b =>

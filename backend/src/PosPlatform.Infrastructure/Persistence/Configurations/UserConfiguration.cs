@@ -17,5 +17,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithMany(b => b.Users)
             .HasForeignKey(u => u.BranchId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(u => u.Organization)
+            .WithMany(o => o.Users)
+            .HasForeignKey(u => u.OrganizationId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

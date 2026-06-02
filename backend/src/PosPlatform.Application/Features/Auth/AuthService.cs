@@ -3,6 +3,7 @@ using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.Auth.Dtos;
 using PosPlatform.Domain.Entities;
+using PosPlatform.Domain.Enums;
 
 namespace PosPlatform.Application.Features.Auth;
 
@@ -26,7 +27,9 @@ public class AuthService : IAuthService
     {
         var username = request.Username.Trim();
 
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+        var user = await _db.Users
+            .Include(u => u.Organization)
+            .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
         {
             throw new UnauthorizedException("Username yoki parol noto'g'ri.");
@@ -35,6 +38,22 @@ public class AuthService : IAuthService
         if (!user.IsActive)
         {
             throw new UnauthorizedException("Hisob faolsizlantirilgan. Administratorga murojaat qiling.");
+        }
+
+        // Obuna (litsenziya) tekshiruvi — SuperAdmin'dan tashqari barcha foydalanuvchilar uchun.
+        if (user.Role != UserRole.SuperAdmin)
+        {
+            if (user.Organization is { IsActive: false })
+            {
+                throw new UnauthorizedException("Tashkilot bloklangan. Platforma administratoriga murojaat qiling.");
+            }
+
+            var today = DateTime.UtcNow.Date;
+            if (user.LicensedUntil is null || user.LicensedUntil.Value.Date < today)
+            {
+                throw new UnauthorizedException(
+                    "Obuna faollashtirilmagan yoki muddati tugagan. To'lovni amalga oshirib, administrator bilan bog'laning.");
+            }
         }
 
         return BuildResponse(user);
@@ -50,7 +69,10 @@ public class AuthService : IAuthService
             Username = user.Username,
             Role = user.Role,
             Token = token,
-            ExpiresAt = expiresAt
+            ExpiresAt = expiresAt,
+            OrganizationId = user.OrganizationId,
+            OrganizationName = user.Organization?.Name,
+            LicensedUntil = user.LicensedUntil
         };
     }
 }

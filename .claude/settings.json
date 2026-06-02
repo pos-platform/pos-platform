@@ -25,7 +25,9 @@
       "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\desktop\\\\PosPlatform.Desktop\\\\PosPlatform.Desktop.csproj\" -c Debug -v q --nologo 2>&1)",
       "PowerShell(Start-Process \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\desktop\\\\PosPlatform.Desktop\\\\bin\\\\Debug\\\\net8.0-windows\\\\PosPlatform.Desktop.exe\")",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\backend\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\backend\\\\src\\\\PosPlatform.Api\\\\PosPlatform.Api.csproj\" -v q --nologo 2>&1)",
+      "PowerShell($env:PATH += \";$env:USERPROFILE\\\\.dotnet\\\\tools\"; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" ef --version 2>&1 | Select-Object -First 3)"
     ]
   }
 }

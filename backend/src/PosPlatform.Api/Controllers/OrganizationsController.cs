@@ -1,0 +1,71 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using PosPlatform.Application.Features.Organizations;
+using PosPlatform.Application.Features.Organizations.Dtos;
+
+namespace PosPlatform.Api.Controllers;
+
+/// <summary>Tashkilotlar va obunalarni boshqarish — faqat platforma egasi (SuperAdmin) uchun.</summary>
+[ApiController]
+[Authorize(Roles = "SuperAdmin")]
+[Route("api/organizations")]
+public class OrganizationsController : ControllerBase
+{
+    private readonly IOrganizationService _service;
+
+    public OrganizationsController(IOrganizationService service)
+    {
+        _service = service;
+    }
+
+    /// <summary>Barcha tashkilotlar (statistika bilan).</summary>
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<OrganizationDto>>> GetAll(CancellationToken ct)
+        => Ok(await _service.GetAllAsync(ct));
+
+    /// <summary>Bitta tashkilot tafsiloti — foydalanuvchilar va obuna holatlari bilan.</summary>
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<OrganizationDetailDto>> GetById(Guid id, CancellationToken ct)
+        => Ok(await _service.GetByIdAsync(id, ct));
+
+    /// <summary>Yangi tashkilot + uning bosh admini.</summary>
+    [HttpPost]
+    public async Task<ActionResult<OrganizationDto>> Create(CreateOrganizationRequest request, CancellationToken ct)
+        => Ok(await _service.CreateAsync(request, ct));
+
+    /// <summary>Tashkilot ma'lumotlarini tahrirlash.</summary>
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<OrganizationDto>> Update(Guid id, UpdateOrganizationRequest request, CancellationToken ct)
+        => Ok(await _service.UpdateAsync(id, request, ct));
+
+    [HttpPost("{id:guid}/activate")]
+    public async Task<ActionResult<OrganizationDto>> Activate(Guid id, CancellationToken ct)
+        => Ok(await _service.SetActiveAsync(id, true, ct));
+
+    [HttpPost("{id:guid}/deactivate")]
+    public async Task<ActionResult<OrganizationDto>> Deactivate(Guid id, CancellationToken ct)
+        => Ok(await _service.SetActiveAsync(id, false, ct));
+
+    /// <summary>Tashkilot ichida yangi foydalanuvchi (kassir/menejer/admin) yaratish.</summary>
+    [HttpPost("{id:guid}/users")]
+    public async Task<ActionResult<OrgUserDto>> CreateUser(Guid id, CreateOrgUserRequest request, CancellationToken ct)
+        => Ok(await _service.CreateUserAsync(id, request, ct));
+
+    /// <summary>Foydalanuvchi obunasini uzaytirish (oylik to'lov qabul qilingach faollashtirish).</summary>
+    [HttpPost("users/{userId:guid}/extend-license")]
+    public async Task<ActionResult<OrgUserDto>> ExtendLicense(Guid userId, ExtendLicenseRequest request, CancellationToken ct)
+        => Ok(await _service.ExtendLicenseAsync(userId, request.Months, ct));
+
+    /// <summary>Obunani bekor qilish (muddatni olib tashlash — foydalanuvchi kira olmaydi).</summary>
+    [HttpPost("users/{userId:guid}/revoke-license")]
+    public async Task<ActionResult<OrgUserDto>> RevokeLicense(Guid userId, CancellationToken ct)
+        => Ok(await _service.RevokeLicenseAsync(userId, ct));
+
+    [HttpPost("users/{userId:guid}/activate")]
+    public async Task<ActionResult<OrgUserDto>> ActivateUser(Guid userId, CancellationToken ct)
+        => Ok(await _service.SetUserActiveAsync(userId, true, ct));
+
+    [HttpPost("users/{userId:guid}/deactivate")]
+    public async Task<ActionResult<OrgUserDto>> DeactivateUser(Guid userId, CancellationToken ct)
+        => Ok(await _service.SetUserActiveAsync(userId, false, ct));
+}

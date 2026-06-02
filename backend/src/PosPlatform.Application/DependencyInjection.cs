@@ -6,6 +6,7 @@ using PosPlatform.Application.Features.Dashboard;
 using PosPlatform.Application.Features.Debtors;
 using PosPlatform.Application.Features.Expenses;
 using PosPlatform.Application.Features.Fiscal;
+using PosPlatform.Application.Features.Organizations;
 using PosPlatform.Application.Features.Payments;
 using PosPlatform.Application.Features.Products;
 using PosPlatform.Application.Features.Promotions;
@@ -26,6 +27,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IOrganizationService, OrganizationService>();
         services.AddScoped<IStoreService, StoreService>();
         services.AddScoped<ISupplierService, SupplierService>();
         services.AddScoped<IStockReceiptService, StockReceiptService>();

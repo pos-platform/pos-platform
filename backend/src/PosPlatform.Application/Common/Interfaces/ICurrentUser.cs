@@ -9,4 +9,5 @@ public interface ICurrentUser
     Guid? UserId { get; }
     string? Username { get; }
     Guid? BranchId { get; }
+    Guid? OrganizationId { get; }
 }

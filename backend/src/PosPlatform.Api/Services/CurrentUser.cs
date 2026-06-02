@@ -22,4 +22,7 @@ public class CurrentUser : ICurrentUser
 
     public Guid? BranchId =>
         Guid.TryParse(Principal?.FindFirstValue("branchId"), out var id) ? id : null;
+
+    public Guid? OrganizationId =>
+        Guid.TryParse(Principal?.FindFirstValue("organizationId"), out var id) ? id : null;
 }

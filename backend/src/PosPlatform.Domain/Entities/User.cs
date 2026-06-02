@@ -18,4 +18,16 @@ public class User : BaseEntity
     public Guid? BranchId { get; set; }
 
     public Branch? Branch { get; set; }
+
+    /// <summary>Foydalanuvchi tegishli tashkilot. SuperAdmin uchun null.</summary>
+    public Guid? OrganizationId { get; set; }
+
+    public Organization? Organization { get; set; }
+
+    /// <summary>
+    /// Obuna shu sanagacha amal qiladi (oylik to'lov). SuperAdmin har bir kassir uchun
+    /// alohida belgilaydi/uzaytiradi. null yoki o'tgan sana = faollashtirilmagan/muddati tugagan.
+    /// SuperAdmin rolidagi foydalanuvchilarga taalluqli emas.
+    /// </summary>
+    public DateTime? LicensedUntil { get; set; }
 }

@@ -35,6 +35,11 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             claims.Add(new Claim("branchId", user.BranchId.Value.ToString()));
         }
 
+        if (user.OrganizationId is not null)
+        {
+            claims.Add(new Claim("organizationId", user.OrganizationId.Value.ToString()));
+        }
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
