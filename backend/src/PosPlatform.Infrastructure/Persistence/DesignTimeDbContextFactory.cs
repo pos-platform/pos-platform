@@ -40,5 +40,6 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
         public string? Username => null;
         public Guid? BranchId => null;
         public Guid? OrganizationId => null;
+        public string? IpAddress => null;
     }
 }

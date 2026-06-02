@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
+using PosPlatform.Application.Features.Audit;
 using PosPlatform.Application.Features.Auth.Dtos;
 using PosPlatform.Domain.Entities;
 using PosPlatform.Domain.Enums;

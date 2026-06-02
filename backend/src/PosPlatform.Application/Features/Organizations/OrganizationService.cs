@@ -93,6 +93,7 @@ public class OrganizationService : IOrganizationService
         _db.Users.Add(admin);
 
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("org.create", $"name={name}, admin={adminUsername}", organizationId: org.Id, ct: ct);
 
         return OrganizationDto.FromEntity(org, userCount: 1, licensedCount: admin.LicensedUntil is not null ? 1 : 0);
     }
@@ -112,6 +113,7 @@ public class OrganizationService : IOrganizationService
         var org = await GetOrgAsync(id, ct);
         org.IsActive = isActive;
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync(isActive ? "org.activate" : "org.deactivate", $"name={org.Name}", organizationId: org.Id, ct: ct);
         return await ToDtoWithStats(org, ct);
     }
 
@@ -141,6 +143,7 @@ public class OrganizationService : IOrganizationService
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("user.create", $"username={username}, role={request.Role}", organizationId: orgId, ct: ct);
 
         return OrgUserDto.FromEntity(user, Today);
     }
@@ -154,6 +157,8 @@ public class OrganizationService : IOrganizationService
         var start = user.LicensedUntil is { } lu && lu.Date >= Today ? lu.Date : Today;
         user.LicensedUntil = start.AddMonths(months);
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("license.extend", $"username={user.Username}, +{months} oy, until={user.LicensedUntil:yyyy-MM-dd}",
+            organizationId: user.OrganizationId, ct: ct);
         return OrgUserDto.FromEntity(user, Today);
     }
 
@@ -162,6 +167,7 @@ public class OrganizationService : IOrganizationService
         var user = await GetManagedUserAsync(userId, ct);
         user.LicensedUntil = null;
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("license.revoke", $"username={user.Username}", organizationId: user.OrganizationId, ct: ct);
         return OrgUserDto.FromEntity(user, Today);
     }
 
@@ -170,6 +176,8 @@ public class OrganizationService : IOrganizationService
         var user = await GetManagedUserAsync(userId, ct);
         user.IsActive = isActive;
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync(isActive ? "user.activate" : "user.deactivate", $"username={user.Username}",
+            organizationId: user.OrganizationId, ct: ct);
         return OrgUserDto.FromEntity(user, Today);
     }
 

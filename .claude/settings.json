@@ -31,7 +31,8 @@
       "PowerShell(Get-Process -Name PosPlatform.Api,dotnet -ErrorAction SilentlyContinue)",
       "PowerShell(Test-NetConnection -ComputerName localhost -Port 5000 -InformationLevel Quiet -WarningAction SilentlyContinue)",
       "PowerShell(\"---\")",
-      "PowerShell(Get-Process PosPlatform.Api -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Process PosPlatform.Api -ErrorAction SilentlyContinue)",
+      "PowerShell(\"cleaned\")"
     ]
   }
 }

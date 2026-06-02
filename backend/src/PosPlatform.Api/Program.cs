@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PosPlatform.Api.Middleware;
@@ -109,6 +111,36 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// --- Reverse proxy (nginx/IIS) ortida ishlash: original sxema (https) va client IP'ni o'qiymiz ---
+// Ilova faqat ishonchli proxy orqali ochilishi kerak (localhost'ga bog'lanadi).
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// --- Rate limiting: login endpointini brute-force'dan himoya (IP bo'yicha) ---
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,        // bir IP'dan daqiqasiga 10 ta urinish
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync(
+            "{\"status\":429,\"error\":\"Juda ko'p urinish. Bir daqiqa kutib, qayta urinib ko'ring.\"}", token);
+    };
+});
+
 // --- CORS (Vue dev server) ---
 builder.Services.AddCors(options =>
 {
@@ -128,6 +160,9 @@ using (var scope = app.Services.CreateScope())
     await initializer.SeedAsync();
 }
 
+// Reverse proxy header'larini eng birinchi o'qiymiz (qolgan middleware to'g'ri sxema/IP ko'rishi uchun).
+app.UseForwardedHeaders();
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -144,8 +179,13 @@ app.UseHttpsRedirection();
 
 app.UseCors(CorsPolicy);
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Obuna/hisob holatini har bir so'rovda qayta tekshiramiz (auth'dan keyin).
+app.UseMiddleware<LicenseValidationMiddleware>();
 
 app.MapControllers();
 

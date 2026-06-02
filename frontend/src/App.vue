@@ -30,7 +30,8 @@ const navItems = [
 
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
 const superNavItems = [
-  { name: 'organizations', label: 'Tashkilotlar', icon: '🏢' }
+  { name: 'organizations', label: 'Tashkilotlar', icon: '🏢' },
+  { name: 'audit', label: 'Audit jurnali', icon: '🛡️' }
 ]
 
 const visibleNav = computed(() => {

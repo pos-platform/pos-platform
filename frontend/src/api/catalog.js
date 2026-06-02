@@ -58,6 +58,10 @@ export const organizationsApi = {
     http.post(`/api/organizations/users/${userId}/deactivate`).then((r) => r.data)
 }
 
+export const auditApi = {
+  recent: (take = 200) => http.get('/api/audit', { params: { take } }).then((r) => r.data)
+}
+
 export const usersApi = {
   list: () => http.get('/api/users').then((r) => r.data),
   create: (payload) => http.post('/api/users', payload).then((r) => r.data),
