@@ -18,6 +18,7 @@ public class ProductDto
     public decimal Price { get; set; }
     public decimal Quantity { get; set; }
     public string Unit { get; set; } = "Piece";
+    public Guid CategoryId { get; set; }
 
     public string? ImageUrl { get; set; }
 
@@ -37,6 +38,12 @@ public class DebtorDto
     public decimal Balance { get; set; }
 
     public string Display => $"{Name}  (qarz: {Balance:N0})";
+}
+
+public class CategoryDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = "";
 }
 
 public class ShiftDto

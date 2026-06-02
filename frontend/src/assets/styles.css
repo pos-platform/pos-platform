@@ -109,6 +109,9 @@ body {
 .modal-head h3 { margin: 0; font-size: 18px; }
 .modal-x { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); line-height: 1; }
 .modal-body { padding: 20px 22px; max-height: 70vh; overflow-y: auto; }
+.del-warn { font-size: 46px; text-align: center; margin: 4px 0 14px; }
+.del-actions { display: flex; gap: 10px; margin-top: 22px; }
+.del-actions .btn { flex: 1; }
 .toggle-row { display: flex; gap: 24px; align-items: center; margin: 6px 0; }
 .toggle { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 

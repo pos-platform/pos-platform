@@ -11,7 +11,21 @@
       "PowerShell(winget search PostgreSQL.PostgreSQL --accept-source-agreements 2>&1)",
       "PowerShell(winget install --id PostgreSQL.PostgreSQL.16 --silent --accept-package-agreements --accept-source-agreements --override \"--mode unattended --unattendedmodeui none --superpassword postgres --serverport 5432 --enable-components server,commandlinetools\" 2>&1)",
       "PowerShell(\"deleted\")",
-      "PowerShell(\"Backend \\(5000\\): $\\(\\(Test-NetConnection -ComputerName localhost -Port 5000 -WarningAction SilentlyContinue\\).TcpTestSucceeded\\)\")"
+      "PowerShell(\"Backend \\(5000\\): $\\(\\(Test-NetConnection -ComputerName localhost -Port 5000 -WarningAction SilentlyContinue\\).TcpTestSucceeded\\)\")",
+      "PowerShell(Get-Process -Name PosPlatform.Desktop -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process PosPlatform.Desktop -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force)",
+      "PowerShell(dotnet build \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\desktop\\\\PosPlatform.Desktop\\\\PosPlatform.Desktop.csproj\" -c Debug -v q --nologo)",
+      "PowerShell($d = @\\(\"$env:ProgramFiles\\\\dotnet\\\\dotnet.exe\",\"$env:LOCALAPPDATA\\\\Microsoft\\\\dotnet\\\\dotnet.exe\",\"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\"\\) | Where-Object { Test-Path $_ } | Select-Object -First 1; if \\($d\\) { $d } else { Get-Command dotnet -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source })",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\desktop\\\\PosPlatform.Desktop\\\\PosPlatform.Desktop.csproj\" -c Debug -v q --nologo)",
+      "PowerShell(Start-Process $exe)",
+      "PowerShell($exe = \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\desktop\\\\PosPlatform.Desktop\\\\bin\\\\Debug\\\\net8.0-windows\\\\PosPlatform.Desktop.exe\")",
+      "PowerShell(\"started\")",
+      "PowerShell(try { $r = Invoke-WebRequest \"http://localhost:5000/index.html\" -UseBasicParsing -TimeoutSec 4; \"API UP: $\\($r.StatusCode\\)\" } catch { \"API DOWN: $\\($_.Exception.Message\\)\" }; Get-Process PosPlatform.Desktop -ErrorAction SilentlyContinue | Select-Object Id,ProcessName)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\desktop\\\\PosPlatform.Desktop\\\\PosPlatform.Desktop.csproj\" -c Debug -v q --nologo 2>&1)",
+      "PowerShell(Start-Process \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\desktop\\\\PosPlatform.Desktop\\\\bin\\\\Debug\\\\net8.0-windows\\\\PosPlatform.Desktop.exe\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\backend\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }

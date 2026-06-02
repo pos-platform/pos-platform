@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using PosPlatform.Desktop.Services;
@@ -6,10 +7,33 @@ namespace PosPlatform.Desktop.Views;
 
 public partial class LoginWindow : Window
 {
+    private bool _showPassword;
+
     public LoginWindow()
     {
         InitializeComponent();
         Loaded += (_, _) => PasswordBox.Focus();
+    }
+
+    private string CurrentPassword => _showPassword ? PasswordVisible.Text : PasswordBox.Password;
+
+    private void ToggleShowPassword(object sender, RoutedEventArgs e)
+    {
+        _showPassword = !_showPassword;
+        if (_showPassword)
+        {
+            PasswordVisible.Text = PasswordBox.Password;
+            PasswordVisible.Visibility = Visibility.Visible;
+            PasswordBox.Visibility = Visibility.Collapsed;
+            EyeButton.Content = "🙈";
+        }
+        else
+        {
+            PasswordBox.Password = PasswordVisible.Text;
+            PasswordBox.Visibility = Visibility.Visible;
+            PasswordVisible.Visibility = Visibility.Collapsed;
+            EyeButton.Content = "👁";
+        }
     }
 
     private async void LoginButton_Click(object sender, RoutedEventArgs e) => await LoginAsync();
@@ -19,6 +43,9 @@ public partial class LoginWindow : Window
         if (e.Key == Key.Enter) await LoginAsync();
     }
 
+    private void Settings_Click(object sender, RoutedEventArgs e)
+        => new SettingsWindow { Owner = this }.ShowDialog();
+
     private async Task LoginAsync()
     {
         ErrorText.Visibility = Visibility.Collapsed;
@@ -26,8 +53,9 @@ public partial class LoginWindow : Window
         LoginButton.Content = "Kirilmoqda...";
         try
         {
-            var resp = await AppState.Backend.LoginAsync(UsernameBox.Text.Trim(), PasswordBox.Password);
+            var resp = await AppState.Backend.LoginAsync(UsernameBox.Text.Trim(), CurrentPassword);
             AppState.Backend.SetToken(resp.Token);
+            AppState.Token = resp.Token;
             AppState.Username = resp.Username;
             AppState.Role = resp.Role;
 
@@ -37,6 +65,11 @@ public partial class LoginWindow : Window
         }
         catch (Exception ex)
         {
+            try
+            {
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "login-error.log"), ex.ToString());
+            }
+            catch { /* ignore */ }
             ErrorText.Text = ex.Message;
             ErrorText.Visibility = Visibility.Visible;
         }

@@ -1,0 +1,103 @@
+using System.Printing;
+using System.Windows;
+using System.Windows.Media;
+using PosPlatform.Desktop.Models;
+using PosPlatform.Desktop.Services;
+
+namespace PosPlatform.Desktop.Views;
+
+public partial class SettingsWindow : Window
+{
+    public SettingsWindow()
+    {
+        InitializeComponent();
+
+        BaseUrlBox.Text = AppState.BaseUrl;
+        PrinterEnabledBox.IsChecked = AppState.PrinterEnabled;
+
+        // O'rnatilgan printerlarni yuklaymiz.
+        try
+        {
+            using var server = new LocalPrintServer();
+            foreach (var q in server.GetPrintQueues())
+                PrinterCombo.Items.Add(q.Name);
+        }
+        catch { /* printerlar olinmadi — qo'lda yozish mumkin */ }
+
+        PrinterCombo.Text = AppState.PrinterName ?? "";
+    }
+
+    private void Save_Click(object sender, RoutedEventArgs e)
+    {
+        var baseUrl = BaseUrlBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            ShowMessage("Backend manzilini kiriting", error: true);
+            return;
+        }
+
+        var settings = new Settings
+        {
+            BaseUrl = baseUrl,
+            PrinterEnabled = PrinterEnabledBox.IsChecked == true,
+            PrinterName = string.IsNullOrWhiteSpace(PrinterCombo.Text) ? null : PrinterCombo.Text.Trim()
+        };
+
+        try
+        {
+            SettingsService.Save(settings);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Saqlanmadi: " + ex.Message, error: true);
+            return;
+        }
+
+        var urlChanged = !string.Equals(AppState.BaseUrl, settings.BaseUrl, StringComparison.OrdinalIgnoreCase);
+        AppState.BaseUrl = settings.BaseUrl;
+        AppState.PrinterEnabled = settings.PrinterEnabled;
+        AppState.PrinterName = settings.PrinterName;
+        if (urlChanged) AppState.RebuildBackend();
+
+        DialogResult = true;
+        Close();
+    }
+
+    private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void TestPrint_Click(object sender, RoutedEventArgs e)
+    {
+        var sample = new ReceiptData
+        {
+            ReceiptNumber = "TEST-0001",
+            Cashier = AppState.Username,
+            Payment = "Cash",
+            Total = 10000,
+            Paid = 10000,
+            Change = 0,
+            Lines = new()
+            {
+                new ReceiptLine { Name = "Test mahsulot", Quantity = 1, Price = 10000, LineTotal = 10000 }
+            }
+        };
+        try
+        {
+            var printerName = string.IsNullOrWhiteSpace(PrinterCombo.Text) ? null : PrinterCombo.Text.Trim();
+            new ReceiptPrinter().Print(sample, printerName);
+            ShowMessage("Test chek yuborildi", error: false);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Chop etilmadi: " + ex.Message, error: true);
+        }
+    }
+
+    private void ShowMessage(string text, bool error)
+    {
+        MsgText.Text = text;
+        MsgText.Foreground = new SolidColorBrush(error
+            ? Color.FromRgb(0xDC, 0x26, 0x26)
+            : Color.FromRgb(0x16, 0xA3, 0x4A));
+        MsgText.Visibility = Visibility.Visible;
+    }
+}

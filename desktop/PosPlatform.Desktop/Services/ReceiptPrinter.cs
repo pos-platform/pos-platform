@@ -13,9 +13,11 @@ namespace PosPlatform.Desktop.Services;
 public class ReceiptPrinter
 {
     public void Print(ReceiptData r, string? printerName)
-    {
-        var doc = BuildDocument(r);
+        => PrintDocument(BuildDocument(r), printerName, "Chek " + r.ReceiptNumber);
 
+    /// <summary>Tayyor hujjatni printerga yuboradi (preview oynasi ham shu metoddan foydalanadi).</summary>
+    public void PrintDocument(FlowDocument doc, string? printerName, string jobName)
+    {
         PrintQueue queue;
         if (!string.IsNullOrWhiteSpace(printerName))
         {
@@ -29,10 +31,10 @@ public class ReceiptPrinter
 
         var pd = new System.Windows.Controls.PrintDialog { PrintQueue = queue };
         doc.PageWidth = pd.PrintableAreaWidth > 0 ? Math.Min(pd.PrintableAreaWidth, 300) : 280;
-        pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "Chek " + r.ReceiptNumber);
+        pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, jobName);
     }
 
-    private static FlowDocument BuildDocument(ReceiptData r)
+    public static FlowDocument BuildDocument(ReceiptData r)
     {
         var doc = new FlowDocument
         {

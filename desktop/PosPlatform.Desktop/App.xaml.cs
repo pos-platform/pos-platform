@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using PosPlatform.Desktop.Services;
@@ -11,16 +12,35 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // UI oqimidagi ushlanmagan xatoliklar ilovani yiqitmasligi uchun.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            try { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"), args.Exception.ToString()); }
+            catch { /* ignore */ }
+            MessageBox.Show(args.Exception.Message, "Xatolik", MessageBoxButton.OK, MessageBoxImage.Error);
+            args.Handled = true;
+        };
+
+        // appsettings.json — standart qiymatlar.
         var config = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: true)
             .Build();
 
-        var baseUrl = config["Backend:BaseUrl"] ?? "http://localhost:5000";
-        AppState.BaseUrl = baseUrl;
-        AppState.Backend = new BackendClient(baseUrl);
+        AppState.BaseUrl = config["Backend:BaseUrl"] ?? "http://localhost:5000";
         AppState.PrinterEnabled = bool.TryParse(config["Printer:Enabled"], out var pe) && pe;
         AppState.PrinterName = string.IsNullOrWhiteSpace(config["Printer:Name"]) ? null : config["Printer:Name"];
+
+        // Foydalanuvchi sozlamalari (%APPDATA%) — agar bor bo'lsa, ustun.
+        var saved = SettingsService.Load();
+        if (saved is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(saved.BaseUrl)) AppState.BaseUrl = saved.BaseUrl;
+            AppState.PrinterEnabled = saved.PrinterEnabled;
+            AppState.PrinterName = string.IsNullOrWhiteSpace(saved.PrinterName) ? null : saved.PrinterName;
+        }
+
+        AppState.Backend = new BackendClient(AppState.BaseUrl);
 
         new LoginWindow().Show();
     }

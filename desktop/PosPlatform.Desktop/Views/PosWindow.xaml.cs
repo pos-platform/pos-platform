@@ -12,23 +12,244 @@ namespace PosPlatform.Desktop.Views;
 
 public partial class PosWindow : Window
 {
-    private readonly ObservableCollection<CartLine> _cart = new();
+    private readonly List<SaleSession> _sessions = new();
+    private int _currentIndex;
+    private ObservableCollection<CartLine> _cart;
     private List<ProductDto> _allProducts = new();
     private ShiftDto? _shift;
     private readonly ReceiptPrinter _printer = new();
     private ReceiptData? _lastReceipt;
+    private List<CategoryDto> _categories = new();
+    private Guid? _selectedCategoryId; // null = barchasi
 
     public PosWindow()
     {
         InitializeComponent();
+        _sessions.Add(new SaleSession());
+        _cart = _sessions[0].Cart;
         CartItems.ItemsSource = _cart;
         UserText.Text = $"{AppState.Username} ({AppState.Role})";
+        BuildSaleTabs();
         Loaded += async (_, _) =>
         {
             await LoadShiftAsync();
+            await LoadCategoriesAsync();
             await LoadProductsAsync();
             SearchBox.Focus();
         };
+    }
+
+    // ---------- Parallel savdolar (tablar) ----------
+
+    private void BuildSaleTabs()
+    {
+        SaleTabs.Children.Clear();
+        var chip = (Style)FindResource("Chip");
+        var active = (Style)FindResource("ChipActive");
+        var canClose = _sessions.Count > 1;
+        for (var i = 0; i < _sessions.Count; i++)
+        {
+            // Tab + yopish (×) tugmasi bitta Grid ichida.
+            var grid = new System.Windows.Controls.Grid { Margin = new Thickness(0, 0, 8, 0) };
+
+            var btn = new System.Windows.Controls.Button
+            {
+                Content = $"Savdo {i + 1}",
+                Tag = i,
+                Margin = new Thickness(0),
+                Padding = canClose ? new Thickness(16, 8, 30, 8) : new Thickness(16, 8, 16, 8),
+                Style = i == _currentIndex ? active : chip
+            };
+            btn.Click += SaleTab_Click;
+            grid.Children.Add(btn);
+
+            if (canClose)
+            {
+                var close = new System.Windows.Controls.Button
+                {
+                    Content = "×",
+                    Tag = i,
+                    ToolTip = "Savdoni o'chirish",
+                    FontSize = 15,
+                    FontWeight = FontWeights.Bold,
+                    Width = 20,
+                    Height = 20,
+                    Padding = new Thickness(0),
+                    Margin = new Thickness(0, 0, 6, 0),
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    BorderThickness = new Thickness(0),
+                    Foreground = i == _currentIndex
+                        ? System.Windows.Media.Brushes.White
+                        : (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#9AA3AF")!
+                };
+                close.Click += CloseSale_Click;
+                grid.Children.Add(close);
+            }
+
+            SaleTabs.Children.Add(grid);
+        }
+        var add = new System.Windows.Controls.Button
+        {
+            Content = "＋",
+            Style = (Style)FindResource("Chip"),
+            ToolTip = "Yangi savdo (parallel)"
+        };
+        add.Click += AddSale_Click;
+        SaleTabs.Children.Add(add);
+    }
+
+    private void SaleTab_Click(object sender, RoutedEventArgs e)
+    {
+        var i = (int)((System.Windows.Controls.Button)sender).Tag;
+        if (i == _currentIndex) return;
+        SwitchSession(i);
+    }
+
+    private void CloseSale_Click(object sender, RoutedEventArgs e)
+    {
+        var i = (int)((System.Windows.Controls.Button)sender).Tag;
+        if (_sessions.Count <= 1) return;
+
+        var s = _sessions[i];
+        if (s.Cart.Count > 0)
+        {
+            var ok = MessageBox.Show(
+                $"Savdo {i + 1} da {s.Cart.Count} ta tovar bor. O'chirilsinmi?",
+                "Savdoni o'chirish", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (ok != MessageBoxResult.Yes) return;
+        }
+
+        // Joriy tabni o'chirayotgan bo'lsak holatni saqlashga hojat yo'q;
+        // boshqasini o'chirsak — joriy holat o'zgarmaydi.
+        if (i != _currentIndex) SaveCurrentSession();
+
+        _sessions.RemoveAt(i);
+        if (_currentIndex > i) _currentIndex--;
+        else if (_currentIndex >= _sessions.Count) _currentIndex = _sessions.Count - 1;
+
+        LoadCurrentSession();
+        BuildSaleTabs();
+        SearchBox.Focus();
+    }
+
+    private void AddSale_Click(object sender, RoutedEventArgs e)
+    {
+        SaveCurrentSession();
+        _sessions.Add(new SaleSession());
+        _currentIndex = _sessions.Count - 1;
+        LoadCurrentSession();
+        BuildSaleTabs();
+        SearchBox.Focus();
+    }
+
+    private void SwitchSession(int index)
+    {
+        SaveCurrentSession();
+        _currentIndex = index;
+        LoadCurrentSession();
+        BuildSaleTabs();
+        SearchBox.Focus();
+    }
+
+    private void SaveCurrentSession()
+    {
+        var s = _sessions[_currentIndex];
+        s.Paid = PaidBox.Text;
+        s.PaymentIndex = PaymentCombo.SelectedIndex;
+        s.DebtorId = (DebtorCombo.SelectedItem as DebtorDto)?.Id;
+    }
+
+    private void LoadCurrentSession()
+    {
+        var s = _sessions[_currentIndex];
+        _cart = s.Cart;
+        CartItems.ItemsSource = _cart;
+        PaidBox.Text = s.Paid;
+        PaymentCombo.SelectedIndex = s.PaymentIndex;
+        if (s.DebtorId is Guid did && DebtorCombo.ItemsSource is IEnumerable<DebtorDto> debtors)
+            DebtorCombo.SelectedItem = debtors.FirstOrDefault(d => d.Id == did);
+        else
+            DebtorCombo.SelectedIndex = -1;
+        RecalcTotals();
+    }
+
+    /// <summary>Sotuvdan keyin: bir nechta savdo ochiq bo'lsa shuni o'chiradi, aks holda tozalaydi.</summary>
+    private void CloseCurrentSessionAfterSale()
+    {
+        if (_sessions.Count > 1)
+        {
+            _sessions.RemoveAt(_currentIndex);
+            if (_currentIndex >= _sessions.Count) _currentIndex = _sessions.Count - 1;
+            LoadCurrentSession();
+            BuildSaleTabs();
+        }
+        else
+        {
+            _cart.Clear();
+            PaidBox.Text = "0";
+            PaymentCombo.SelectedIndex = 0;
+            DebtorCombo.SelectedIndex = -1;
+            RecalcTotals();
+        }
+        SearchBox.Focus();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        try
+        {
+            _categories = await AppState.Backend.GetCategoriesAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowMessage(ex.Message, error: true);
+        }
+        BuildCategoryChips();
+    }
+
+    private void BuildCategoryChips()
+    {
+        CategoryBar.Children.Clear();
+        AddChip("Barchasi", null);
+        foreach (var c in _categories.OrderBy(c => c.Name))
+            AddChip(c.Name, c.Id);
+        RefreshChipStyles();
+    }
+
+    private void AddChip(string text, Guid? categoryId)
+    {
+        var btn = new System.Windows.Controls.Button
+        {
+            Content = text,
+            Tag = categoryId,
+            Style = (Style)FindResource("Chip")
+        };
+        btn.Click += CategoryChip_Click;
+        CategoryBar.Children.Add(btn);
+    }
+
+    private void CategoryChip_Click(object sender, RoutedEventArgs e)
+    {
+        _selectedCategoryId = ((System.Windows.Controls.Button)sender).Tag as Guid?;
+        RefreshChipStyles();
+        ApplyFilter();
+    }
+
+    private void RefreshChipStyles()
+    {
+        var chip = (Style)FindResource("Chip");
+        var active = (Style)FindResource("ChipActive");
+        foreach (var child in CategoryBar.Children)
+        {
+            if (child is System.Windows.Controls.Button b)
+            {
+                var id = b.Tag as Guid?;
+                b.Style = id == _selectedCategoryId ? active : chip;
+            }
+        }
     }
 
     // ---------- Yuklash ----------
@@ -81,9 +302,14 @@ public partial class PosWindow : Window
     {
         var q = SearchBox.Text.Trim().ToLowerInvariant();
         IEnumerable<ProductDto> items = _allProducts;
+
+        // Kategoriya bo'yicha filtr (null = barchasi).
+        if (_selectedCategoryId is Guid cid)
+            items = items.Where(p => p.CategoryId == cid);
+
         if (!string.IsNullOrEmpty(q))
         {
-            items = _allProducts.Where(p =>
+            items = items.Where(p =>
                 p.Name.ToLowerInvariant().Contains(q) ||
                 (p.Barcode != null && p.Barcode.ToLowerInvariant().Contains(q)) ||
                 p.MxikCode.ToLowerInvariant().Contains(q));
@@ -134,6 +360,8 @@ public partial class PosWindow : Window
             line.Quantity += 1;
         }
         RecalcTotals();
+        // Shtrix-skaner ketma-ket o'qishi uchun fokus qidiruv maydonida qolsin.
+        SearchBox.Focus();
     }
 
     private void Inc_Click(object sender, RoutedEventArgs e)
@@ -163,10 +391,19 @@ public partial class PosWindow : Window
         RecalcTotals();
     }
 
+    private void ExactCash_Click(object sender, RoutedEventArgs e)
+    {
+        PaidBox.Text = CartTotal().ToString("0");
+    }
+
     private decimal CartTotal() => _cart.Sum(l => l.LineTotal);
 
     private void RecalcTotals()
     {
+        // InitializeComponent paytida PaidBox Text="0" TextChanged'ni ishga tushiradi,
+        // lekin ba'zi elementlar hali yaratilmagan bo'lishi mumkin.
+        if (TotalText is null || ChangeText is null) return;
+
         var total = CartTotal();
         TotalText.Text = total.ToString("N0");
         var paid = ParseDecimal(PaidBox.Text);
@@ -266,12 +503,11 @@ public partial class PosWindow : Window
             ReprintButton.IsEnabled = true;
 
             ShowMessage($"✓ Chek {sale.ReceiptNumber} · Jami {sale.TotalAmount:N0} · Qaytim {sale.ChangeAmount:N0}", error: false);
-            _cart.Clear();
-            PaidBox.Text = "0";
-            RecalcTotals();
+            CloseCurrentSessionAfterSale();
             await LoadProductsAsync(); // qoldiq yangilandi
 
-            if (AppState.PrinterEnabled) PrintReceiptSafe(receipt);
+            // Chekni ko'rib chop etish uchun preview oynasi.
+            new ReceiptPreviewWindow(receipt) { Owner = this }.ShowDialog();
         }
         catch (Exception ex)
         {
@@ -288,6 +524,9 @@ public partial class PosWindow : Window
         new LoginWindow().Show();
         Close();
     }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+        => new SettingsWindow { Owner = this }.ShowDialog();
 
     // ---------- Nasiya (qarz) ----------
 
@@ -336,7 +575,8 @@ public partial class PosWindow : Window
 
     private void Reprint_Click(object sender, RoutedEventArgs e)
     {
-        if (_lastReceipt is not null) PrintReceiptSafe(_lastReceipt);
+        if (_lastReceipt is null) return;
+        new ReceiptPreviewWindow(_lastReceipt) { Owner = this }.ShowDialog();
     }
 
     private void PrintReceiptSafe(ReceiptData receipt)

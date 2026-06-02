@@ -17,6 +17,10 @@ const showModal = ref(false)
 const editId = ref(null) // null = yaratish, aks holda tahrir
 const newCategory = ref('')
 
+// O'chirish tasdiqlash modali
+const deleteTarget = ref(null)
+const deleting = ref(false)
+
 // Excel
 const importInput = ref(null)
 const importing = ref(false)
@@ -229,14 +233,27 @@ async function submit() {
   }
 }
 
-async function removeProduct(p) {
-  if (!window.confirm(`"${p.name}" mahsulotini o'chirasizmi?`)) return
+function removeProduct(p) {
+  deleteTarget.value = p
+}
+
+function cancelDelete() {
+  if (deleting.value) return
+  deleteTarget.value = null
+}
+
+async function confirmDelete() {
+  if (!deleteTarget.value) return
   error.value = ''
+  deleting.value = true
   try {
-    await productsApi.remove(p.id)
+    await productsApi.remove(deleteTarget.value.id)
+    deleteTarget.value = null
     await loadAll()
   } catch (e) {
     error.value = errorMessage(e)
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -438,6 +455,31 @@ onMounted(loadAll)
           {{ saving ? 'Saqlanmoqda...' : (editId ? 'Saqlash' : 'Qo\'shish') }}
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- O'chirishni tasdiqlash modali -->
+  <div v-if="deleteTarget" class="modal-overlay" @click.self="cancelDelete">
+    <div class="modal-box" style="max-width:420px">
+      <div class="modal-head">
+        <h3>Mahsulotni o'chirish</h3>
+        <button class="modal-x" @click="cancelDelete">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="del-warn">⚠️</div>
+        <p style="text-align:center; margin:0 0 6px">
+          <strong>"{{ deleteTarget.name }}"</strong> mahsulotini o'chirmoqchimisiz?
+        </p>
+        <p class="muted" style="text-align:center; font-size:13px; margin:0">
+          Bu amalni qaytarib bo'lmaydi.
+        </p>
+        <div class="del-actions">
+          <button class="btn btn-ghost" :disabled="deleting" @click="cancelDelete">Bekor qilish</button>
+          <button class="btn btn-danger" :disabled="deleting" @click="confirmDelete">
+            {{ deleting ? 'O\'chirilmoqda...' : 'O\'chirish' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
