@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -39,7 +40,11 @@ public partial class PosWindow : Window
             StartSyncTimer();
             SearchBox.Focus();
         };
-        Closed += (_, _) => _syncTimer?.Stop();
+        Closed += (_, _) =>
+        {
+            _syncTimer?.Stop();
+            NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
+        };
     }
 
     // ─── Online/offline holat ────────────────────────────────────────────────
@@ -83,24 +88,48 @@ public partial class PosWindow : Window
         }
     }
 
-    // ─── Background sync timer ───────────────────────────────────────────────
+    // ─── Background sync: network event + fallback timer ────────────────────
 
     private void StartSyncTimer()
     {
+        // 1) OS darajasida network o'zgarishi — darhol ishga tushadi
+        NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+
+        // 2) Fallback timer: har 15 sek (masalan, backend restart bo'lganda)
         _syncTimer = new System.Windows.Threading.DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(30)
+            Interval = TimeSpan.FromSeconds(15)
         };
-        _syncTimer.Tick += async (_, _) => await TimerTickAsync();
+        _syncTimer.Tick += async (_, _) => await CheckAndSyncAsync();
         _syncTimer.Start();
     }
 
-    private async Task TimerTickAsync()
+    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
     {
+        // Bu event ThreadPool thread'da keladi.
+        // BeginInvoke(async () =>) — UI thread'da async void sifatida ishga tushadi;
+        // await'lar ham UI thread'da davom etadi (SynchronizationContext captured).
+        Dispatcher.BeginInvoke(async () =>
+        {
+            if (!e.IsAvailable)
+            {
+                SetOnlineState(false);
+                return;
+            }
+            // Tarmoq OS'da ko'rinsa ham router/backend bir-ikki soniya kechikishi mumkin
+            await Task.Delay(1500);
+            await CheckAndSyncAsync();
+        });
+    }
+
+    private async Task CheckAndSyncAsync()
+    {
+        var wasOffline = !AppState.IsOnline;
         var online = await AppState.Backend.PingAsync();
         SetOnlineState(online);
+
         if (online && AppState.Offline.PendingCount() > 0)
-            await SyncPendingSalesAsync(silent: true);
+            await SyncPendingSalesAsync(silent: !wasOffline);
     }
 
     private async Task SyncPendingSalesAsync(bool silent = false)
