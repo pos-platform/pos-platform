@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, reactive, computed } from 'vue'
+import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { productsApi, categoriesApi, suppliersApi, downloadBlob } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
 
@@ -11,13 +11,21 @@ const error = ref('')
 const success = ref('')
 const saving = ref(false)
 const uploading = ref(false)
+
+// Filters
 const filterCategory = ref('')
+const searchName = ref('')
+const filterQtyOp = ref('')
+const filterQtyVal = ref('')
+
+// Pagination
+const currentPage = ref(1)
+const pageSize = ref(50)
 
 const showModal = ref(false)
-const editId = ref(null) // null = yaratish, aks holda tahrir
+const editId = ref(null)
 const newCategory = ref('')
 
-// O'chirish tasdiqlash modali
 const deleteTarget = ref(null)
 const deleting = ref(false)
 
@@ -46,7 +54,7 @@ async function onImportFile(event) {
     error.value = errorMessage(e)
   } finally {
     importing.value = false
-    event.target.value = '' // bir xil faylni qayta tanlash uchun
+    event.target.value = ''
   }
 }
 
@@ -87,11 +95,78 @@ const blankForm = () => ({
 })
 const form = reactive(blankForm())
 
-const visibleProducts = computed(() =>
-  filterCategory.value
-    ? products.value.filter((p) => p.categoryId === filterCategory.value)
-    : products.value
-)
+const filteredProducts = computed(() => {
+  let list = products.value
+
+  if (filterCategory.value) {
+    list = list.filter((p) => p.categoryId === filterCategory.value)
+  }
+
+  if (searchName.value.trim()) {
+    const q = searchName.value.trim().toLowerCase()
+    list = list.filter(
+      (p) => p.name.toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q)
+    )
+  }
+
+  if (filterQtyOp.value && filterQtyVal.value !== '') {
+    const val = Number(filterQtyVal.value)
+    list = list.filter((p) => {
+      const qty = Number(p.quantity)
+      if (filterQtyOp.value === '=') return qty === val
+      if (filterQtyOp.value === '>') return qty > val
+      if (filterQtyOp.value === '<') return qty < val
+      if (filterQtyOp.value === '>=') return qty >= val
+      if (filterQtyOp.value === '<=') return qty <= val
+      return true
+    })
+  }
+
+  return list
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredProducts.value.length / pageSize.value)))
+
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredProducts.value.slice(start, start + pageSize.value)
+})
+
+const pageNumbers = computed(() => {
+  const total = totalPages.value
+  const cur = currentPage.value
+  const pages = []
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else if (cur <= 4) {
+    for (let i = 1; i <= 5; i++) pages.push(i)
+    pages.push('...')
+    pages.push(total)
+  } else if (cur >= total - 3) {
+    pages.push(1)
+    pages.push('...')
+    for (let i = total - 4; i <= total; i++) pages.push(i)
+  } else {
+    pages.push(1)
+    pages.push('...')
+    for (let i = cur - 1; i <= cur + 1; i++) pages.push(i)
+    pages.push('...')
+    pages.push(total)
+  }
+  return pages
+})
+
+function setPage(p) {
+  if (typeof p === 'number') currentPage.value = Math.min(Math.max(1, p), totalPages.value)
+}
+
+watch([searchName, filterCategory, filterQtyOp, filterQtyVal], () => {
+  currentPage.value = 1
+})
+
+watch(pageSize, () => {
+  currentPage.value = 1
+})
 
 function round2(n) { return Math.round((Number(n) || 0) * 100) / 100 }
 function recalcPrice() {
@@ -233,14 +308,8 @@ async function submit() {
   }
 }
 
-function removeProduct(p) {
-  deleteTarget.value = p
-}
-
-function cancelDelete() {
-  if (deleting.value) return
-  deleteTarget.value = null
-}
+function removeProduct(p) { deleteTarget.value = p }
+function cancelDelete() { if (deleting.value) return; deleteTarget.value = null }
 
 async function confirmDelete() {
   if (!deleteTarget.value) return
@@ -264,7 +333,6 @@ onMounted(loadAll)
   <div class="page-head">
     <h1>Mahsulotlar</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-      <span class="muted">{{ visibleProducts.length }} / {{ products.length }} ta</span>
       <button class="btn btn-ghost btn-sm" @click="downloadTemplate">📄 Shablon</button>
       <button class="btn btn-ghost btn-sm" :disabled="importing" @click="triggerImport">
         {{ importing ? '⏳ Import...' : '📥 Excel import' }}
@@ -284,46 +352,126 @@ onMounted(loadAll)
     </ul>
   </div>
 
-  <div class="card">
-    <div class="field" style="max-width:260px; margin-bottom:12px">
-      <label>Kategoriya bo'yicha filtr</label>
-      <select v-model="filterCategory" class="select">
-        <option value="">Barchasi</option>
+  <!-- Filters -->
+  <div class="card" style="margin-bottom:12px; padding:16px 20px">
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px">
+      <div style="position:relative; flex:1; min-width:220px; max-width:400px">
+        <input
+          v-model="searchName"
+          class="input"
+          placeholder="Nomi yoki barkod bo'yicha qidirish"
+          style="padding-left:38px; width:100%; box-sizing:border-box"
+        />
+        <svg style="position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#aaa; pointer-events:none" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+        </svg>
+      </div>
+      <select v-model="filterCategory" class="select" style="min-width:180px">
+        <option value="">Barcha kategoriyalar</option>
         <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center">
+      <select v-model="filterQtyOp" class="select" style="width:150px">
+        <option value="">Qoldiq filtri</option>
+        <option value="=">=</option>
+        <option value=">">&gt;</option>
+        <option value="<">&lt;</option>
+        <option value=">=">&gt;=</option>
+        <option value="<=">&lt;=</option>
+      </select>
+      <input
+        v-model="filterQtyVal"
+        type="number"
+        class="input"
+        placeholder="Miqdor"
+        style="width:160px"
+        :disabled="!filterQtyOp"
+      />
+    </div>
+  </div>
+
+  <div class="card">
+    <!-- Top bar: info + page size -->
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 4px 12px; border-bottom:1px solid var(--border)">
+      <div class="muted" style="font-size:13px">
+        <template v-if="filteredProducts.length">
+          {{ filteredProducts.length }} ta mahsulotdan
+          {{ (currentPage - 1) * pageSize + 1 }}–{{ Math.min(currentPage * pageSize, filteredProducts.length) }}
+          ko'rsatilmoqda
+        </template>
+        <template v-else>Natija yo'q</template>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px">
+        <span class="muted" style="font-size:13px">Sahifada:</span>
+        <select v-model.number="pageSize" class="select" style="width:76px">
+          <option :value="25">25</option>
+          <option :value="50">50</option>
+          <option :value="100">100</option>
+        </select>
+      </div>
     </div>
 
     <table class="table">
       <thead>
         <tr>
-          <th></th><th>Nomi</th><th>Kategoriya</th>
-          <th class="text-right">Qoldiq</th><th class="text-right">Tannarx</th>
-          <th class="text-right">Sotish</th><th class="text-right">Ustama</th><th></th>
+          <th style="width:52px"></th>
+          <th>Nomi</th>
+          <th>Kategoriya</th>
+          <th>Barcode</th>
+          <th>PLU</th>
+          <th class="text-right">Qoldiq</th>
+          <th class="text-right">Tannarx</th>
+          <th class="text-right">Ustama</th>
+          <th class="text-right">Narx</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="p in visibleProducts" :key="p.id">
+        <tr v-if="loading">
+          <td colspan="10" class="muted" style="text-align:center; padding:32px">Yuklanmoqda...</td>
+        </tr>
+        <tr v-for="p in paginatedProducts" :key="p.id">
           <td><div class="thumb"><img v-if="p.imageUrl" :src="mediaUrl(p.imageUrl)" alt="" /></div></td>
           <td>
-            {{ p.name }}
-            <span v-if="p.isWeighed" class="pill pill-amber" style="margin-left:6px">tarozi</span>
+            <div style="font-weight:500">{{ p.name }}</div>
             <div class="muted" style="font-size:12px">MXIK: {{ p.mxikCode }}</div>
+            <span v-if="p.isWeighed" class="pill pill-amber" style="margin-top:2px; display:inline-block">tarozi</span>
           </td>
           <td>{{ categoryName(p.categoryId) }}</td>
-          <td class="text-right" :style="{ color: Number(p.quantity) <= 0 ? 'var(--danger)' : 'inherit' }">{{ Number(p.quantity).toLocaleString() }}</td>
+          <td class="muted" style="font-size:13px">{{ p.barcode || '—' }}</td>
+          <td class="muted" style="font-size:13px">{{ p.pluNumber ?? '—' }}</td>
+          <td class="text-right" :style="{ color: Number(p.quantity) <= 0 ? 'var(--danger)' : 'inherit' }">
+            {{ Number(p.quantity).toLocaleString() }}
+          </td>
           <td class="text-right muted">{{ Number(p.costPrice).toLocaleString() }}</td>
-          <td class="text-right">{{ Number(p.price).toLocaleString() }}</td>
           <td class="text-right"><span class="pill pill-green">{{ Number(p.markupPercent).toFixed(1) }}%</span></td>
+          <td class="text-right" style="font-weight:500">{{ Number(p.price).toLocaleString() }}</td>
           <td class="text-right" style="white-space:nowrap">
             <button class="btn btn-ghost btn-sm" @click="openEdit(p)">✏️</button>
             <button class="btn btn-ghost btn-sm" @click="removeProduct(p)">🗑️</button>
           </td>
         </tr>
-        <tr v-if="!visibleProducts.length && !loading">
-          <td colspan="8" class="muted" style="text-align:center; padding:24px">Mahsulot yo'q</td>
+        <tr v-if="!paginatedProducts.length && !loading">
+          <td colspan="10" class="muted" style="text-align:center; padding:32px">Mahsulot yo'q</td>
         </tr>
       </tbody>
     </table>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="pagination-row">
+      <button class="btn btn-ghost btn-sm pag-btn" :disabled="currentPage === 1" @click="setPage(currentPage - 1)">‹</button>
+      <template v-for="pg in pageNumbers" :key="String(pg) + '_' + pageNumbers.indexOf(pg)">
+        <span v-if="pg === '...'" class="muted pag-ellipsis">…</span>
+        <button
+          v-else
+          class="btn btn-sm pag-btn"
+          :class="{ 'pag-active': pg === currentPage, 'btn-ghost': pg !== currentPage }"
+          @click="setPage(pg)"
+        >{{ pg }}</button>
+      </template>
+      <button class="btn btn-ghost btn-sm pag-btn" :disabled="currentPage === totalPages" @click="setPage(currentPage + 1)">›</button>
+    </div>
   </div>
 
   <!-- Modal -->
@@ -336,7 +484,6 @@ onMounted(loadAll)
       <form class="modal-body" @submit.prevent="submit">
         <div v-if="error" class="alert alert-error">{{ error }}</div>
 
-        <!-- Rasm -->
         <div class="field">
           <label>Rasm</label>
           <div class="img-upload">
@@ -441,7 +588,6 @@ onMounted(loadAll)
           </div>
         </div>
 
-        <!-- Yangi kategoriya (faqat yaratishda) -->
         <template v-if="!editId">
           <hr style="border:none;border-top:1px solid var(--border);margin:14px 0" />
           <label class="muted" style="font-weight:600;font-size:13px">Yangi kategoriya</label>
@@ -483,3 +629,33 @@ onMounted(loadAll)
     </div>
   </div>
 </template>
+
+<style scoped>
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 0 8px;
+  flex-wrap: wrap;
+}
+
+.pag-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.pag-active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.pag-ellipsis {
+  padding: 0 6px;
+  font-size: 15px;
+}
+</style>

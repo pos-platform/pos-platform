@@ -157,9 +157,15 @@ public class ProductService : IProductService
         var result = new ImportResultDto();
         if (rows.Count == 0) return result;
 
-        // Kategoriyalarni nom bo'yicha keshlaymiz (yangi kategoriyalar yo'lda yaratiladi).
         var categories = await _db.Categories.ToListAsync(cancellationToken);
         var byName = categories.ToDictionary(c => c.Name.ToLowerInvariant(), c => c);
+
+        // Mavjud barcode'lar — takrorlanishni oldini olish uchun
+        var existingBarcodes = (await _db.Products
+            .Where(p => p.Barcode != null)
+            .Select(p => p.Barcode!)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
 
         foreach (var row in rows)
         {
@@ -167,9 +173,8 @@ public class ProductService : IProductService
             {
                 if (string.IsNullOrWhiteSpace(row.Name))
                     throw new Exception("Nomi bo'sh");
-                if (string.IsNullOrWhiteSpace(row.MxikCode))
-                    throw new Exception("MXIK bo'sh");
 
+                // Kategoriya: K ustun → yo'q bo'lsa "Umumiy"
                 var catName = string.IsNullOrWhiteSpace(row.CategoryName) ? "Umumiy" : row.CategoryName!.Trim();
                 var key = catName.ToLowerInvariant();
                 if (!byName.TryGetValue(key, out var category))
@@ -179,22 +184,47 @@ public class ProductService : IProductService
                     byName[key] = category;
                 }
 
-                var unit = (row.Unit ?? "").Trim().ToLowerInvariant() is "kg" or "kilogram" or "кг"
+                // Birlik: F(шт/кг) yoki O(Birlik) ustunlaridan
+                var unitRaw = (row.UnitType ?? row.Unit ?? "").Trim().ToLowerInvariant();
+                var unit = unitRaw is "кг" or "kg" or "kilogram" or "kilogramm"
                     ? Unit.Kilogram
                     : Unit.Piece;
 
+                // Narx/naценка: agar narx yo'q bo'lsa tannarx + naценka hisoblash
+                var cost = row.CostPrice ?? 0m;
+                decimal price;
+                if (row.Price is > 0)
+                {
+                    price = row.Price.Value;
+                }
+                else if (row.MarkupPercent is > 0)
+                {
+                    price = Math.Round(cost * (1 + row.MarkupPercent.Value / 100m), 0);
+                }
+                else
+                {
+                    price = cost;
+                }
+
+                var barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode!.Trim();
+                if (barcode != null && existingBarcodes.Contains(barcode))
+                    barcode = null; // takrorlanishni e'tiborsiz qoldiramiz
+
                 _db.Products.Add(new Product
                 {
-                    Name = row.Name!.Trim(),
-                    MxikCode = row.MxikCode!.Trim(),
-                    Barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode!.Trim(),
-                    CostPrice = row.CostPrice ?? 0,
-                    Price = row.Price ?? 0,
-                    Quantity = row.Quantity ?? 0,
-                    IsVat = row.IsVat ?? true,
-                    Unit = unit,
+                    Name      = row.Name!.Trim(),
+                    MxikCode  = string.IsNullOrWhiteSpace(row.MxikCode) ? "00000000" : row.MxikCode!.Trim(),
+                    Barcode   = barcode,
+                    PluNumber = row.PluNumber,
+                    CostPrice = cost,
+                    Price     = price,
+                    Quantity  = row.Quantity ?? 0,
+                    IsVat     = row.IsVat ?? false,
+                    IsMarked  = row.IsMarked ?? false,
+                    Unit      = unit,
                     CategoryId = category.Id
                 });
+                if (barcode != null) existingBarcodes.Add(barcode);
                 result.Created++;
             }
             catch (Exception ex)
@@ -213,19 +243,37 @@ public class ProductService : IProductService
         var products = await _db.Products
             .AsNoTracking()
             .Include(p => p.Category)
+            .Include(p => p.Supplier)
             .OrderBy(p => p.Name)
             .ToListAsync(cancellationToken);
 
-        var rows = products.Select(p => new ProductExportRow
+        var rows = products.Select(p =>
         {
-            Name = p.Name,
-            MxikCode = p.MxikCode,
-            Barcode = p.Barcode,
-            CostPrice = p.CostPrice,
-            Price = p.Price,
-            Quantity = p.Quantity,
-            Unit = p.Unit == Unit.Kilogram ? "Kg" : "Dona",
-            Category = p.Category?.Name ?? ""
+            var unitType = p.Unit == Unit.Kilogram ? "кг" : "шт";
+            var unitLabel = p.Unit == Unit.Kilogram ? "Kilogramm" : "Донна";
+            var markup = p.CostPrice > 0
+                ? Math.Round((p.Price - p.CostPrice) / p.CostPrice * 100, 2)
+                : 0m;
+            return new ProductExportRow
+            {
+                Name          = p.Name,
+                Quantity      = p.Quantity,
+                Barcode       = p.Barcode,
+                PluNumber     = p.PluNumber,
+                UnitType      = unitType,
+                CostPrice     = p.CostPrice,
+                Price         = p.Price,
+                MarkupPercent = markup,
+                BranchName    = null,         // do'kon filter context'da
+                Category      = p.Category?.Name ?? "",
+                HasDiscount   = "нет",
+                DiscountPrice = null,
+                IsVat         = p.IsVat ? "есть" : "нет",
+                Unit          = unitLabel,
+                MxikCode      = p.MxikCode,
+                IsMarked      = p.IsMarked ? "есть" : "нет",
+                PackageCode   = null
+            };
         });
 
         return _excel.Export(rows);

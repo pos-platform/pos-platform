@@ -32,7 +32,8 @@
       "PowerShell(Test-NetConnection -ComputerName localhost -Port 5000 -InformationLevel Quiet -WarningAction SilentlyContinue)",
       "PowerShell(\"---\")",
       "PowerShell(Get-Process PosPlatform.Api -ErrorAction SilentlyContinue)",
-      "PowerShell(\"cleaned\")"
+      "PowerShell(\"cleaned\")",
+      "Bash(npm run *)"
     ]
   }
 }
