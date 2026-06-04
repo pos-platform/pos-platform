@@ -18,6 +18,40 @@ const searchName = ref('')
 const filterQtyOp = ref('')
 const filterQtyVal = ref('')
 
+// Barcode scanner
+const barcodeInput = ref(null)
+const barcodeBuffer = ref('')
+const barcodeHighlight = ref(null) // topilgan mahsulot ID
+
+function onBarcodeKey(e) {
+  if (e.key === 'Enter') {
+    const code = barcodeBuffer.value.trim()
+    barcodeBuffer.value = ''
+    if (!code) return
+    const found = products.value.find(
+      (p) => p.barcode && p.barcode.toLowerCase() === code.toLowerCase()
+    )
+    if (found) {
+      barcodeHighlight.value = found.id
+      searchName.value = ''
+      filterCategory.value = ''
+      currentPage.value = 1
+      // Sahifada qaysi sahifada ekanligini toping
+      const idx = filteredProducts.value.findIndex((p) => p.id === found.id)
+      if (idx >= 0) currentPage.value = Math.floor(idx / pageSize.value) + 1
+      setTimeout(() => {
+        document.getElementById(`product-row-${found.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setTimeout(() => { barcodeHighlight.value = null }, 2500)
+      }, 50)
+    } else {
+      error.value = `Barcode topilmadi: ${code}`
+      setTimeout(() => { error.value = '' }, 3000)
+    }
+  } else if (e.key.length === 1) {
+    barcodeBuffer.value += e.key
+  }
+}
+
 // Pagination
 const currentPage = ref(1)
 const pageSize = ref(50)
@@ -326,7 +360,10 @@ async function confirmDelete() {
   }
 }
 
-onMounted(loadAll)
+onMounted(async () => {
+  await loadAll()
+  barcodeInput.value?.focus()
+})
 </script>
 
 <template>
@@ -351,6 +388,14 @@ onMounted(loadAll)
       <li v-for="(e, i) in importResult.errors.slice(0, 10)" :key="i">{{ e }}</li>
     </ul>
   </div>
+
+  <!-- Barcode scanner: yashirin input, sahifa fokusda bo'lsa barkod o'qiydi -->
+  <input
+    ref="barcodeInput"
+    style="position:fixed; opacity:0; pointer-events:none; width:1px; height:1px; top:0; left:0"
+    @keydown="onBarcodeKey"
+    @blur="() => $nextTick(() => barcodeInput?.focus())"
+  />
 
   <!-- Filters -->
   <div class="card" style="margin-bottom:12px; padding:16px 20px">
@@ -431,7 +476,12 @@ onMounted(loadAll)
         <tr v-if="loading">
           <td colspan="10" class="muted" style="text-align:center; padding:32px">Yuklanmoqda...</td>
         </tr>
-        <tr v-for="p in paginatedProducts" :key="p.id">
+        <tr
+          v-for="p in paginatedProducts"
+          :key="p.id"
+          :id="`product-row-${p.id}`"
+          :style="barcodeHighlight === p.id ? 'background:#FEF9C3; transition:background 0.3s' : ''"
+        >
           <td><div class="thumb"><img v-if="p.imageUrl" :src="mediaUrl(p.imageUrl)" alt="" /></div></td>
           <td>
             <div style="font-weight:500">{{ p.name }}</div>

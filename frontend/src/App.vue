@@ -24,6 +24,7 @@ const navItems = [
   { name: 'payments', label: 'Платежи', icon: '💳', admin: true },
   { name: 'write-offs', label: 'Списание', icon: '🗑️', admin: true },
   { name: 'analytics', label: 'Аналитика', icon: '📈', admin: true },
+  { name: 'reports', label: 'Hisobotlar', icon: '📊', admin: true },
   { name: 'promotions', label: 'Aksiyalar', icon: '🏷️', admin: true },
   { name: 'users', label: 'Foydalanuvchilar', icon: '👥', admin: true }
 ]

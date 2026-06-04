@@ -80,6 +80,12 @@ const routes = [
     name: 'analytics',
     component: () => import('../views/AnalyticsView.vue'),
     meta: { adminOnly: true }
+  },
+  {
+    path: '/reports',
+    name: 'reports',
+    component: () => import('../views/ReportsView.vue'),
+    meta: { adminOnly: true }
   }
 ]
 

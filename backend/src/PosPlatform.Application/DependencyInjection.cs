@@ -17,6 +17,7 @@ using PosPlatform.Application.Features.Stock;
 using PosPlatform.Application.Features.Stores;
 using PosPlatform.Application.Features.Suppliers;
 using PosPlatform.Application.Features.Users;
+using PosPlatform.Application.Features.Reports;
 using PosPlatform.Application.Features.WriteOffs;
 
 namespace PosPlatform.Application;
@@ -45,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IWriteOffService, WriteOffService>();
         services.AddScoped<ISupplierPaymentService, SupplierPaymentService>();
         services.AddScoped<IFiscalQueueService, FiscalQueueService>();
+        services.AddScoped<IReportService, ReportService>();
 
         return services;
     }

@@ -136,6 +136,13 @@ export const debtorsApi = {
   addTransaction: (id, payload) => http.post(`/api/debtors/${id}/transactions`, payload).then((r) => r.data)
 }
 
+export const reportsApi = {
+  sales:       (params) => http.get('/api/reports/sales',        { params }).then((r) => r.data),
+  exportSales: (params) => http.get('/api/reports/sales/export', { params, responseType: 'blob' }).then((r) => r.data),
+  stock:       ()       => http.get('/api/reports/stock').then((r) => r.data),
+  exportStock: ()       => http.get('/api/reports/stock/export', { responseType: 'blob' }).then((r) => r.data)
+}
+
 export const expensesApi = {
   list: () => http.get('/api/expenses').then((r) => r.data),
   create: (payload) => http.post('/api/expenses', payload).then((r) => r.data),

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { dashboardApi, storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
@@ -52,16 +52,44 @@ async function loadStores() {
   }
 }
 
+const lastUpdated = ref('')
+const polling = ref(true)
+let pollTimer = null
+
+async function loadSilent() {
+  if (!polling.value) return
+  try {
+    const params = { from: filters.from, to: filters.to }
+    if (filters.branchId) params.branchId = filters.branchId
+    summary.value = await dashboardApi.summary(params)
+    buildCards(summary.value)
+    lastUpdated.value = new Date().toLocaleTimeString()
+  } catch { /* silent — UI ni buzmasin */ }
+}
+
 onMounted(() => {
   loadStores()
   load()
+  // Bugun filtri aktiv bo'lsa har 30 sek yangilanadi
+  pollTimer = setInterval(() => {
+    if (filters.from === todayStr() && filters.to === todayStr()) loadSilent()
+  }, 30_000)
 })
+
+onUnmounted(() => clearInterval(pollTimer))
 </script>
 
 <template>
   <div class="page-head">
     <h1>Главный</h1>
-    <span v-if="summary" class="muted">{{ summary.salesCount }} ta savdo</span>
+    <div style="display:flex; align-items:center; gap:12px">
+      <span v-if="summary" class="muted">{{ summary.salesCount }} ta savdo</span>
+      <span v-if="lastUpdated" class="muted" style="font-size:12px">● yangilandi {{ lastUpdated }}</span>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; color:var(--muted)">
+        <input type="checkbox" v-model="polling" style="cursor:pointer" />
+        Avtomatik
+      </label>
+    </div>
   </div>
 
   <!-- Filtrlar -->

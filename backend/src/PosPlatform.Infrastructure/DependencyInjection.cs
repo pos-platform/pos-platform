@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IFiscalReceiptService, PendingFiscalReceiptService>();
 
         services.AddSingleton<IProductExcelService, ProductExcelService>();
+        services.AddSingleton<IReportExcelService, ReportExcelService>();
 
         return services;
     }

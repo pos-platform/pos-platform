@@ -128,7 +128,13 @@ public partial class PosWindow : Window
         var online = await AppState.Backend.PingAsync();
         SetOnlineState(online);
 
-        if (online && AppState.Offline.PendingCount() > 0)
+        if (!online) return;
+
+        // Avval lokal smena serverga yuborilsin (savdolar unga bog'liq)
+        if (AppState.Offline.HasPendingShift())
+            await SyncPendingShiftAsync();
+
+        if (AppState.Offline.PendingCount() > 0)
             await SyncPendingSalesAsync(silent: !wasOffline);
     }
 
@@ -555,15 +561,33 @@ public partial class PosWindow : Window
 
     private async void OpenShift_Click(object sender, RoutedEventArgs e)
     {
-        try
+        var cash = ParseDecimal(OpeningCashBox.Text);
+        if (AppState.IsOnline)
         {
-            _shift = await AppState.Backend.OpenShiftAsync(ParseDecimal(OpeningCashBox.Text));
-            RenderShiftBar();
-            ShowMessage("Smena ochildi", error: false);
+            try
+            {
+                _shift = await AppState.Backend.OpenShiftAsync(cash);
+                AppState.Offline.SaveShift(_shift);
+                AppState.Offline.ClearPendingShift();
+                RenderShiftBar();
+                ShowMessage("Smena ochildi", error: false);
+            }
+            catch (Exception ex) { ShowMessage(ex.Message, error: true); }
         }
-        catch (Exception ex)
+        else
         {
-            ShowMessage(ex.Message, error: true);
+            // Oflayn: lokal smena yaratamiz, internet kelganda serverga yuboramiz
+            AppState.Offline.SavePendingShift(cash);
+            _shift = new ShiftDto
+            {
+                Id = Guid.NewGuid(),
+                OpeningCash = cash,
+                OpenedAt = DateTime.Now,
+                Status = "Open"
+            };
+            AppState.Offline.SaveShift(_shift);
+            RenderShiftBar();
+            ShowMessage("Smena lokal ochildi — internet tiklansa serverga yuboriladi", error: false);
         }
     }
 
@@ -571,17 +595,44 @@ public partial class PosWindow : Window
     {
         var input = PromptInput("Sanab chiqilgan naqd summasini kiriting:", "Smenani yopish", "0");
         if (input is null) return;
+
+        if (AppState.Offline.HasPendingShift() && !AppState.IsOnline)
+        {
+            // Serverda smena yo'q — faqat lokaldan o'chiramiz
+            AppState.Offline.ClearPendingShift();
+            AppState.Offline.SaveShift(null);
+            _shift = null;
+            RenderShiftBar();
+            ShowMessage("Lokal smena yopildi", error: false);
+            return;
+        }
+
         try
         {
             await AppState.Backend.CloseShiftAsync(ParseDecimal(input));
+            AppState.Offline.SaveShift(null);
+            AppState.Offline.ClearPendingShift();
             _shift = null;
             RenderShiftBar();
             ShowMessage("Smena yopildi", error: false);
         }
-        catch (Exception ex)
+        catch (Exception ex) { ShowMessage(ex.Message, error: true); }
+    }
+
+    /// <summary>Oflayn ochilgan smenani serverda ro'yxatdan o'tkazadi.</summary>
+    private async Task SyncPendingShiftAsync()
+    {
+        var pending = AppState.Offline.GetPendingShift();
+        if (pending is null) return;
+        try
         {
-            ShowMessage(ex.Message, error: true);
+            var serverShift = await AppState.Backend.OpenShiftAsync(pending.Value.OpeningCash);
+            AppState.Offline.SaveShift(serverShift);
+            AppState.Offline.ClearPendingShift();
+            _shift = serverShift;
+            Dispatcher.Invoke(RenderShiftBar);
         }
+        catch { /* keyingi urinishda qayta sinab ko'riladi */ }
     }
 
     // ---------- To'lash ----------

@@ -57,6 +57,11 @@ public class OfflineStore : IDisposable
                 Payload   TEXT NOT NULL,
                 CreatedAt TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS PendingShift (
+                Key          TEXT PRIMARY KEY,
+                OpeningCash  REAL NOT NULL,
+                OpenedAt     TEXT NOT NULL
+            );
             INSERT OR IGNORE INTO ShiftCache(Key, Payload) VALUES('current', NULL);
         ");
     }
@@ -155,6 +160,31 @@ public class OfflineStore : IDisposable
         var val = cmd.ExecuteScalar() as string;
         return string.IsNullOrEmpty(val) ? null : JsonSerializer.Deserialize<ShiftDto>(val, _json);
     }
+
+    // ─── Oflayn smena ───────────────────────────────────────────────────────
+
+    /// <summary>Serverda ochilmagan, lokal smena yozuvini saqlaydi.</summary>
+    public void SavePendingShift(decimal openingCash)
+    {
+        var cmd = Cmd("INSERT OR REPLACE INTO PendingShift VALUES('pending',@Cash,@At)");
+        cmd.Parameters.AddWithValue("@Cash", (double)openingCash);
+        cmd.Parameters.AddWithValue("@At",   DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public (decimal OpeningCash, DateTime OpenedAt)? GetPendingShift()
+    {
+        using var cmd = Cmd("SELECT OpeningCash, OpenedAt FROM PendingShift WHERE Key='pending'");
+        using var r = cmd.ExecuteReader();
+        if (!r.Read()) return null;
+        return ((decimal)r.GetDouble(0), DateTime.Parse(r.GetString(1)).ToUniversalTime());
+    }
+
+    public void ClearPendingShift()
+        => Exec("DELETE FROM PendingShift WHERE Key='pending'");
+
+    public bool HasPendingShift() =>
+        Convert.ToInt32(Cmd("SELECT COUNT(*) FROM PendingShift").ExecuteScalar()) > 0;
 
     // ─── Oflayn savdo navbati ────────────────────────────────────────────────
 
