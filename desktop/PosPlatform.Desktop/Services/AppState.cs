@@ -4,10 +4,14 @@ namespace PosPlatform.Desktop.Services;
 public static class AppState
 {
     public static BackendClient Backend { get; set; } = null!;
+    public static OfflineStore Offline { get; set; } = new();
+
     public static string BaseUrl { get; set; } = "http://localhost:5000";
     public static string Username { get; set; } = "";
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
+
+    public static bool IsOnline { get; set; } = true;
 
     public static bool PrinterEnabled { get; set; }
     public static string? PrinterName { get; set; }

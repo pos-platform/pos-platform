@@ -33,7 +33,9 @@
       "PowerShell(\"---\")",
       "PowerShell(Get-Process PosPlatform.Api -ErrorAction SilentlyContinue)",
       "PowerShell(\"cleaned\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Read(//c/Users/Developer/.claude/projects/c--Users-Developer-webase-pos-platform/memory/**)",
+      "Bash(Get-ChildItem \"c:\\\\Users\\\\Developer\\\\webase\\\\pos-platform\\\\backend\\\\src\\\\PosPlatform.Infrastructure\\\\Persistence\\\\Migrations\\\\\" | Select-Object -Last 5 -ExpandProperty Name)"
     ]
   }
 }

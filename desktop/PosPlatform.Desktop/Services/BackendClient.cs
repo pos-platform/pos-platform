@@ -81,6 +81,21 @@ public class BackendClient
         return (await resp.Content.ReadFromJsonAsync<SaleDto>(Json))!;
     }
 
+    /// <summary>Backend tirik ekanligini tekshiradi (/health endpoint).</summary>
+    public async Task<bool> PingAsync()
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var resp = await _http.GetAsync("health", cts.Token);
+            return resp.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static async Task EnsureOk(HttpResponseMessage resp)
     {
         if (resp.IsSuccessStatusCode) return;

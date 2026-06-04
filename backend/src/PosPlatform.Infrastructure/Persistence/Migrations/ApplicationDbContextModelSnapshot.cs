@@ -694,6 +694,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<decimal>("CostPrice")
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 

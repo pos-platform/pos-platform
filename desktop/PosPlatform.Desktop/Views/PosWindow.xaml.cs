@@ -20,7 +20,8 @@ public partial class PosWindow : Window
     private readonly ReceiptPrinter _printer = new();
     private ReceiptData? _lastReceipt;
     private List<CategoryDto> _categories = new();
-    private Guid? _selectedCategoryId; // null = barchasi
+    private Guid? _selectedCategoryId;
+    private System.Windows.Threading.DispatcherTimer? _syncTimer;
 
     public PosWindow()
     {
@@ -35,8 +36,107 @@ public partial class PosWindow : Window
             await LoadShiftAsync();
             await LoadCategoriesAsync();
             await LoadProductsAsync();
+            StartSyncTimer();
             SearchBox.Focus();
         };
+        Closed += (_, _) => _syncTimer?.Stop();
+    }
+
+    // ─── Online/offline holat ────────────────────────────────────────────────
+
+    private void SetOnlineState(bool online)
+    {
+        AppState.IsOnline = online;
+        if (online)
+        {
+            OnlineBadge.Background = System.Windows.Media.Brushes.Transparent;
+            OnlineBadge.Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(0xDC, 0xFC, 0xE7));
+            OnlineText.Text = "● Onlayn";
+            OnlineText.Foreground = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(0x16, 0xA3, 0x4A));
+            OnlineBadge.ToolTip = "Internet bor — onlayn rejim";
+        }
+        else
+        {
+            OnlineBadge.Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(0xFE, 0xE2, 0xE2));
+            OnlineText.Text = "● Oflayn";
+            OnlineText.Foreground = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(0xDC, 0x26, 0x26));
+            OnlineBadge.ToolTip = "Internet yo'q — oflayn rejim (savdolar saqlanadi)";
+        }
+        RefreshSyncButton();
+    }
+
+    private void RefreshSyncButton()
+    {
+        var count = AppState.Offline.PendingCount();
+        if (count > 0 && AppState.IsOnline)
+        {
+            SyncText.Text = $"↑ Sync ({count})";
+            SyncButton.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            SyncButton.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    // ─── Background sync timer ───────────────────────────────────────────────
+
+    private void StartSyncTimer()
+    {
+        _syncTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(30)
+        };
+        _syncTimer.Tick += async (_, _) => await TimerTickAsync();
+        _syncTimer.Start();
+    }
+
+    private async Task TimerTickAsync()
+    {
+        var online = await AppState.Backend.PingAsync();
+        SetOnlineState(online);
+        if (online && AppState.Offline.PendingCount() > 0)
+            await SyncPendingSalesAsync(silent: true);
+    }
+
+    private async Task SyncPendingSalesAsync(bool silent = false)
+    {
+        var pending = AppState.Offline.GetPendingSales();
+        if (pending.Count == 0) return;
+
+        var synced = 0;
+        foreach (var (id, req) in pending)
+        {
+            try
+            {
+                await AppState.Backend.CreateSaleAsync(req);
+                AppState.Offline.RemovePendingSale(id);
+                synced++;
+            }
+            catch
+            {
+                break; // birinchi xatoda to'xtaymiz
+            }
+        }
+
+        if (synced > 0)
+        {
+            if (!silent)
+                ShowMessage($"✓ {synced} ta oflayn savdo serverga yuborildi", error: false);
+            await LoadProductsAsync(); // qoldiqlar yangilandi
+        }
+        RefreshSyncButton();
+    }
+
+    private async void Sync_Click(object sender, RoutedEventArgs e)
+    {
+        SyncButton.IsEnabled = false;
+        try { await SyncPendingSalesAsync(silent: false); }
+        finally { SyncButton.IsEnabled = true; }
     }
 
     // ---------- Parallel savdolar (tablar) ----------
@@ -202,10 +302,11 @@ public partial class PosWindow : Window
         try
         {
             _categories = await AppState.Backend.GetCategoriesAsync();
+            AppState.Offline.SaveCategories(_categories);
         }
-        catch (Exception ex)
+        catch
         {
-            ShowMessage(ex.Message, error: true);
+            _categories = AppState.Offline.LoadCategories();
         }
         BuildCategoryChips();
     }
@@ -259,10 +360,13 @@ public partial class PosWindow : Window
         try
         {
             _shift = await AppState.Backend.GetCurrentShiftAsync();
+            AppState.Offline.SaveShift(_shift);
+            SetOnlineState(true);
         }
-        catch (Exception ex)
+        catch
         {
-            ShowMessage(ex.Message, error: true);
+            _shift = AppState.Offline.LoadShift();
+            SetOnlineState(false);
         }
         RenderShiftBar();
     }
@@ -272,12 +376,17 @@ public partial class PosWindow : Window
         try
         {
             _allProducts = await AppState.Backend.GetProductsAsync();
-            ApplyFilter();
+            AppState.Offline.SaveProducts(_allProducts);
+            SetOnlineState(true);
         }
-        catch (Exception ex)
+        catch
         {
-            ShowMessage(ex.Message, error: true);
+            _allProducts = AppState.Offline.LoadProducts();
+            SetOnlineState(false);
+            if (_allProducts.Count > 0)
+                ShowMessage("Oflayn rejim — keshdan yuklandi", error: false);
         }
+        ApplyFilter();
     }
 
     private void RenderShiftBar()
@@ -483,7 +592,6 @@ public partial class PosWindow : Window
                 DebtorId = debtorId,
                 Items = _cart.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity }).ToList()
             };
-            // Chek ma'lumotini sotuvdan oldin yig'amiz.
             var receipt = new ReceiptData
             {
                 Cashier = AppState.Username,
@@ -496,17 +604,42 @@ public partial class PosWindow : Window
                 }).ToList()
             };
 
-            var sale = await AppState.Backend.CreateSaleAsync(req);
-            receipt.ReceiptNumber = sale.ReceiptNumber;
-            receipt.Change = sale.ChangeAmount;
-            _lastReceipt = receipt;
-            ReprintButton.IsEnabled = true;
+            if (AppState.IsOnline)
+            {
+                // ─── Onlayn: serverga yuboramiz ────────────────────────────
+                var sale = await AppState.Backend.CreateSaleAsync(req);
+                receipt.ReceiptNumber = sale.ReceiptNumber;
+                receipt.Change = sale.ChangeAmount;
+                _lastReceipt = receipt;
+                ReprintButton.IsEnabled = true;
+                ShowMessage($"✓ Chek {sale.ReceiptNumber} · Jami {sale.TotalAmount:N0} · Qaytim {sale.ChangeAmount:N0}", error: false);
+                CloseCurrentSessionAfterSale();
+                await LoadProductsAsync();
+            }
+            else
+            {
+                // ─── Oflayn: lokal keshga saqlaymiz ────────────────────────
+                var localId = $"OFF-{DateTime.Now:yyyyMMdd-HHmmss-fff}";
+                receipt.ReceiptNumber = localId;
+                receipt.Change = Math.Max(0, req.PaidAmount - total);
+                AppState.Offline.EnqueueSale(localId, req);
 
-            ShowMessage($"✓ Chek {sale.ReceiptNumber} · Jami {sale.TotalAmount:N0} · Qaytim {sale.ChangeAmount:N0}", error: false);
-            CloseCurrentSessionAfterSale();
-            await LoadProductsAsync(); // qoldiq yangilandi
+                // Lokal mahsulot qoldiqlarini kamaytiramiz (kesh)
+                foreach (var line in _cart)
+                {
+                    var cached = _allProducts.FirstOrDefault(p => p.Id == line.Product.Id);
+                    if (cached is not null) cached.Quantity -= line.Quantity;
+                }
+                AppState.Offline.SaveProducts(_allProducts);
 
-            // Chekni ko'rib chop etish uchun preview oynasi.
+                _lastReceipt = receipt;
+                ReprintButton.IsEnabled = true;
+                RefreshSyncButton();
+                ShowMessage($"✓ Oflayn saqlandi: {localId}. Internet tiklansa avtomatik yuboriladi.", error: false);
+                CloseCurrentSessionAfterSale();
+                ApplyFilter();
+            }
+
             new ReceiptPreviewWindow(receipt) { Owner = this }.ShowDialog();
         }
         catch (Exception ex)

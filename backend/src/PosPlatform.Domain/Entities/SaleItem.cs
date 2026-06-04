@@ -28,6 +28,9 @@ public class SaleItem : BaseEntity
     /// <summary>Savdo paytidagi birlik narxi.</summary>
     public decimal UnitPrice { get; set; }
 
+    /// <summary>Savdo paytidagi tannarx (snapshot) — foyda hisobi uchun.</summary>
+    public decimal CostPrice { get; set; }
+
     public decimal DiscountAmount { get; set; }
 
     /// <summary>QQS stavkasi (%), fiskal uchun. O'zbekistonda odatda 12%.</summary>

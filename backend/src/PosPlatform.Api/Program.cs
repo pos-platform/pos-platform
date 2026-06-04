@@ -37,6 +37,14 @@ builder.Services.AddControllers()
 
 builder.Services.AddEndpointsApiExplorer();
 
+// Health check — /health endpointga DB ulanishini tekshiradi.
+builder.Services.AddHealthChecks()
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("DefaultConnection")!,
+        name: "postgres",
+        tags: ["db", "ready"]);
+
+
 // --- Swagger (JWT Bearer bilan) ---
 builder.Services.AddSwaggerGen(options =>
 {
@@ -188,6 +196,9 @@ app.UseAuthorization();
 app.UseMiddleware<LicenseValidationMiddleware>();
 
 app.MapControllers();
+
+// Health check — autentifikatsiyasiz, monitoring uchun.
+app.MapHealthChecks("/health").AllowAnonymous();
 
 // SPA fallback: API/statik fayllarga tushmagan so'rovlar Vue index.html'ga (client routing).
 app.MapFallbackToFile("index.html");

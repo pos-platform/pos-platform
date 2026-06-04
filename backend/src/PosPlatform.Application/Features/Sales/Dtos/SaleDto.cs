@@ -54,6 +54,7 @@ public class SaleItemDto
     public Unit Unit { get; set; }
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public decimal CostPrice { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal VatPercent { get; set; }
     public decimal VatAmount { get; set; }
@@ -68,6 +69,7 @@ public class SaleItemDto
         Unit = i.Unit,
         Quantity = i.Quantity,
         UnitPrice = i.UnitPrice,
+        CostPrice = i.CostPrice,
         DiscountAmount = i.DiscountAmount,
         VatPercent = i.VatPercent,
         VatAmount = i.VatAmount,

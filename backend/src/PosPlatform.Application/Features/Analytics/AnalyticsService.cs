@@ -32,24 +32,16 @@ public class AnalyticsService : IAnalyticsService
         var revenue = sales.Sum(s => s.TotalAmount);
         var salesCount = sales.Count;
 
-        // Qatorlar (tannarx/foyda va top tovarlar uchun).
+        // Qatorlar (tannarx/foyda va top tovarlar uchun) — CostPrice snapshot'dan.
         var items = await _db.SaleItems
             .AsNoTracking()
             .Where(i => i.Sale!.Type == SaleType.Sale
                         && i.Sale.CreatedAt >= fromDate && i.Sale.CreatedAt < toExclusive
                         && (branchId == null || i.Sale.BranchId == branchId))
-            .Select(i => new { i.ProductId, i.ProductName, i.Quantity, i.LineTotal })
+            .Select(i => new { i.ProductId, i.ProductName, i.Quantity, i.LineTotal, i.CostPrice })
             .ToListAsync(cancellationToken);
 
-        // Joriy tannarxlar (taxminiy COGS — sotuv paytidagi emas, joriy tannarx).
-        var productIds = items.Select(i => i.ProductId).Distinct().ToList();
-        var costs = await _db.Products
-            .AsNoTracking()
-            .Where(p => productIds.Contains(p.Id))
-            .Select(p => new { p.Id, p.CostPrice })
-            .ToDictionaryAsync(p => p.Id, p => p.CostPrice, cancellationToken);
-
-        var cost = items.Sum(i => (costs.TryGetValue(i.ProductId, out var c) ? c : 0m) * i.Quantity);
+        var cost = items.Sum(i => i.CostPrice * i.Quantity);
         var profit = revenue - cost;
 
         var dailySales = sales
