@@ -24,12 +24,18 @@ public class SaleService : ISaleService
         _fiscal = fiscal;
     }
 
-    public async Task<IReadOnlyList<SaleDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SaleDto>> GetAllAsync(Guid? branchId = null, CancellationToken cancellationToken = default)
     {
-        var sales = await _db.Sales
+        var query = _db.Sales
             .AsNoTracking()
             .Include(s => s.Items)
             .Include(s => s.Receipt)
+            .AsQueryable();
+
+        if (branchId.HasValue)
+            query = query.Where(s => s.BranchId == branchId);
+
+        var sales = await query
             .OrderByDescending(s => s.CreatedAt)
             .ToListAsync(cancellationToken);
 

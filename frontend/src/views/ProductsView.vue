@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, reactive, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, reactive, computed, watch } from 'vue'
 import { productsApi, categoriesApi, suppliersApi, downloadBlob } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
 
@@ -360,9 +360,27 @@ async function confirmDelete() {
   }
 }
 
+let stockPollTimer = null
+
+async function refreshStock() {
+  if (loading.value || saving.value || showModal.value) return
+  try {
+    const fresh = await productsApi.list()
+    products.value = fresh
+  } catch {
+    // silent — foydalanuvchiga ko'rsatilmaydi
+  }
+}
+
 onMounted(async () => {
   await loadAll()
   barcodeInput.value?.focus()
+  // Qoldiqlarni har 30 soniyada yangilab turadi (savdo bo'lsa ko'rinadi)
+  stockPollTimer = setInterval(refreshStock, 30_000)
+})
+
+onUnmounted(() => {
+  clearInterval(stockPollTimer)
 })
 </script>
 

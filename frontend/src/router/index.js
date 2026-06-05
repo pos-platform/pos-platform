@@ -70,6 +70,12 @@ const routes = [
     meta: { adminOnly: true }
   },
   {
+    path: '/inventories',
+    name: 'inventories',
+    component: () => import('../views/InventoriesView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
     path: '/payments',
     name: 'payments',
     component: () => import('../views/PaymentsView.vue'),

@@ -54,10 +54,12 @@ public class CashShiftService : ICashShiftService
 
     public async Task<CashShiftDto> CloseAsync(CloseShiftRequest request, CancellationToken cancellationToken = default)
     {
-        var shift = await FindOpenShiftAsync(CurrentCashierId, cancellationToken)
+        var cashierId = CurrentCashierId;
+        var shift = await FindOpenShiftAsync(cashierId, cancellationToken)
             ?? throw new NotFoundException("Ochiq smena topilmadi.");
 
         var sales = await _db.Sales
+            .Include(s => s.Items)
             .Where(s => s.CashShiftId == shift.Id)
             .ToListAsync(cancellationToken);
 
@@ -75,6 +77,10 @@ public class CashShiftService : ICashShiftService
             SumWhere(s => s.Type == SaleType.Sale && s.PaymentMethod == PaymentMethod.Card)
             - SumWhere(s => s.Type == SaleType.Refund && s.PaymentMethod == PaymentMethod.Card);
 
+        shift.TransferSalesNet =
+            SumWhere(s => s.Type == SaleType.Sale && s.PaymentMethod == PaymentMethod.Transfer)
+            - SumWhere(s => s.Type == SaleType.Refund && s.PaymentMethod == PaymentMethod.Transfer);
+
         shift.ExpectedCash = shift.OpeningCash + shift.CashSalesNet;
         shift.CountedCash = request.CountedCash;
         shift.CashDifference = request.CountedCash - shift.ExpectedCash;
@@ -83,7 +89,10 @@ public class CashShiftService : ICashShiftService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        return CashShiftDto.FromEntity(shift);
+        var cashier = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == cashierId, cancellationToken);
+
+        return CashShiftDto.FromEntity(shift, sales, cashier?.Username);
     }
 
     public async Task<IReadOnlyList<CashShiftDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -93,21 +102,63 @@ public class CashShiftService : ICashShiftService
             .OrderByDescending(s => s.OpenedAt)
             .ToListAsync(cancellationToken);
 
-        return shifts.Select(CashShiftDto.FromEntity).ToList();
+        return shifts.Select(s => CashShiftDto.FromEntity(s)).ToList();
     }
 
     public async Task<CashShiftDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var shift = await _db.CashShifts
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Smena topilmadi: {id}");
 
-        if (shift is null)
+        var sales = await _db.Sales
+            .AsNoTracking()
+            .Include(s => s.Items)
+            .Where(s => s.CashShiftId == shift.Id)
+            .ToListAsync(cancellationToken);
+
+        var cashier = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == shift.CashierId, cancellationToken);
+
+        return CashShiftDto.FromEntity(shift, sales, cashier?.Username);
+    }
+
+    public async Task<IReadOnlyList<CashShiftDto>> GetPendingReportsAsync(int max, CancellationToken cancellationToken = default)
+    {
+        var shifts = await _db.CashShifts
+            .AsNoTracking()
+            .Where(s => s.Status == ShiftStatus.Closed && !s.ShiftReportPrinted)
+            .OrderBy(s => s.ClosedAt)
+            .Take(max)
+            .ToListAsync(cancellationToken);
+
+        var result = new List<CashShiftDto>();
+        foreach (var shift in shifts)
         {
-            throw new NotFoundException($"Smena topilmadi: {id}");
+            var sales = await _db.Sales
+                .AsNoTracking()
+                .Include(s => s.Items)
+                .Where(s => s.CashShiftId == shift.Id)
+                .ToListAsync(cancellationToken);
+
+            var cashier = await _db.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == shift.CashierId, cancellationToken);
+
+            result.Add(CashShiftDto.FromEntity(shift, sales, cashier?.Username));
         }
 
-        return CashShiftDto.FromEntity(shift);
+        return result;
+    }
+
+    public async Task MarkReportPrintedAsync(Guid shiftId, CancellationToken cancellationToken = default)
+    {
+        var shift = await _db.CashShifts
+            .FirstOrDefaultAsync(s => s.Id == shiftId, cancellationToken)
+            ?? throw new NotFoundException($"Smena topilmadi: {shiftId}");
+
+        shift.ShiftReportPrinted = true;
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<CashShift?> FindOpenShiftAsync(Guid cashierId, CancellationToken cancellationToken) =>

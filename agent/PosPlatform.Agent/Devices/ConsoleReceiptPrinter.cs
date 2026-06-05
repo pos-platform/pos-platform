@@ -41,4 +41,32 @@ public class ConsoleReceiptPrinter : IReceiptPrinter
         _logger.LogInformation("Chek chop etildi:{Receipt}", sb.ToString());
         return Task.CompletedTask;
     }
+
+    public Task PrintShiftReportAsync(ShiftReport report, CancellationToken cancellationToken)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine();
+        sb.AppendLine("======= SMENA Z-HISOBOT =======");
+        sb.AppendLine($"  Kassir:    {report.CashierName}");
+        sb.AppendLine($"  Ochildi:   {report.OpenedAt.ToLocalTime():dd.MM.yyyy HH:mm}");
+        sb.AppendLine($"  Yopildi:   {report.ClosedAt?.ToLocalTime():dd.MM.yyyy HH:mm}");
+        sb.AppendLine("--------------------------------");
+        sb.AppendLine($"  Sotuvlar:  {report.SaleCount} ta  ({report.TotalSales:N2})");
+        sb.AppendLine($"  Qaytarish: {report.RefundCount} ta  ({report.TotalRefunds:N2})");
+        sb.AppendLine("--- To'lov turlari (netto) -----");
+        sb.AppendLine($"  Naqd:      {report.CashSalesNet:N2}");
+        sb.AppendLine($"  Karta:     {report.CardSalesNet:N2}");
+        sb.AppendLine($"  O'tkazma:  {report.TransferSalesNet:N2}");
+        sb.AppendLine($"  Nasiya:    {report.DebtSalesNet:N2}");
+        sb.AppendLine("--- Kassa -------------------");
+        sb.AppendLine($"  Boshlangich: {report.OpeningCash:N2}");
+        sb.AppendLine($"  Kutilgan:    {report.ExpectedCash:N2}");
+        sb.AppendLine($"  Sanab:       {report.CountedCash:N2}");
+        sb.AppendLine($"  Farq:        {report.CashDifference:N2}");
+        sb.AppendLine($"  QQS:         {report.VatAmount:N2}");
+        sb.AppendLine("================================");
+
+        _logger.LogInformation("Z-hisobot chop etildi:{Report}", sb.ToString());
+        return Task.CompletedTask;
+    }
 }

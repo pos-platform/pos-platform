@@ -140,6 +140,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("ShiftReportPrinted")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -148,6 +151,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("TotalSales")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("TransferSalesNet")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -343,6 +349,84 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.ToTable("Expenses");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Inventory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.ToTable("Inventories");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.InventoryItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("ActualQty")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("ExpectedQty")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<Guid>("InventoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("InventoryItems");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Organization", b =>
@@ -657,6 +741,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<decimal>("CostPrice")
+                        .HasColumnType("numeric");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -692,9 +779,6 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("CostPrice")
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1065,6 +1149,35 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Branch");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Inventory", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.InventoryItem", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Inventory", "Inventory")
+                        .WithMany("Items")
+                        .HasForeignKey("InventoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Inventory");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Product", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Category", "Category")
@@ -1283,6 +1396,11 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("PosPlatform.Domain.Entities.Debtor", b =>
                 {
                     b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Inventory", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Organization", b =>

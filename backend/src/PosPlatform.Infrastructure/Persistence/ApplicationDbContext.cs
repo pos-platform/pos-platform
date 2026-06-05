@@ -38,6 +38,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<WriteOff> WriteOffs => Set<WriteOff>();
     public DbSet<WriteOffItem> WriteOffItems => Set<WriteOffItem>();
     public DbSet<SupplierPayment> SupplierPayments => Set<SupplierPayment>();
+    public DbSet<Inventory> Inventories => Set<Inventory>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
 
     private static readonly MethodInfo SetTenantFilterMethod =
         typeof(ApplicationDbContext).GetMethod(nameof(SetTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;

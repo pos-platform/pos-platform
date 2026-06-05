@@ -104,21 +104,48 @@ onMounted(load)
     </div>
   </div>
 
-  <!-- Yopilgan smena hisoboti -->
+  <!-- Yopilgan smena hisoboti (X-Z hisobot) -->
   <div v-if="closedReport" class="card" style="margin-bottom: 16px">
-    <h3 style="margin-top: 0">Smena hisoboti — {{ fmtDate(closedReport.closedAt) }}</h3>
-    <div class="totals">
-      <div class="t-row"><span>Sotuvlar</span><span>{{ fmt(closedReport.totalSales) }} so'm</span></div>
-      <div class="t-row"><span>Qaytarishlar</span><span>− {{ fmt(closedReport.totalRefunds) }} so'm</span></div>
-      <div class="t-row"><span>Naqd (sof)</span><span>{{ fmt(closedReport.cashSalesNet) }} so'm</span></div>
-      <div class="t-row"><span>Karta (sof)</span><span>{{ fmt(closedReport.cardSalesNet) }} so'm</span></div>
-      <div class="t-row"><span>Kutilgan naqd</span><span>{{ fmt(closedReport.expectedCash) }} so'm</span></div>
-      <div class="t-row"><span>Sanalgan naqd</span><span>{{ fmt(closedReport.countedCash) }} so'm</span></div>
-      <div class="t-row grand">
-        <span>Farq</span>
-        <span :style="{ color: closedReport.cashDifference < 0 ? 'var(--danger)' : 'var(--success)' }">
-          {{ fmt(closedReport.cashDifference) }} so'm
-        </span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+      <h3 style="margin: 0">Smena hisoboti — {{ fmtDate(closedReport.closedAt) }}</h3>
+      <span class="muted" style="font-size:13px">{{ closedReport.cashierName || '' }}</span>
+    </div>
+
+    <!-- Savdo ko'rsatkichlari -->
+    <div class="report-section">
+      <div class="report-label">Sotuvlar</div>
+      <div class="totals">
+        <div class="t-row"><span>Sotuv operatsiyalari</span><span>{{ closedReport.saleCount }} ta</span></div>
+        <div class="t-row"><span>Sotilgan tovarlar</span><span>{{ fmt(closedReport.totalItemsSold) }} dona</span></div>
+        <div class="t-row"><span>Sotuv jami</span><span>{{ fmt(closedReport.totalSales) }} so'm</span></div>
+        <div class="t-row"><span>QQS (12%)</span><span>{{ fmt(closedReport.vatAmount) }} so'm</span></div>
+        <div class="t-row" v-if="closedReport.refundCount"><span>Qaytarishlar ({{ closedReport.refundCount }} ta)</span><span>− {{ fmt(closedReport.totalRefunds) }} so'm</span></div>
+      </div>
+    </div>
+
+    <!-- To'lov usullari bo'yicha -->
+    <div class="report-section">
+      <div class="report-label">To'lov usullari (sof)</div>
+      <div class="totals">
+        <div class="t-row"><span>Naqd</span><span>{{ fmt(closedReport.cashSalesNet) }} so'm</span></div>
+        <div class="t-row"><span>Karta</span><span>{{ fmt(closedReport.cardSalesNet) }} so'm</span></div>
+        <div class="t-row" v-if="closedReport.debtSalesNet"><span>Nasiya</span><span>{{ fmt(closedReport.debtSalesNet) }} so'm</span></div>
+      </div>
+    </div>
+
+    <!-- Kassa hisob-kitobi -->
+    <div class="report-section">
+      <div class="report-label">Kassa hisob-kitobi (X-hisobot)</div>
+      <div class="totals">
+        <div class="t-row"><span>Boshlang'ich naqd</span><span>{{ fmt(closedReport.openingCash) }} so'm</span></div>
+        <div class="t-row"><span>Kutilgan naqd</span><span>{{ fmt(closedReport.expectedCash) }} so'm</span></div>
+        <div class="t-row"><span>Sanalgan naqd</span><span>{{ fmt(closedReport.countedCash) }} so'm</span></div>
+        <div class="t-row grand">
+          <span>Farq</span>
+          <span :style="{ color: closedReport.cashDifference < 0 ? 'var(--danger)' : 'var(--success)' }">
+            {{ closedReport.cashDifference >= 0 ? '+' : '' }}{{ fmt(closedReport.cashDifference) }} so'm
+          </span>
+        </div>
       </div>
     </div>
   </div>
@@ -156,3 +183,23 @@ onMounted(load)
     </table>
   </div>
 </template>
+
+<style scoped>
+.report-section {
+  margin-bottom: 12px;
+}
+.report-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted, #888);
+  margin-bottom: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+.report-section:first-child .report-label {
+  border-top: none;
+  padding-top: 0;
+}
+</style>

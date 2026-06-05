@@ -31,6 +31,8 @@ public interface IApplicationDbContext
     DbSet<WriteOff> WriteOffs { get; }
     DbSet<WriteOffItem> WriteOffItems { get; }
     DbSet<SupplierPayment> SupplierPayments { get; }
+    DbSet<Inventory> Inventories { get; }
+    DbSet<InventoryItem> InventoryItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

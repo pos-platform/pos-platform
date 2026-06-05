@@ -17,12 +17,14 @@ public class SalesController : ControllerBase
         _saleService = saleService;
     }
 
-    /// <summary>Barcha savdolar (eng yangisi birinchi).</summary>
+    /// <summary>Barcha savdolar (eng yangisi birinchi). branchId bilan filtrlanadi.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<SaleDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<SaleDto>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<SaleDto>>> GetAll(
+        [FromQuery] Guid? branchId,
+        CancellationToken cancellationToken)
     {
-        var sales = await _saleService.GetAllAsync(cancellationToken);
+        var sales = await _saleService.GetAllAsync(branchId, cancellationToken);
         return Ok(sales);
     }
 

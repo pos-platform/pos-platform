@@ -8,5 +8,7 @@ public enum PaymentMethod
     /// <summary>Aralash to'lov (naqd + karta).</summary>
     Mixed = 2,
     /// <summary>Nasiya (qarz) — qarzdor balansiga yoziladi.</summary>
-    Debt = 3
+    Debt = 3,
+    /// <summary>Bank o'tkazmasi (Payme, Click, naqd pul o'tkazmasi).</summary>
+    Transfer = 4
 }

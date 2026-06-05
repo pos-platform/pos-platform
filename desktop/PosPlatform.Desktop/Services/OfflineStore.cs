@@ -62,6 +62,11 @@ public class OfflineStore : IDisposable
                 OpeningCash  REAL NOT NULL,
                 OpenedAt     TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS PendingShiftClose (
+                Key          TEXT PRIMARY KEY,
+                CountedCash  REAL NOT NULL,
+                QueuedAt     TEXT NOT NULL
+            );
             INSERT OR IGNORE INTO ShiftCache(Key, Payload) VALUES('current', NULL);
         ");
     }
@@ -185,6 +190,29 @@ public class OfflineStore : IDisposable
 
     public bool HasPendingShift() =>
         Convert.ToInt32(Cmd("SELECT COUNT(*) FROM PendingShift").ExecuteScalar()) > 0;
+
+    // ─── Oflayn smena yopish navbati ────────────────────────────────────────
+
+    public void SavePendingShiftClose(decimal countedCash)
+    {
+        var cmd = Cmd("INSERT OR REPLACE INTO PendingShiftClose VALUES('pending',@Cash,@At)");
+        cmd.Parameters.AddWithValue("@Cash", (double)countedCash);
+        cmd.Parameters.AddWithValue("@At",   DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public decimal? GetPendingShiftClose()
+    {
+        using var cmd = Cmd("SELECT CountedCash FROM PendingShiftClose WHERE Key='pending'");
+        var val = cmd.ExecuteScalar();
+        return val is null or DBNull ? null : (decimal)(double)val;
+    }
+
+    public void ClearPendingShiftClose()
+        => Exec("DELETE FROM PendingShiftClose WHERE Key='pending'");
+
+    public bool HasPendingShiftClose() =>
+        Convert.ToInt32(Cmd("SELECT COUNT(*) FROM PendingShiftClose").ExecuteScalar()) > 0;
 
     // ─── Oflayn savdo navbati ────────────────────────────────────────────────
 

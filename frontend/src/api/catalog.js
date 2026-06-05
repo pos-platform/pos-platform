@@ -72,7 +72,7 @@ export const usersApi = {
 }
 
 export const salesApi = {
-  list: () => http.get('/api/sales').then((r) => r.data),
+  list: (params) => http.get('/api/sales', { params }).then((r) => r.data),
   get: (id) => http.get(`/api/sales/${id}`).then((r) => r.data),
   create: (payload) => http.post('/api/sales', payload).then((r) => r.data),
   refund: (id) => http.post(`/api/sales/${id}/refund`).then((r) => r.data)
@@ -122,6 +122,14 @@ export const stockReceiptsApi = {
 export const writeOffsApi = {
   list: () => http.get('/api/write-offs').then((r) => r.data),
   create: (payload) => http.post('/api/write-offs', payload).then((r) => r.data)
+}
+
+export const inventoriesApi = {
+  list: () => http.get('/api/inventories').then((r) => r.data),
+  get: (id) => http.get(`/api/inventories/${id}`).then((r) => r.data),
+  create: (payload) => http.post('/api/inventories', payload).then((r) => r.data),
+  update: (id, payload) => http.put(`/api/inventories/${id}`, payload).then((r) => r.data),
+  apply: (id) => http.post(`/api/inventories/${id}/apply`).then((r) => r.data)
 }
 
 export const paymentsApi = {

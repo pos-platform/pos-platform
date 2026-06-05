@@ -25,6 +25,12 @@ public partial class SettingsWindow : Window
         catch { /* printerlar olinmadi — qo'lda yozish mumkin */ }
 
         PrinterCombo.Text = AppState.PrinterName ?? "";
+
+        // COM port skaner
+        foreach (var port in BarcodeScanner.GetAvailablePorts())
+            ScannerPortCombo.Items.Add(port);
+        ScannerPortCombo.Text = AppState.ScannerComPort ?? "";
+        BaudRateBox.Text = AppState.ScannerBaudRate > 0 ? AppState.ScannerBaudRate.ToString() : "9600";
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -40,7 +46,9 @@ public partial class SettingsWindow : Window
         {
             BaseUrl = baseUrl,
             PrinterEnabled = PrinterEnabledBox.IsChecked == true,
-            PrinterName = string.IsNullOrWhiteSpace(PrinterCombo.Text) ? null : PrinterCombo.Text.Trim()
+            PrinterName = string.IsNullOrWhiteSpace(PrinterCombo.Text) ? null : PrinterCombo.Text.Trim(),
+            ScannerComPort = string.IsNullOrWhiteSpace(ScannerPortCombo.Text) ? null : ScannerPortCombo.Text.Trim(),
+            ScannerBaudRate = int.TryParse(BaudRateBox.Text, out var br) && br > 0 ? br : 9600
         };
 
         try
@@ -57,7 +65,12 @@ public partial class SettingsWindow : Window
         AppState.BaseUrl = settings.BaseUrl;
         AppState.PrinterEnabled = settings.PrinterEnabled;
         AppState.PrinterName = settings.PrinterName;
+        var scannerChanged = AppState.ScannerComPort != settings.ScannerComPort
+                             || AppState.ScannerBaudRate != settings.ScannerBaudRate;
+        AppState.ScannerComPort = settings.ScannerComPort;
+        AppState.ScannerBaudRate = settings.ScannerBaudRate;
         if (urlChanged) AppState.RebuildBackend();
+        if (scannerChanged) AppState.RestartScanner();
 
         DialogResult = true;
         Close();

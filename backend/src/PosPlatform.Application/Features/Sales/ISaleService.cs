@@ -4,7 +4,7 @@ namespace PosPlatform.Application.Features.Sales;
 
 public interface ISaleService
 {
-    Task<IReadOnlyList<SaleDto>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SaleDto>> GetAllAsync(Guid? branchId = null, CancellationToken cancellationToken = default);
 
     Task<SaleDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 

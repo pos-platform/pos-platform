@@ -16,6 +16,40 @@ public class AgentOptions
     /// <summary>Bir tsiklda olinadigan cheklar soni.</summary>
     public int BatchSize { get; set; } = 20;
 
-    /// <summary>Fiskal modul (terminal) identifikatori — simulyatsiya uchun.</summary>
+    /// <summary>Fiskal modul (terminal) identifikatori.</summary>
     public string FiscalModuleId { get; set; } = "SIM-FISCAL-0001";
+
+    // ─── Fiskal qurilma ──────────────────────────────────────────────────────
+
+    /// <summary>true = SimulatedFiscalDevice; false = OfdFiscalDevice (haqiqiy OFD API).</summary>
+    public bool UseSimulatedFiscal { get; set; } = true;
+
+    /// <summary>Haqiqiy OFD API manzili, masalan https://ofd.soliq.uz/api.</summary>
+    public string OfdApiUrl { get; set; } = "https://ofd.soliq.uz/api";
+
+    /// <summary>OFD API autentifikatsiya tokeni (Bearer).</summary>
+    public string OfdApiToken { get; set; } = string.Empty;
+
+    // ─── Printer ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Printer rejimi: "Console" | "Network" | "Usb".
+    /// Bo'sh qoldirilsa UseConsolePrinter flagiga qaytadi (ortga moslik).
+    /// </summary>
+    public string PrinterMode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [Eskirgan] PrinterMode bo'sh bo'lganda ishlatiladi.
+    /// true = Console, false = Network.
+    /// </summary>
+    public bool UseConsolePrinter { get; set; } = true;
+
+    /// <summary>Network rejimi uchun TCP manzil, masalan 192.168.1.100:9100.</summary>
+    public string PrinterAddress { get; set; } = "192.168.1.100:9100";
+
+    /// <summary>USB rejimi uchun Windows printer nomi, masalan "EPSON TM-T20 Receipt".</summary>
+    public string PrinterName { get; set; } = string.Empty;
+
+    /// <summary>TCP ulanish timeout (ms).</summary>
+    public int PrinterTimeoutMs { get; set; } = 3000;
 }

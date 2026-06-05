@@ -38,12 +38,16 @@ public partial class PosWindow : Window
             await LoadCategoriesAsync();
             await LoadProductsAsync();
             StartSyncTimer();
+            AppState.Scanner.BarcodeReceived += OnBarcodeScanned;
+            AppState.RestartScanner();
             SearchBox.Focus();
         };
         Closed += (_, _) =>
         {
             _syncTimer?.Stop();
             NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
+            AppState.Scanner.BarcodeReceived -= OnBarcodeScanned;
+            AppState.Scanner.Stop();
         };
     }
 
@@ -136,6 +140,23 @@ public partial class PosWindow : Window
 
         if (AppState.Offline.PendingCount() > 0)
             await SyncPendingSalesAsync(silent: !wasOffline);
+
+        // Navbatdagi smena yopish serverga yuborilsin
+        if (AppState.Offline.HasPendingShiftClose())
+            await SyncPendingShiftCloseAsync();
+    }
+
+    private async Task SyncPendingShiftCloseAsync()
+    {
+        var countedCash = AppState.Offline.GetPendingShiftClose();
+        if (countedCash is null) return;
+        try
+        {
+            await AppState.Backend.CloseShiftAsync(countedCash.Value);
+            AppState.Offline.ClearPendingShiftClose();
+            Dispatcher.Invoke(() => ShowMessage("✓ Oflayn smena yopish serverga yuborildi", error: false));
+        }
+        catch { /* keyingi urinishda qayta sinab ko'riladi */ }
     }
 
     private async Task SyncPendingSalesAsync(bool silent = false)
@@ -463,6 +484,27 @@ public partial class PosWindow : Window
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
 
+    // COM port skanerdan barcode kelganda (ThreadPool thread) UI thread'da qayta ishlash
+    private void OnBarcodeScanned(string barcode)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var product = _allProducts.FirstOrDefault(p =>
+                p.Barcode != null && string.Equals(p.Barcode, barcode, StringComparison.OrdinalIgnoreCase));
+            if (product is not null)
+            {
+                AddToCart(product);
+                SearchBox.Clear();
+            }
+            else
+            {
+                SearchBox.Text = barcode;
+                ApplyFilter();
+                ShowMessage($"Topilmadi: {barcode}", error: true);
+            }
+        });
+    }
+
     private void SearchBox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter) return;
@@ -596,22 +638,26 @@ public partial class PosWindow : Window
         var input = PromptInput("Sanab chiqilgan naqd summasini kiriting:", "Smenani yopish", "0");
         if (input is null) return;
 
-        if (AppState.Offline.HasPendingShift() && !AppState.IsOnline)
+        var countedCash = ParseDecimal(input);
+
+        if (!AppState.IsOnline)
         {
-            // Serverda smena yo'q — faqat lokaldan o'chiramiz
+            // Oflayn: lokal smena yoki server smena — yopish navbatga qo'yiladi
+            AppState.Offline.SavePendingShiftClose(countedCash);
             AppState.Offline.ClearPendingShift();
             AppState.Offline.SaveShift(null);
             _shift = null;
             RenderShiftBar();
-            ShowMessage("Lokal smena yopildi", error: false);
+            ShowMessage("Smena yopish navbatga qo'yildi — internet tiklansa serverga yuboriladi", error: false);
             return;
         }
 
         try
         {
-            await AppState.Backend.CloseShiftAsync(ParseDecimal(input));
+            await AppState.Backend.CloseShiftAsync(countedCash);
             AppState.Offline.SaveShift(null);
             AppState.Offline.ClearPendingShift();
+            AppState.Offline.ClearPendingShiftClose();
             _shift = null;
             RenderShiftBar();
             ShowMessage("Smena yopildi", error: false);

@@ -38,6 +38,8 @@ public partial class App : Application
             if (!string.IsNullOrWhiteSpace(saved.BaseUrl)) AppState.BaseUrl = saved.BaseUrl;
             AppState.PrinterEnabled = saved.PrinterEnabled;
             AppState.PrinterName = string.IsNullOrWhiteSpace(saved.PrinterName) ? null : saved.PrinterName;
+            AppState.ScannerComPort = string.IsNullOrWhiteSpace(saved.ScannerComPort) ? null : saved.ScannerComPort;
+            AppState.ScannerBaudRate = saved.ScannerBaudRate > 0 ? saved.ScannerBaudRate : 9600;
         }
 
         AppState.Backend = new BackendClient(AppState.BaseUrl);

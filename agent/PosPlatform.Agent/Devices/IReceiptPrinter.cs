@@ -8,4 +8,6 @@ namespace PosPlatform.Agent.Devices;
 public interface IReceiptPrinter
 {
     Task PrintAsync(PendingReceipt receipt, FiscalResult fiscal, CancellationToken cancellationToken);
+
+    Task PrintShiftReportAsync(ShiftReport report, CancellationToken cancellationToken);
 }

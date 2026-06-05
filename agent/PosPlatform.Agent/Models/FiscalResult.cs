@@ -10,4 +10,6 @@ public class FiscalResult
     public string? QrCodeUrl { get; set; }
     public DateTime? FiscalizedAt { get; set; }
     public string? ErrorMessage { get; set; }
+
+    public static FiscalResult Failure(string message) => new() { Success = false, ErrorMessage = message };
 }

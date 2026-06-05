@@ -65,4 +65,25 @@ public class ShiftsController : ControllerBase
         var shift = await _shifts.GetByIdAsync(id, cancellationToken);
         return Ok(shift);
     }
+
+    /// <summary>Agent uchun: X/Z hisobot kutayotgan yopilgan smenalar.</summary>
+    [HttpGet("pending-report")]
+    [ProducesResponseType(typeof(IReadOnlyList<CashShiftDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CashShiftDto>>> PendingReport(
+        [FromQuery] int max = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var shifts = await _shifts.GetPendingReportsAsync(max, cancellationToken);
+        return Ok(shifts);
+    }
+
+    /// <summary>Agent uchun: X/Z hisobot chop etildi deb belgilash.</summary>
+    [HttpPost("{id:guid}/report-printed")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReportPrinted(Guid id, CancellationToken cancellationToken)
+    {
+        await _shifts.MarkReportPrintedAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

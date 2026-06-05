@@ -41,11 +41,17 @@ public class CashShift : BaseEntity
     /// <summary>Karta orqali sotuvlar (refund ayrilgan).</summary>
     public decimal CardSalesNet { get; set; }
 
+    /// <summary>Bank o'tkazmasi orqali sotuvlar (refund ayrilgan).</summary>
+    public decimal TransferSalesNet { get; set; }
+
     /// <summary>Kutilgan naqd = OpeningCash + CashSalesNet.</summary>
     public decimal ExpectedCash { get; set; }
 
     /// <summary>Farq = CountedCash - ExpectedCash (manfiy = kam, musbat = ortiq).</summary>
     public decimal CashDifference { get; set; }
+
+    /// <summary>X/Z hisobot printer'ga yuborilganmi.</summary>
+    public bool ShiftReportPrinted { get; set; }
 
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
 }
