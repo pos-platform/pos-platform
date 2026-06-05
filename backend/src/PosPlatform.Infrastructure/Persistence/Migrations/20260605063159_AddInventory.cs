@@ -100,14 +100,6 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Inventories");
-
-            migrationBuilder.AlterColumn<decimal>(
-                name: "CostPrice",
-                table: "SaleItems",
-                type: "numeric(18,2)",
-                nullable: false,
-                oldClrType: typeof(decimal),
-                oldType: "numeric");
         }
     }
 }
