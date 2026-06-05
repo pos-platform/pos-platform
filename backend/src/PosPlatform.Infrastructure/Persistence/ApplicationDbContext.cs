@@ -40,6 +40,14 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<SupplierPayment> SupplierPayments => Set<SupplierPayment>();
     public DbSet<Inventory> Inventories => Set<Inventory>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
+    public DbSet<StockTransferItem> StockTransferItems => Set<StockTransferItem>();
+    public DbSet<CashMovement> CashMovements => Set<CashMovement>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<LoyaltyTransaction> LoyaltyTransactions => Set<LoyaltyTransaction>();
+    public DbSet<OnlinePayment> OnlinePayments => Set<OnlinePayment>();
+    public DbSet<LabelPrintJob> LabelPrintJobs => Set<LabelPrintJob>();
+    public DbSet<LabelPrintJobItem> LabelPrintJobItems => Set<LabelPrintJobItem>();
 
     private static readonly MethodInfo SetTenantFilterMethod =
         typeof(ApplicationDbContext).GetMethod(nameof(SetTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;

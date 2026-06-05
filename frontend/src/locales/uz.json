@@ -1,0 +1,108 @@
+{
+  "nav": {
+    "dashboard": "Главный",
+    "pos": "Savdo",
+    "stores": "Do'konlar",
+    "products": "Mahsulotlar",
+    "sales": "Savdolar",
+    "shifts": "Smena",
+    "suppliers": "Yetkazib beruvchilar",
+    "stockReceipts": "Накладная",
+    "debtors": "Qarzdorlar",
+    "expenses": "Xarajatlar",
+    "payments": "Платежи",
+    "writeOffs": "Списание",
+    "inventories": "Inventarizatsiya",
+    "analytics": "Аналитика",
+    "reports": "Hisobotlar",
+    "promotions": "Aksiyalar",
+    "stockTransfers": "Transfer",
+    "cashMovements": "Kassa harakati",
+    "customers": "Mijozlar",
+    "users": "Foydalanuvchilar",
+    "organizations": "Tashkilotlar",
+    "audit": "Audit jurnali"
+  },
+  "common": {
+    "save": "Saqlash",
+    "cancel": "Bekor",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "add": "Qo'shish",
+    "search": "Qidirish",
+    "loading": "Yuklanmoqda...",
+    "noData": "Ma'lumot yo'q",
+    "logout": "Chiqish",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "all": "Barchasi",
+    "total": "Jami",
+    "date": "Sana",
+    "comment": "Izoh",
+    "active": "Faol",
+    "inactive": "Faol emas",
+    "name": "Nomi",
+    "amount": "Summa",
+    "quantity": "Miqdor",
+    "price": "Narx",
+    "branch": "Filial"
+  },
+  "auth": {
+    "login": "Kirish",
+    "username": "Foydalanuvchi nomi",
+    "password": "Parol",
+    "loginBtn": "Tizimga kirish",
+    "loggingIn": "Kirilmoqda..."
+  },
+  "shift": {
+    "open": "Smena ochish",
+    "close": "Smena yopish",
+    "current": "Joriy smena",
+    "openingCash": "Boshlangich naqd",
+    "countedCash": "Sanab chiqilgan naqd",
+    "xReport": "X-hisobot chop et",
+    "cashier": "Kassir"
+  },
+  "pos": {
+    "cart": "Savat",
+    "checkout": "To'lov",
+    "clear": "Tozalash",
+    "searchProduct": "Mahsulot qidirish (nom, shtrix-kod)...",
+    "payment": "To'lov turi",
+    "cash": "Naqd",
+    "card": "Karta",
+    "transfer": "O'tkazma",
+    "debt": "Nasiya",
+    "paidAmount": "Berilgan summa",
+    "change": "Qaytim",
+    "refund": "Qaytarish",
+    "attachCustomer": "Mijoz"
+  },
+  "cashMovement": {
+    "income": "Kirim",
+    "expense": "Chiqim",
+    "incassation": "Inkassatsiya",
+    "title": "Kassa harakatlari"
+  },
+  "customer": {
+    "title": "Mijozlar",
+    "points": "Ball",
+    "discount": "Chegirma",
+    "phone": "Telefon",
+    "email": "Email",
+    "address": "Manzil"
+  },
+  "transfer": {
+    "from": "Manba filial",
+    "to": "Maqsad filial",
+    "receive": "Qabul qilish",
+    "sent": "Yuborildi",
+    "received": "Qabul qilindi",
+    "pending": "Kutilmoqda",
+    "cancelled": "Bekor"
+  },
+  "language": {
+    "uz": "O'zbekcha",
+    "ru": "Русский"
+  }
+}

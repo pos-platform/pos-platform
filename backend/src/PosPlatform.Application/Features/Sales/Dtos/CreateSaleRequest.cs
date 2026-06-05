@@ -13,6 +13,9 @@ public class CreateSaleRequest
     /// <summary>Nasiya (Debt) sotuvda majburiy — qaysi qarzdorga.</summary>
     public Guid? DebtorId { get; set; }
 
+    /// <summary>Mijoz (sodiqlik dasturi, ixtiyoriy).</summary>
+    public Guid? CustomerId { get; set; }
+
     /// <summary>Mijoz bergan summa (naqd uchun qaytim hisoblanadi).</summary>
     [Range(0, double.MaxValue)]
     public decimal PaidAmount { get; set; }

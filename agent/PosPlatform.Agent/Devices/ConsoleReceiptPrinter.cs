@@ -5,8 +5,7 @@ using PosPlatform.Agent.Models;
 namespace PosPlatform.Agent.Devices;
 
 /// <summary>
-/// Chekni konsolga "chop etadigan" placeholder. Haqiqiy ESC/POS printer
-/// implementatsiyasi shu interfeysni almashtiradi.
+/// Chekni konsolga "chop etadigan" test implementatsiyasi (PrinterMode = "Console").
 /// </summary>
 public class ConsoleReceiptPrinter : IReceiptPrinter
 {
@@ -67,6 +66,12 @@ public class ConsoleReceiptPrinter : IReceiptPrinter
         sb.AppendLine("================================");
 
         _logger.LogInformation("Z-hisobot chop etildi:{Report}", sb.ToString());
+        return Task.CompletedTask;
+    }
+
+    public Task PrintRawAsync(byte[] data, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Raw chop etildi: {Bytes} bayt", data.Length);
         return Task.CompletedTask;
     }
 }

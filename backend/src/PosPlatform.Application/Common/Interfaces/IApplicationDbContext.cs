@@ -34,5 +34,23 @@ public interface IApplicationDbContext
     DbSet<Inventory> Inventories { get; }
     DbSet<InventoryItem> InventoryItems { get; }
 
+    // Task 4: Branch transfers
+    DbSet<StockTransfer> StockTransfers { get; }
+    DbSet<StockTransferItem> StockTransferItems { get; }
+
+    // Task 5: Cash movements
+    DbSet<CashMovement> CashMovements { get; }
+
+    // Task 8: Customer loyalty
+    DbSet<Customer> Customers { get; }
+    DbSet<LoyaltyTransaction> LoyaltyTransactions { get; }
+
+    // Task 9: Online payments
+    DbSet<OnlinePayment> OnlinePayments { get; }
+
+    // Task 6: Label printing
+    DbSet<LabelPrintJob> LabelPrintJobs { get; }
+    DbSet<LabelPrintJobItem> LabelPrintJobItems { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

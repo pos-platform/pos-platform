@@ -1,0 +1,108 @@
+{
+  "nav": {
+    "dashboard": "Главная",
+    "pos": "Продажа",
+    "stores": "Магазины",
+    "products": "Товары",
+    "sales": "Продажи",
+    "shifts": "Смена",
+    "suppliers": "Поставщики",
+    "stockReceipts": "Накладная",
+    "debtors": "Должники",
+    "expenses": "Расходы",
+    "payments": "Платежи",
+    "writeOffs": "Списание",
+    "inventories": "Инвентаризация",
+    "analytics": "Аналитика",
+    "reports": "Отчёты",
+    "promotions": "Акции",
+    "stockTransfers": "Перемещение",
+    "cashMovements": "Движение кассы",
+    "customers": "Клиенты",
+    "users": "Пользователи",
+    "organizations": "Организации",
+    "audit": "Журнал аудита"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Изменить",
+    "add": "Добавить",
+    "search": "Поиск",
+    "loading": "Загрузка...",
+    "noData": "Нет данных",
+    "logout": "Выход",
+    "yes": "Да",
+    "no": "Нет",
+    "all": "Все",
+    "total": "Итого",
+    "date": "Дата",
+    "comment": "Комментарий",
+    "active": "Активен",
+    "inactive": "Неактивен",
+    "name": "Наименование",
+    "amount": "Сумма",
+    "quantity": "Количество",
+    "price": "Цена",
+    "branch": "Филиал"
+  },
+  "auth": {
+    "login": "Вход",
+    "username": "Имя пользователя",
+    "password": "Пароль",
+    "loginBtn": "Войти",
+    "loggingIn": "Вход..."
+  },
+  "shift": {
+    "open": "Открыть смену",
+    "close": "Закрыть смену",
+    "current": "Текущая смена",
+    "openingCash": "Начальная наличность",
+    "countedCash": "Пересчитанная наличность",
+    "xReport": "Распечатать X-отчёт",
+    "cashier": "Кассир"
+  },
+  "pos": {
+    "cart": "Корзина",
+    "checkout": "Оплата",
+    "clear": "Очистить",
+    "searchProduct": "Поиск товара (название, штрих-код)...",
+    "payment": "Способ оплаты",
+    "cash": "Наличные",
+    "card": "Карта",
+    "transfer": "Перевод",
+    "debt": "В долг",
+    "paidAmount": "Внесено",
+    "change": "Сдача",
+    "refund": "Возврат",
+    "attachCustomer": "Клиент"
+  },
+  "cashMovement": {
+    "income": "Приход",
+    "expense": "Расход",
+    "incassation": "Инкассация",
+    "title": "Движение кассы"
+  },
+  "customer": {
+    "title": "Клиенты",
+    "points": "Баллы",
+    "discount": "Скидка",
+    "phone": "Телефон",
+    "email": "Email",
+    "address": "Адрес"
+  },
+  "transfer": {
+    "from": "Из филиала",
+    "to": "В филиал",
+    "receive": "Принять",
+    "sent": "Отправлено",
+    "received": "Принято",
+    "pending": "Ожидание",
+    "cancelled": "Отменено"
+  },
+  "language": {
+    "uz": "O'zbekcha",
+    "ru": "Русский"
+  }
+}

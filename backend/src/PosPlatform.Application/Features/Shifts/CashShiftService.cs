@@ -81,7 +81,24 @@ public class CashShiftService : ICashShiftService
             SumWhere(s => s.Type == SaleType.Sale && s.PaymentMethod == PaymentMethod.Transfer)
             - SumWhere(s => s.Type == SaleType.Refund && s.PaymentMethod == PaymentMethod.Transfer);
 
-        shift.ExpectedCash = shift.OpeningCash + shift.CashSalesNet;
+        // Kassa harakatlari (kirim − chiqim − inkassatsiya).
+        var movements = await _db.CashMovements
+            .Where(m => m.CashShiftId == shift.Id)
+            .ToListAsync(cancellationToken);
+
+        decimal movementsNet = 0m;
+        foreach (var m in movements)
+        {
+            movementsNet += m.Type switch
+            {
+                Domain.Enums.CashMovementType.Income => m.Amount,
+                Domain.Enums.CashMovementType.Expense => -m.Amount,
+                Domain.Enums.CashMovementType.Incassation => -m.Amount,
+                _ => 0
+            };
+        }
+
+        shift.ExpectedCash = shift.OpeningCash + shift.CashSalesNet + movementsNet;
         shift.CountedCash = request.CountedCash;
         shift.CashDifference = request.CountedCash - shift.ExpectedCash;
         shift.ClosedAt = DateTime.UtcNow;

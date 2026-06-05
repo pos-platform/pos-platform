@@ -97,6 +97,13 @@ public class SaleService : ISaleService
             .Where(p => p.IsActive && p.StartDate <= nowUtc && p.EndDate >= nowUtc)
             .ToListAsync(cancellationToken);
 
+        // Mijoz (sodiqlik dasturi, ixtiyoriy).
+        Customer? customer = null;
+        if (request.CustomerId.HasValue)
+        {
+            customer = await _db.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
+        }
+
         var sale = new Sale
         {
             BranchId = request.BranchId ?? _currentUser.BranchId,
@@ -105,6 +112,7 @@ public class SaleService : ISaleService
             Type = SaleType.Sale,
             PaymentMethod = request.PaymentMethod,
             DebtorId = debtor?.Id,
+            CustomerId = customer?.Id,
             Status = SaleStatus.Completed
         };
 
@@ -186,6 +194,22 @@ public class SaleService : ISaleService
         sale.Receipt = new Receipt { FiscalStatus = FiscalStatus.NotSent };
 
         _db.Sales.Add(sale);
+
+        // Mijoz sodiqlik ballari (savdo summasining 1%).
+        if (customer is not null)
+        {
+            var points = Round2(sale.TotalAmount * 0.01m);
+            customer.LoyaltyPoints += points;
+            sale.LoyaltyPointsEarned = points;
+            _db.LoyaltyTransactions.Add(new LoyaltyTransaction
+            {
+                CustomerId = customer.Id,
+                Points = points,
+                Amount = sale.TotalAmount,
+                Comment = $"Savdo {sale.ReceiptNumber}",
+                Sale = sale
+            });
+        }
 
         // Nasiya — qarzdor balansiga qo'shamiz va harakat yozamiz.
         if (debtor is not null)

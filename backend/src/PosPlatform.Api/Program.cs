@@ -26,6 +26,10 @@ const string CorsPolicy = "WebClient";
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// To'lov shlyuzlari sozlamalari (Payme / Click).
+builder.Services.AddSingleton<PosPlatform.Application.Common.Interfaces.IPaymentGatewaySettings>(
+    new PosPlatform.Api.Services.PaymentGatewaySettings(builder.Configuration));
+
 // Joriy foydalanuvchi (JWT) — HttpContext orqali.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();

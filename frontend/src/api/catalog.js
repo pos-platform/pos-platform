@@ -158,6 +158,41 @@ export const expensesApi = {
   remove: (id) => http.delete(`/api/expenses/${id}`).then((r) => r.data)
 }
 
+export const stockTransfersApi = {
+  list: () => http.get('/api/stock-transfers').then((r) => r.data),
+  get: (id) => http.get(`/api/stock-transfers/${id}`).then((r) => r.data),
+  create: (payload) => http.post('/api/stock-transfers', payload).then((r) => r.data),
+  receive: (id) => http.post(`/api/stock-transfers/${id}/receive`).then((r) => r.data),
+  cancel: (id) => http.post(`/api/stock-transfers/${id}/cancel`).then((r) => r.data)
+}
+
+export const cashMovementsApi = {
+  list: (params) => http.get('/api/cash-movements', { params }).then((r) => r.data),
+  create: (payload) => http.post('/api/cash-movements', payload).then((r) => r.data),
+  remove: (id) => http.delete(`/api/cash-movements/${id}`).then((r) => r.data)
+}
+
+export const customersApi = {
+  list: () => http.get('/api/customers').then((r) => r.data),
+  get: (id) => http.get(`/api/customers/${id}`).then((r) => r.data),
+  byPhone: (phone) => http.get('/api/customers/by-phone', { params: { phone } }).then((r) => r.data),
+  create: (payload) => http.post('/api/customers', payload).then((r) => r.data),
+  update: (id, payload) => http.put(`/api/customers/${id}`, payload).then((r) => r.data),
+  adjustPoints: (id, payload) => http.post(`/api/customers/${id}/adjust-points`, payload).then((r) => r.data),
+  remove: (id) => http.delete(`/api/customers/${id}`).then((r) => r.data)
+}
+
+export const labelsApi = {
+  print: (payload) => http.post('/api/labels/print', payload).then((r) => r.data)
+}
+
+export const onlinePaymentsApi = {
+  create: (payload) => http.post('/api/online-payments', payload).then((r) => r.data),
+  get: (id) => http.get(`/api/online-payments/${id}`).then((r) => r.data),
+  bySale: (saleId) => http.get(`/api/online-payments/by-sale/${saleId}`).then((r) => r.data),
+  cancel: (id) => http.post(`/api/online-payments/${id}/cancel`).then((r) => r.data)
+}
+
 export const promotionsApi = {
   active: () => http.get('/api/promotions/active').then((r) => r.data),
   list: () => http.get('/api/promotions').then((r) => r.data),

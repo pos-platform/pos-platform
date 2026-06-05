@@ -29,7 +29,7 @@ public class EscPosPrinter : IReceiptPrinter
             return;
         }
 
-        var data = EscPosBuilder.Build(receipt, fiscal);
+        var data = EscPosBuilder.Build(receipt, fiscal, _options.PrintWidth);
 
         try
         {
@@ -56,7 +56,7 @@ public class EscPosPrinter : IReceiptPrinter
             return;
         }
 
-        var data = EscPosBuilder.BuildShiftReport(report);
+        var data = EscPosBuilder.BuildShiftReport(report, _options.PrintWidth);
 
         try
         {
@@ -72,6 +72,24 @@ public class EscPosPrinter : IReceiptPrinter
         catch (Exception ex)
         {
             _logger.LogError(ex, "Printer xatosi ({Addr}): {Msg}", _options.PrinterAddress, ex.Message);
+        }
+    }
+
+    public async Task PrintRawAsync(byte[] data, CancellationToken cancellationToken)
+    {
+        if (!TryParseAddress(out var host, out var port)) return;
+        try
+        {
+            using var client = new TcpClient();
+            client.SendTimeout = _options.PrinterTimeoutMs;
+            await client.ConnectAsync(host, port, cancellationToken);
+            await using var stream = client.GetStream();
+            await stream.WriteAsync(data, cancellationToken);
+            await stream.FlushAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Printer raw xatosi: {Msg}", ex.Message);
         }
     }
 

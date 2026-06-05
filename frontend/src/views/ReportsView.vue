@@ -1,7 +1,10 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { reportsApi, storesApi, downloadBlob } from '../api/catalog'
+import { ref, computed, watch, onMounted } from 'vue'
+import { reportsApi, downloadBlob } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import { useStoreFilterStore } from '../stores/storeFilter'
+
+const storeFilter = useStoreFilterStore()
 
 function todayStr() { return new Date().toISOString().slice(0, 10) }
 
@@ -10,8 +13,6 @@ const tab = ref('sales')  // 'sales' | 'stock'
 // --- Filters ---
 const from = ref(todayStr())
 const to   = ref(todayStr())
-const branchId = ref('')
-const stores = ref([])
 
 // --- Data ---
 const salesReport = ref(null)
@@ -28,7 +29,7 @@ async function loadSales() {
   error.value = ''
   try {
     const params = { from: from.value, to: to.value }
-    if (branchId.value) params.branchId = branchId.value
+    if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
     salesReport.value = await reportsApi.sales(params)
   } catch (e) { error.value = errorMessage(e) }
   finally { loading.value = false }
@@ -51,7 +52,7 @@ function load() {
 async function exportSales() {
   try {
     const params = { from: from.value, to: to.value }
-    if (branchId.value) params.branchId = branchId.value
+    if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
     downloadBlob(await reportsApi.exportSales(params), `savdolar-${from.value}-${to.value}.xlsx`)
   } catch (e) { error.value = errorMessage(e) }
 }
@@ -77,10 +78,9 @@ const filteredStock = computed(() => {
   )
 })
 
-onMounted(async () => {
-  try { stores.value = await storesApi.list() } catch { /* optional */ }
-  load()
-})
+watch(() => storeFilter.selectedBranchId, () => load())
+
+onMounted(load)
 </script>
 
 <template>
@@ -114,13 +114,6 @@ onMounted(async () => {
       <div class="field" style="margin:0">
         <label>Gacha</label>
         <input v-model="to" type="date" class="input" />
-      </div>
-      <div class="field" style="margin:0; min-width:180px">
-        <label>Do'kon</label>
-        <select v-model="branchId" class="select">
-          <option value="">Barcha do'konlar</option>
-          <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
       </div>
       <button class="btn" :disabled="loading" @click="loadSales">
         {{ loading ? 'Yuklanmoqda...' : 'Ko\'rsatish' }}

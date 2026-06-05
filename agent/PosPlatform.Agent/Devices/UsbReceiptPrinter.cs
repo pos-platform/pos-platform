@@ -34,7 +34,7 @@ public class UsbReceiptPrinter : IReceiptPrinter
             return Task.CompletedTask;
         }
 
-        var data = EscPosBuilder.Build(receipt, fiscal);
+        var data = EscPosBuilder.Build(receipt, fiscal, _options.PrintWidth);
 
         try
         {
@@ -59,7 +59,7 @@ public class UsbReceiptPrinter : IReceiptPrinter
             return Task.CompletedTask;
         }
 
-        var data = EscPosBuilder.BuildShiftReport(report);
+        var data = EscPosBuilder.BuildShiftReport(report, _options.PrintWidth);
 
         try
         {
@@ -72,6 +72,15 @@ public class UsbReceiptPrinter : IReceiptPrinter
             _logger.LogError(ex, "USB printer xatosi (\"{Printer}\"): {Msg}", printerName, ex.Message);
         }
 
+        return Task.CompletedTask;
+    }
+
+    public Task PrintRawAsync(byte[] data, CancellationToken cancellationToken)
+    {
+        var printerName = _options.PrinterName;
+        if (string.IsNullOrWhiteSpace(printerName)) return Task.CompletedTask;
+        try { SendRaw(printerName, data); }
+        catch (Exception ex) { _logger.LogError(ex, "USB printer raw xatosi: {Msg}", ex.Message); }
         return Task.CompletedTask;
     }
 

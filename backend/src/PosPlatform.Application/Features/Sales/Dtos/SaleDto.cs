@@ -19,6 +19,8 @@ public class SaleDto
     public decimal VatAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal ChangeAmount { get; set; }
+    public Guid? CustomerId { get; set; }
+    public decimal LoyaltyPointsEarned { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<SaleItemDto> Items { get; set; } = new();
     public ReceiptDto? Receipt { get; set; }
@@ -39,6 +41,8 @@ public class SaleDto
         VatAmount = s.VatAmount,
         PaidAmount = s.PaidAmount,
         ChangeAmount = s.ChangeAmount,
+        CustomerId = s.CustomerId,
+        LoyaltyPointsEarned = s.LoyaltyPointsEarned,
         CreatedAt = s.CreatedAt,
         Items = s.Items.Select(SaleItemDto.FromEntity).ToList(),
         Receipt = s.Receipt is null ? null : ReceiptDto.FromEntity(s.Receipt)

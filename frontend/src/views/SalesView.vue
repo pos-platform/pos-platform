@@ -1,11 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { salesApi, storesApi } from '../api/catalog'
+import { ref, watch, onMounted } from 'vue'
+import { salesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import { useStoreFilterStore } from '../stores/storeFilter'
+
+const storeFilter = useStoreFilterStore()
 
 const sales = ref([])
-const stores = ref([])
-const filterBranchId = ref('')
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
@@ -32,7 +33,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const params = filterBranchId.value ? { branchId: filterBranchId.value } : undefined
+    const params = storeFilter.selectedBranchId ? { branchId: storeFilter.selectedBranchId } : undefined
     sales.value = await salesApi.list(params)
   } catch (e) {
     error.value = errorMessage(e)
@@ -41,10 +42,10 @@ async function load() {
   }
 }
 
-onMounted(async () => {
-  try { stores.value = await storesApi.list() } catch { /* do'konlar yuklashni e'tiborsiz qoldiramiz */ }
-  await load()
-})
+// Sidebar'dan do'kon o'zgarsa ro'yxatni qayta yuklaydi
+watch(() => storeFilter.selectedBranchId, () => load())
+
+onMounted(load)
 
 async function refund(sale) {
   if (!window.confirm(`"${sale.receiptNumber}" chekni qaytarasizmi?`)) return
@@ -71,17 +72,6 @@ async function refund(sale) {
 
   <div v-if="error" class="alert alert-error">{{ error }}</div>
   <div v-if="success" class="alert alert-success">{{ success }}</div>
-
-  <!-- Do'kon filtri (bir necha filial bo'lsa ko'rinadi) -->
-  <div v-if="stores.length > 1" class="card" style="margin-bottom:12px; padding:12px 16px">
-    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap">
-      <select v-model="filterBranchId" class="select" style="min-width:200px" @change="load">
-        <option value="">Barcha do'konlar</option>
-        <option v-for="b in stores" :key="b.id" :value="b.id">{{ b.name }}</option>
-      </select>
-      <span class="muted" style="font-size:13px">{{ sales.length }} ta savdo</span>
-    </div>
-  </div>
 
   <div class="card">
     <table class="table">

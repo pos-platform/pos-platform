@@ -36,6 +36,8 @@ public class StockReceiptItemDto
     public decimal Quantity { get; set; }
     public decimal CostPrice { get; set; }
     public decimal LineTotal { get; set; }
+    public string? BatchNumber { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 
     public static StockReceiptItemDto FromEntity(StockReceiptItem i) => new()
     {
@@ -43,7 +45,9 @@ public class StockReceiptItemDto
         ProductName = i.Product?.Name,
         Quantity = i.Quantity,
         CostPrice = i.CostPrice,
-        LineTotal = i.LineTotal
+        LineTotal = i.LineTotal,
+        BatchNumber = i.BatchNumber,
+        ExpiryDate = i.ExpiryDate
     };
 }
 
@@ -71,4 +75,8 @@ public class CreateStockReceiptItemRequest
 
     [Range(0, double.MaxValue)]
     public decimal CostPrice { get; set; }
+
+    public string? BatchNumber { get; set; }
+
+    public DateTime? ExpiryDate { get; set; }
 }

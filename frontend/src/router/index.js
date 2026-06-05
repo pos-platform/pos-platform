@@ -92,6 +92,24 @@ const routes = [
     name: 'reports',
     component: () => import('../views/ReportsView.vue'),
     meta: { adminOnly: true }
+  },
+  {
+    path: '/stock-transfers',
+    name: 'stock-transfers',
+    component: () => import('../views/StockTransfersView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
+    path: '/cash-movements',
+    name: 'cash-movements',
+    component: () => import('../views/CashMovementsView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
+    path: '/customers',
+    name: 'customers',
+    component: () => import('../views/CustomersView.vue'),
+    meta: { adminOnly: true }
   }
 ]
 

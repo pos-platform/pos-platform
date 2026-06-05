@@ -16,4 +16,10 @@ public class StockReceiptItem : BaseEntity
     public decimal CostPrice { get; set; }
 
     public decimal LineTotal { get; set; }
+
+    /// <summary>Partiya/seriya raqami (ixtiyoriy).</summary>
+    public string? BatchNumber { get; set; }
+
+    /// <summary>Yaroqlilik muddati (ixtiyoriy).</summary>
+    public DateTime? ExpiryDate { get; set; }
 }

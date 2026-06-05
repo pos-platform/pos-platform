@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PosPlatform.Api.Authentication;
 using PosPlatform.Application.Features.Shifts;
 using PosPlatform.Application.Features.Shifts.Dtos;
 
@@ -68,6 +69,8 @@ public class ShiftsController : ControllerBase
 
     /// <summary>Agent uchun: X/Z hisobot kutayotgan yopilgan smenalar.</summary>
     [HttpGet("pending-report")]
+    [AllowAnonymous]
+    [AgentApiKey]
     [ProducesResponseType(typeof(IReadOnlyList<CashShiftDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<CashShiftDto>>> PendingReport(
         [FromQuery] int max = 10,
@@ -79,6 +82,8 @@ public class ShiftsController : ControllerBase
 
     /// <summary>Agent uchun: X/Z hisobot chop etildi deb belgilash.</summary>
     [HttpPost("{id:guid}/report-printed")]
+    [AllowAnonymous]
+    [AgentApiKey]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReportPrinted(Guid id, CancellationToken cancellationToken)
@@ -99,6 +104,8 @@ public class ShiftsController : ControllerBase
 
     /// <summary>Agent uchun: X-hisobot kutayotgan ochiq smenalar.</summary>
     [HttpGet("pending-x-report")]
+    [AllowAnonymous]
+    [AgentApiKey]
     [ProducesResponseType(typeof(IReadOnlyList<CashShiftDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<CashShiftDto>>> PendingXReport(
         [FromQuery] int max = 10,
@@ -110,6 +117,8 @@ public class ShiftsController : ControllerBase
 
     /// <summary>Agent uchun: X-hisobot chop etildi deb belgilash.</summary>
     [HttpPost("{id:guid}/x-report-printed")]
+    [AllowAnonymous]
+    [AgentApiKey]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> XReportPrinted(Guid id, CancellationToken cancellationToken)

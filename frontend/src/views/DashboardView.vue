@@ -1,17 +1,19 @@
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import { dashboardApi, storesApi } from '../api/catalog'
+import { ref, reactive, watch, onMounted, onUnmounted } from 'vue'
+import { dashboardApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import { useStoreFilterStore } from '../stores/storeFilter'
+
+const storeFilter = useStoreFilterStore()
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
 
-const stores = ref([])
 const loading = ref(false)
 const err = ref('')
 const summary = ref(null)
-const filters = reactive({ from: todayStr(), to: todayStr(), branchId: '' })
+const filters = reactive({ from: todayStr(), to: todayStr() })
 
 function fmt(n) {
   return Number(n || 0).toLocaleString()
@@ -34,21 +36,13 @@ async function load() {
   err.value = ''
   try {
     const params = { from: filters.from, to: filters.to }
-    if (filters.branchId) params.branchId = filters.branchId
+    if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
     summary.value = await dashboardApi.summary(params)
     buildCards(summary.value)
   } catch (e) {
     err.value = errorMessage(e)
   } finally {
     loading.value = false
-  }
-}
-
-async function loadStores() {
-  try {
-    stores.value = await storesApi.list()
-  } catch {
-    // dashboard baribir ishlayveradi
   }
 }
 
@@ -60,15 +54,17 @@ async function loadSilent() {
   if (!polling.value) return
   try {
     const params = { from: filters.from, to: filters.to }
-    if (filters.branchId) params.branchId = filters.branchId
+    if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
     summary.value = await dashboardApi.summary(params)
     buildCards(summary.value)
     lastUpdated.value = new Date().toLocaleTimeString()
   } catch { /* silent — UI ni buzmasin */ }
 }
 
+// Sidebar'dan do'kon o'zgarsa sahifani qayta yuklaydi
+watch(() => storeFilter.selectedBranchId, () => load())
+
 onMounted(() => {
-  loadStores()
   load()
   // Bugun filtri aktiv bo'lsa har 30 sek yangilanadi
   pollTimer = setInterval(() => {
@@ -102,13 +98,6 @@ onUnmounted(() => clearInterval(pollTimer))
       <div class="field" style="margin:0">
         <label>Gacha</label>
         <input v-model="filters.to" type="date" class="input" />
-      </div>
-      <div class="field" style="margin:0; min-width:200px">
-        <label>Do'kon</label>
-        <select v-model="filters.branchId" class="select">
-          <option value="">Barcha do'konlar</option>
-          <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
       </div>
       <button class="btn" @click="load">Ko'rsatish</button>
     </div>

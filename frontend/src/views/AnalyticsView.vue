@@ -1,7 +1,10 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { analyticsApi, storesApi } from '../api/catalog'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { analyticsApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import { useStoreFilterStore } from '../stores/storeFilter'
+
+const storeFilter = useStoreFilterStore()
 
 function daysAgo(n) {
   const d = new Date()
@@ -10,10 +13,9 @@ function daysAgo(n) {
 }
 
 const data = ref(null)
-const stores = ref([])
 const loading = ref(false)
 const err = ref('')
-const filters = reactive({ from: daysAgo(6), to: daysAgo(0), branchId: '' })
+const filters = reactive({ from: daysAgo(6), to: daysAgo(0) })
 
 function fmt(n) { return Number(n || 0).toLocaleString() }
 function fmtDate(d) { return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' }) }
@@ -28,7 +30,7 @@ async function load() {
   err.value = ''
   try {
     const params = { from: filters.from, to: filters.to }
-    if (filters.branchId) params.branchId = filters.branchId
+    if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
     data.value = await analyticsApi.get(params)
   } catch (e) {
     err.value = errorMessage(e)
@@ -37,10 +39,9 @@ async function load() {
   }
 }
 
-onMounted(async () => {
-  try { stores.value = await storesApi.list() } catch { /* ok */ }
-  load()
-})
+watch(() => storeFilter.selectedBranchId, () => load())
+
+onMounted(load)
 </script>
 
 <template>
@@ -52,13 +53,6 @@ onMounted(async () => {
     <div class="row" style="align-items:flex-end">
       <div class="field" style="margin:0"><label>Dan</label><input v-model="filters.from" type="date" class="input" /></div>
       <div class="field" style="margin:0"><label>Gacha</label><input v-model="filters.to" type="date" class="input" /></div>
-      <div class="field" style="margin:0; min-width:200px">
-        <label>Do'kon</label>
-        <select v-model="filters.branchId" class="select">
-          <option value="">Barcha do'konlar</option>
-          <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
-      </div>
       <button class="btn" @click="load">Ko'rsatish</button>
     </div>
   </div>

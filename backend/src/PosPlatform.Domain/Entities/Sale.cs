@@ -30,6 +30,13 @@ public class Sale : BaseEntity
     public Guid? DebtorId { get; set; }
     public Debtor? Debtor { get; set; }
 
+    /// <summary>Mijoz (sodiqlik dasturi uchun ixtiyoriy).</summary>
+    public Guid? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+
+    /// <summary>Ushbu savdodan topilgan ball.</summary>
+    public decimal LoyaltyPointsEarned { get; set; }
+
     public SaleStatus Status { get; set; } = SaleStatus.Completed;
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;

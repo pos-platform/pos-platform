@@ -91,7 +91,9 @@ public class StockReceiptService : IStockReceiptService
                 ProductId = product.Id,
                 Quantity = line.Quantity,
                 CostPrice = line.CostPrice,
-                LineTotal = lineTotal
+                LineTotal = lineTotal,
+                BatchNumber = line.BatchNumber?.Trim(),
+                ExpiryDate = line.ExpiryDate
             });
         }
 

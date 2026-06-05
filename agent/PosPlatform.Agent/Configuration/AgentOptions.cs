@@ -52,4 +52,9 @@ public class AgentOptions
 
     /// <summary>TCP ulanish timeout (ms).</summary>
     public int PrinterTimeoutMs { get; set; } = 3000;
+
+    /// <summary>
+    /// Chek kengligi belgilarda: 42 = 80mm qog'oz (standart), 32 = 57mm qog'oz.
+    /// </summary>
+    public int PrintWidth { get; set; } = 42;
 }

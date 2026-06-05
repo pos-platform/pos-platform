@@ -19,6 +19,12 @@ internal static class EscPosBuilder
     private static readonly byte[] LF           = [0x0A];
     private static readonly byte[] LF2          = [0x0A, 0x0A];
 
+    // ESC/POS GS ( k — 2D barcode (QR code) commands
+    private static readonly byte[] QR_MODEL2    = [0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00];
+    private static readonly byte[] QR_SIZE3     = [0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x03];
+    private static readonly byte[] QR_ERR_L     = [0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x30];
+    private static readonly byte[] QR_PRINT     = [0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30];
+
     /// <param name="printWidth">Ustun kengligi belgilarda: 42 = 80mm, 32 = 57mm.</param>
     public static byte[] Build(PendingReceipt receipt, FiscalResult fiscal, int printWidth = 42)
     {
@@ -71,7 +77,11 @@ internal static class EscPosBuilder
         WriteLine("*** FISKAL CHEK ***");
         WriteLine($"FP: {fiscal.FiscalSign}");
         if (!string.IsNullOrEmpty(fiscal.QrCodeUrl))
-            WriteLine("QR: ofd.soliq.uz orqali tekshiring");
+        {
+            Write(LF);
+            Write(BuildQrCode(fiscal.QrCodeUrl));
+            Write(LF);
+        }
 
         Write(LF2);
         Write(ESC_CUT);
@@ -144,6 +154,90 @@ internal static class EscPosBuilder
         Write(LF2);
         Write(ESC_CUT);
 
+        return ms.ToArray();
+    }
+
+    /// <summary>Narx yorlig'i (label) — bitta mahsulot uchun n nusxa.</summary>
+    public static byte[] BuildLabels(IEnumerable<LabelItem> items, int printWidth = 42)
+    {
+        var enc = Encoding.GetEncoding(866);
+        using var ms = new MemoryStream();
+
+        void Write(byte[] b) => ms.Write(b);
+        void WriteLine(string text = "") { ms.Write(enc.GetBytes(text)); Write(LF); }
+
+        Write(ESC_INIT);
+
+        foreach (var item in items)
+        {
+            for (int i = 0; i < item.Copies; i++)
+            {
+                Write(ESC_CENTER);
+                // Mahsulot nomi (agar uzun bo'lsa qisqartir)
+                var name = item.ProductName.Length > printWidth ? item.ProductName[..printWidth] : item.ProductName;
+                Write(ESC_BOLD_ON);
+                WriteLine(name);
+                Write(ESC_BOLD_OFF);
+
+                // Narx — 2x o'lcham
+                Write(ESC_DOUBLE);
+                Write(ESC_BOLD_ON);
+                WriteLine($"{item.Price:N2} so'm");
+                Write(ESC_NORMAL);
+                Write(ESC_BOLD_OFF);
+
+                // Shtrix-kod matni
+                if (!string.IsNullOrEmpty(item.Barcode))
+                {
+                    WriteLine(item.Barcode);
+                    // CODE128 shtrix-kod
+                    Write(BuildBarcode128(item.Barcode));
+                }
+
+                Write(LF);
+                Write(ESC_CUT);
+            }
+        }
+
+        return ms.ToArray();
+    }
+
+    /// <summary>CODE128 shtrix-kodi (GS k m d1...dk).</summary>
+    private static byte[] BuildBarcode128(string data)
+    {
+        var content = "{B" + data; // Code B subset
+        var contentBytes = Encoding.ASCII.GetBytes(content);
+
+        using var ms = new MemoryStream();
+        // Set barcode height: GS h n
+        ms.Write([0x1D, 0x68, 0x50]);
+        // Set barcode width: GS w n
+        ms.Write([0x1D, 0x77, 0x02]);
+        // Print HRI below: GS H 2
+        ms.Write([0x1D, 0x48, 0x02]);
+        // GS k m=73 (CODE128) n d1...dk
+        ms.Write([0x1D, 0x6B, 0x49, (byte)contentBytes.Length]);
+        ms.Write(contentBytes);
+        ms.Write(LF);
+        return ms.ToArray();
+    }
+
+    // ESC/POS GS ( k: URL ni QR kodga aylantiradi va printga yuborish uchun baytlar qaytaradi.
+    private static byte[] BuildQrCode(string url)
+    {
+        var urlBytes = Encoding.ASCII.GetBytes(url);
+        int dataLen = urlBytes.Length + 3; // cn(1) + fn(1) + m(1) + url bytes
+        var pL = (byte)(dataLen & 0xFF);
+        var pH = (byte)(dataLen >> 8);
+
+        using var ms = new MemoryStream();
+        ms.Write(QR_MODEL2);
+        ms.Write(QR_SIZE3);
+        ms.Write(QR_ERR_L);
+        // Store data: GS ( k pL pH 31 50 30 [url]
+        ms.Write([0x1D, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30]);
+        ms.Write(urlBytes);
+        ms.Write(QR_PRINT);
         return ms.ToArray();
     }
 }

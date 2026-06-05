@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using PosPlatform.Agent.Authentication;
 using PosPlatform.Agent.Models;
@@ -92,6 +93,20 @@ public class BackendClient
     public async Task MarkXReportPrintedAsync(Guid shiftId, CancellationToken cancellationToken)
     {
         var response = await _http.PostAsync($"api/shifts/{shiftId}/x-report-printed", null, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<LabelPrintJobDto?> GetPendingLabelJobAsync(CancellationToken cancellationToken)
+    {
+        var resp = await _http.GetAsync("api/labels/pending", cancellationToken);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<LabelPrintJobDto>(cancellationToken);
+    }
+
+    public async Task MarkLabelJobPrintedAsync(Guid jobId, CancellationToken cancellationToken)
+    {
+        var response = await _http.PostAsync($"api/labels/{jobId}/printed", null, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 

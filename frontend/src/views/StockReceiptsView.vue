@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { stockReceiptsApi, suppliersApi, productsApi } from '../api/catalog'
+import { stockReceiptsApi, suppliersApi, productsApi, labelsApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const receipts = ref([])
@@ -32,12 +32,14 @@ const total = computed(() =>
 function fmt(n) { return Number(n || 0).toLocaleString() }
 function fmtDate(d) { return new Date(d).toLocaleString('uz-UZ') }
 
+const labelSuccess = ref('')
+
 function addLine(product) {
   if (lines.value.find((l) => l.product.id === product.id)) {
     productSearch.value = ''
     return
   }
-  lines.value.push({ product, quantity: 1, costPrice: Number(product.costPrice) || 0 })
+  lines.value.push({ product, quantity: 1, costPrice: Number(product.costPrice) || 0, batchNumber: '', expiryDate: '' })
   productSearch.value = ''
 }
 function removeLine(id) {
@@ -59,6 +61,15 @@ async function load() {
   }
 }
 
+async function printLabels() {
+  err.value = ''; labelSuccess.value = ''
+  if (!lines.value.length) { err.value = 'Tovar qo\'shing'; return }
+  try {
+    await labelsApi.print({ items: lines.value.map(l => ({ productId: l.product.id, copies: 1 })) })
+    labelSuccess.value = 'Yorliqlar chop etish so\'rovi yuborildi (agent printer\'ga chop etadi)'
+  } catch (e) { err.value = errorMessage(e) }
+}
+
 async function submit() {
   err.value = ''
   success.value = ''
@@ -72,7 +83,9 @@ async function submit() {
       items: lines.value.map((l) => ({
         productId: l.product.id,
         quantity: Number(l.quantity),
-        costPrice: Number(l.costPrice)
+        costPrice: Number(l.costPrice),
+        batchNumber: l.batchNumber || null,
+        expiryDate: l.expiryDate || null
       }))
     })
     success.value = `Накладная ${r.number} yaratildi — ombor yangilandi`
@@ -130,23 +143,33 @@ onMounted(load)
 
     <table class="table" style="margin: 12px 0">
       <thead>
-        <tr><th>Tovar</th><th style="width:120px">Miqdor</th><th style="width:140px">Tannarx</th><th class="text-right">Summa</th><th></th></tr>
+        <tr>
+          <th>Tovar</th><th style="width:110px">Miqdor</th><th style="width:120px">Tannarx</th>
+          <th style="width:130px">Partiya №</th><th style="width:130px">Muddati</th>
+          <th class="text-right">Summa</th><th></th>
+        </tr>
       </thead>
       <tbody>
         <tr v-for="l in lines" :key="l.product.id">
           <td>{{ l.product.name }}</td>
           <td><input v-model="l.quantity" type="number" min="0" step="0.001" class="input" /></td>
           <td><input v-model="l.costPrice" type="number" min="0" step="0.01" class="input" /></td>
+          <td><input v-model="l.batchNumber" class="input" placeholder="Lot/seriya" /></td>
+          <td><input v-model="l.expiryDate" type="date" class="input" /></td>
           <td class="text-right">{{ fmt(Number(l.quantity) * Number(l.costPrice)) }}</td>
           <td class="text-right"><button type="button" class="btn btn-ghost btn-sm" @click="removeLine(l.product.id)">✕</button></td>
         </tr>
-        <tr v-if="!lines.length"><td colspan="5" class="muted">Tovar qo'shilmagan</td></tr>
+        <tr v-if="!lines.length"><td colspan="7" class="muted">Tovar qo'shilmagan</td></tr>
       </tbody>
     </table>
 
+    <div v-if="labelSuccess" class="alert alert-success" style="margin-bottom:8px">{{ labelSuccess }}</div>
     <div class="row" style="justify-content: space-between; align-items: center">
       <strong style="font-size: 16px">Jami: {{ fmt(total) }} so'm</strong>
-      <button class="btn btn-success" :disabled="saving">{{ saving ? 'Saqlanmoqda...' : 'Saqlash (omborga qo\'shish)' }}</button>
+      <div style="display:flex; gap:8px">
+        <button type="button" class="btn btn-ghost" @click="printLabels">🏷️ Yorliq chop</button>
+        <button class="btn btn-success" :disabled="saving">{{ saving ? 'Saqlanmoqda...' : 'Saqlash (omborga qo\'shish)' }}</button>
+      </div>
     </div>
   </form>
 
@@ -168,12 +191,14 @@ onMounted(load)
           <tr v-if="expanded === r.id">
             <td colspan="5" style="background:#fafbfc">
               <table class="table">
-                <thead><tr><th>Tovar</th><th class="text-right">Miqdor</th><th class="text-right">Tannarx</th><th class="text-right">Summa</th></tr></thead>
+                <thead><tr><th>Tovar</th><th class="text-right">Miqdor</th><th class="text-right">Tannarx</th><th>Partiya</th><th>Muddati</th><th class="text-right">Summa</th></tr></thead>
                 <tbody>
                   <tr v-for="(i, idx) in r.items" :key="idx">
                     <td>{{ i.productName }}</td>
                     <td class="text-right">{{ fmt(i.quantity) }}</td>
                     <td class="text-right">{{ fmt(i.costPrice) }}</td>
+                    <td class="muted">{{ i.batchNumber || '—' }}</td>
+                    <td class="muted">{{ i.expiryDate ? new Date(i.expiryDate).toLocaleDateString('uz-UZ') : '—' }}</td>
                     <td class="text-right">{{ fmt(i.lineTotal) }}</td>
                   </tr>
                 </tbody>
