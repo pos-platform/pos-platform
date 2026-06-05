@@ -11,6 +11,7 @@ const loading = ref(false)
 const busy = ref(false)
 const error = ref('')
 const closedReport = ref(null)
+const xReportSent = ref(false)
 
 function fmt(n) {
   return Number(n || 0).toLocaleString()
@@ -40,7 +41,21 @@ async function openShift() {
     await shiftsApi.open({ openingCash: Number(openingCash.value) || 0 })
     openingCash.value = 0
     closedReport.value = null
+    xReportSent.value = false
     await load()
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function requestXReport() {
+  error.value = ''
+  busy.value = true
+  try {
+    await shiftsApi.requestXReport()
+    xReportSent.value = true
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -80,13 +95,16 @@ onMounted(load)
       Ochilgan: {{ fmtDate(current.openedAt) }} ·
       Boshlang'ich naqd: {{ fmt(current.openingCash) }} so'm
     </p>
-    <div class="row" style="align-items: flex-end">
+    <div class="row" style="align-items: flex-end; gap: 8px; flex-wrap: wrap">
       <div class="field" style="margin: 0">
         <label>Sanab chiqilgan naqd</label>
         <input v-model="countedCash" type="number" min="0" class="input" style="width: 220px" />
       </div>
       <button class="btn btn-danger" :disabled="busy" @click="closeShift">
         {{ busy ? '...' : 'Smenani yopish' }}
+      </button>
+      <button class="btn btn-ghost" :disabled="busy" @click="requestXReport" :title="'X-hisobot printer\'ga yuborish'">
+        {{ xReportSent ? 'X-hisobot yuborildi ✓' : 'X-hisobot chop et' }}
       </button>
     </div>
   </div>
@@ -129,6 +147,7 @@ onMounted(load)
       <div class="totals">
         <div class="t-row"><span>Naqd</span><span>{{ fmt(closedReport.cashSalesNet) }} so'm</span></div>
         <div class="t-row"><span>Karta</span><span>{{ fmt(closedReport.cardSalesNet) }} so'm</span></div>
+        <div class="t-row" v-if="closedReport.transferSalesNet"><span>O'tkazma</span><span>{{ fmt(closedReport.transferSalesNet) }} so'm</span></div>
         <div class="t-row" v-if="closedReport.debtSalesNet"><span>Nasiya</span><span>{{ fmt(closedReport.debtSalesNet) }} so'm</span></div>
       </div>
     </div>

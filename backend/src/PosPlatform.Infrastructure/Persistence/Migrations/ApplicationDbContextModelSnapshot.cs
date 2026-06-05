@@ -146,6 +146,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("XReportRequested")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("TotalRefunds")
                         .HasColumnType("numeric(18,2)");
 

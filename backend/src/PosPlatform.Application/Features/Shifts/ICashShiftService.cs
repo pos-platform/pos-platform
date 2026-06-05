@@ -20,4 +20,13 @@ public interface ICashShiftService
 
     /// <summary>Agent uchun: smena hisoboti muvaffaqiyatli chop etildi deb belgilash.</summary>
     Task MarkReportPrintedAsync(Guid shiftId, CancellationToken cancellationToken = default);
+
+    /// <summary>Ochiq smenada X-hisobot chop etishni so'rash.</summary>
+    Task RequestXReportAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Agent uchun: X-hisobot kutayotgan ochiq smenalar.</summary>
+    Task<IReadOnlyList<CashShiftDto>> GetPendingXReportsAsync(int max, CancellationToken cancellationToken = default);
+
+    /// <summary>Agent uchun: X-hisobot chop etildi deb belgilash.</summary>
+    Task MarkXReportPrintedAsync(Guid shiftId, CancellationToken cancellationToken = default);
 }

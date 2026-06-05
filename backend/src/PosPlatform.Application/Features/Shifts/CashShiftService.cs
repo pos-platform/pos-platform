@@ -161,6 +161,52 @@ public class CashShiftService : ICashShiftService
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RequestXReportAsync(CancellationToken cancellationToken = default)
+    {
+        var shift = await FindOpenShiftAsync(CurrentCashierId, cancellationToken)
+            ?? throw new NotFoundException("Ochiq smena topilmadi.");
+
+        shift.XReportRequested = true;
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<CashShiftDto>> GetPendingXReportsAsync(int max, CancellationToken cancellationToken = default)
+    {
+        var shifts = await _db.CashShifts
+            .AsNoTracking()
+            .Where(s => s.Status == ShiftStatus.Open && s.XReportRequested)
+            .OrderBy(s => s.OpenedAt)
+            .Take(max)
+            .ToListAsync(cancellationToken);
+
+        var result = new List<CashShiftDto>();
+        foreach (var shift in shifts)
+        {
+            var sales = await _db.Sales
+                .AsNoTracking()
+                .Include(s => s.Items)
+                .Where(s => s.CashShiftId == shift.Id)
+                .ToListAsync(cancellationToken);
+
+            var cashier = await _db.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == shift.CashierId, cancellationToken);
+
+            result.Add(CashShiftDto.FromEntity(shift, sales, cashier?.Username));
+        }
+
+        return result;
+    }
+
+    public async Task MarkXReportPrintedAsync(Guid shiftId, CancellationToken cancellationToken = default)
+    {
+        var shift = await _db.CashShifts
+            .FirstOrDefaultAsync(s => s.Id == shiftId, cancellationToken)
+            ?? throw new NotFoundException($"Smena topilmadi: {shiftId}");
+
+        shift.XReportRequested = false;
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<CashShift?> FindOpenShiftAsync(Guid cashierId, CancellationToken cancellationToken) =>
         await _db.CashShifts
             .FirstOrDefaultAsync(

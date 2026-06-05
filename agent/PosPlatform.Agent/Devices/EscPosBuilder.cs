@@ -100,7 +100,7 @@ internal static class EscPosBuilder
         Write(ESC_CENTER);
         Write(ESC_DOUBLE);
         Write(ESC_BOLD_ON);
-        WriteLine("Z-HISOBOT");
+        WriteLine(report.IsXReport ? "X-HISOBOT" : "Z-HISOBOT");
         Write(ESC_NORMAL);
         Write(ESC_BOLD_OFF);
 

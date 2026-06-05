@@ -58,22 +58,41 @@ public class ShiftReportWorker : BackgroundService
         using var scope = _services.CreateScope();
         var backend = scope.ServiceProvider.GetRequiredService<BackendClient>();
 
-        var reports = await backend.GetPendingShiftReportsAsync(_options.BatchSize, cancellationToken);
-        if (reports.Count == 0) return;
-
-        _logger.LogInformation("{Count} ta smena Z-hisobot chop etish kutmoqda.", reports.Count);
-
-        foreach (var report in reports)
+        var zReports = await backend.GetPendingShiftReportsAsync(_options.BatchSize, cancellationToken);
+        if (zReports.Count > 0)
         {
-            try
+            _logger.LogInformation("{Count} ta smena Z-hisobot chop etish kutmoqda.", zReports.Count);
+            foreach (var report in zReports)
             {
-                await _printer.PrintShiftReportAsync(report, cancellationToken);
-                await backend.MarkShiftReportPrintedAsync(report.ShiftId, cancellationToken);
-                _logger.LogInformation("Z-hisobot chop etildi: smena {ShiftId}", report.ShiftId);
+                try
+                {
+                    await _printer.PrintShiftReportAsync(report, cancellationToken);
+                    await backend.MarkShiftReportPrintedAsync(report.ShiftId, cancellationToken);
+                    _logger.LogInformation("Z-hisobot chop etildi: smena {ShiftId}", report.ShiftId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Z-hisobot xatosi (smena {ShiftId}): {Msg}", report.ShiftId, ex.Message);
+                }
             }
-            catch (Exception ex)
+        }
+
+        var xReports = await backend.GetPendingXReportsAsync(_options.BatchSize, cancellationToken);
+        if (xReports.Count > 0)
+        {
+            _logger.LogInformation("{Count} ta smena X-hisobot chop etish kutmoqda.", xReports.Count);
+            foreach (var report in xReports)
             {
-                _logger.LogError(ex, "Z-hisobot xatosi (smena {ShiftId}): {Msg}", report.ShiftId, ex.Message);
+                try
+                {
+                    await _printer.PrintShiftReportAsync(report, cancellationToken);
+                    await backend.MarkXReportPrintedAsync(report.ShiftId, cancellationToken);
+                    _logger.LogInformation("X-hisobot chop etildi: smena {ShiftId}", report.ShiftId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "X-hisobot xatosi (smena {ShiftId}): {Msg}", report.ShiftId, ex.Message);
+                }
             }
         }
     }

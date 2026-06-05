@@ -20,4 +20,7 @@ public class ShiftReport
     public decimal VatAmount { get; set; }
     public int SaleCount { get; set; }
     public int RefundCount { get; set; }
+
+    /// <summary>true = X-hisobot (ochiq smena); false = Z-hisobot (yopilgan smena).</summary>
+    public bool IsXReport { get; set; }
 }

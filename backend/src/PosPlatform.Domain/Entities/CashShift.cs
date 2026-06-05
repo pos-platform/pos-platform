@@ -53,5 +53,8 @@ public class CashShift : BaseEntity
     /// <summary>X/Z hisobot printer'ga yuborilganmi.</summary>
     public bool ShiftReportPrinted { get; set; }
 
+    /// <summary>X-hisobot (interim) chop etish so'rovi bor (smena ochiq paytda).</summary>
+    public bool XReportRequested { get; set; }
+
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
 }

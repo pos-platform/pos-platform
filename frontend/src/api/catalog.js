@@ -84,7 +84,8 @@ export const shiftsApi = {
   open: (payload) => http.post('/api/shifts/open', payload).then((r) => r.data),
   close: (payload) => http.post('/api/shifts/close', payload).then((r) => r.data),
   list: () => http.get('/api/shifts').then((r) => r.data),
-  get: (id) => http.get(`/api/shifts/${id}`).then((r) => r.data)
+  get: (id) => http.get(`/api/shifts/${id}`).then((r) => r.data),
+  requestXReport: () => http.post('/api/shifts/current/request-x-report').then((r) => r.data)
 }
 
 export const dashboardApi = {

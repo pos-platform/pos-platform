@@ -86,4 +86,35 @@ public class ShiftsController : ControllerBase
         await _shifts.MarkReportPrintedAsync(id, cancellationToken);
         return NoContent();
     }
+
+    /// <summary>Ochiq smenada X-hisobot (interim) chop etishni so'rash.</summary>
+    [HttpPost("current/request-x-report")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RequestXReport(CancellationToken cancellationToken)
+    {
+        await _shifts.RequestXReportAsync(cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Agent uchun: X-hisobot kutayotgan ochiq smenalar.</summary>
+    [HttpGet("pending-x-report")]
+    [ProducesResponseType(typeof(IReadOnlyList<CashShiftDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CashShiftDto>>> PendingXReport(
+        [FromQuery] int max = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var shifts = await _shifts.GetPendingXReportsAsync(max, cancellationToken);
+        return Ok(shifts);
+    }
+
+    /// <summary>Agent uchun: X-hisobot chop etildi deb belgilash.</summary>
+    [HttpPost("{id:guid}/x-report-printed")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> XReportPrinted(Guid id, CancellationToken cancellationToken)
+    {
+        await _shifts.MarkXReportPrintedAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

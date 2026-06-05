@@ -46,7 +46,7 @@ public class ConsoleReceiptPrinter : IReceiptPrinter
     {
         var sb = new StringBuilder();
         sb.AppendLine();
-        sb.AppendLine("======= SMENA Z-HISOBOT =======");
+        sb.AppendLine(report.IsXReport ? "======= SMENA X-HISOBOT =======" : "======= SMENA Z-HISOBOT =======");
         sb.AppendLine($"  Kassir:    {report.CashierName}");
         sb.AppendLine($"  Ochildi:   {report.OpenedAt.ToLocalTime():dd.MM.yyyy HH:mm}");
         sb.AppendLine($"  Yopildi:   {report.ClosedAt?.ToLocalTime():dd.MM.yyyy HH:mm}");
