@@ -695,6 +695,35 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("Organizations");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Permissions");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -881,6 +910,49 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Receipts");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.RolePermission", b =>
+                {
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("RoleId", "PermissionId");
+
+                    b.HasIndex("PermissionId");
+
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Sale", b =>
@@ -1301,6 +1373,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AppRoleId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
@@ -1332,6 +1407,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(128)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppRoleId");
 
                     b.HasIndex("BranchId");
 
@@ -1613,6 +1690,25 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.RolePermission", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosPlatform.Domain.Entities.Role", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Sale", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
@@ -1765,6 +1861,11 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.User", b =>
                 {
+                    b.HasOne("PosPlatform.Domain.Entities.Role", "AppRole")
+                        .WithMany("Users")
+                        .HasForeignKey("AppRoleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
                         .WithMany("Users")
                         .HasForeignKey("BranchId")
@@ -1774,6 +1875,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .WithMany("Users")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AppRole");
 
                     b.Navigation("Branch");
 
@@ -1851,6 +1954,18 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("PosPlatform.Domain.Entities.Organization", b =>
                 {
                     b.Navigation("Branches");
+
+                    b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Permission", b =>
+                {
+                    b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Role", b =>
+                {
+                    b.Navigation("RolePermissions");
 
                     b.Navigation("Users");
                 });

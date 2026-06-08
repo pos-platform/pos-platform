@@ -10,6 +10,11 @@ public class AuthResponse
 
     public UserRole Role { get; set; }
 
+    /// <summary>DB darajasidagi rol nomi (Admin/Manager/Cashier yoki custom).</summary>
+    public string? RoleName { get; set; }
+
+    public Guid? AppRoleId { get; set; }
+
     public string Token { get; set; } = string.Empty;
 
     public DateTime ExpiresAt { get; set; }
@@ -19,4 +24,6 @@ public class AuthResponse
     public string? OrganizationName { get; set; }
 
     public DateTime? LicensedUntil { get; set; }
+
+    public List<string> Permissions { get; set; } = [];
 }

@@ -12,4 +12,7 @@ public interface IUserService
 
     /// <summary>Hisobni faollashtirish/faolsizlantirish.</summary>
     Task<UserDto> SetActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken = default);
+
+    /// <summary>Foydalanuvchiga rol belgilaydi.</summary>
+    Task<UserDto> AssignRoleAsync(Guid id, AssignRoleRequest request, CancellationToken cancellationToken = default);
 }

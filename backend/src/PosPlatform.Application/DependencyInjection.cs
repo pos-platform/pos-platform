@@ -23,6 +23,7 @@ using PosPlatform.Application.Features.Stock;
 using PosPlatform.Application.Features.Stores;
 using PosPlatform.Application.Features.Suppliers;
 using PosPlatform.Application.Features.Transfers;
+using PosPlatform.Application.Features.Roles;
 using PosPlatform.Application.Features.Users;
 using PosPlatform.Application.Features.WriteOffs;
 
@@ -35,6 +36,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IOrganizationService, OrganizationService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IStoreService, StoreService>();

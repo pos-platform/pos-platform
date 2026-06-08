@@ -13,4 +13,7 @@ public interface ICurrentUser
 
     /// <summary>So'rov kelgan IP manzil (reverse proxy ortida X-Forwarded-For hisobga olinadi).</summary>
     string? IpAddress { get; }
+
+    /// <summary>JWT tokendan o'qilgan ruxsatlar (permission code'lari). SuperAdmin uchun bo'sh.</summary>
+    IReadOnlyList<string> Permissions { get; }
 }

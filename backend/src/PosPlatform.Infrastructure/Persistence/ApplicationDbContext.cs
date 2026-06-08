@@ -19,6 +19,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Branch> Branches => Set<Branch>();
@@ -59,6 +62,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
         // Organization — ijarachilik ildizi; uning o'zida OrganizationId ustuni bo'lmaydi.
         modelBuilder.Entity<Organization>().Ignore(o => o.OrganizationId);
+
 
         // Ko'p-ijarachilik: Organization va AuditLog'dan tashqari barcha entity'ga
         // tashkilot bo'yicha global query filter qo'yamiz. _organizationId null bo'lsa

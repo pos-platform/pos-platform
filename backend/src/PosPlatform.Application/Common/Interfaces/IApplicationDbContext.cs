@@ -12,6 +12,9 @@ public interface IApplicationDbContext
 {
     DbSet<Organization> Organizations { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<Permission> Permissions { get; }
+    DbSet<Role> Roles { get; }
+    DbSet<RolePermission> RolePermissions { get; }
     DbSet<Product> Products { get; }
     DbSet<Category> Categories { get; }
     DbSet<Branch> Branches { get; }

@@ -68,7 +68,16 @@ export const usersApi = {
   resetPassword: (id, newPassword) =>
     http.post(`/api/users/${id}/reset-password`, { newPassword }).then((r) => r.data),
   activate: (id) => http.post(`/api/users/${id}/activate`).then((r) => r.data),
-  deactivate: (id) => http.post(`/api/users/${id}/deactivate`).then((r) => r.data)
+  deactivate: (id) => http.post(`/api/users/${id}/deactivate`).then((r) => r.data),
+  assignRole: (id, roleId) => http.put(`/api/users/${id}/role`, { roleId }).then((r) => r.data)
+}
+
+export const rolesApi = {
+  list: () => http.get('/api/roles').then((r) => r.data),
+  get: (id) => http.get(`/api/roles/${id}`).then((r) => r.data),
+  create: (payload) => http.post('/api/roles', payload).then((r) => r.data),
+  update: (id, payload) => http.put(`/api/roles/${id}`, payload).then((r) => r.data),
+  remove: (id) => http.delete(`/api/roles/${id}`).then((r) => r.data)
 }
 
 export const salesApi = {

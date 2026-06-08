@@ -22,6 +22,11 @@ public class User : BaseEntity
     /// <summary>Foydalanuvchi tegishli tashkilot (OrganizationId BaseEntity'da). SuperAdmin uchun null.</summary>
     public Organization? Organization { get; set; }
 
+    /// <summary>Foydalanuvchining org darajasidagi roli. SuperAdmin uchun null.</summary>
+    public Guid? AppRoleId { get; set; }
+
+    public Role? AppRole { get; set; }
+
     /// <summary>
     /// Obuna shu sanagacha amal qiladi (oylik to'lov). SuperAdmin har bir kassir uchun
     /// alohida belgilaydi/uzaytiradi. null yoki o'tgan sana = faollashtirilmagan/muddati tugagan.

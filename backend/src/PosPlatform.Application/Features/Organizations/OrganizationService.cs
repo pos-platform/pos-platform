@@ -3,6 +3,7 @@ using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.Audit;
 using PosPlatform.Application.Features.Organizations.Dtos;
+using PosPlatform.Application.Features.Roles;
 using PosPlatform.Domain.Entities;
 using PosPlatform.Domain.Enums;
 
@@ -13,12 +14,18 @@ public class OrganizationService : IOrganizationService
     private readonly IApplicationDbContext _db;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditService _audit;
+    private readonly IRoleService _roleService;
 
-    public OrganizationService(IApplicationDbContext db, IPasswordHasher passwordHasher, IAuditService audit)
+    public OrganizationService(
+        IApplicationDbContext db,
+        IPasswordHasher passwordHasher,
+        IAuditService audit,
+        IRoleService roleService)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _audit = audit;
+        _roleService = roleService;
     }
 
     private static DateTime Today => DateTime.UtcNow.Date;
@@ -80,14 +87,22 @@ public class OrganizationService : IOrganizationService
             IsActive = true
         };
         _db.Organizations.Add(org);
+        await _db.SaveChangesAsync(ct);
+
+        // Yangi org uchun standart rollarni seed qilamiz.
+        await _roleService.InitializeOrgRolesAsync(org.Id, ct);
+
+        var adminRole = await _db.Roles
+            .FirstOrDefaultAsync(r => r.OrganizationId == org.Id && r.Name == "Admin", ct);
 
         var admin = new User
         {
             Username = adminUsername,
             PasswordHash = _passwordHasher.Hash(request.AdminPassword),
             Role = UserRole.Admin,
+            AppRoleId = adminRole?.Id,
             IsActive = true,
-            Organization = org,
+            OrganizationId = org.Id,
             LicensedUntil = request.LicenseMonths > 0 ? Today.AddMonths(request.LicenseMonths) : null
         };
         _db.Users.Add(admin);
@@ -132,11 +147,16 @@ public class OrganizationService : IOrganizationService
             throw new ConflictException($"'{username}' username allaqachon band.");
         }
 
+        var roleName = request.Role.ToString();
+        var appRole = await _db.Roles
+            .FirstOrDefaultAsync(r => r.OrganizationId == orgId && r.Name == roleName, ct);
+
         var user = new User
         {
             Username = username,
             PasswordHash = _passwordHasher.Hash(request.Password),
             Role = request.Role,
+            AppRoleId = appRole?.Id,
             OrganizationId = orgId,
             IsActive = true,
             LicensedUntil = request.LicenseMonths > 0 ? Today.AddMonths(request.LicenseMonths) : null

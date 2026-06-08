@@ -28,6 +28,12 @@ const routes = [
     meta: { adminOnly: true }
   },
   {
+    path: '/roles',
+    name: 'roles',
+    component: () => import('../views/RolesView.vue'),
+    meta: { adminOnly: true }
+  },
+  {
     path: '/promotions',
     name: 'promotions',
     component: () => import('../views/PromotionsView.vue'),

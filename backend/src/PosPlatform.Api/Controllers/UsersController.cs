@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PosPlatform.Api.Authorization;
+using PosPlatform.Application.Common.Authorization;
 using PosPlatform.Application.Features.Users;
 using PosPlatform.Application.Features.Users.Dtos;
 
 namespace PosPlatform.Api.Controllers;
 
-/// <summary>Foydalanuvchilar boshqaruvi — faqat Admin uchun.</summary>
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize]
 [Route("api/users")]
 public class UsersController : ControllerBase
 {
@@ -19,6 +20,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission(Permissions.UsersView)]
     [ProducesResponseType(typeof(IReadOnlyList<UserDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<UserDto>>> GetAll(CancellationToken cancellationToken)
     {
@@ -26,8 +28,8 @@ public class UsersController : ControllerBase
         return Ok(users);
     }
 
-    /// <summary>Yangi foydalanuvchi (kassir/menejer/admin) yaratadi.</summary>
     [HttpPost]
+    [HasPermission(Permissions.UsersCreate)]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UserDto>> Create(CreateUserRequest request, CancellationToken cancellationToken)
@@ -36,8 +38,8 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
-    /// <summary>Foydalanuvchi parolini tiklaydi.</summary>
     [HttpPost("{id:guid}/reset-password")]
+    [HasPermission(Permissions.UsersEdit)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResetPassword(Guid id, ResetPasswordRequest request, CancellationToken cancellationToken)
@@ -46,8 +48,8 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Hisobni faollashtirish.</summary>
     [HttpPost("{id:guid}/activate")]
+    [HasPermission(Permissions.UsersActivate)]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<UserDto>> Activate(Guid id, CancellationToken cancellationToken)
     {
@@ -55,13 +57,24 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
-    /// <summary>Hisobni faolsizlantirish (bloklash).</summary>
     [HttpPost("{id:guid}/deactivate")]
+    [HasPermission(Permissions.UsersActivate)]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<UserDto>> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var user = await _userService.SetActiveAsync(id, false, cancellationToken);
+        return Ok(user);
+    }
+
+    /// <summary>Foydalanuvchiga rol belgilaydi.</summary>
+    [HttpPut("{id:guid}/role")]
+    [HasPermission(Permissions.UsersEdit)]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserDto>> AssignRole(Guid id, AssignRoleRequest request, CancellationToken cancellationToken)
+    {
+        var user = await _userService.AssignRoleAsync(id, request, cancellationToken);
         return Ok(user);
     }
 }

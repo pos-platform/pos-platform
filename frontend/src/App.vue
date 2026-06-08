@@ -46,7 +46,8 @@ const navItems = [
   { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔄', admin: true },
   { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true },
   { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true },
-  { name: 'users', key: 'nav.users', icon: '👥', admin: true }
+  { name: 'users', key: 'nav.users', icon: '👥', admin: true },
+  { name: 'roles', key: 'nav.roles', icon: '🔑', admin: true }
 ]
 
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.

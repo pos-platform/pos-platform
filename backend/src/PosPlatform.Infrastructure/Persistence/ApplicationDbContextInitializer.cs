@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PosPlatform.Application.Common.Authorization;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Domain.Entities;
 using PosPlatform.Domain.Enums;
@@ -37,6 +38,9 @@ public class ApplicationDbContextInitializer
 
     public async Task SeedAsync()
     {
+        // Global permission katalogini seed qilamiz — bir marta, barcha orglar uchun.
+        await SeedPermissionsAsync();
+
         // Standart tashkilot (mijoz) — toza bazada ham, eski bazada ham bo'lishini ta'minlaymiz.
         // BIRINCHI yaratiladi, chunki qolgan standart yozuvlar shunga biriktiriladi.
         var org = await _db.Organizations.FirstOrDefaultAsync(o => o.Name == "Asosiy tashkilot");
@@ -66,6 +70,9 @@ public class ApplicationDbContextInitializer
             _logger.LogInformation("Standart do'kon va kassa yaratildi.");
         }
 
+        // Standart tashkilot uchun 3 ta tizim rolini seed qilamiz.
+        await SeedOrgRolesAsync(org.Id);
+
         // Eski (tashkilotsiz) ma'lumotlarni standart tashkilotga biriktiramiz — bir martalik backfill.
         // SuperAdmin foydalanuvchidan tashqari (u tashkilotsiz qoladi).
         await BackfillOrganizationAsync(org.Id);
@@ -80,11 +87,14 @@ public class ApplicationDbContextInitializer
         var admin = await _db.Users.FirstOrDefaultAsync(u => u.Username == adminUsername);
         if (admin is null)
         {
+            var adminRole = await _db.Roles
+                .FirstOrDefaultAsync(r => r.OrganizationId == org.Id && r.Name == "Admin");
             _db.Users.Add(new User
             {
                 Username = adminUsername,
                 PasswordHash = _passwordHasher.Hash(adminPassword),
                 Role = UserRole.Admin,
+                AppRoleId = adminRole?.Id,
                 OrganizationId = org.Id,
                 LicensedUntil = farFuture
             });
@@ -95,10 +105,15 @@ public class ApplicationDbContextInitializer
         }
         else if (admin.Role == UserRole.Admin)
         {
-            // Eski admin — tashkilot/obunani backfill qilamiz (aks holda yangi qoidalar uni bloklab qo'yadi).
             var changed = false;
             if (admin.OrganizationId is null) { admin.OrganizationId = org.Id; changed = true; }
             if (admin.LicensedUntil is null) { admin.LicensedUntil = farFuture; changed = true; }
+            if (admin.AppRoleId is null)
+            {
+                var adminRole = await _db.Roles
+                    .FirstOrDefaultAsync(r => r.OrganizationId == org.Id && r.Name == "Admin");
+                if (adminRole is not null) { admin.AppRoleId = adminRole.Id; changed = true; }
+            }
             if (changed) await _db.SaveChangesAsync();
         }
 
@@ -119,6 +134,124 @@ public class ApplicationDbContextInitializer
                 "Platforma egasi (SuperAdmin) yaratildi: '{Username}'. DIQQAT: parolni almashtiring.",
                 superUsername);
         }
+    }
+
+    /// <summary>
+    /// Tizimga tegishli barcha permission'larni bazaga yozadi (idempotent: mavjudlari qayta yozilmaydi).
+    /// </summary>
+    private async Task SeedPermissionsAsync()
+    {
+        var existing = await _db.Permissions.Select(p => p.Code).ToListAsync();
+        var allCodes = Permissions.All();
+        var toAdd = allCodes.Except(existing).ToList();
+
+        if (toAdd.Count == 0) return;
+
+        var categoryMap = new Dictionary<string, string>
+        {
+            ["users."] = "Foydalanuvchilar",
+            ["roles."] = "Rollar",
+            ["branches."] = "Filiallar",
+            ["products."] = "Mahsulotlar",
+            ["categories."] = "Kategoriyalar",
+            ["sales."] = "Sotuvlar",
+            ["reports."] = "Hisobotlar",
+            ["cashbox."] = "Kassa",
+            ["inventory."] = "Inventar",
+            ["suppliers."] = "Yetkazib beruvchilar",
+            ["customers."] = "Mijozlar",
+            ["debtors."] = "Qarzdorlar",
+            ["expenses."] = "Xarajatlar",
+            ["settings."] = "Sozlamalar",
+        };
+
+        var nameMap = new Dictionary<string, string>
+        {
+            [Permissions.UsersView]       = "Foydalanuvchilarni ko'rish",
+            [Permissions.UsersCreate]     = "Foydalanuvchi yaratish",
+            [Permissions.UsersEdit]       = "Foydalanuvchini tahrirlash",
+            [Permissions.UsersActivate]   = "Faollashtirish/bloklash",
+            [Permissions.RolesView]       = "Rollarni ko'rish",
+            [Permissions.RolesManage]     = "Rollarni boshqarish",
+            [Permissions.BranchesView]    = "Filiallarni ko'rish",
+            [Permissions.BranchesCreate]  = "Filial yaratish",
+            [Permissions.BranchesEdit]    = "Filialni tahrirlash",
+            [Permissions.BranchesDelete]  = "Filialni o'chirish",
+            [Permissions.ProductsView]    = "Mahsulotlarni ko'rish",
+            [Permissions.ProductsCreate]  = "Mahsulot yaratish",
+            [Permissions.ProductsEdit]    = "Mahsulotni tahrirlash",
+            [Permissions.ProductsDelete]  = "Mahsulotni o'chirish",
+            [Permissions.CategoriesView]  = "Kategoriyalarni ko'rish",
+            [Permissions.CategoriesManage]= "Kategoriyalarni boshqarish",
+            [Permissions.SalesView]       = "Sotuvlarni ko'rish",
+            [Permissions.SalesCreate]     = "Sotuv yaratish",
+            [Permissions.SalesRefund]     = "Qaytarish",
+            [Permissions.ReportsView]     = "Hisobotlarni ko'rish",
+            [Permissions.CashboxView]     = "Kassani ko'rish",
+            [Permissions.CashboxManage]   = "Kassani boshqarish",
+            [Permissions.InventoryView]   = "Inventarni ko'rish",
+            [Permissions.InventoryManage] = "Inventarni boshqarish",
+            [Permissions.SuppliersView]   = "Yetkazib beruvchilarni ko'rish",
+            [Permissions.SuppliersManage] = "Yetkazib beruvchilarni boshqarish",
+            [Permissions.CustomersView]   = "Mijozlarni ko'rish",
+            [Permissions.CustomersManage] = "Mijozlarni boshqarish",
+            [Permissions.DebtorsView]     = "Qarzdorlarni ko'rish",
+            [Permissions.DebtorsManage]   = "Qarzdorlarni boshqarish",
+            [Permissions.ExpensesView]    = "Xarajatlarni ko'rish",
+            [Permissions.ExpensesManage]  = "Xarajatlarni boshqarish",
+            [Permissions.SettingsManage]  = "Sozlamalarni boshqarish",
+        };
+
+        foreach (var code in toAdd)
+        {
+            var category = categoryMap.FirstOrDefault(kv => code.StartsWith(kv.Key)).Value ?? "Boshqa";
+            var name = nameMap.GetValueOrDefault(code, code);
+            _db.Permissions.Add(new Permission { Id = Guid.NewGuid(), Code = code, Name = name, Category = category });
+        }
+
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("{Count} ta yangi permission qo'shildi.", toAdd.Count);
+    }
+
+    /// <summary>
+    /// Berilgan tashkilot uchun 3 ta tizim rolini (Admin, Manager, Cashier) yaratadi va
+    /// ular uchun standart permissionlarni belgilaydi. Idempotent.
+    /// </summary>
+    private async Task SeedOrgRolesAsync(Guid orgId)
+    {
+        var permMap = await _db.Permissions.ToDictionaryAsync(p => p.Code, p => p.Id);
+
+        var roleDefinitions = new[]
+        {
+            ("Admin",   Permissions.AdminPermissions),
+            ("Manager", Permissions.ManagerPermissions),
+            ("Cashier", Permissions.CashierPermissions),
+        };
+
+        foreach (var (roleName, permCodes) in roleDefinitions)
+        {
+            var existing = await _db.Roles
+                .Include(r => r.RolePermissions)
+                .FirstOrDefaultAsync(r => r.OrganizationId == orgId && r.Name == roleName);
+
+            if (existing is null)
+            {
+                var role = new Role
+                {
+                    Name = roleName,
+                    IsSystem = true,
+                    OrganizationId = orgId,
+                    RolePermissions = permCodes
+                        .Where(c => permMap.ContainsKey(c))
+                        .Select(c => new RolePermission { PermissionId = permMap[c] })
+                        .ToList()
+                };
+                _db.Roles.Add(role);
+                _logger.LogInformation("'{Role}' roli yaratildi (org: {OrgId}).", roleName, orgId);
+            }
+        }
+
+        await _db.SaveChangesAsync();
     }
 
     /// <summary>

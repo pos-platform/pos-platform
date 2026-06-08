@@ -20,6 +20,7 @@
     "cashMovements": "Движение кассы",
     "customers": "Клиенты",
     "users": "Пользователи",
+    "roles": "Роли",
     "organizations": "Организации",
     "audit": "Журнал аудита"
   },

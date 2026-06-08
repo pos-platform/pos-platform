@@ -33,6 +33,9 @@ public class AuthService : IAuthService
 
         var user = await _db.Users
             .Include(u => u.Organization)
+            .Include(u => u.AppRole)
+                .ThenInclude(r => r!.RolePermissions)
+                    .ThenInclude(rp => rp.Permission)
             .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
         {
@@ -76,18 +79,25 @@ public class AuthService : IAuthService
 
     private AuthResponse BuildResponse(User user)
     {
-        var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(user);
+        var permissions = user.AppRole?.RolePermissions
+            .Select(rp => rp.Permission.Code)
+            .ToList() ?? [];
+
+        var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(user, permissions);
 
         return new AuthResponse
         {
             UserId = user.Id,
             Username = user.Username,
             Role = user.Role,
+            RoleName = user.AppRole?.Name,
+            AppRoleId = user.AppRoleId,
             Token = token,
             ExpiresAt = expiresAt,
             OrganizationId = user.OrganizationId,
             OrganizationName = user.Organization?.Name,
-            LicensedUntil = user.LicensedUntil
+            LicensedUntil = user.LicensedUntil,
+            Permissions = permissions
         };
     }
 }

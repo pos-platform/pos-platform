@@ -17,7 +17,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _settings = settings.Value;
     }
 
-    public (string Token, DateTime ExpiresAt) GenerateToken(User user)
+    public (string Token, DateTime ExpiresAt) GenerateToken(User user, IEnumerable<string> permissions)
     {
         var expiresAt = DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes);
 
@@ -30,15 +30,17 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new(ClaimTypes.Role, user.Role.ToString())
         };
 
+        foreach (var perm in permissions)
+            claims.Add(new Claim("perm", perm));
+
+        if (user.AppRoleId is not null)
+            claims.Add(new Claim("roleId", user.AppRoleId.Value.ToString()));
+
         if (user.BranchId is not null)
-        {
             claims.Add(new Claim("branchId", user.BranchId.Value.ToString()));
-        }
 
         if (user.OrganizationId is not null)
-        {
             claims.Add(new Claim("organizationId", user.OrganizationId.Value.ToString()));
-        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

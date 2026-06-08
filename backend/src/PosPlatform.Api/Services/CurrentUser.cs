@@ -28,4 +28,7 @@ public class CurrentUser : ICurrentUser
 
     public string? IpAddress =>
         _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+    public IReadOnlyList<string> Permissions =>
+        Principal?.FindAll("perm").Select(c => c.Value).ToList() ?? [];
 }

@@ -18,6 +18,9 @@ export const useAuthStore = defineStore('auth', {
       token: saved.token || null,
       username: saved.username || null,
       role: saved.role || null,
+      roleName: saved.roleName || null,
+      appRoleId: saved.appRoleId || null,
+      permissions: saved.permissions || [],
       organizationId: saved.organizationId || null,
       organizationName: saved.organizationName || null,
       licensedUntil: saved.licensedUntil || null
@@ -26,7 +29,11 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.token,
     isSuperAdmin: (state) => state.role === 'SuperAdmin',
-    isAdmin: (state) => state.role === 'Admin'
+    isAdmin: (state) => state.role === 'Admin',
+    hasPermission: (state) => (code) => {
+      if (state.role === 'SuperAdmin') return true
+      return state.permissions.includes(code)
+    }
   },
   actions: {
     async login(username, password) {
@@ -34,6 +41,9 @@ export const useAuthStore = defineStore('auth', {
       this.token = data.token
       this.username = data.username
       this.role = data.role
+      this.roleName = data.roleName || null
+      this.appRoleId = data.appRoleId || null
+      this.permissions = data.permissions || []
       this.organizationId = data.organizationId || null
       this.organizationName = data.organizationName || null
       this.licensedUntil = data.licensedUntil || null
@@ -43,6 +53,9 @@ export const useAuthStore = defineStore('auth', {
           token: data.token,
           username: data.username,
           role: data.role,
+          roleName: this.roleName,
+          appRoleId: this.appRoleId,
+          permissions: this.permissions,
           organizationId: this.organizationId,
           organizationName: this.organizationName,
           licensedUntil: this.licensedUntil
@@ -53,6 +66,9 @@ export const useAuthStore = defineStore('auth', {
       this.token = null
       this.username = null
       this.role = null
+      this.roleName = null
+      this.appRoleId = null
+      this.permissions = []
       this.organizationId = null
       this.organizationName = null
       this.licensedUntil = null

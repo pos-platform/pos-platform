@@ -1,26 +1,28 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { usersApi } from '../api/catalog'
+import { usersApi, rolesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
 const users = ref([])
+const roles = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
 const success = ref('')
 
-const blank = () => ({ username: '', password: '', role: 'Cashier' })
+const blank = () => ({ username: '', password: '', appRoleId: '' })
 const form = reactive(blank())
 
-const roleLabel = { Admin: 'Administrator', Manager: 'Menejer', Cashier: 'Kassir' }
+// Rol o'zgartirish modali
+const roleModal = ref(null) // { user, roleId }
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    users.value = await usersApi.list()
+    ;[users.value, roles.value] = await Promise.all([usersApi.list(), rolesApi.list()])
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -33,12 +35,14 @@ async function create() {
   success.value = ''
   saving.value = true
   try {
-    const u = await usersApi.create({
+    const payload = {
       username: form.username.trim(),
       password: form.password,
-      role: form.role
-    })
-    success.value = `"${u.username}" (${roleLabel[u.role]}) yaratildi`
+      role: roleName(form.appRoleId) || 'Cashier'
+    }
+    if (form.appRoleId) payload.appRoleId = form.appRoleId
+    const u = await usersApi.create(payload)
+    success.value = `"${u.username}" (${u.appRoleName || u.role}) yaratildi`
     Object.assign(form, blank())
     await load()
   } catch (e) {
@@ -72,6 +76,27 @@ async function resetPassword(u) {
   }
 }
 
+function openRoleModal(u) {
+  roleModal.value = { user: u, roleId: u.appRoleId || '' }
+}
+
+async function saveRole() {
+  if (!roleModal.value?.roleId) return
+  error.value = ''
+  try {
+    await usersApi.assignRole(roleModal.value.user.id, roleModal.value.roleId)
+    success.value = `"${roleModal.value.user.username}" roli yangilandi`
+    roleModal.value = null
+    await load()
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
+
+function roleName(id) {
+  return roles.value.find((r) => r.id === id)?.name || ''
+}
+
 onMounted(load)
 </script>
 
@@ -98,10 +123,9 @@ onMounted(load)
       </div>
       <div class="field">
         <label>Rol</label>
-        <select v-model="form.role" class="select">
-          <option value="Cashier">Kassir</option>
-          <option value="Manager">Menejer</option>
-          <option value="Admin">Administrator</option>
+        <select v-model="form.appRoleId" class="select">
+          <option value="">— Tanlang —</option>
+          <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
         </select>
       </div>
       <button class="btn" style="width: 100%" :disabled="saving">
@@ -111,7 +135,8 @@ onMounted(load)
 
     <!-- Ro'yxat -->
     <div class="card" style="flex: 2; min-width: 360px">
-      <table class="table">
+      <div v-if="loading" style="color: var(--text-muted); padding: 16px">Yuklanmoqda...</div>
+      <table v-else class="table">
         <thead>
           <tr>
             <th>Foydalanuvchi</th>
@@ -126,13 +151,16 @@ onMounted(load)
               <strong>{{ u.username }}</strong>
               <span v-if="u.username === auth.username" class="muted"> (siz)</span>
             </td>
-            <td>{{ roleLabel[u.role] || u.role }}</td>
+            <td>
+              <span class="role-badge">{{ u.appRoleName || u.role }}</span>
+            </td>
             <td>
               <span class="pill" :class="u.isActive ? 'pill-green' : 'pill-red'">
                 {{ u.isActive ? 'Faol' : 'Bloklangan' }}
               </span>
             </td>
-            <td class="text-right">
+            <td class="text-right" style="white-space: nowrap">
+              <button class="btn btn-ghost btn-sm" @click="openRoleModal(u)">Rol</button>
               <button class="btn btn-ghost btn-sm" @click="resetPassword(u)">Parol</button>
               <button
                 v-if="u.username !== auth.username"
@@ -147,4 +175,33 @@ onMounted(load)
       </table>
     </div>
   </div>
+
+  <!-- Rol o'zgartirish modali -->
+  <div v-if="roleModal" class="modal-overlay" @click.self="roleModal = null">
+    <div class="modal" style="width: 340px">
+      <h3 style="margin-top: 0">"{{ roleModal.user.username }}" — rol o'zgartirish</h3>
+      <div class="field">
+        <label>Yangi rol</label>
+        <select v-model="roleModal.roleId" class="select">
+          <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:8px; margin-top: 16px; justify-content:flex-end">
+        <button class="btn btn-ghost" @click="roleModal = null">Bekor</button>
+        <button class="btn" @click="saveRole">Saqlash</button>
+      </div>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+</style>

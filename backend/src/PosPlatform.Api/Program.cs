@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using PosPlatform.Api.Authorization;
 using PosPlatform.Api.Middleware;
 using PosPlatform.Api.Services;
 using PosPlatform.Application;
@@ -122,6 +124,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 // --- Reverse proxy (nginx/IIS) ortida ishlash: original sxema (https) va client IP'ni o'qiymiz ---
 // Ilova faqat ishonchli proxy orqali ochilishi kerak (localhost'ga bog'lanadi).
