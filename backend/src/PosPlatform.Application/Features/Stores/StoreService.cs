@@ -103,6 +103,19 @@ public class StoreService : IStoreService
         return CashboxDto.FromEntity(cashbox);
     }
 
+    public async Task<IReadOnlyList<StoreDto>> GetByOrgAsync(Guid orgId, CancellationToken cancellationToken = default)
+    {
+        var stores = await _db.Branches
+            .AsNoTracking()
+            .Where(b => b.OrganizationId == orgId)
+            .Include(b => b.Cashboxes)
+            .Include(b => b.Users).ThenInclude(u => u.AppRole)
+            .OrderBy(b => b.Name)
+            .ToListAsync(cancellationToken);
+
+        return stores.Select(StoreDto.FromEntity).ToList();
+    }
+
     public async Task AssignUserToBranchAsync(Guid userId, Guid? branchId, CancellationToken cancellationToken = default)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)

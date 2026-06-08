@@ -12,8 +12,8 @@ using PosPlatform.Infrastructure.Persistence;
 namespace PosPlatform.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260608095539_AddBranchIdToProduct")]
-    partial class AddBranchIdToProduct
+    [Migration("20260608115829_AddBranchStock")]
+    partial class AddBranchStock
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -99,6 +99,40 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("OrganizationId");
 
                     b.ToTable("Branches");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.BranchStock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("BranchId", "ProductId", "OrganizationId")
+                        .IsUnique();
+
+                    b.ToTable("BranchStocks");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.CashMovement", b =>
@@ -262,6 +296,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
@@ -737,6 +774,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
@@ -782,9 +822,6 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("numeric(18,3)");
-
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("uuid");
 
@@ -800,6 +837,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Barcode");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("CategoryId");
 
@@ -956,6 +995,31 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("PermissionId");
 
                     b.ToTable("RolePermissions");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.RoleTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PermissionsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RoleTemplates");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Sale", b =>
@@ -1517,6 +1581,25 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Organization");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.BranchStock", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "Product")
+                        .WithMany("Stocks")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.CashMovement", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
@@ -1652,6 +1735,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Product", b =>
                 {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("PosPlatform.Domain.Entities.Category", "Category")
                         .WithMany("Products")
                         .HasForeignKey("CategoryId")
@@ -1662,6 +1749,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Category");
 
@@ -1967,6 +2056,11 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("PosPlatform.Domain.Entities.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.Product", b =>
+                {
+                    b.Navigation("Stocks");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Role", b =>

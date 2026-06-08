@@ -16,4 +16,7 @@ public interface IStoreService
 
     /// <summary>Foydalanuvchini do'konga biriktirish yoki uzish (branchId = null).</summary>
     Task AssignUserToBranchAsync(Guid userId, Guid? branchId, CancellationToken cancellationToken = default);
+
+    /// <summary>Muayyan tashkilotga tegishli do'konlar (SuperAdmin panel uchun).</summary>
+    Task<IReadOnlyList<StoreDto>> GetByOrgAsync(Guid orgId, CancellationToken cancellationToken = default);
 }

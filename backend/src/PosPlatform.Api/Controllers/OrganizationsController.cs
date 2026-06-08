@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PosPlatform.Application.Common.Models;
 using PosPlatform.Application.Features.Organizations;
 using PosPlatform.Application.Features.Organizations.Dtos;
+using PosPlatform.Application.Features.Stores;
+using PosPlatform.Application.Features.Stores.Dtos;
 
 namespace PosPlatform.Api.Controllers;
 
@@ -12,16 +15,26 @@ namespace PosPlatform.Api.Controllers;
 public class OrganizationsController : ControllerBase
 {
     private readonly IOrganizationService _service;
+    private readonly IStoreService _stores;
 
-    public OrganizationsController(IOrganizationService service)
+    public OrganizationsController(IOrganizationService service, IStoreService stores)
     {
         _service = service;
+        _stores = stores;
     }
 
-    /// <summary>Barcha tashkilotlar (statistika bilan).</summary>
+    /// <summary>To'lov qilinmagan va muddati yaqin tugayotgan kassirlar bo'lgan tashkilotlar.</summary>
+    [HttpGet("alerts")]
+    public async Task<ActionResult<OrgAlertsDto>> GetAlerts(CancellationToken ct)
+        => Ok(await _service.GetAlertsAsync(ct));
+
+    /// <summary>Barcha tashkilotlar (sahifalash bilan).</summary>
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<OrganizationDto>>> GetAll(CancellationToken ct)
-        => Ok(await _service.GetAllAsync(ct));
+    public async Task<ActionResult<PagedResult<OrganizationDto>>> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+        => Ok(await _service.GetAllAsync(page, pageSize, ct));
 
     /// <summary>Bitta tashkilot tafsiloti — foydalanuvchilar va obuna holatlari bilan.</summary>
     [HttpGet("{id:guid}")]
@@ -72,6 +85,11 @@ public class OrganizationsController : ControllerBase
     [HttpGet("{id:guid}/roles")]
     public async Task<ActionResult<IReadOnlyList<OrgRoleDto>>> GetRoles(Guid id, CancellationToken ct)
         => Ok(await _service.GetRolesAsync(id, ct));
+
+    /// <summary>Tashkilotga tegishli do'konlar (SuperAdmin panel uchun).</summary>
+    [HttpGet("{id:guid}/stores")]
+    public async Task<ActionResult<IReadOnlyList<StoreDto>>> GetStores(Guid id, CancellationToken ct)
+        => Ok(await _stores.GetByOrgAsync(id, ct));
 
     [HttpPut("users/{userId:guid}/app-role")]
     public async Task<ActionResult<OrgUserDto>> AssignAppRole(Guid userId, AssignOrgUserRoleRequest request, CancellationToken ct)

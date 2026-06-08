@@ -45,6 +45,11 @@ public class StockTransferService : IStockTransferService
             .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
+        // Manba filialning qoldiqlarini yuklaymiz
+        var fromStocks = await _db.BranchStocks
+            .Where(s => s.BranchId == request.FromBranchId && productIds.Contains(s.ProductId))
+            .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+
         var transfer = new StockTransfer
         {
             FromBranchId = request.FromBranchId,
@@ -60,11 +65,12 @@ public class StockTransferService : IStockTransferService
                 throw new NotFoundException($"Mahsulot topilmadi: {line.ProductId}");
             if (line.Quantity <= 0)
                 throw new ValidationException($"'{product.Name}' uchun miqdor 0 dan katta bo'lishi kerak.");
-            if (product.Quantity < line.Quantity)
-                throw new ValidationException($"'{product.Name}' uchun qoldiq yetarli emas (mavjud: {product.Quantity}).");
 
-            // Manba filialdan ayiramiz.
-            product.Quantity -= line.Quantity;
+            if (!fromStocks.TryGetValue(line.ProductId, out var fromStock) || fromStock.Quantity < line.Quantity)
+                throw new ValidationException($"'{product.Name}' uchun qoldiq yetarli emas (mavjud: {fromStock?.Quantity ?? 0}).");
+
+            // Manba filialdan ayiramiz
+            fromStock.Quantity -= line.Quantity;
 
             transfer.Items.Add(new StockTransferItem
             {
@@ -96,14 +102,21 @@ public class StockTransferService : IStockTransferService
             throw new ValidationException("Faqat 'Yuborilgan' statusdagi transferni qabul qilish mumkin.");
 
         var productIds = transfer.Items.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _db.Products
-            .Where(p => productIds.Contains(p.Id))
-            .ToDictionaryAsync(p => p.Id, cancellationToken);
+
+        // Maqsad filialning mavjud qoldiqlarini yuklaymiz
+        var toStocks = await _db.BranchStocks
+            .Where(s => s.BranchId == transfer.ToBranchId && productIds.Contains(s.ProductId))
+            .ToDictionaryAsync(s => s.ProductId, cancellationToken);
 
         foreach (var item in transfer.Items)
         {
-            if (products.TryGetValue(item.ProductId, out var product))
-                product.Quantity += item.Quantity;
+            if (!toStocks.TryGetValue(item.ProductId, out var toStock))
+            {
+                toStock = new BranchStock { BranchId = transfer.ToBranchId, ProductId = item.ProductId };
+                _db.BranchStocks.Add(toStock);
+                toStocks[item.ProductId] = toStock;
+            }
+            toStock.Quantity += item.Quantity;
         }
 
         transfer.Status = TransferStatus.Received;
@@ -125,18 +138,23 @@ public class StockTransferService : IStockTransferService
         if (transfer.Status == TransferStatus.Cancelled)
             throw new ValidationException("Transfer allaqachon bekor qilingan.");
 
-        // Yuborilgan bo'lsa — manba filialga qaytaramiz.
+        // Yuborilgan bo'lsa — manba filialga qaytaramiz
         if (transfer.Status == TransferStatus.Sent)
         {
             var productIds = transfer.Items.Select(i => i.ProductId).Distinct().ToList();
-            var products = await _db.Products
-                .Where(p => productIds.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id, cancellationToken);
+            var fromStocks = await _db.BranchStocks
+                .Where(s => s.BranchId == transfer.FromBranchId && productIds.Contains(s.ProductId))
+                .ToDictionaryAsync(s => s.ProductId, cancellationToken);
 
             foreach (var item in transfer.Items)
             {
-                if (products.TryGetValue(item.ProductId, out var product))
-                    product.Quantity += item.Quantity;
+                if (!fromStocks.TryGetValue(item.ProductId, out var fromStock))
+                {
+                    fromStock = new BranchStock { BranchId = transfer.FromBranchId, ProductId = item.ProductId };
+                    _db.BranchStocks.Add(fromStock);
+                    fromStocks[item.ProductId] = fromStock;
+                }
+                fromStock.Quantity += item.Quantity;
             }
         }
 

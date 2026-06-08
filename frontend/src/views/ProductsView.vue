@@ -1,11 +1,15 @@
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, computed, watch } from 'vue'
-import { productsApi, categoriesApi, suppliersApi, downloadBlob } from '../api/catalog'
+import { productsApi, categoriesApi, suppliersApi, storesApi, downloadBlob } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
 
 const products = ref([])
 const categories = ref([])
 const suppliers = ref([])
+const stores = ref([])
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
@@ -14,6 +18,7 @@ const uploading = ref(false)
 
 // Filters
 const filterCategory = ref('')
+const filterBranch = ref('')
 const searchName = ref('')
 const filterQtyOp = ref('')
 const filterQtyVal = ref('')
@@ -62,7 +67,14 @@ const editId = ref(null)
 // Inline add — category
 const showAddCategory = ref(false)
 const newCategoryName = ref('')
+const newCategoryNote = ref('')
 const addingCategory = ref(false)
+
+// Category management
+const showManageCategories = ref(false)
+const editingCategory = ref(null) // { id, name, note }
+const savingCategory = ref(false)
+const deletingCategoryId = ref(null)
 
 // Inline add — supplier
 const showAddSupplier = ref(false)
@@ -134,12 +146,17 @@ const blankForm = () => ({
   isWeighed: false,
   pluNumber: null,
   tare: null,
-  categoryId: ''
+  categoryId: '',
+  branchId: ''
 })
 const form = reactive(blankForm())
 
 const filteredProducts = computed(() => {
   let list = products.value
+
+  if (filterBranch.value) {
+    list = list.filter((p) => p.branchId === filterBranch.value)
+  }
 
   if (filterCategory.value) {
     list = list.filter((p) => p.categoryId === filterCategory.value)
@@ -203,7 +220,7 @@ function setPage(p) {
   if (typeof p === 'number') currentPage.value = Math.min(Math.max(1, p), totalPages.value)
 }
 
-watch([searchName, filterCategory, filterQtyOp, filterQtyVal], () => {
+watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal], () => {
   currentPage.value = 1
 })
 
@@ -227,10 +244,11 @@ async function loadAll() {
   loading.value = true
   error.value = ''
   try {
-    const [p, c, s] = await Promise.all([productsApi.list(), categoriesApi.list(), suppliersApi.list()])
+    const [p, c, s, st] = await Promise.all([productsApi.list(), categoriesApi.list(), suppliersApi.list(), storesApi.list()])
     products.value = p
     categories.value = c
     suppliers.value = s
+    stores.value = st
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -268,15 +286,55 @@ async function addCategory() {
   if (!newCategoryName.value.trim()) return
   addingCategory.value = true
   try {
-    const created = await categoriesApi.create({ name: newCategoryName.value.trim() })
+    const created = await categoriesApi.create({
+      name: newCategoryName.value.trim(),
+      note: newCategoryNote.value.trim() || null
+    })
     categories.value.push(created)
     form.categoryId = created.id
     newCategoryName.value = ''
+    newCategoryNote.value = ''
     showAddCategory.value = false
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
     addingCategory.value = false
+  }
+}
+
+function startEditCategory(cat) {
+  editingCategory.value = { id: cat.id, name: cat.name, note: cat.note || '' }
+}
+
+async function saveCategory() {
+  if (!editingCategory.value) return
+  savingCategory.value = true
+  try {
+    const updated = await categoriesApi.update(editingCategory.value.id, {
+      name: editingCategory.value.name.trim(),
+      note: editingCategory.value.note?.trim() || null
+    })
+    const idx = categories.value.findIndex((c) => c.id === updated.id)
+    if (idx >= 0) categories.value[idx] = updated
+    editingCategory.value = null
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    savingCategory.value = false
+  }
+}
+
+async function deleteCategory(cat) {
+  if (cat.productCount > 0) return
+  deletingCategoryId.value = cat.id
+  try {
+    await categoriesApi.remove(cat.id)
+    categories.value = categories.value.filter((c) => c.id !== cat.id)
+    if (form.categoryId === cat.id) form.categoryId = categories.value[0]?.id || ''
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    deletingCategoryId.value = null
   }
 }
 
@@ -309,6 +367,8 @@ async function openCreate() {
   error.value = ''
   showAddCategory.value = false
   showAddSupplier.value = false
+  showManageCategories.value = false
+  editingCategory.value = null
   showModal.value = true
   await genBarcode()
 }
@@ -331,10 +391,13 @@ function openEdit(p) {
     isWeighed: p.isWeighed,
     pluNumber: p.pluNumber,
     tare: p.tare,
-    categoryId: p.categoryId
+    categoryId: p.categoryId,
+    branchId: p.branchId || ''
   })
   editId.value = p.id
   error.value = ''
+  showManageCategories.value = false
+  editingCategory.value = null
   showAddCategory.value = false
   showAddSupplier.value = false
   showModal.value = true
@@ -363,7 +426,8 @@ async function submit() {
       isWeighed: form.isWeighed,
       pluNumber: form.pluNumber ? Number(form.pluNumber) : null,
       tare: form.tare ? Number(form.tare) : null,
-      categoryId: form.categoryId
+      categoryId: form.categoryId,
+      branchId: form.branchId || null
     }
     if (editId.value) {
       await productsApi.update(editId.value, payload)
@@ -472,6 +536,10 @@ onUnmounted(() => {
         <option value="">Barcha kategoriyalar</option>
         <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
+      <select v-if="stores.length" v-model="filterBranch" class="select" style="min-width:160px">
+        <option value="">Barcha do'konlar</option>
+        <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+      </select>
     </div>
     <div style="display:flex; gap:8px; align-items:center">
       <select v-model="filterQtyOp" class="select" style="width:150px">
@@ -520,6 +588,7 @@ onUnmounted(() => {
           <th style="width:52px"></th>
           <th>Nomi</th>
           <th>Kategoriya</th>
+          <th v-if="stores.length">Do'kon</th>
           <th>Barcode</th>
           <th>PLU</th>
           <th class="text-right">Qoldiq</th>
@@ -531,7 +600,7 @@ onUnmounted(() => {
       </thead>
       <tbody>
         <tr v-if="loading">
-          <td colspan="10" class="muted" style="text-align:center; padding:32px">Yuklanmoqda...</td>
+          <td :colspan="stores.length ? 11 : 10" class="muted" style="text-align:center; padding:32px">Yuklanmoqda...</td>
         </tr>
         <tr
           v-for="p in paginatedProducts"
@@ -546,6 +615,7 @@ onUnmounted(() => {
             <span v-if="p.isWeighed" class="pill pill-amber" style="margin-top:2px; display:inline-block">tarozi</span>
           </td>
           <td>{{ categoryName(p.categoryId) }}</td>
+          <td v-if="stores.length" class="muted" style="font-size:13px">{{ p.branchName || '—' }}</td>
           <td class="muted" style="font-size:13px">{{ p.barcode || '—' }}</td>
           <td class="muted" style="font-size:13px">{{ p.pluNumber ?? '—' }}</td>
           <td class="text-right" :style="{ color: Number(p.quantity) <= 0 ? 'var(--danger)' : 'inherit' }">
@@ -560,7 +630,7 @@ onUnmounted(() => {
           </td>
         </tr>
         <tr v-if="!paginatedProducts.length && !loading">
-          <td colspan="10" class="muted" style="text-align:center; padding:32px">Mahsulot yo'q</td>
+          <td :colspan="stores.length ? 11 : 10" class="muted" style="text-align:center; padding:32px">Mahsulot yo'q</td>
         </tr>
       </tbody>
     </table>
@@ -654,15 +724,52 @@ onUnmounted(() => {
               <select v-model="form.categoryId" class="select" required style="flex:1">
                 <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
-              <button type="button" class="btn-add-inline" :class="{ active: showAddCategory }" @click="showAddCategory = !showAddCategory; showAddSupplier = false" title="Yangi kategoriya">+</button>
+              <button type="button" class="btn-add-inline" :class="{ active: showAddCategory }" @click="showAddCategory = !showAddCategory; showAddSupplier = false; showManageCategories = false; editingCategory = null" title="Yangi kategoriya">+</button>
+              <button type="button" class="btn-add-inline" :class="{ active: showManageCategories }" @click="showManageCategories = !showManageCategories; showAddCategory = false; showAddSupplier = false; editingCategory = null" title="Kategoriyalarni boshqarish" style="font-size:15px">⚙</button>
             </div>
             <div v-if="showAddCategory" class="inline-add-box">
-              <input v-model="newCategoryName" class="input" placeholder="Kategoriya nomi *" style="margin-bottom:8px" autofocus />
+              <input v-model="newCategoryName" class="input" placeholder="Kategoriya nomi *" style="margin-bottom:6px" autofocus />
+              <input v-model="newCategoryNote" class="input" placeholder="Izoh (ixtiyoriy)" style="margin-bottom:8px" />
               <div style="display:flex; gap:6px">
                 <button type="button" class="btn btn-sm" :disabled="addingCategory || !newCategoryName.trim()" style="flex:1" @click="addCategory">
                   {{ addingCategory ? '...' : 'Qo\'shish' }}
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" @click="showAddCategory = false">Bekor</button>
+              </div>
+            </div>
+            <div v-if="showManageCategories" class="inline-add-box" style="max-height:240px; overflow-y:auto; padding:8px">
+              <div v-if="!categories.length" class="muted" style="font-size:13px; text-align:center; padding:8px">Kategoriya yo'q</div>
+              <div
+                v-for="cat in categories"
+                :key="cat.id"
+                style="padding:6px 0; border-bottom:1px solid var(--border)"
+              >
+                <div v-if="editingCategory?.id === cat.id">
+                  <input v-model="editingCategory.name" class="input" placeholder="Nomi *" style="margin-bottom:4px" />
+                  <input v-model="editingCategory.note" class="input" placeholder="Izoh (ixtiyoriy)" style="margin-bottom:6px" />
+                  <div style="display:flex; gap:4px">
+                    <button type="button" class="btn btn-sm" style="flex:1" :disabled="savingCategory || !editingCategory.name.trim()" @click="saveCategory">
+                      {{ savingCategory ? '...' : 'Saqlash' }}
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" @click="editingCategory = null">Bekor</button>
+                  </div>
+                </div>
+                <div v-else style="display:flex; align-items:center; gap:6px">
+                  <div style="flex:1; min-width:0">
+                    <div style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ cat.name }}</div>
+                    <div v-if="cat.note" class="muted" style="font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ cat.note }}</div>
+                    <div class="muted" style="font-size:11px">{{ cat.productCount }} ta mahsulot</div>
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0" @click="startEditCategory(cat)">✏️</button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    style="flex-shrink:0"
+                    :disabled="cat.productCount > 0 || deletingCategoryId === cat.id"
+                    :title="cat.productCount > 0 ? 'Mahsulotlar mavjud — o\'chirib bo\'lmaydi' : 'O\'chirish'"
+                    @click="deleteCategory(cat)"
+                  >{{ deletingCategoryId === cat.id ? '...' : '🗑️' }}</button>
+                </div>
               </div>
             </div>
           </div>
@@ -719,6 +826,14 @@ onUnmounted(() => {
             <label>Tara (kg)</label>
             <input v-model="form.tare" type="number" min="0" step="0.001" class="input" />
           </div>
+        </div>
+
+        <div v-if="stores.length" class="field" style="margin-top:8px">
+          <label>Do'kon</label>
+          <select v-model="form.branchId" class="select">
+            <option value="">— Umumiy (do'konga bog'lanmagan) —</option>
+            <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
         </div>
 
         <button class="btn" style="width:100%; margin-top:16px" :disabled="saving || uploading">

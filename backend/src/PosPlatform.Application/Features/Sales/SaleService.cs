@@ -91,6 +91,13 @@ public class SaleService : ISaleService
             .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
+        var saleBranchId = request.BranchId ?? _currentUser.BranchId
+            ?? throw new ValidationException("Savdo uchun filial aniqlanmadi.");
+
+        var branchStocks = await _db.BranchStocks
+            .Where(s => s.BranchId == saleBranchId && productIds.Contains(s.ProductId))
+            .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+
         // Amaldagi aksiyalar — chegirma server tomonida hisoblanadi (mijozga ishonmaymiz).
         var nowUtc = DateTime.UtcNow;
         var activePromotions = await _db.Promotions
@@ -164,8 +171,10 @@ public class SaleService : ISaleService
                 LineTotal = lineTotal
             });
 
-            // Ombor qoldig'idan ayiramiz.
-            product.Quantity -= line.Quantity;
+            // Filial qoldig'idan ayiramiz.
+            if (!branchStocks.TryGetValue(product.Id, out var stock) || stock.Quantity < line.Quantity)
+                throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
+            stock.Quantity -= line.Quantity;
         }
 
         sale.TotalAmount = sale.Items.Sum(i => i.LineTotal);
@@ -302,17 +311,24 @@ public class SaleService : ISaleService
 
         original.Status = SaleStatus.Refunded;
 
-        // Qaytarilgan tovarlar ombor qoldig'iga qaytadi.
-        var productIds = original.Items.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _db.Products
-            .Where(p => productIds.Contains(p.Id))
-            .ToListAsync(cancellationToken);
-        foreach (var item in original.Items)
+        // Qaytarilgan tovarlar filial qoldig'iga qaytadi.
+        var refundBranchId = original.BranchId;
+        if (refundBranchId.HasValue)
         {
-            var product = products.FirstOrDefault(p => p.Id == item.ProductId);
-            if (product is not null)
+            var refundProductIds = original.Items.Select(i => i.ProductId).Distinct().ToList();
+            var refundStocks = await _db.BranchStocks
+                .Where(s => s.BranchId == refundBranchId && refundProductIds.Contains(s.ProductId))
+                .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+
+            foreach (var item in original.Items)
             {
-                product.Quantity += item.Quantity;
+                if (!refundStocks.TryGetValue(item.ProductId, out var stock))
+                {
+                    stock = new Domain.Entities.BranchStock { BranchId = refundBranchId.Value, ProductId = item.ProductId };
+                    _db.BranchStocks.Add(stock);
+                    refundStocks[item.ProductId] = stock;
+                }
+                stock.Quantity += item.Quantity;
             }
         }
 

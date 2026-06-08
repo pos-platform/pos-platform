@@ -121,18 +121,50 @@ body {
 /* ----- Modal ----- */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 50;
-  background: rgba(16, 24, 40, 0.45);
-  display: flex; align-items: flex-start; justify-content: center;
-  padding: 40px 16px; overflow-y: auto;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px; overflow-y: auto;
+  animation: overlayIn 0.15s ease;
 }
-.modal-box {
-  background: var(--surface); border-radius: 14px; width: 100%; max-width: 640px;
-  box-shadow: 0 20px 50px rgba(16,24,40,.25); overflow: hidden;
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
-.modal-head h3 { margin: 0; font-size: 18px; }
-.modal-x { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); line-height: 1; }
-.modal-body { padding: 20px 22px; max-height: 70vh; overflow-y: auto; }
+.modal-box,
+.modal {
+  background: var(--surface);
+  border-radius: 18px;
+  width: 100%; max-width: 640px;
+  box-shadow:
+    0 0 0 1px rgba(16,24,40,.06),
+    0 8px 24px rgba(16,24,40,.12),
+    0 32px 64px rgba(16,24,40,.18);
+  overflow: hidden;
+  animation: modalIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(to bottom, #fafbfc, var(--surface));
+}
+.modal-head h3 { margin: 0; font-size: 17px; font-weight: 700; }
+.modal-x {
+  background: none; border: none; font-size: 20px; cursor: pointer;
+  color: var(--muted); line-height: 1;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.modal-x:hover { background: #f1f5f9; color: var(--text); }
+.modal-body { padding: 20px 22px; max-height: 72vh; overflow-y: auto; }
+.modal { padding: 24px; }
 .del-warn { font-size: 46px; text-align: center; margin: 4px 0 14px; }
 .del-actions { display: flex; gap: 10px; margin-top: 22px; }
 .del-actions .btn { flex: 1; }

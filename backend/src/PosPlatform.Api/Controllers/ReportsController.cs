@@ -40,13 +40,13 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("stock")]
-    public async Task<IActionResult> GetStockReport(CancellationToken ct)
-        => Ok(await _reports.GetStockReportAsync(ct));
+    public async Task<IActionResult> GetStockReport([FromQuery] Guid? branchId, CancellationToken ct)
+        => Ok(await _reports.GetStockReportAsync(branchId, ct));
 
     [HttpGet("stock/export")]
-    public async Task<IActionResult> ExportStockReport(CancellationToken ct)
+    public async Task<IActionResult> ExportStockReport([FromQuery] Guid? branchId, CancellationToken ct)
     {
-        var bytes = await _reports.ExportStockReportAsync(ct);
+        var bytes = await _reports.ExportStockReportAsync(branchId, ct);
         var name  = $"qoldiqlar-{DateTime.Today:yyyy-MM-dd}.xlsx";
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name);
     }

@@ -38,7 +38,11 @@ async function loadSales() {
 async function loadStock() {
   loading.value = true
   error.value = ''
-  try { stockReport.value = await reportsApi.stock() }
+  try {
+    const params = {}
+    if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
+    stockReport.value = await reportsApi.stock(params)
+  }
   catch (e) { error.value = errorMessage(e) }
   finally { loading.value = false }
 }
@@ -59,7 +63,9 @@ async function exportSales() {
 
 async function exportStock() {
   try {
-    downloadBlob(await reportsApi.exportStock(), `qoldiqlar-${todayStr()}.xlsx`)
+    const params = {}
+    if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
+    downloadBlob(await reportsApi.exportStock(params), `qoldiqlar-${todayStr()}.xlsx`)
   } catch (e) { error.value = errorMessage(e) }
 }
 
@@ -114,6 +120,17 @@ onMounted(load)
       <div class="field" style="margin:0">
         <label>Gacha</label>
         <input v-model="to" type="date" class="input" />
+      </div>
+      <div v-if="storeFilter.multiStore" class="field" style="margin:0; min-width:160px">
+        <label>Do'kon</label>
+        <select
+          class="select"
+          :value="storeFilter.selectedBranchId"
+          @change="storeFilter.select($event.target.value)"
+        >
+          <option value="">— Hammasi —</option>
+          <option v-for="s in storeFilter.stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
       </div>
       <button class="btn" :disabled="loading" @click="loadSales">
         {{ loading ? 'Yuklanmoqda...' : 'Ko\'rsatish' }}
@@ -216,14 +233,34 @@ onMounted(load)
 
   <!-- ═══════════ QOLDIQLAR ═══════════ -->
   <template v-if="tab === 'stock'">
+    <!-- Stock filters -->
+    <div class="card" style="margin-bottom:14px; padding:14px 20px">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
+        <div v-if="storeFilter.multiStore" class="field" style="margin:0; min-width:160px">
+          <label>Do'kon</label>
+          <select
+            class="select"
+            :value="storeFilter.selectedBranchId"
+            @change="storeFilter.select($event.target.value)"
+          >
+            <option value="">— Hammasi —</option>
+            <option v-for="s in storeFilter.stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+        </div>
+        <button class="btn" :disabled="loading" @click="loadStock">
+          {{ loading ? 'Yuklanmoqda...' : 'Ko\'rsatish' }}
+        </button>
+        <div style="margin-left:auto">
+          <input v-model="stockSearch" class="input" placeholder="Qidirish..." style="width:220px" />
+        </div>
+      </div>
+    </div>
+
     <div v-if="stockReport" class="card" style="margin-bottom:14px; padding:14px 20px">
       <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:center">
         <div><span class="muted">Jami mahsulot:</span> <strong>{{ stockReport.totalProducts }}</strong></div>
         <div><span class="muted">Tannarx qiymati:</span> <strong>{{ fmt(stockReport.totalCostValue) }}</strong></div>
         <div><span class="muted">Savdo qiymati:</span> <strong>{{ fmt(stockReport.totalSaleValue) }}</strong></div>
-        <div style="margin-left:auto">
-          <input v-model="stockSearch" class="input" placeholder="Qidirish..." style="width:220px" />
-        </div>
       </div>
     </div>
 

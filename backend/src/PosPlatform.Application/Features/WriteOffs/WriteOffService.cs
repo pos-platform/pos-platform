@@ -9,10 +9,12 @@ namespace PosPlatform.Application.Features.WriteOffs;
 public class WriteOffService : IWriteOffService
 {
     private readonly IApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
-    public WriteOffService(IApplicationDbContext db)
+    public WriteOffService(IApplicationDbContext db, ICurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<WriteOffDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -29,18 +31,23 @@ public class WriteOffService : IWriteOffService
     public async Task<WriteOffDto> CreateAsync(CreateWriteOffRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Items.Count == 0)
-        {
             throw new ValidationException("Hisobdan chiqarishda kamida bitta tovar bo'lishi kerak.");
-        }
+
+        var branchId = request.BranchId ?? _currentUser.BranchId
+            ?? throw new ValidationException("Hisobdan chiqarish uchun filial ko'rsatilmagan.");
 
         var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
         var products = await _db.Products
             .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
+        var stocks = await _db.BranchStocks
+            .Where(s => s.BranchId == branchId && productIds.Contains(s.ProductId))
+            .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+
         var writeOff = new WriteOff
         {
-            BranchId = request.BranchId,
+            BranchId = branchId,
             Reason = request.Reason?.Trim(),
             Number = await GenerateNumberAsync(cancellationToken)
         };
@@ -48,18 +55,15 @@ public class WriteOffService : IWriteOffService
         foreach (var line in request.Items)
         {
             if (!products.TryGetValue(line.ProductId, out var product))
-            {
                 throw new NotFoundException($"Mahsulot topilmadi: {line.ProductId}");
-            }
             if (line.Quantity <= 0)
-            {
                 throw new ValidationException($"'{product.Name}' uchun miqdor 0 dan katta bo'lishi kerak.");
-            }
+
+            if (!stocks.TryGetValue(line.ProductId, out var stock) || stock.Quantity < line.Quantity)
+                throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
 
             var lineTotal = Round2(line.Quantity * product.CostPrice);
-
-            // Ombor qoldig'idan ayiramiz.
-            product.Quantity -= line.Quantity;
+            stock.Quantity -= line.Quantity;
 
             writeOff.Items.Add(new WriteOffItem
             {

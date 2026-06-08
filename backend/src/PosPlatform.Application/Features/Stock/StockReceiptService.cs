@@ -9,10 +9,12 @@ namespace PosPlatform.Application.Features.Stock;
 public class StockReceiptService : IStockReceiptService
 {
     private readonly IApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
-    public StockReceiptService(IApplicationDbContext db)
+    public StockReceiptService(IApplicationDbContext db, ICurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<StockReceiptDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -20,6 +22,7 @@ public class StockReceiptService : IStockReceiptService
         var receipts = await _db.StockReceipts
             .AsNoTracking()
             .Include(r => r.Supplier)
+            .Include(r => r.Branch)
             .Include(r => r.Items).ThenInclude(i => i.Product)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -32,13 +35,12 @@ public class StockReceiptService : IStockReceiptService
         var receipt = await _db.StockReceipts
             .AsNoTracking()
             .Include(r => r.Supplier)
+            .Include(r => r.Branch)
             .Include(r => r.Items).ThenInclude(i => i.Product)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
         if (receipt is null)
-        {
             throw new NotFoundException($"Накладная topilmadi: {id}");
-        }
 
         return StockReceiptDto.FromEntity(receipt);
     }
@@ -46,9 +48,10 @@ public class StockReceiptService : IStockReceiptService
     public async Task<StockReceiptDto> CreateAsync(CreateStockReceiptRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Items.Count == 0)
-        {
             throw new ValidationException("Kirimda kamida bitta tovar bo'lishi kerak.");
-        }
+
+        var branchId = request.BranchId ?? _currentUser.BranchId
+            ?? throw new ValidationException("Kirim uchun filial ko'rsatilmagan.");
 
         var supplier = await _db.Suppliers.FirstOrDefaultAsync(s => s.Id == request.SupplierId, cancellationToken)
             ?? throw new NotFoundException($"Yetkazib beruvchi topilmadi: {request.SupplierId}");
@@ -58,10 +61,15 @@ public class StockReceiptService : IStockReceiptService
             .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
+        // Filial qoldiqlarini oldindan yuklaymiz (tracking uchun)
+        var stocks = await _db.BranchStocks
+            .Where(s => s.BranchId == branchId && productIds.Contains(s.ProductId))
+            .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+
         var receipt = new StockReceipt
         {
             SupplierId = supplier.Id,
-            BranchId = request.BranchId,
+            BranchId = branchId,
             Comment = request.Comment?.Trim(),
             Number = await GenerateNumberAsync(cancellationToken)
         };
@@ -69,22 +77,23 @@ public class StockReceiptService : IStockReceiptService
         foreach (var line in request.Items)
         {
             if (!products.TryGetValue(line.ProductId, out var product))
-            {
                 throw new NotFoundException($"Mahsulot topilmadi: {line.ProductId}");
-            }
             if (line.Quantity <= 0)
-            {
                 throw new ValidationException($"'{product.Name}' uchun miqdor 0 dan katta bo'lishi kerak.");
-            }
 
             var lineTotal = Round2(line.Quantity * line.CostPrice);
 
-            // Ombor qoldig'i oshadi, tannarx oxirgi kirim narxiga yangilanadi.
-            product.Quantity += line.Quantity;
-            if (line.CostPrice > 0)
+            // Filial qoldig'ini oshiramiz
+            if (!stocks.TryGetValue(line.ProductId, out var stock))
             {
-                product.CostPrice = line.CostPrice;
+                stock = new BranchStock { BranchId = branchId, ProductId = product.Id };
+                _db.BranchStocks.Add(stock);
+                stocks[line.ProductId] = stock;
             }
+            stock.Quantity += line.Quantity;
+
+            if (line.CostPrice > 0)
+                product.CostPrice = line.CostPrice;
 
             receipt.Items.Add(new StockReceiptItem
             {
@@ -98,8 +107,6 @@ public class StockReceiptService : IStockReceiptService
         }
 
         receipt.TotalAmount = receipt.Items.Sum(i => i.LineTotal);
-
-        // Yetkazib beruvchiga qarz oshadi.
         supplier.Balance += receipt.TotalAmount;
 
         _db.StockReceipts.Add(receipt);

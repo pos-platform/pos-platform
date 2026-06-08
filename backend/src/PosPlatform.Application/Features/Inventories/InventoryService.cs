@@ -48,6 +48,16 @@ public class InventoryService : IInventoryService
         if (products.Count == 0)
             throw new ValidationException("Inventarizatsiya uchun mahsulot topilmadi.");
 
+        // Filial qoldiqlari (agar BranchId ko'rsatilgan bo'lsa)
+        Dictionary<Guid, decimal> stockMap = new();
+        if (req.BranchId.HasValue)
+        {
+            var productIds = products.Select(p => p.Id).ToList();
+            stockMap = await _db.BranchStocks
+                .Where(s => s.BranchId == req.BranchId && productIds.Contains(s.ProductId))
+                .ToDictionaryAsync(s => s.ProductId, s => s.Quantity, ct);
+        }
+
         var count = await _db.Inventories.CountAsync(ct);
         var number = $"INV-{DateTime.UtcNow:yyyyMMdd}-{count + 1:D4}";
 
@@ -56,11 +66,15 @@ public class InventoryService : IInventoryService
             Number = number,
             Notes = req.Notes,
             BranchId = req.BranchId,
-            Items = products.Select(p => new InventoryItem
+            Items = products.Select(p =>
             {
-                ProductId = p.Id,
-                ExpectedQty = p.Quantity,
-                ActualQty = p.Quantity
+                var qty = stockMap.TryGetValue(p.Id, out var q) ? q : 0m;
+                return new InventoryItem
+                {
+                    ProductId = p.Id,
+                    ExpectedQty = qty,
+                    ActualQty = qty
+                };
             }).ToList()
         };
 
@@ -105,17 +119,27 @@ public class InventoryService : IInventoryService
         if (inv.Status != InventoryStatus.Draft)
             throw new ValidationException("Inventarizatsiya allaqachon qo'llanilgan.");
 
+        if (!inv.BranchId.HasValue)
+            throw new ValidationException("Inventarizatsiya filialga biriktirilmagan.");
+
         var productIds = inv.Items.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _db.Products
-            .Where(p => productIds.Contains(p.Id))
-            .ToDictionaryAsync(p => p.Id, ct);
+
+        var stocks = await _db.BranchStocks
+            .Where(s => s.BranchId == inv.BranchId && productIds.Contains(s.ProductId))
+            .ToDictionaryAsync(s => s.ProductId, ct);
 
         foreach (var item in inv.Items)
         {
-            if (!products.TryGetValue(item.ProductId, out var product)) continue;
-
             var discrepancy = item.ActualQty - item.ExpectedQty;
-            product.Quantity += discrepancy;
+            if (discrepancy == 0) continue;
+
+            if (!stocks.TryGetValue(item.ProductId, out var stock))
+            {
+                stock = new BranchStock { BranchId = inv.BranchId.Value, ProductId = item.ProductId };
+                _db.BranchStocks.Add(stock);
+                stocks[item.ProductId] = stock;
+            }
+            stock.Quantity += discrepancy;
         }
 
         inv.Status = InventoryStatus.Completed;

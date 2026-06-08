@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
+using PosPlatform.Application.Common.Models;
 using PosPlatform.Application.Features.Audit;
 using PosPlatform.Application.Features.Organizations.Dtos;
 using PosPlatform.Application.Features.Roles;
+using PosPlatform.Application.Features.Stores;
 using PosPlatform.Domain.Entities;
 using PosPlatform.Domain.Enums;
 
@@ -30,18 +32,29 @@ public class OrganizationService : IOrganizationService
 
     private static DateTime Today => DateTime.UtcNow.Date;
 
-    public async Task<IReadOnlyList<OrganizationDto>> GetAllAsync(CancellationToken ct = default)
+    public async Task<PagedResult<OrganizationDto>> GetAllAsync(int page, int pageSize, CancellationToken ct = default)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 5, 100);
         var today = Today;
+
+        var totalCount = await _db.Organizations.CountAsync(ct);
+
         var orgs = await _db.Organizations
             .AsNoTracking()
             .OrderBy(o => o.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(ct);
 
-        // Foydalanuvchi statistikasini bitta so'rovda yig'amiz.
+        // Faqat Desktop foydalanuvchilar (Kassir/Menejer) hisoblanadi — Admin panel bepul.
+        var orgIds = orgs.Select(o => o.Id).ToList();
         var stats = await _db.Users
             .AsNoTracking()
-            .Where(u => u.OrganizationId != null)
+            .Where(u => u.OrganizationId != null
+                        && orgIds.Contains(u.OrganizationId!.Value)
+                        && u.Role != UserRole.Admin
+                        && u.Role != UserRole.SuperAdmin)
             .GroupBy(u => u.OrganizationId!.Value)
             .Select(g => new
             {
@@ -51,11 +64,19 @@ public class OrganizationService : IOrganizationService
             })
             .ToListAsync(ct);
 
-        return orgs.Select(o =>
+        var items = orgs.Select(o =>
         {
             var s = stats.FirstOrDefault(x => x.OrgId == o.Id);
             return OrganizationDto.FromEntity(o, s?.Total ?? 0, s?.Licensed ?? 0);
         }).ToList();
+
+        return new PagedResult<OrganizationDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<OrganizationDetailDto> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -64,6 +85,7 @@ public class OrganizationService : IOrganizationService
         var users = await _db.Users
             .AsNoTracking()
             .Include(u => u.AppRole)
+            .Include(u => u.Branch)
             .Where(u => u.OrganizationId == id)
             .ToListAsync(ct);
 
@@ -92,6 +114,18 @@ public class OrganizationService : IOrganizationService
 
         // Yangi org uchun standart rollarni seed qilamiz.
         await _roleService.InitializeOrgRolesAsync(org.Id, ct);
+
+        // Tashkilot uchun do'konlarni avtomatik yaratamiz.
+        for (int i = 1; i <= request.StoreCount; i++)
+        {
+            _db.Branches.Add(new Branch
+            {
+                Name = i == 1 ? "Do'kon 1" : $"Do'kon {i}",
+                IsActive = true,
+                OrganizationId = org.Id
+            });
+        }
+        await _db.SaveChangesAsync(ct);
 
         var adminRole = await _db.Roles
             .FirstOrDefaultAsync(r => r.OrganizationId == org.Id && r.Name == "Admin", ct);
@@ -159,6 +193,7 @@ public class OrganizationService : IOrganizationService
             Role = request.Role,
             AppRoleId = appRole?.Id,
             OrganizationId = orgId,
+            BranchId = request.BranchId,
             IsActive = true,
             LicensedUntil = request.LicenseMonths > 0 ? Today.AddMonths(request.LicenseMonths) : null
         };
@@ -195,6 +230,14 @@ public class OrganizationService : IOrganizationService
     public async Task<OrgUserDto> SetUserActiveAsync(Guid userId, bool isActive, CancellationToken ct = default)
     {
         var user = await GetManagedUserAsync(userId, ct);
+
+        if (isActive && user.OrganizationId is not null)
+        {
+            var org = await _db.Organizations.FirstOrDefaultAsync(o => o.Id == user.OrganizationId, ct);
+            if (org is not null && !org.IsActive)
+                throw new ValidationException("Tashkilot bloklangan — avval tashkilotni faollashtiring.");
+        }
+
         user.IsActive = isActive;
         await _db.SaveChangesAsync(ct);
         await _audit.LogAsync(isActive ? "user.activate" : "user.deactivate", $"username={user.Username}",
@@ -233,6 +276,12 @@ public class OrganizationService : IOrganizationService
     public async Task<IReadOnlyList<OrgRoleDto>> GetRolesAsync(Guid orgId, CancellationToken ct = default)
     {
         await GetOrgAsync(orgId, ct);
+
+        // Agar tashkilotda hali rol bo'lmasa (eski tashkilotlar uchun) — avtomatik yaratamiz.
+        var hasRoles = await _db.Roles.AnyAsync(r => r.OrganizationId == orgId, ct);
+        if (!hasRoles)
+            await _roleService.InitializeOrgRolesAsync(orgId, ct);
+
         return await _db.Roles
             .AsNoTracking()
             .Where(r => r.OrganizationId == orgId)
@@ -245,6 +294,63 @@ public class OrganizationService : IOrganizationService
                 PermissionCount = r.RolePermissions.Count
             })
             .ToListAsync(ct);
+    }
+
+    public async Task<OrgAlertsDto> GetAlertsAsync(CancellationToken ct = default)
+    {
+        var today = Today;
+        var soon = today.AddDays(7);
+
+        // Faqat Desktop foydalanuvchilar (Kassir/Menejer) tekshiriladi.
+        var users = await _db.Users
+            .AsNoTracking()
+            .Include(u => u.Branch)
+            .Where(u => u.OrganizationId != null
+                        && u.Role != UserRole.Admin
+                        && u.Role != UserRole.SuperAdmin)
+            .ToListAsync(ct);
+
+        var orgIds = users.Select(u => u.OrganizationId!.Value).Distinct().ToList();
+        var orgs = await _db.Organizations
+            .AsNoTracking()
+            .Where(o => orgIds.Contains(o.Id))
+            .ToListAsync(ct);
+        var orgMap = orgs.ToDictionary(o => o.Id);
+
+        OrgAlertItemDto BuildItem(Guid orgId, IEnumerable<User> orgUsers) =>
+            new()
+            {
+                OrgId = orgId,
+                OrgName = orgMap.TryGetValue(orgId, out var o) ? o.Name : orgId.ToString(),
+                OrgPhone = orgMap.TryGetValue(orgId, out var o2) ? o2.Phone : null,
+                Users = orgUsers.Select(u => new OrgUserAlertDto
+                {
+                    UserId = u.Id,
+                    Username = u.Username,
+                    Role = u.Role.ToString(),
+                    BranchName = u.Branch?.Name,
+                    LicensedUntil = u.LicensedUntil,
+                    DaysLeft = u.LicensedUntil is null ? null : (int)(u.LicensedUntil.Value.Date - today).TotalDays
+                }).ToList()
+            };
+
+        var unpaid = users
+            .Where(u => u.LicensedUntil is null)
+            .GroupBy(u => u.OrganizationId!.Value)
+            .Select(g => BuildItem(g.Key, g))
+            .OrderBy(x => x.OrgName)
+            .ToList();
+
+        var expiringSoon = users
+            .Where(u => u.LicensedUntil is not null
+                        && u.LicensedUntil.Value.Date >= today
+                        && u.LicensedUntil.Value.Date <= soon)
+            .GroupBy(u => u.OrganizationId!.Value)
+            .Select(g => BuildItem(g.Key, g))
+            .OrderBy(x => x.OrgName)
+            .ToList();
+
+        return new OrgAlertsDto { Unpaid = unpaid, ExpiringSoon = expiringSoon };
     }
 
     // ---------- yordamchilar ----------
@@ -267,9 +373,12 @@ public class OrganizationService : IOrganizationService
     private async Task<OrganizationDto> ToDtoWithStats(Organization org, CancellationToken ct)
     {
         var today = Today;
-        var total = await _db.Users.CountAsync(u => u.OrganizationId == org.Id, ct);
+        var total = await _db.Users.CountAsync(
+            u => u.OrganizationId == org.Id && u.Role != UserRole.Admin && u.Role != UserRole.SuperAdmin, ct);
         var licensed = await _db.Users.CountAsync(
-            u => u.OrganizationId == org.Id && u.LicensedUntil != null && u.LicensedUntil.Value.Date >= today, ct);
+            u => u.OrganizationId == org.Id
+                 && u.Role != UserRole.Admin && u.Role != UserRole.SuperAdmin
+                 && u.LicensedUntil != null && u.LicensedUntil.Value.Date >= today, ct);
         return OrganizationDto.FromEntity(org, total, licensed);
     }
 }

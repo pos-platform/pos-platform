@@ -1,3 +1,4 @@
+using PosPlatform.Application.Common.Models;
 using PosPlatform.Application.Features.Organizations.Dtos;
 
 namespace PosPlatform.Application.Features.Organizations;
@@ -5,7 +6,7 @@ namespace PosPlatform.Application.Features.Organizations;
 /// <summary>Tashkilotlar va ularning obunalarini boshqarish — faqat SuperAdmin uchun.</summary>
 public interface IOrganizationService
 {
-    Task<IReadOnlyList<OrganizationDto>> GetAllAsync(CancellationToken ct = default);
+    Task<PagedResult<OrganizationDto>> GetAllAsync(int page, int pageSize, CancellationToken ct = default);
     Task<OrganizationDetailDto> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<OrganizationDto> CreateAsync(CreateOrganizationRequest request, CancellationToken ct = default);
     Task<OrganizationDto> UpdateAsync(Guid id, UpdateOrganizationRequest request, CancellationToken ct = default);
@@ -17,4 +18,5 @@ public interface IOrganizationService
     Task<OrgUserDto> SetUserActiveAsync(Guid userId, bool isActive, CancellationToken ct = default);
     Task<IReadOnlyList<OrgRoleDto>> GetRolesAsync(Guid orgId, CancellationToken ct = default);
     Task<OrgUserDto> AssignAppRoleAsync(Guid userId, Guid? roleId, CancellationToken ct = default);
+    Task<OrgAlertsDto> GetAlertsAsync(CancellationToken ct = default);
 }

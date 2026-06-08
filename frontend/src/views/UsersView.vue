@@ -1,18 +1,19 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { usersApi, rolesApi } from '../api/catalog'
+import { usersApi, rolesApi, storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
 const users = ref([])
 const roles = ref([])
+const stores = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
 const success = ref('')
 
-const blank = () => ({ username: '', password: '', appRoleId: '' })
+const blank = () => ({ username: '', password: '', appRoleId: '', branchId: '' })
 const form = reactive(blank())
 
 // Rol o'zgartirish modali
@@ -22,7 +23,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    ;[users.value, roles.value] = await Promise.all([usersApi.list(), rolesApi.list()])
+    ;[users.value, roles.value, stores.value] = await Promise.all([usersApi.list(), rolesApi.list(), storesApi.list()])
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -41,6 +42,7 @@ async function create() {
       role: roleName(form.appRoleId) || 'Cashier'
     }
     if (form.appRoleId) payload.appRoleId = form.appRoleId
+    if (form.branchId) payload.branchId = form.branchId
     const u = await usersApi.create(payload)
     success.value = `"${u.username}" (${u.appRoleName || u.role}) yaratildi`
     Object.assign(form, blank())
@@ -128,6 +130,13 @@ onMounted(load)
           <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
         </select>
       </div>
+      <div v-if="stores.length" class="field">
+        <label>Do'kon</label>
+        <select v-model="form.branchId" class="select">
+          <option value="">— Bog'lanmagan —</option>
+          <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
+      </div>
       <button class="btn" style="width: 100%" :disabled="saving">
         {{ saving ? 'Saqlanmoqda...' : 'Yaratish' }}
       </button>
@@ -141,6 +150,7 @@ onMounted(load)
           <tr>
             <th>Foydalanuvchi</th>
             <th>Rol</th>
+            <th v-if="stores.length">Do'kon</th>
             <th>Holat</th>
             <th></th>
           </tr>
@@ -153,6 +163,9 @@ onMounted(load)
             </td>
             <td>
               <span class="role-badge">{{ u.appRoleName || u.role }}</span>
+            </td>
+            <td v-if="stores.length" class="muted" style="font-size:13px">
+              {{ u.branchName || '—' }}
             </td>
             <td>
               <span class="pill" :class="u.isActive ? 'pill-green' : 'pill-red'">

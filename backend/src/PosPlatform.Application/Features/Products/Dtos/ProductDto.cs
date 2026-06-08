@@ -11,6 +11,10 @@ public class ProductDto
     public string? Barcode { get; set; }
     public decimal CostPrice { get; set; }
     public decimal Price { get; set; }
+    /// <summary>
+    /// Joriy foydalanuvchi filialidagi qoldiq.
+    /// Admin uchun barcha filiallar yig'indisi.
+    /// </summary>
     public decimal Quantity { get; set; }
     /// <summary>Ustama foiz = (Price - CostPrice) / CostPrice * 100.</summary>
     public decimal MarkupPercent { get; set; }
@@ -30,7 +34,11 @@ public class ProductDto
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
-    public static ProductDto FromEntity(Product p) => new()
+    /// <param name="branchId">
+    /// Ko'rsatilsa — shu filialdagi qoldiq qaytariladi.
+    /// null bo'lsa — barcha filiallar yig'indisi (admin view).
+    /// </param>
+    public static ProductDto FromEntity(Product p, Guid? branchId = null) => new()
     {
         Id = p.Id,
         Name = p.Name,
@@ -38,7 +46,9 @@ public class ProductDto
         Barcode = p.Barcode,
         CostPrice = p.CostPrice,
         Price = p.Price,
-        Quantity = p.Quantity,
+        Quantity = branchId.HasValue
+            ? p.Stocks.FirstOrDefault(s => s.BranchId == branchId)?.Quantity ?? 0m
+            : p.Stocks.Sum(s => s.Quantity),
         MarkupPercent = p.CostPrice > 0
             ? Math.Round((p.Price - p.CostPrice) / p.CostPrice * 100m, 2)
             : 0m,

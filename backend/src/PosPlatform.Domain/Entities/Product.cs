@@ -35,9 +35,6 @@ public class Product : BaseEntity
     /// <summary>Sotish narxi.</summary>
     public decimal Price { get; set; }
 
-    /// <summary>Ombordagi qoldiq (kirimda oshadi, sotuvda kamayadi).</summary>
-    public decimal Quantity { get; set; }
-
     /// <summary>Mahsulot rasmi manzili (ixtiyoriy).</summary>
     public string? ImageUrl { get; set; }
 
@@ -60,4 +57,7 @@ public class Product : BaseEntity
     public Guid? BranchId { get; set; }
 
     public Branch? Branch { get; set; }
+
+    /// <summary>Filiallar bo'yicha qoldiqlar (BranchStock).</summary>
+    public ICollection<BranchStock> Stocks { get; set; } = new List<BranchStock>();
 }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PosPlatform.Application.Common.Interfaces;
+using PosPlatform.Domain.Enums;
 
 namespace PosPlatform.Api.Middleware;
 
@@ -31,11 +32,12 @@ public class LicenseValidationMiddleware
                 .Include(u => u.Organization)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
+            // Obuna faqat Kassir/Menejer uchun tekshiriladi. Admin panel bepul.
+            var needsLicense = user?.Role == UserRole.Cashier || user?.Role == UserRole.Manager;
             var invalid = user is null
                 || !user.IsActive
                 || user.Organization is { IsActive: false }
-                || user.LicensedUntil is null
-                || user.LicensedUntil.Value.Date < today;
+                || (needsLicense && (user.LicensedUntil is null || user.LicensedUntil.Value.Date < today));
 
             if (invalid)
             {

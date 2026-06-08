@@ -51,16 +51,17 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("Hisob faolsizlantirilgan. Administratorga murojaat qiling.");
         }
 
-        // Obuna (litsenziya) tekshiruvi — SuperAdmin'dan tashqari barcha foydalanuvchilar uchun.
-        if (user.Role != UserRole.SuperAdmin)
+        // Tashkilot bloki — SuperAdmin bundan mustasno.
+        if (user.Role != UserRole.SuperAdmin && user.Organization is { IsActive: false })
         {
-            if (user.Organization is { IsActive: false })
-            {
-                await _audit.LogAsync("login.fail", "tashkilot bloklangan", success: false,
-                    organizationId: user.OrganizationId, actorUserId: user.Id, actorUsername: user.Username, ct: cancellationToken);
-                throw new UnauthorizedException("Tashkilot bloklangan. Platforma administratoriga murojaat qiling.");
-            }
+            await _audit.LogAsync("login.fail", "tashkilot bloklangan", success: false,
+                organizationId: user.OrganizationId, actorUserId: user.Id, actorUsername: user.Username, ct: cancellationToken);
+            throw new UnauthorizedException("Tashkilot bloklangan. Platforma administratoriga murojaat qiling.");
+        }
 
+        // Obuna (litsenziya) tekshiruvi — faqat Kassir va Menejer uchun. Admin panel bepul.
+        if (user.Role == UserRole.Cashier || user.Role == UserRole.Manager)
+        {
             var today = DateTime.UtcNow.Date;
             if (user.LicensedUntil is null || user.LicensedUntil.Value.Date < today)
             {

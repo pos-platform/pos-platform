@@ -98,25 +98,35 @@ public class ReportService : IReportService
 
     // ─── Qoldiq hisoboti ─────────────────────────────────────────────────────
 
-    public async Task<StockReportDto> GetStockReportAsync(CancellationToken ct = default)
+    public async Task<StockReportDto> GetStockReportAsync(Guid? branchId = null, CancellationToken ct = default)
     {
-        var products = await _db.Products
+        IQueryable<Domain.Entities.Product> query = _db.Products
             .AsNoTracking()
             .Include(p => p.Category)
-            .OrderBy(p => p.Name)
-            .ToListAsync(ct);
+            .Include(p => p.Stocks);
 
-        var items = products.Select(p => new StockReportItemDto
+        if (branchId is not null)
+            query = query.Where(p => p.BranchId == branchId || p.BranchId == null);
+
+        var products = await query.OrderBy(p => p.Name).ToListAsync(ct);
+
+        var items = products.Select(p =>
         {
-            Name      = p.Name,
-            Category  = p.Category?.Name ?? "—",
-            Barcode   = p.Barcode,
-            Unit      = p.Unit == Domain.Enums.Unit.Kilogram ? "kg" : "dona",
-            Quantity  = p.Quantity,
-            CostPrice = p.CostPrice,
-            SalePrice = p.Price,
-            CostValue = Math.Round(p.Quantity * p.CostPrice, 2),
-            SaleValue = Math.Round(p.Quantity * p.Price, 2)
+            var qty = branchId.HasValue
+                ? p.Stocks.FirstOrDefault(s => s.BranchId == branchId)?.Quantity ?? 0m
+                : p.Stocks.Sum(s => s.Quantity);
+            return new StockReportItemDto
+            {
+                Name      = p.Name,
+                Category  = p.Category?.Name ?? "—",
+                Barcode   = p.Barcode,
+                Unit      = p.Unit == Domain.Enums.Unit.Kilogram ? "kg" : "dona",
+                Quantity  = qty,
+                CostPrice = p.CostPrice,
+                SalePrice = p.Price,
+                CostValue = Math.Round(qty * p.CostPrice, 2),
+                SaleValue = Math.Round(qty * p.Price, 2)
+            };
         }).ToList();
 
         return new StockReportDto
@@ -128,9 +138,9 @@ public class ReportService : IReportService
         };
     }
 
-    public async Task<byte[]> ExportStockReportAsync(CancellationToken ct = default)
+    public async Task<byte[]> ExportStockReportAsync(Guid? branchId = null, CancellationToken ct = default)
     {
-        var report = await GetStockReportAsync(ct);
+        var report = await GetStockReportAsync(branchId, ct);
         return _excel.ExportStockReport(report);
     }
 }

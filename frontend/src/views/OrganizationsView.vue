@@ -4,32 +4,44 @@ import { organizationsApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const orgs = ref([])
+const totalCount = ref(0)
+const totalPages = ref(0)
+const currentPage = ref(1)
+const PAGE_SIZE = 10
 const loading = ref(false)
 const err = ref('')
 const success = ref('')
 
+// Ogohlantirishlar (to'lov qilinmagan / muddati yaqin)
+const alerts = ref({ unpaid: [], expiringSoon: [] })
+const alertModal = ref(null) // 'unpaid' | 'expiringSoon' | null
+
 const selected = ref(null)
 const busy = ref(false)
-const orgRoles = ref([]) // org rollari — admin user uchun dropdown
+const orgRoles = ref([])
+const orgStores = ref([]) // tanlangan tashkilotning do'konlari
 
 // Yangi tashkilot modali
 const showOrgForm = ref(false)
-const orgForm = reactive({ name: '', phone: '', note: '', adminUsername: '', adminPassword: '' })
+const orgForm = reactive({ name: '', phone: '', note: '', adminUsername: '', adminPassword: '', storeCount: 1 })
+
+const STORE_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 // Admin + Desktop login qo'shish modali
 const showAdminForm = ref(false)
 const createDesktop = ref(true)
 const adminForm = reactive({ username: '', password: '' })
-const desktopForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0 })
+const desktopForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
 
 // Faqat desktop login qo'shish modali
 const showDesktopForm = ref(false)
-const desktopOnlyForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0 })
+const desktopOnlyForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
 
 const roleLabel = { Admin: 'Admin', Manager: 'Menejer', Cashier: 'Kassir', SuperAdmin: 'SuperAdmin' }
 
 const totalUsers = computed(() => orgs.value.reduce((s, o) => s + o.userCount, 0))
 const totalLicensed = computed(() => orgs.value.reduce((s, o) => s + o.licensedCount, 0))
+const totalOrgs = computed(() => totalCount.value || orgs.value.length)
 
 const adminUsers = computed(() => selected.value?.users.filter(u => u.role === 'Admin') ?? [])
 const desktopUsers = computed(() => selected.value?.users.filter(u => u.role !== 'Admin') ?? [])
@@ -41,20 +53,39 @@ async function load() {
   loading.value = true
   err.value = ''
   try {
-    orgs.value = await organizationsApi.list()
+    const result = await organizationsApi.list(currentPage.value, PAGE_SIZE)
+    orgs.value = result.items
+    totalCount.value = result.totalCount
+    totalPages.value = result.totalPages
   } catch (e) {
     err.value = errorMessage(e)
   } finally {
     loading.value = false
   }
+  // Ogohlantirishlar alohida — xato bo'lsa asosiy ro'yxatga ta'sir qilmasin
+  try {
+    alerts.value = await organizationsApi.getAlerts()
+  } catch {
+    // silent
+  }
+}
+
+async function goToPage(p) {
+  if (p < 1 || p > totalPages.value) return
+  currentPage.value = p
+  await load()
 }
 
 async function openOrg(o) {
   err.value = ''
   orgRoles.value = []
+  orgStores.value = []
   try {
-    selected.value = await organizationsApi.get(o.id)
-    orgRoles.value = await organizationsApi.getRoles(o.id)
+    ;[selected.value, orgRoles.value, orgStores.value] = await Promise.all([
+      organizationsApi.get(o.id),
+      organizationsApi.getRoles(o.id),
+      organizationsApi.getStores(o.id)
+    ])
   } catch (e) {
     err.value = errorMessage(e)
   }
@@ -62,8 +93,11 @@ async function openOrg(o) {
 
 async function refreshSelected() {
   if (selected.value) {
-    selected.value = await organizationsApi.get(selected.value.id)
-    orgRoles.value = await organizationsApi.getRoles(selected.value.id)
+    ;[selected.value, orgRoles.value, orgStores.value] = await Promise.all([
+      organizationsApi.get(selected.value.id),
+      organizationsApi.getRoles(selected.value.id),
+      organizationsApi.getStores(selected.value.id)
+    ])
   }
   await load()
 }
@@ -77,10 +111,11 @@ async function createOrg() {
       note: orgForm.note.trim() || null,
       adminUsername: orgForm.adminUsername.trim(),
       adminPassword: orgForm.adminPassword,
-      licenseMonths: 0
+      licenseMonths: 0,
+      storeCount: Number(orgForm.storeCount) || 1
     })
     notify(`"${orgForm.name}" tashkiloti yaratildi`)
-    Object.assign(orgForm, { name: '', phone: '', note: '', adminUsername: '', adminPassword: '' })
+    Object.assign(orgForm, { name: '', phone: '', note: '', adminUsername: '', adminPassword: '', storeCount: 1 })
     showOrgForm.value = false
     await load()
   } catch (e) {
@@ -112,16 +147,18 @@ async function createAdminWithDesktop() {
       licenseMonths: 0
     })
     if (createDesktop.value && desktopForm.username.trim()) {
-      await organizationsApi.createUser(selected.value.id, {
+      const dp = {
         username: desktopForm.username.trim(),
         password: desktopForm.password,
         role: desktopForm.role,
         licenseMonths: Number(desktopForm.licenseMonths) || 0
-      })
+      }
+      if (desktopForm.branchId) dp.branchId = desktopForm.branchId
+      await organizationsApi.createUser(selected.value.id, dp)
     }
     notify('Login(lar) qo\'shildi')
     Object.assign(adminForm, { username: '', password: '' })
-    Object.assign(desktopForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0 })
+    Object.assign(desktopForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
     createDesktop.value = true
     showAdminForm.value = false
     await refreshSelected()
@@ -136,14 +173,16 @@ async function createDesktopOnly() {
   err.value = ''
   busy.value = true
   try {
-    await organizationsApi.createUser(selected.value.id, {
+    const payload = {
       username: desktopOnlyForm.username.trim(),
       password: desktopOnlyForm.password,
       role: desktopOnlyForm.role,
       licenseMonths: Number(desktopOnlyForm.licenseMonths) || 0
-    })
+    }
+    if (desktopOnlyForm.branchId) payload.branchId = desktopOnlyForm.branchId
+    await organizationsApi.createUser(selected.value.id, payload)
     notify('Desktop login qo\'shildi')
-    Object.assign(desktopOnlyForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0 })
+    Object.assign(desktopOnlyForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
     showDesktopForm.value = false
     await refreshSelected()
   } catch (e) {
@@ -223,9 +262,19 @@ onMounted(load)
   </div>
 
   <div class="stat-row">
-    <div class="stat-card"><div class="stat-label">Tashkilotlar</div><div class="stat-value">{{ orgs.length }}</div></div>
-    <div class="stat-card"><div class="stat-label">Jami foydalanuvchilar</div><div class="stat-value">{{ totalUsers }}</div></div>
+    <div class="stat-card"><div class="stat-label">Tashkilotlar</div><div class="stat-value">{{ totalOrgs }}</div></div>
+    <div class="stat-card"><div class="stat-label">Jami kassirlar</div><div class="stat-value">{{ totalUsers }}</div></div>
     <div class="stat-card"><div class="stat-label">Faol obunalar</div><div class="stat-value ok">{{ totalLicensed }}</div></div>
+    <div class="stat-card stat-card-warn" :class="{ 'stat-card-clickable': alerts.unpaid.length }" @click="alerts.unpaid.length && (alertModal = 'unpaid')">
+      <div class="stat-label">To'lov qilinmagan</div>
+      <div class="stat-value warn">{{ alerts.unpaid.length }}</div>
+      <div v-if="alerts.unpaid.length" class="stat-hint">tashkilot · bosing</div>
+    </div>
+    <div class="stat-card stat-card-danger" :class="{ 'stat-card-clickable': alerts.expiringSoon.length }" @click="alerts.expiringSoon.length && (alertModal = 'expiringSoon')">
+      <div class="stat-label">Muddati yaqin (≤7 kun)</div>
+      <div class="stat-value danger">{{ alerts.expiringSoon.length }}</div>
+      <div v-if="alerts.expiringSoon.length" class="stat-hint">tashkilot · bosing</div>
+    </div>
   </div>
 
   <div v-if="err" class="alert alert-error">{{ err }}</div>
@@ -255,6 +304,20 @@ onMounted(load)
           <tr v-if="!orgs.length && !loading"><td colspan="4" class="muted" style="text-align:center;padding:24px">Tashkilot yo'q</td></tr>
         </tbody>
       </table>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button class="pg-btn" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">‹</button>
+        <template v-for="p in totalPages" :key="p">
+          <button
+            class="pg-btn"
+            :class="{ 'pg-active': p === currentPage }"
+            @click="goToPage(p)"
+          >{{ p }}</button>
+        </template>
+        <button class="pg-btn" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">›</button>
+        <span class="pg-info">{{ (currentPage - 1) * PAGE_SIZE + 1 }}–{{ Math.min(currentPage * PAGE_SIZE, totalCount) }} / {{ totalCount }}</span>
+      </div>
     </div>
 
     <!-- Tafsilot -->
@@ -287,6 +350,9 @@ onMounted(load)
             <div class="user-name">
               {{ u.username }}
               <span class="pill pill-blue">Admin</span>
+              <span class="status-pill" :class="u.isActive ? 'sp-on' : 'sp-off'">
+                {{ u.isActive ? 'Faol' : 'Passiv' }}
+              </span>
             </div>
             <div class="user-role-row">
               <select class="select select-sm" :value="u.appRoleId || ''" :disabled="busy"
@@ -298,7 +364,7 @@ onMounted(load)
           </div>
           <div class="user-acts">
             <button class="btn btn-xs" :class="u.isActive ? 'btn-danger' : 'btn-success'" :disabled="busy" @click="toggleUser(u)">
-              {{ u.isActive ? 'Passiv' : 'Aktiv' }}
+              {{ u.isActive ? "O'chirish" : 'Faollashtirish' }}
             </button>
           </div>
         </div>
@@ -318,6 +384,10 @@ onMounted(load)
             <div class="user-name">
               {{ u.username }}
               <span class="pill pill-gray">{{ roleLabel[u.role] || u.role }}</span>
+              <span v-if="u.branchName" class="store-tag">🏪 {{ u.branchName }}</span>
+              <span class="status-pill" :class="u.isActive ? 'sp-on' : 'sp-off'">
+                {{ u.isActive ? 'Faol' : 'Passiv' }}
+              </span>
             </div>
             <div class="user-status">
               <span class="st-dot" :class="statusOf(u).cls"></span>
@@ -329,12 +399,21 @@ onMounted(load)
             <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)">💵 +1 oy</button>
             <button class="btn btn-ghost btn-xs" :disabled="busy" @click="extend(u, 3)">+3 oy</button>
             <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)">⨯</button>
-            <button class="btn btn-xs" :class="u.isActive ? 'btn-danger' : 'btn-success'" :disabled="busy" @click="toggleUser(u)">
-              {{ u.isActive ? 'Passiv' : 'Aktiv' }}
+            <button
+              class="btn btn-xs"
+              :class="u.isActive ? 'btn-danger' : 'btn-success'"
+              :disabled="busy || (!u.isActive && !selected.isActive)"
+              :title="!u.isActive && !selected.isActive ? 'Tashkilot bloklangan — avval tashkilotni faollashtiring' : ''"
+              @click="toggleUser(u)"
+            >
+              {{ u.isActive ? "O'chirish" : 'Faollashtirish' }}
             </button>
           </div>
         </div>
         <p v-if="!desktopUsers.length" class="muted empty-msg">Desktop login yo'q</p>
+        <p v-if="!selected.isActive && desktopUsers.length" class="muted" style="font-size:12px; margin:6px 0 0; color:var(--danger)">
+          ⚠️ Tashkilot bloklangan — kassirlarni faollashtirish uchun avval tashkilotni faollashtiring.
+        </p>
       </div>
     </div>
 
@@ -354,7 +433,15 @@ onMounted(load)
           <div class="field"><label>Tashkilot nomi *</label><input v-model="orgForm.name" class="input" required placeholder="Do'kon / firma nomi" /></div>
           <div class="field"><label>Telefon</label><input v-model="orgForm.phone" class="input" placeholder="+998 ..." /></div>
         </div>
-        <div class="field"><label>Izoh</label><input v-model="orgForm.note" class="input" placeholder="Ixtiyoriy" /></div>
+        <div class="row">
+          <div class="field" style="flex:2"><label>Izoh</label><input v-model="orgForm.note" class="input" placeholder="Ixtiyoriy" /></div>
+          <div class="field" style="flex:1;min-width:140px">
+            <label>Do'kon soni *</label>
+            <select v-model="orgForm.storeCount" class="select">
+              <option v-for="n in STORE_COUNTS" :key="n" :value="n">{{ n }} ta do'kon</option>
+            </select>
+          </div>
+        </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:14px 0" />
         <div class="muted" style="font-weight:600;font-size:13px;margin-bottom:6px">Bosh admin logini (Admin panel)</div>
         <div class="row">
@@ -400,10 +487,56 @@ onMounted(load)
             </div>
             <div class="field" style="max-width:160px"><label>Obuna (oy)</label><input v-model="desktopForm.licenseMonths" type="number" min="0" class="input" /></div>
           </div>
+          <div v-if="orgStores.length" class="field">
+            <label>Do'kon</label>
+            <select v-model="desktopForm.branchId" class="select">
+              <option value="">— Belgilanmagan —</option>
+              <option v-for="s in orgStores" :key="s.id" :value="s.id">{{ s.name }}</option>
+            </select>
+          </div>
         </template>
 
         <button class="btn" style="width:100%; margin-top:16px" :disabled="busy">Qo'shish</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Ogohlantirishlar modali -->
+  <div v-if="alertModal" class="modal-overlay" @click.self="alertModal = null">
+    <div class="modal-box" style="max-width:600px">
+      <div class="modal-head">
+        <h3>
+          <template v-if="alertModal === 'unpaid'">To'lov qilinmagan kassirlar</template>
+          <template v-else>Muddati yaqin tugayotgan obunalar (≤7 kun)</template>
+        </h3>
+        <button class="modal-x" @click="alertModal = null">×</button>
+      </div>
+      <div class="modal-body" style="max-height:70vh;overflow-y:auto;padding-top:0">
+        <template v-for="item in (alertModal === 'unpaid' ? alerts.unpaid : alerts.expiringSoon)" :key="item.orgId">
+          <div class="alert-org-block">
+            <div class="alert-org-name">
+              {{ item.orgName }}
+              <span v-if="item.orgPhone" class="muted" style="font-weight:400;font-size:13px"> · {{ item.orgPhone }}</span>
+            </div>
+            <div v-for="u in item.users" :key="u.userId" class="alert-user-row">
+              <span class="alert-username">{{ u.username }}</span>
+              <span class="pill pill-gray" style="font-size:11px">{{ u.role === 'Cashier' ? 'Kassir' : u.role === 'Manager' ? 'Menejer' : u.role }}</span>
+              <span v-if="u.branchName" class="store-tag">{{ u.branchName }}</span>
+              <template v-if="alertModal === 'unpaid'">
+                <span class="alert-status st-none">Hali to'lanmagan</span>
+              </template>
+              <template v-else>
+                <span class="alert-status" :class="u.daysLeft <= 3 ? 'st-expired' : 'st-soon'">
+                  {{ u.daysLeft }} kun qoldi · {{ fmtDate(u.licensedUntil) }} gacha
+                </span>
+              </template>
+            </div>
+          </div>
+        </template>
+        <p v-if="(alertModal === 'unpaid' ? alerts.unpaid : alerts.expiringSoon).length === 0" class="muted" style="text-align:center;padding:24px">
+          Ma'lumot yo'q
+        </p>
+      </div>
     </div>
   </div>
 
@@ -427,6 +560,13 @@ onMounted(load)
           </div>
           <div class="field" style="max-width:160px"><label>Obuna (oy)</label><input v-model="desktopOnlyForm.licenseMonths" type="number" min="0" class="input" /></div>
         </div>
+        <div v-if="orgStores.length" class="field" style="margin-top:8px">
+          <label>Do'kon</label>
+          <select v-model="desktopOnlyForm.branchId" class="select">
+            <option value="">— Belgilanmagan —</option>
+            <option v-for="s in orgStores" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+        </div>
         <p class="muted" style="font-size:12px;margin:4px 0 0">0 = faollashtirilmagan (keyin "+1 oy" bilan faollashtirasiz).</p>
         <button class="btn" style="width:100%; margin-top:14px" :disabled="busy">Qo'shish</button>
       </form>
@@ -436,10 +576,26 @@ onMounted(load)
 
 <style scoped>
 .stat-row { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
-.stat-card { flex: 1; min-width: 170px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
+.stat-card { flex: 1 1 140px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
+.stat-card-clickable { cursor: pointer; transition: box-shadow 0.15s, transform 0.1s; }
+.stat-card-clickable:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.10); transform: translateY(-1px); }
+.stat-card-warn { border-color: #fcd34d; background: #fffbeb; }
+.stat-card-danger { border-color: #fca5a5; background: #fff1f1; }
 .stat-label { font-size: 13px; color: var(--muted); font-weight: 600; }
 .stat-value { font-size: 26px; font-weight: 800; margin-top: 4px; }
 .stat-value.ok { color: #15803d; }
+.stat-value.warn { color: #b45309; }
+.stat-value.danger { color: #dc2626; }
+.stat-hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.alert-org-block { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
+.alert-org-name { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+.alert-user-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; border-top: 1px solid var(--border); }
+.alert-username { font-weight: 600; font-size: 13px; }
+.alert-status { font-size: 12px; font-weight: 600; }
+.alert-status.st-none { color: #94a3b8; }
+.alert-status.st-soon { color: #d97706; }
+.alert-status.st-expired { color: #dc2626; }
 
 .layout { display: flex; gap: 16px; align-items: flex-start; }
 .list-card { flex: 1.3; min-width: 380px; }
@@ -485,6 +641,50 @@ onMounted(load)
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
 
 .select-sm { font-size: 12px; padding: 3px 6px; height: auto; }
+
+.status-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+.sp-on  { background: #dcfce7; color: #15803d; }
+.sp-off { background: #fee2e2; color: #dc2626; }
+
+.store-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px 4px;
+  flex-wrap: wrap;
+}
+.pg-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  transition: background 0.15s;
+}
+.pg-btn:hover:not(:disabled) { background: var(--surface); }
+.pg-btn:disabled { opacity: 0.4; cursor: default; }
+.pg-active { background: var(--primary) !important; color: #fff !important; border-color: var(--primary) !important; }
+.pg-info { font-size: 12px; color: var(--text-muted); margin-left: 6px; }
 
 /* Modal extras */
 .section-label { font-weight: 700; font-size: 13px; color: var(--muted); margin-bottom: 8px; }

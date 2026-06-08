@@ -1,7 +1,7 @@
 import http from './http'
 
 export const productsApi = {
-  list: () => http.get('/api/products').then((r) => r.data),
+  list: (params) => http.get('/api/products', { params }).then((r) => r.data),
   get: (id) => http.get(`/api/products/${id}`).then((r) => r.data),
   create: (payload) => http.post('/api/products', payload).then((r) => r.data),
   update: (id, payload) => http.put(`/api/products/${id}`, payload).then((r) => r.data),
@@ -36,11 +36,14 @@ export function downloadBlob(blob, filename) {
 
 export const categoriesApi = {
   list: () => http.get('/api/categories').then((r) => r.data),
-  create: (payload) => http.post('/api/categories', payload).then((r) => r.data)
+  create: (payload) => http.post('/api/categories', payload).then((r) => r.data),
+  update: (id, payload) => http.put(`/api/categories/${id}`, payload).then((r) => r.data),
+  remove: (id) => http.delete(`/api/categories/${id}`).then((r) => r.data)
 }
 
 export const organizationsApi = {
-  list: () => http.get('/api/organizations').then((r) => r.data),
+  list: (page = 1, pageSize = 10) =>
+    http.get('/api/organizations', { params: { page, pageSize } }).then((r) => r.data),
   get: (id) => http.get(`/api/organizations/${id}`).then((r) => r.data),
   create: (payload) => http.post('/api/organizations', payload).then((r) => r.data),
   update: (id, payload) => http.put(`/api/organizations/${id}`, payload).then((r) => r.data),
@@ -57,8 +60,10 @@ export const organizationsApi = {
   deactivateUser: (userId) =>
     http.post(`/api/organizations/users/${userId}/deactivate`).then((r) => r.data),
   getRoles: (id) => http.get(`/api/organizations/${id}/roles`).then((r) => r.data),
+  getStores: (id) => http.get(`/api/organizations/${id}/stores`).then((r) => r.data),
   assignAppRole: (userId, roleId) =>
-    http.put(`/api/organizations/users/${userId}/app-role`, { roleId: roleId ?? null }).then((r) => r.data)
+    http.put(`/api/organizations/users/${userId}/app-role`, { roleId: roleId ?? null }).then((r) => r.data),
+  getAlerts: () => http.get('/api/organizations/alerts').then((r) => r.data)
 }
 
 export const roleTemplatesApi = {
@@ -122,7 +127,9 @@ export const storesApi = {
   deactivateStore: (id) => http.post(`/api/stores/${id}/deactivate`).then((r) => r.data),
   addCashbox: (payload) => http.post('/api/stores/cashboxes', payload).then((r) => r.data),
   activateCashbox: (id) => http.post(`/api/stores/cashboxes/${id}/activate`).then((r) => r.data),
-  deactivateCashbox: (id) => http.post(`/api/stores/cashboxes/${id}/deactivate`).then((r) => r.data)
+  deactivateCashbox: (id) => http.post(`/api/stores/cashboxes/${id}/deactivate`).then((r) => r.data),
+  assignUser: (storeId, userId) => http.put(`/api/stores/${storeId}/users/${userId}`).then((r) => r.data),
+  removeUser: (storeId, userId) => http.delete(`/api/stores/${storeId}/users/${userId}`).then((r) => r.data)
 }
 
 export const suppliersApi = {
@@ -167,8 +174,8 @@ export const debtorsApi = {
 export const reportsApi = {
   sales:       (params) => http.get('/api/reports/sales',        { params }).then((r) => r.data),
   exportSales: (params) => http.get('/api/reports/sales/export', { params, responseType: 'blob' }).then((r) => r.data),
-  stock:       ()       => http.get('/api/reports/stock').then((r) => r.data),
-  exportStock: ()       => http.get('/api/reports/stock/export', { responseType: 'blob' }).then((r) => r.data)
+  stock:       (params) => http.get('/api/reports/stock',        { params }).then((r) => r.data),
+  exportStock: (params) => http.get('/api/reports/stock/export', { params, responseType: 'blob' }).then((r) => r.data)
 }
 
 export const expensesApi = {

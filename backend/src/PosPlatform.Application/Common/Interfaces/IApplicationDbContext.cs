@@ -37,6 +37,8 @@ public interface IApplicationDbContext
     DbSet<Inventory> Inventories { get; }
     DbSet<InventoryItem> InventoryItems { get; }
 
+    DbSet<BranchStock> BranchStocks { get; }
+
     // Task 4: Branch transfers
     DbSet<StockTransfer> StockTransfers { get; }
     DbSet<StockTransferItem> StockTransferItems { get; }
