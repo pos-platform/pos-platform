@@ -15,4 +15,6 @@ public interface IOrganizationService
     Task<OrgUserDto> ExtendLicenseAsync(Guid userId, int months, CancellationToken ct = default);
     Task<OrgUserDto> RevokeLicenseAsync(Guid userId, CancellationToken ct = default);
     Task<OrgUserDto> SetUserActiveAsync(Guid userId, bool isActive, CancellationToken ct = default);
+    Task<IReadOnlyList<OrgRoleDto>> GetRolesAsync(Guid orgId, CancellationToken ct = default);
+    Task<OrgUserDto> AssignAppRoleAsync(Guid userId, Guid? roleId, CancellationToken ct = default);
 }

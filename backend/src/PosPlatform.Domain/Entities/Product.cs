@@ -55,4 +55,9 @@ public class Product : BaseEntity
     public Guid CategoryId { get; set; }
 
     public Category? Category { get; set; }
+
+    /// <summary>Mahsulot tegishli do'kon (ixtiyoriy). null = barcha do'konlar uchun umumiy.</summary>
+    public Guid? BranchId { get; set; }
+
+    public Branch? Branch { get; set; }
 }

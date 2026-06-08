@@ -3,6 +3,22 @@ using PosPlatform.Domain.Entities;
 
 namespace PosPlatform.Application.Features.Stores.Dtos;
 
+public class StoreUserDto
+{
+    public Guid Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string? RoleName { get; set; }
+    public bool IsActive { get; set; }
+
+    public static StoreUserDto FromEntity(User u) => new()
+    {
+        Id = u.Id,
+        Username = u.Username,
+        RoleName = u.AppRole?.Name,
+        IsActive = u.IsActive
+    };
+}
+
 public class StoreDto
 {
     public Guid Id { get; set; }
@@ -11,6 +27,7 @@ public class StoreDto
     public decimal Balance { get; set; }
     public bool IsActive { get; set; }
     public List<CashboxDto> Cashboxes { get; set; } = new();
+    public List<StoreUserDto> Users { get; set; } = new();
 
     public static StoreDto FromEntity(Branch b) => new()
     {
@@ -22,6 +39,10 @@ public class StoreDto
         Cashboxes = b.Cashboxes
             .OrderBy(c => c.Name)
             .Select(CashboxDto.FromEntity)
+            .ToList(),
+        Users = b.Users
+            .OrderBy(u => u.Username)
+            .Select(StoreUserDto.FromEntity)
             .ToList()
     };
 }
@@ -59,4 +80,10 @@ public class CreateCashboxRequest
 
     [Required]
     public string Name { get; set; } = string.Empty;
+}
+
+/// <summary>Foydalanuvchini do'konga biriktirish yoki uzish (branchId = null → uzish).</summary>
+public class AssignUserToBranchRequest
+{
+    public Guid? BranchId { get; set; }
 }

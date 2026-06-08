@@ -1,7 +1,10 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+
+const router = useRouter()
 
 const stores = ref([])
 const loading = ref(false)
@@ -133,7 +136,8 @@ onMounted(load)
               {{ c.isActive ? 'Aktiv' : 'O\'chiq' }}
             </span>
           </td>
-          <td class="text-right" style="width: 110px">
+          <td class="text-right" style="width: 180px">
+            <button class="btn btn-ghost btn-sm" @click="router.push({ name: 'cashbox', params: { id: c.id } })">📊 Ko'rish</button>
             <button class="btn btn-ghost btn-sm" @click="toggleCashbox(c)">
               {{ c.isActive ? 'O\'chirish' : 'Yoqish' }}
             </button>

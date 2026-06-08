@@ -58,7 +58,16 @@ const pageSize = ref(50)
 
 const showModal = ref(false)
 const editId = ref(null)
-const newCategory = ref('')
+
+// Inline add — category
+const showAddCategory = ref(false)
+const newCategoryName = ref('')
+const addingCategory = ref(false)
+
+// Inline add — supplier
+const showAddSupplier = ref(false)
+const newSupplier = reactive({ name: '', phone: '', contactPerson: '' })
+const addingSupplier = ref(false)
 
 const deleteTarget = ref(null)
 const deleting = ref(false)
@@ -256,14 +265,40 @@ async function onImageChange(event) {
 }
 
 async function addCategory() {
-  if (!newCategory.value.trim()) return
+  if (!newCategoryName.value.trim()) return
+  addingCategory.value = true
   try {
-    const created = await categoriesApi.create({ name: newCategory.value.trim() })
+    const created = await categoriesApi.create({ name: newCategoryName.value.trim() })
     categories.value.push(created)
     form.categoryId = created.id
-    newCategory.value = ''
+    newCategoryName.value = ''
+    showAddCategory.value = false
   } catch (e) {
     error.value = errorMessage(e)
+  } finally {
+    addingCategory.value = false
+  }
+}
+
+async function addSupplier() {
+  if (!newSupplier.name.trim()) return
+  addingSupplier.value = true
+  try {
+    const created = await suppliersApi.create({
+      name: newSupplier.name.trim(),
+      phone: newSupplier.phone.trim() || null,
+      contactPerson: newSupplier.contactPerson.trim() || null
+    })
+    suppliers.value.push(created)
+    form.supplierId = created.id
+    newSupplier.name = ''
+    newSupplier.phone = ''
+    newSupplier.contactPerson = ''
+    showAddSupplier.value = false
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    addingSupplier.value = false
   }
 }
 
@@ -272,6 +307,8 @@ async function openCreate() {
   if (categories.value.length) form.categoryId = categories.value[0].id
   editId.value = null
   error.value = ''
+  showAddCategory.value = false
+  showAddSupplier.value = false
   showModal.value = true
   await genBarcode()
 }
@@ -298,6 +335,8 @@ function openEdit(p) {
   })
   editId.value = p.id
   error.value = ''
+  showAddCategory.value = false
+  showAddSupplier.value = false
   showModal.value = true
 }
 
@@ -589,17 +628,43 @@ onUnmounted(() => {
 
         <div class="row">
           <div class="field">
-            <label>Kategoriya *</label>
-            <select v-model="form.categoryId" class="select" required>
-              <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
+            <label>Yetkazib beruvchi</label>
+            <div style="display:flex; gap:6px">
+              <select v-model="form.supplierId" class="select" style="flex:1">
+                <option value="">— tanlanmagan —</option>
+                <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
+              </select>
+              <button type="button" class="btn-add-inline" :class="{ active: showAddSupplier }" @click="showAddSupplier = !showAddSupplier; showAddCategory = false" title="Yangi yetkazib beruvchi">+</button>
+            </div>
+            <div v-if="showAddSupplier" class="inline-add-box">
+              <input v-model="newSupplier.name" class="input" placeholder="Nomi *" style="margin-bottom:6px" autofocus />
+              <input v-model="newSupplier.contactPerson" class="input" placeholder="Mas'ul shaxs" style="margin-bottom:6px" />
+              <input v-model="newSupplier.phone" class="input" placeholder="Telefon" style="margin-bottom:8px" />
+              <div style="display:flex; gap:6px">
+                <button type="button" class="btn btn-sm" :disabled="addingSupplier || !newSupplier.name.trim()" style="flex:1" @click="addSupplier">
+                  {{ addingSupplier ? '...' : 'Qo\'shish' }}
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" @click="showAddSupplier = false">Bekor</button>
+              </div>
+            </div>
           </div>
           <div class="field">
-            <label>Yetkazib beruvchi</label>
-            <select v-model="form.supplierId" class="select">
-              <option value="">— tanlanmagan —</option>
-              <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-            </select>
+            <label>Kategoriya *</label>
+            <div style="display:flex; gap:6px">
+              <select v-model="form.categoryId" class="select" required style="flex:1">
+                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </select>
+              <button type="button" class="btn-add-inline" :class="{ active: showAddCategory }" @click="showAddCategory = !showAddCategory; showAddSupplier = false" title="Yangi kategoriya">+</button>
+            </div>
+            <div v-if="showAddCategory" class="inline-add-box">
+              <input v-model="newCategoryName" class="input" placeholder="Kategoriya nomi *" style="margin-bottom:8px" autofocus />
+              <div style="display:flex; gap:6px">
+                <button type="button" class="btn btn-sm" :disabled="addingCategory || !newCategoryName.trim()" style="flex:1" @click="addCategory">
+                  {{ addingCategory ? '...' : 'Qo\'shish' }}
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" @click="showAddCategory = false">Bekor</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -655,15 +720,6 @@ onUnmounted(() => {
             <input v-model="form.tare" type="number" min="0" step="0.001" class="input" />
           </div>
         </div>
-
-        <template v-if="!editId">
-          <hr style="border:none;border-top:1px solid var(--border);margin:14px 0" />
-          <label class="muted" style="font-weight:600;font-size:13px">Yangi kategoriya</label>
-          <div class="row" style="margin-top:6px">
-            <input v-model="newCategory" class="input" placeholder="Kategoriya nomi" style="flex:1" />
-            <button type="button" class="btn btn-ghost" @click="addCategory">+</button>
-          </div>
-        </template>
 
         <button class="btn" style="width:100%; margin-top:16px" :disabled="saving || uploading">
           {{ saving ? 'Saqlanmoqda...' : (editId ? 'Saqlash' : 'Qo\'shish') }}
@@ -725,5 +781,36 @@ onUnmounted(() => {
 .pag-ellipsis {
   padding: 0 6px;
   font-size: 15px;
+}
+
+.btn-add-inline {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: 8px;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-add-inline:hover,
+.btn-add-inline.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.inline-add-box {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
 }
 </style>

@@ -51,6 +51,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<OnlinePayment> OnlinePayments => Set<OnlinePayment>();
     public DbSet<LabelPrintJob> LabelPrintJobs => Set<LabelPrintJob>();
     public DbSet<LabelPrintJobItem> LabelPrintJobItems => Set<LabelPrintJobItem>();
+    public DbSet<RoleTemplate> RoleTemplates => Set<RoleTemplate>();
 
     private static readonly MethodInfo SetTenantFilterMethod =
         typeof(ApplicationDbContext).GetMethod(nameof(SetTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;

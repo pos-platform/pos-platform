@@ -8,6 +8,7 @@ public class SupplierDto
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }
+    public string? ContactPerson { get; set; }
     public string? Address { get; set; }
     public decimal Balance { get; set; }
     public bool IsActive { get; set; }
@@ -18,6 +19,7 @@ public class SupplierDto
         Id = s.Id,
         Name = s.Name,
         Phone = s.Phone,
+        ContactPerson = s.ContactPerson,
         Address = s.Address,
         Balance = s.Balance,
         IsActive = s.IsActive,
@@ -30,6 +32,7 @@ public class CreateSupplierRequest
     [Required]
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }
+    public string? ContactPerson { get; set; }
     public string? Address { get; set; }
 }
 
@@ -38,5 +41,6 @@ public class UpdateSupplierRequest
     [Required]
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }
+    public string? ContactPerson { get; set; }
     public string? Address { get; set; }
 }

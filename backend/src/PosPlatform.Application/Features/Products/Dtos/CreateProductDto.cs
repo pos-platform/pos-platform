@@ -48,6 +48,9 @@ public class CreateProductDto
 
     [Required]
     public Guid CategoryId { get; set; }
+
+    /// <summary>Mahsulot tegishli do'kon. null = barcha do'konlarga umumiy.</summary>
+    public Guid? BranchId { get; set; }
 }
 
 /// <summary>Mahsulotni tahrirlash (yaratish bilan bir xil maydonlar).</summary>

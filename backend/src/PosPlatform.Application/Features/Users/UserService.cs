@@ -23,6 +23,7 @@ public class UserService : IUserService
     {
         var users = await _db.Users
             .Include(u => u.AppRole)
+            .Include(u => u.Branch)
             .AsNoTracking()
             .OrderBy(u => u.Username)
             .ToListAsync(cancellationToken);
@@ -106,6 +107,7 @@ public class UserService : IUserService
     private async Task<User> GetUserWithRoleAsync(Guid id, CancellationToken cancellationToken) =>
         await _db.Users
             .Include(u => u.AppRole)
+            .Include(u => u.Branch)
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken)
         ?? throw new NotFoundException($"Foydalanuvchi topilmadi: {id}");

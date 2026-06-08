@@ -68,4 +68,12 @@ public class OrganizationsController : ControllerBase
     [HttpPost("users/{userId:guid}/deactivate")]
     public async Task<ActionResult<OrgUserDto>> DeactivateUser(Guid userId, CancellationToken ct)
         => Ok(await _service.SetUserActiveAsync(userId, false, ct));
+
+    [HttpGet("{id:guid}/roles")]
+    public async Task<ActionResult<IReadOnlyList<OrgRoleDto>>> GetRoles(Guid id, CancellationToken ct)
+        => Ok(await _service.GetRolesAsync(id, ct));
+
+    [HttpPut("users/{userId:guid}/app-role")]
+    public async Task<ActionResult<OrgUserDto>> AssignAppRole(Guid userId, AssignOrgUserRoleRequest request, CancellationToken ct)
+        => Ok(await _service.AssignAppRoleAsync(userId, request.RoleId, ct));
 }

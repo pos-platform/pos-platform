@@ -9,7 +9,7 @@ namespace PosPlatform.Api.Authorization;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public sealed class HasPermissionAttribute : AuthorizeAttribute, IAuthorizationRequirement, IAuthorizationRequirementData
 {
-    public HasPermissionAttribute(string permission) : base(permission)
+    public HasPermissionAttribute(string permission)
     {
         Permission = permission;
     }

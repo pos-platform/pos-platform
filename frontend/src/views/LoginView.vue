@@ -19,8 +19,16 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(username.value, password.value)
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
+    const redirect = route.query.redirect
+    if (redirect && redirect !== '/') {
+      router.push(redirect)
+    } else if (auth.isSuperAdmin) {
+      router.push({ name: 'organizations' })
+    } else if (auth.role === 'Admin') {
+      router.push({ name: 'dashboard' })
+    } else {
+      router.push({ name: 'pos' })
+    }
   } catch (e) {
     error.value = errorMessage(e, 'Kirib bo\'lmadi')
   } finally {

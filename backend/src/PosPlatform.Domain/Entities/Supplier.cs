@@ -12,6 +12,8 @@ public class Supplier : BaseEntity
 
     public string? Phone { get; set; }
 
+    public string? ContactPerson { get; set; }
+
     public string? Address { get; set; }
 
     /// <summary>Yetkazib beruvchiga qarz (balans).</summary>

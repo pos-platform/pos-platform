@@ -13,6 +13,7 @@ public class UserDto
     public string? AppRoleName { get; set; }
     public bool IsActive { get; set; }
     public Guid? BranchId { get; set; }
+    public string? BranchName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LicensedUntil { get; set; }
 
@@ -25,6 +26,7 @@ public class UserDto
         AppRoleName = u.AppRole?.Name,
         IsActive = u.IsActive,
         BranchId = u.BranchId,
+        BranchName = u.Branch?.Name,
         CreatedAt = u.CreatedAt,
         LicensedUntil = u.LicensedUntil
     };

@@ -28,7 +28,7 @@ watch(
 // Sidebar menyu. admin: true bo'lsa faqat Admin ko'radi.
 const navItems = [
   { name: 'dashboard', key: 'nav.dashboard', icon: '📊', admin: true },
-  { name: 'pos', key: 'nav.pos', icon: '🛒' },
+  { name: 'pos', key: 'nav.pos', icon: '🛒', cashierOnly: true },
   { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true },
   { name: 'products', key: 'nav.products', icon: '📦' },
   { name: 'sales', key: 'nav.sales', icon: '🧾' },
@@ -53,12 +53,17 @@ const navItems = [
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
 const superNavItems = [
   { name: 'organizations', key: 'nav.organizations', icon: '🏢' },
+  { name: 'admin-roles', key: 'nav.roles', icon: '🔑' },
   { name: 'audit', key: 'nav.audit', icon: '🛡️' }
 ]
 
 const visibleNav = computed(() => {
   if (auth.isSuperAdmin) return superNavItems
-  return navItems.filter((i) => !i.admin || auth.role === 'Admin')
+  return navItems.filter((i) => {
+    if (i.admin && auth.role !== 'Admin') return false
+    if (i.cashierOnly && auth.role === 'Admin') return false
+    return true
+  })
 })
 
 function logout() {

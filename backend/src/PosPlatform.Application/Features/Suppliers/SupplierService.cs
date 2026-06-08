@@ -38,6 +38,7 @@ public class SupplierService : ISupplierService
         {
             Name = name,
             Phone = request.Phone?.Trim(),
+            ContactPerson = request.ContactPerson?.Trim(),
             Address = request.Address?.Trim(),
             IsActive = true
         };
@@ -53,6 +54,7 @@ public class SupplierService : ISupplierService
         var supplier = await GetAsync(id, cancellationToken);
         supplier.Name = request.Name.Trim();
         supplier.Phone = request.Phone?.Trim();
+        supplier.ContactPerson = request.ContactPerson?.Trim();
         supplier.Address = request.Address?.Trim();
         await _db.SaveChangesAsync(cancellationToken);
 

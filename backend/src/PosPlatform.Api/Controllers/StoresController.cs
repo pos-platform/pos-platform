@@ -61,4 +61,22 @@ public class StoresController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CashboxDto>> DeactivateCashbox(Guid id, CancellationToken cancellationToken)
         => Ok(await _stores.SetCashboxActiveAsync(id, false, cancellationToken));
+
+    /// <summary>Foydalanuvchini do'konga biriktirish — Admin.</summary>
+    [HttpPut("{storeId:guid}/users/{userId:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AssignUser(Guid storeId, Guid userId, CancellationToken cancellationToken)
+    {
+        await _stores.AssignUserToBranchAsync(userId, storeId, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Foydalanuvchini do'kondan uzish — Admin.</summary>
+    [HttpDelete("{storeId:guid}/users/{userId:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> RemoveUser(Guid storeId, Guid userId, CancellationToken cancellationToken)
+    {
+        await _stores.AssignUserToBranchAsync(userId, null, cancellationToken);
+        return NoContent();
+    }
 }

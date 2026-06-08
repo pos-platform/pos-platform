@@ -55,5 +55,7 @@ public interface IApplicationDbContext
     DbSet<LabelPrintJob> LabelPrintJobs { get; }
     DbSet<LabelPrintJobItem> LabelPrintJobItems { get; }
 
+    DbSet<RoleTemplate> RoleTemplates { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

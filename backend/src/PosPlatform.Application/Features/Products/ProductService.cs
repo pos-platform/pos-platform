@@ -11,21 +11,24 @@ public class ProductService : IProductService
 {
     private readonly IApplicationDbContext _db;
     private readonly IProductExcelService _excel;
+    private readonly ICurrentUser _currentUser;
 
-    public ProductService(IApplicationDbContext db, IProductExcelService excel)
+    public ProductService(IApplicationDbContext db, IProductExcelService excel, ICurrentUser currentUser)
     {
         _db = db;
         _excel = excel;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var products = await _db.Products
-            .AsNoTracking()
-            .Include(p => p.Supplier)
-            .OrderBy(p => p.Name)
-            .ToListAsync(cancellationToken);
+        IQueryable<Product> query = _db.Products.AsNoTracking().Include(p => p.Supplier).Include(p => p.Branch);
 
+        // Agar foydalanuvchi do'konga biriktirilgan bo'lsa (kassir/menejer), faqat shu do'kon mahsulotlarini ko'rsin.
+        if (_currentUser.BranchId is not null)
+            query = query.Where(p => p.BranchId == _currentUser.BranchId);
+
+        var products = await query.OrderBy(p => p.Name).ToListAsync(cancellationToken);
         return products.Select(ProductDto.FromEntity).ToList();
     }
 
@@ -34,6 +37,7 @@ public class ProductService : IProductService
         var product = await _db.Products
             .AsNoTracking()
             .Include(p => p.Supplier)
+            .Include(p => p.Branch)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
         if (product is null)
@@ -69,7 +73,8 @@ public class ProductService : IProductService
             IsWeighed = dto.IsWeighed,
             PluNumber = dto.PluNumber,
             Tare = dto.Tare,
-            CategoryId = dto.CategoryId
+            CategoryId = dto.CategoryId,
+            BranchId = dto.BranchId ?? _currentUser.BranchId
         };
 
         _db.Products.Add(product);
@@ -105,6 +110,7 @@ public class ProductService : IProductService
         product.PluNumber = dto.PluNumber;
         product.Tare = dto.Tare;
         product.CategoryId = dto.CategoryId;
+        product.BranchId = dto.BranchId ?? product.BranchId;
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -240,12 +246,10 @@ public class ProductService : IProductService
 
     public async Task<byte[]> ExportAsync(CancellationToken cancellationToken = default)
     {
-        var products = await _db.Products
-            .AsNoTracking()
-            .Include(p => p.Category)
-            .Include(p => p.Supplier)
-            .OrderBy(p => p.Name)
-            .ToListAsync(cancellationToken);
+        IQueryable<Product> query = _db.Products.AsNoTracking().Include(p => p.Category).Include(p => p.Supplier).Include(p => p.Branch);
+        if (_currentUser.BranchId is not null)
+            query = query.Where(p => p.BranchId == _currentUser.BranchId);
+        var products = await query.OrderBy(p => p.Name).ToListAsync(cancellationToken);
 
         var rows = products.Select(p =>
         {
@@ -264,7 +268,7 @@ public class ProductService : IProductService
                 CostPrice     = p.CostPrice,
                 Price         = p.Price,
                 MarkupPercent = markup,
-                BranchName    = null,         // do'kon filter context'da
+                BranchName    = p.Branch?.Name,
                 Category      = p.Category?.Name ?? "",
                 HasDiscount   = "нет",
                 DiscountPrice = null,

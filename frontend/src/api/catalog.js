@@ -55,7 +55,17 @@ export const organizationsApi = {
   activateUser: (userId) =>
     http.post(`/api/organizations/users/${userId}/activate`).then((r) => r.data),
   deactivateUser: (userId) =>
-    http.post(`/api/organizations/users/${userId}/deactivate`).then((r) => r.data)
+    http.post(`/api/organizations/users/${userId}/deactivate`).then((r) => r.data),
+  getRoles: (id) => http.get(`/api/organizations/${id}/roles`).then((r) => r.data),
+  assignAppRole: (userId, roleId) =>
+    http.put(`/api/organizations/users/${userId}/app-role`, { roleId: roleId ?? null }).then((r) => r.data)
+}
+
+export const roleTemplatesApi = {
+  list: () => http.get('/api/role-templates').then((r) => r.data),
+  update: (id, permissions) => http.put(`/api/role-templates/${id}`, { permissions }).then((r) => r.data),
+  create: (name, permissions) => http.post('/api/role-templates', { name, permissions }).then((r) => r.data),
+  remove: (id) => http.delete(`/api/role-templates/${id}`).then((r) => r.data)
 }
 
 export const auditApi = {

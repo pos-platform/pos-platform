@@ -13,4 +13,7 @@ public interface IStoreService
     Task<CashboxDto> AddCashboxAsync(CreateCashboxRequest request, CancellationToken cancellationToken = default);
 
     Task<CashboxDto> SetCashboxActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken = default);
+
+    /// <summary>Foydalanuvchini do'konga biriktirish yoki uzish (branchId = null).</summary>
+    Task AssignUserToBranchAsync(Guid userId, Guid? branchId, CancellationToken cancellationToken = default);
 }

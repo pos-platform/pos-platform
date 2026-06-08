@@ -63,6 +63,7 @@ public class OrganizationService : IOrganizationService
         var org = await GetOrgAsync(id, ct);
         var users = await _db.Users
             .AsNoTracking()
+            .Include(u => u.AppRole)
             .Where(u => u.OrganizationId == id)
             .ToListAsync(ct);
 
@@ -199,6 +200,51 @@ public class OrganizationService : IOrganizationService
         await _audit.LogAsync(isActive ? "user.activate" : "user.deactivate", $"username={user.Username}",
             organizationId: user.OrganizationId, ct: ct);
         return OrgUserDto.FromEntity(user, Today);
+    }
+
+    public async Task<OrgUserDto> AssignAppRoleAsync(Guid userId, Guid? roleId, CancellationToken ct = default)
+    {
+        var user = await _db.Users
+            .Include(u => u.AppRole)
+            .FirstOrDefaultAsync(u => u.Id == userId, ct)
+            ?? throw new NotFoundException($"Foydalanuvchi topilmadi: {userId}");
+
+        if (user.Role == UserRole.SuperAdmin)
+            throw new ValidationException("SuperAdmin rolini o'zgartirish mumkin emas.");
+
+        if (roleId.HasValue)
+        {
+            var role = await _db.Roles
+                .FirstOrDefaultAsync(r => r.Id == roleId && r.OrganizationId == user.OrganizationId, ct)
+                ?? throw new NotFoundException($"Rol topilmadi: {roleId}");
+            user.AppRoleId = roleId;
+            user.AppRole = role;
+        }
+        else
+        {
+            user.AppRoleId = null;
+            user.AppRole = null;
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return OrgUserDto.FromEntity(user, Today);
+    }
+
+    public async Task<IReadOnlyList<OrgRoleDto>> GetRolesAsync(Guid orgId, CancellationToken ct = default)
+    {
+        await GetOrgAsync(orgId, ct);
+        return await _db.Roles
+            .AsNoTracking()
+            .Where(r => r.OrganizationId == orgId)
+            .OrderBy(r => r.Name)
+            .Select(r => new OrgRoleDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                IsSystem = r.IsSystem,
+                PermissionCount = r.RolePermissions.Count
+            })
+            .ToListAsync(ct);
     }
 
     // ---------- yordamchilar ----------

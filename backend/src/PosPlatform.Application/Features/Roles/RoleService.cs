@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PosPlatform.Application.Common.Authorization;
 using PosPlatform.Application.Common.Exceptions;
@@ -104,12 +105,15 @@ public class RoleService : IRoleService
     {
         var permMap = await _db.Permissions.ToDictionaryAsync(p => p.Code, p => p.Id, ct);
 
-        var roleDefinitions = new (string Name, string[] PermCodes)[]
-        {
-            ("Admin",   Permissions.AdminPermissions),
-            ("Manager", Permissions.ManagerPermissions),
-            ("Cashier", Permissions.CashierPermissions),
-        };
+        var templates = await _db.RoleTemplates.AsNoTracking().ToListAsync(ct);
+        IEnumerable<(string Name, string[] PermCodes)> roleDefinitions = templates.Any()
+            ? templates.Select(t => (t.Name, JsonSerializer.Deserialize<string[]>(t.PermissionsJson) ?? []))
+            : new (string, string[])[]
+              {
+                  ("Admin",   Permissions.AdminPermissions),
+                  ("Manager", Permissions.ManagerPermissions),
+                  ("Cashier", Permissions.CashierPermissions),
+              };
 
         foreach (var (roleName, permCodes) in roleDefinitions)
         {

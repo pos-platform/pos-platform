@@ -8,24 +8,33 @@ const loading = ref(false)
 const err = ref('')
 const success = ref('')
 
-const selected = ref(null) // tashkilot tafsiloti (foydalanuvchilar bilan)
+const selected = ref(null)
 const busy = ref(false)
+const orgRoles = ref([]) // org rollari — admin user uchun dropdown
 
 // Yangi tashkilot modali
 const showOrgForm = ref(false)
-const orgForm = reactive({ name: '', phone: '', note: '', adminUsername: '', adminPassword: '', licenseMonths: 1 })
+const orgForm = reactive({ name: '', phone: '', note: '', adminUsername: '', adminPassword: '' })
 
-// Yangi foydalanuvchi modali
-const showUserForm = ref(false)
-const userForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0 })
+// Admin + Desktop login qo'shish modali
+const showAdminForm = ref(false)
+const createDesktop = ref(true)
+const adminForm = reactive({ username: '', password: '' })
+const desktopForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0 })
+
+// Faqat desktop login qo'shish modali
+const showDesktopForm = ref(false)
+const desktopOnlyForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0 })
 
 const roleLabel = { Admin: 'Admin', Manager: 'Menejer', Cashier: 'Kassir', SuperAdmin: 'SuperAdmin' }
 
 const totalUsers = computed(() => orgs.value.reduce((s, o) => s + o.userCount, 0))
 const totalLicensed = computed(() => orgs.value.reduce((s, o) => s + o.licensedCount, 0))
 
-function fmtDate(d) { return d ? new Date(d).toLocaleDateString('uz-UZ') : '—' }
+const adminUsers = computed(() => selected.value?.users.filter(u => u.role === 'Admin') ?? [])
+const desktopUsers = computed(() => selected.value?.users.filter(u => u.role !== 'Admin') ?? [])
 
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('uz-UZ') : '—' }
 function notify(msg) { success.value = msg; setTimeout(() => { success.value = '' }, 2500) }
 
 async function load() {
@@ -42,15 +51,20 @@ async function load() {
 
 async function openOrg(o) {
   err.value = ''
+  orgRoles.value = []
   try {
     selected.value = await organizationsApi.get(o.id)
+    orgRoles.value = await organizationsApi.getRoles(o.id)
   } catch (e) {
     err.value = errorMessage(e)
   }
 }
 
 async function refreshSelected() {
-  if (selected.value) selected.value = await organizationsApi.get(selected.value.id)
+  if (selected.value) {
+    selected.value = await organizationsApi.get(selected.value.id)
+    orgRoles.value = await organizationsApi.getRoles(selected.value.id)
+  }
   await load()
 }
 
@@ -63,10 +77,10 @@ async function createOrg() {
       note: orgForm.note.trim() || null,
       adminUsername: orgForm.adminUsername.trim(),
       adminPassword: orgForm.adminPassword,
-      licenseMonths: Number(orgForm.licenseMonths) || 0
+      licenseMonths: 0
     })
     notify(`"${orgForm.name}" tashkiloti yaratildi`)
-    Object.assign(orgForm, { name: '', phone: '', note: '', adminUsername: '', adminPassword: '', licenseMonths: 1 })
+    Object.assign(orgForm, { name: '', phone: '', note: '', adminUsername: '', adminPassword: '' })
     showOrgForm.value = false
     await load()
   } catch (e) {
@@ -87,19 +101,50 @@ async function toggleOrg(o) {
   }
 }
 
-async function createUser() {
+async function createAdminWithDesktop() {
   err.value = ''
   busy.value = true
   try {
     await organizationsApi.createUser(selected.value.id, {
-      username: userForm.username.trim(),
-      password: userForm.password,
-      role: userForm.role,
-      licenseMonths: Number(userForm.licenseMonths) || 0
+      username: adminForm.username.trim(),
+      password: adminForm.password,
+      role: 'Admin',
+      licenseMonths: 0
     })
-    notify('Foydalanuvchi qo\'shildi')
-    Object.assign(userForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0 })
-    showUserForm.value = false
+    if (createDesktop.value && desktopForm.username.trim()) {
+      await organizationsApi.createUser(selected.value.id, {
+        username: desktopForm.username.trim(),
+        password: desktopForm.password,
+        role: desktopForm.role,
+        licenseMonths: Number(desktopForm.licenseMonths) || 0
+      })
+    }
+    notify('Login(lar) qo\'shildi')
+    Object.assign(adminForm, { username: '', password: '' })
+    Object.assign(desktopForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0 })
+    createDesktop.value = true
+    showAdminForm.value = false
+    await refreshSelected()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function createDesktopOnly() {
+  err.value = ''
+  busy.value = true
+  try {
+    await organizationsApi.createUser(selected.value.id, {
+      username: desktopOnlyForm.username.trim(),
+      password: desktopOnlyForm.password,
+      role: desktopOnlyForm.role,
+      licenseMonths: Number(desktopOnlyForm.licenseMonths) || 0
+    })
+    notify('Desktop login qo\'shildi')
+    Object.assign(desktopOnlyForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0 })
+    showDesktopForm.value = false
     await refreshSelected()
   } catch (e) {
     err.value = errorMessage(e)
@@ -141,6 +186,18 @@ async function toggleUser(u) {
   try {
     if (u.isActive) await organizationsApi.deactivateUser(u.id)
     else await organizationsApi.activateUser(u.id)
+    await refreshSelected()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function assignRole(u, roleId) {
+  busy.value = true
+  try {
+    await organizationsApi.assignAppRole(u.id, roleId || null)
     await refreshSelected()
   } catch (e) {
     err.value = errorMessage(e)
@@ -215,38 +272,70 @@ onMounted(load)
                 :disabled="busy" @click="toggleOrg(selected)">
           {{ selected.isActive ? 'Tashkilotni bloklash' : 'Blokdan chiqarish' }}
         </button>
-        <button class="btn btn-sm" @click="showUserForm = true">+ Kassir / foydalanuvchi</button>
       </div>
 
-      <div class="muted" style="font-weight:600;font-size:13px;margin:16px 0 8px">
-        Kassirlar va foydalanuvchilar ({{ selected.users.length }})
-      </div>
-      <p class="hint">Kassir oylik to'lov qilsa <b>«💵 To'lov +1 oy»</b> bosing. To'lamasa <b>«Passiv»</b> qiling — u tizimga kira olmaydi.</p>
+      <!-- Admin panel logini -->
+      <div class="panel-section">
+        <div class="panel-section-head">
+          <span class="panel-label">Admin panel logini</span>
+          <button class="btn btn-xs btn-outline" @click="showAdminForm = true">+ Qo'shish</button>
+        </div>
+        <p class="panel-hint">Veb admin panelga kirish uchun. To'lov olinmaydi.</p>
 
-      <div v-for="u in selected.users" :key="u.id" class="user-row" :class="{ 'row-off': !u.isActive }">
-        <div class="user-main">
-          <div class="user-name">
-            {{ u.username }}
-            <span class="pill" :class="u.role === 'Admin' ? 'pill-blue' : 'pill-gray'">{{ roleLabel[u.role] || u.role }}</span>
+        <div v-for="u in adminUsers" :key="u.id" class="user-row" :class="{ 'row-off': !u.isActive }">
+          <div class="user-main">
+            <div class="user-name">
+              {{ u.username }}
+              <span class="pill pill-blue">Admin</span>
+            </div>
+            <div class="user-role-row">
+              <select class="select select-sm" :value="u.appRoleId || ''" :disabled="busy"
+                      @change="assignRole(u, $event.target.value || null)">
+                <option value="">— Rol belgilanmagan —</option>
+                <option v-for="r in orgRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
+              </select>
+            </div>
           </div>
-          <div class="user-status">
-            <span class="st-dot" :class="statusOf(u).cls"></span>
-            <span>{{ statusOf(u).text }}</span>
-            <span v-if="u.licensedUntil" class="muted" style="margin-left:6px">({{ fmtDate(u.licensedUntil) }} gacha)</span>
+          <div class="user-acts">
+            <button class="btn btn-xs" :class="u.isActive ? 'btn-danger' : 'btn-success'" :disabled="busy" @click="toggleUser(u)">
+              {{ u.isActive ? 'Passiv' : 'Aktiv' }}
+            </button>
           </div>
         </div>
-        <div class="user-acts">
-          <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)"
-                  title="Oylik to'lovni kiritish — 1 oyga faollashtirish/uzaytirish">💵 To'lov +1 oy</button>
-          <button class="btn btn-ghost btn-xs" :disabled="busy" @click="extend(u, 3)" title="3 oylik to'lov">+3 oy</button>
-          <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)" title="Obunani bekor qilish">⨯</button>
-          <button class="btn btn-xs" :class="u.isActive ? 'btn-danger' : 'btn-success'" :disabled="busy" @click="toggleUser(u)"
-                  :title="u.isActive ? 'Passiv qilish — kira olmaydi' : 'Aktivlashtirish'">
-            {{ u.isActive ? 'Passiv' : 'Aktiv' }}
-          </button>
-        </div>
+        <p v-if="!adminUsers.length" class="muted empty-msg">Admin login yo'q</p>
       </div>
-      <p v-if="!selected.users.length" class="muted" style="text-align:center;padding:12px 0">Foydalanuvchi yo'q</p>
+
+      <!-- Desktop panel logini -->
+      <div class="panel-section">
+        <div class="panel-section-head">
+          <span class="panel-label">Desktop panel logini</span>
+          <button class="btn btn-xs btn-outline" @click="showDesktopForm = true">+ Qo'shish</button>
+        </div>
+        <p class="panel-hint">Kassir va menejerlar uchun. Oylik to'lov qilsa <b>«💵 +1 oy»</b> bosing.</p>
+
+        <div v-for="u in desktopUsers" :key="u.id" class="user-row" :class="{ 'row-off': !u.isActive }">
+          <div class="user-main">
+            <div class="user-name">
+              {{ u.username }}
+              <span class="pill pill-gray">{{ roleLabel[u.role] || u.role }}</span>
+            </div>
+            <div class="user-status">
+              <span class="st-dot" :class="statusOf(u).cls"></span>
+              <span>{{ statusOf(u).text }}</span>
+              <span v-if="u.licensedUntil" class="muted" style="margin-left:6px">({{ fmtDate(u.licensedUntil) }} gacha)</span>
+            </div>
+          </div>
+          <div class="user-acts">
+            <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)">💵 +1 oy</button>
+            <button class="btn btn-ghost btn-xs" :disabled="busy" @click="extend(u, 3)">+3 oy</button>
+            <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)">⨯</button>
+            <button class="btn btn-xs" :class="u.isActive ? 'btn-danger' : 'btn-success'" :disabled="busy" @click="toggleUser(u)">
+              {{ u.isActive ? 'Passiv' : 'Aktiv' }}
+            </button>
+          </div>
+        </div>
+        <p v-if="!desktopUsers.length" class="muted empty-msg">Desktop login yo'q</p>
+      </div>
     </div>
 
     <div v-else class="card detail-card empty-detail">
@@ -267,39 +356,78 @@ onMounted(load)
         </div>
         <div class="field"><label>Izoh</label><input v-model="orgForm.note" class="input" placeholder="Ixtiyoriy" /></div>
         <hr style="border:none;border-top:1px solid var(--border);margin:14px 0" />
-        <div class="muted" style="font-weight:600;font-size:13px;margin-bottom:6px">Bosh admin (do'kon egasi)</div>
+        <div class="muted" style="font-weight:600;font-size:13px;margin-bottom:6px">Bosh admin logini (Admin panel)</div>
         <div class="row">
           <div class="field"><label>Login *</label><input v-model="orgForm.adminUsername" class="input" required placeholder="admin login" /></div>
           <div class="field"><label>Parol *</label><input v-model="orgForm.adminPassword" type="text" class="input" required placeholder="kamida 6 belgi" /></div>
-          <div class="field" style="max-width:140px"><label>Obuna (oy)</label><input v-model="orgForm.licenseMonths" type="number" min="0" class="input" /></div>
         </div>
         <button class="btn" style="width:100%; margin-top:14px">Tashkilot yaratish</button>
       </form>
     </div>
   </div>
 
-  <!-- Yangi foydalanuvchi modali -->
-  <div v-if="showUserForm" class="modal-overlay" @click.self="showUserForm = false">
+  <!-- Admin + Desktop login qo'shish modali -->
+  <div v-if="showAdminForm" class="modal-overlay" @click.self="showAdminForm = false">
+    <div class="modal-box" style="max-width:500px">
+      <div class="modal-head"><h3>Admin panel logini qo'shish</h3><button class="modal-x" @click="showAdminForm = false">×</button></div>
+      <form class="modal-body" @submit.prevent="createAdminWithDesktop">
+        <div v-if="err" class="alert alert-error">{{ err }}</div>
+
+        <div class="section-label">Admin login (veb panel)</div>
+        <div class="row">
+          <div class="field"><label>Login *</label><input v-model="adminForm.username" class="input" required /></div>
+          <div class="field"><label>Parol *</label><input v-model="adminForm.password" type="text" class="input" required placeholder="kamida 6 belgi" /></div>
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" v-model="createDesktop" />
+          <span>Desktop panel logini ham yaratish</span>
+        </label>
+
+        <template v-if="createDesktop">
+          <div class="section-label" style="margin-top:12px">Desktop login (kassir / menejer)</div>
+          <div class="row">
+            <div class="field"><label>Login *</label><input v-model="desktopForm.username" class="input" :required="createDesktop" /></div>
+            <div class="field"><label>Parol *</label><input v-model="desktopForm.password" type="text" class="input" :required="createDesktop" placeholder="kamida 6 belgi" /></div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Rol</label>
+              <select v-model="desktopForm.role" class="select">
+                <option value="Cashier">Kassir</option>
+                <option value="Manager">Menejer</option>
+              </select>
+            </div>
+            <div class="field" style="max-width:160px"><label>Obuna (oy)</label><input v-model="desktopForm.licenseMonths" type="number" min="0" class="input" /></div>
+          </div>
+        </template>
+
+        <button class="btn" style="width:100%; margin-top:16px" :disabled="busy">Qo'shish</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Faqat Desktop login qo'shish modali -->
+  <div v-if="showDesktopForm" class="modal-overlay" @click.self="showDesktopForm = false">
     <div class="modal-box" style="max-width:460px">
-      <div class="modal-head"><h3>Foydalanuvchi qo'shish</h3><button class="modal-x" @click="showUserForm = false">×</button></div>
-      <form class="modal-body" @submit.prevent="createUser">
+      <div class="modal-head"><h3>Desktop panel logini qo'shish</h3><button class="modal-x" @click="showDesktopForm = false">×</button></div>
+      <form class="modal-body" @submit.prevent="createDesktopOnly">
         <div v-if="err" class="alert alert-error">{{ err }}</div>
         <div class="row">
-          <div class="field"><label>Login *</label><input v-model="userForm.username" class="input" required /></div>
-          <div class="field"><label>Parol *</label><input v-model="userForm.password" type="text" class="input" required placeholder="kamida 6 belgi" /></div>
+          <div class="field"><label>Login *</label><input v-model="desktopOnlyForm.username" class="input" required /></div>
+          <div class="field"><label>Parol *</label><input v-model="desktopOnlyForm.password" type="text" class="input" required placeholder="kamida 6 belgi" /></div>
         </div>
         <div class="row">
           <div class="field">
             <label>Rol</label>
-            <select v-model="userForm.role" class="select">
+            <select v-model="desktopOnlyForm.role" class="select">
               <option value="Cashier">Kassir</option>
               <option value="Manager">Menejer</option>
-              <option value="Admin">Admin</option>
             </select>
           </div>
-          <div class="field" style="max-width:160px"><label>Boshlang'ich obuna (oy)</label><input v-model="userForm.licenseMonths" type="number" min="0" class="input" /></div>
+          <div class="field" style="max-width:160px"><label>Obuna (oy)</label><input v-model="desktopOnlyForm.licenseMonths" type="number" min="0" class="input" /></div>
         </div>
-        <p class="muted" style="font-size:12px;margin:4px 0 0">0 = faollashtirilmagan (keyin to'lov olib "+1 oy" bilan faollashtirasiz).</p>
+        <p class="muted" style="font-size:12px;margin:4px 0 0">0 = faollashtirilmagan (keyin "+1 oy" bilan faollashtirasiz).</p>
         <button class="btn" style="width:100%; margin-top:14px" :disabled="busy">Qo'shish</button>
       </form>
     </div>
@@ -315,23 +443,31 @@ onMounted(load)
 
 .layout { display: flex; gap: 16px; align-items: flex-start; }
 .list-card { flex: 1.3; min-width: 380px; }
-.detail-card { flex: 1; min-width: 360px; max-width: 460px; }
+.detail-card { flex: 1; min-width: 360px; max-width: 480px; }
 
 .row-active { background: #eff6ff; }
 .bal-tag { font-weight: 700; padding: 3px 10px; border-radius: 20px; font-size: 13px; }
 .bal-tag.ok { background: #dcfce7; color: #15803d; }
 .bal-tag.warn { background: #fef3c7; color: #92400e; }
 
-.hint { font-size: 12.5px; color: var(--muted); background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin: 0 0 10px; }
+.detail-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.org-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+/* Panel sections */
+.panel-section { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.panel-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.panel-label { font-weight: 700; font-size: 13px; }
+.panel-hint { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+.empty-msg { text-align: center; padding: 8px 0; font-size: 13px; }
+
 .row-off { opacity: 0.6; }
 
-.detail-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.org-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.user-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.user-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .user-row:last-child { border-bottom: none; }
-.user-name { font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.user-status { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+.user-main { flex: 1; min-width: 0; }
+.user-name { font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.user-role-row { margin-top: 5px; }
+.user-status { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
 .user-acts { display: flex; gap: 5px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
 .st-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
@@ -346,6 +482,14 @@ onMounted(load)
 
 .btn-xs { padding: 4px 8px; font-size: 12px; }
 .btn-success { background: #16a34a; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+.select-sm { font-size: 12px; padding: 3px 6px; height: auto; }
+
+/* Modal extras */
+.section-label { font-weight: 700; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; margin: 12px 0 0; }
+.checkbox-row input { width: 16px; height: 16px; cursor: pointer; }
 
 .empty-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 240px; }
 </style>

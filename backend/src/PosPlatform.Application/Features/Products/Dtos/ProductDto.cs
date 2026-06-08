@@ -25,6 +25,8 @@ public class ProductDto
     public int? PluNumber { get; set; }
     public decimal? Tare { get; set; }
     public Guid CategoryId { get; set; }
+    public Guid? BranchId { get; set; }
+    public string? BranchName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
@@ -51,6 +53,8 @@ public class ProductDto
         PluNumber = p.PluNumber,
         Tare = p.Tare,
         CategoryId = p.CategoryId,
+        BranchId = p.BranchId,
+        BranchName = p.Branch?.Name,
         CreatedAt = p.CreatedAt,
         UpdatedAt = p.UpdatedAt
     };

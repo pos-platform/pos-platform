@@ -20,6 +20,7 @@ public class StoreService : IStoreService
         var stores = await _db.Branches
             .AsNoTracking()
             .Include(b => b.Cashboxes)
+            .Include(b => b.Users).ThenInclude(u => u.AppRole)
             .OrderBy(b => b.Name)
             .ToListAsync(cancellationToken);
 
@@ -100,5 +101,21 @@ public class StoreService : IStoreService
         await _db.SaveChangesAsync(cancellationToken);
 
         return CashboxDto.FromEntity(cashbox);
+    }
+
+    public async Task AssignUserToBranchAsync(Guid userId, Guid? branchId, CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new NotFoundException($"Foydalanuvchi topilmadi: {userId}");
+
+        if (branchId is not null)
+        {
+            var branchExists = await _db.Branches.AnyAsync(b => b.Id == branchId, cancellationToken);
+            if (!branchExists)
+                throw new NotFoundException($"Do'kon topilmadi: {branchId}");
+        }
+
+        user.BranchId = branchId;
+        await _db.SaveChangesAsync(cancellationToken);
     }
 }

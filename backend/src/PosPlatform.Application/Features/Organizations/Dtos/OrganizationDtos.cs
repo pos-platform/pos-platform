@@ -42,6 +42,8 @@ public class OrgUserDto
     public bool IsLicensed { get; set; }
     public int? DaysLeft { get; set; }
     public DateTime CreatedAt { get; set; }
+    public Guid? AppRoleId { get; set; }
+    public string? AppRoleName { get; set; }
 
     public static OrgUserDto FromEntity(User u, DateTime today)
     {
@@ -55,9 +57,16 @@ public class OrgUserDto
             LicensedUntil = u.LicensedUntil,
             IsLicensed = licensed,
             DaysLeft = u.LicensedUntil is null ? null : (int)(u.LicensedUntil.Value.Date - today).TotalDays,
-            CreatedAt = u.CreatedAt
+            CreatedAt = u.CreatedAt,
+            AppRoleId = u.AppRoleId,
+            AppRoleName = u.AppRole?.Name
         };
     }
+}
+
+public class AssignOrgUserRoleRequest
+{
+    public Guid? RoleId { get; set; }
 }
 
 public class OrganizationDetailDto : OrganizationDto
@@ -136,4 +145,12 @@ public class UpdateOrganizationRequest
 
     public string? Phone { get; set; }
     public string? Note { get; set; }
+}
+
+public class OrgRoleDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public bool IsSystem { get; set; }
+    public int PermissionCount { get; set; }
 }

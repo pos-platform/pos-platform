@@ -1,29 +1,23 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { paymentsApi, suppliersApi } from '../api/catalog'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
-const payments = ref([])
-const suppliers = ref([])
+const router = useRouter()
+const stores = ref([])
 const loading = ref(false)
 const err = ref('')
-const success = ref('')
-const showForm = ref(false)
-const form = reactive({ supplierId: '', amount: 0, comment: '' })
-
-const total = computed(() => payments.value.reduce((s, p) => s + Number(p.amount), 0))
-const selectedSupplier = computed(() => suppliers.value.find((s) => s.id === form.supplierId))
+const filterStore = ref('')
+const filterStatus = ref('')
 
 function fmt(n) { return Number(n || 0).toLocaleString() }
-function fmtDate(d) { return new Date(d).toLocaleString('uz-UZ') }
 
 async function load() {
   loading.value = true
   err.value = ''
   try {
-    const [p, s] = await Promise.all([paymentsApi.list(), suppliersApi.list()])
-    payments.value = p
-    suppliers.value = s
+    stores.value = await storesApi.list()
   } catch (e) {
     err.value = errorMessage(e)
   } finally {
@@ -31,20 +25,23 @@ async function load() {
   }
 }
 
-async function create() {
-  err.value = ''
-  success.value = ''
-  if (!form.supplierId) { err.value = 'Yetkazib beruvchini tanlang'; return }
-  if (!Number(form.amount)) { err.value = 'Summani kiriting'; return }
-  try {
-    await paymentsApi.create({ supplierId: form.supplierId, amount: Number(form.amount), comment: form.comment.trim() || null })
-    success.value = 'To\'lov saqlandi'
-    Object.assign(form, { supplierId: '', amount: 0, comment: '' })
-    showForm.value = false
-    await load()
-  } catch (e) {
-    err.value = errorMessage(e)
+const allCashboxRows = computed(() => {
+  const rows = []
+  for (const s of stores.value) {
+    if (filterStore.value && s.id !== filterStore.value) continue
+    for (const c of s.cashboxes) {
+      if (filterStatus.value === 'active' && !c.isActive) continue
+      if (filterStatus.value === 'inactive' && c.isActive) continue
+      rows.push({ store: s, cashbox: c })
+    }
   }
+  return rows
+})
+
+// Bir do'konning bir nechta kassalari bo'lsa — birinchi kassa store nomini ko'rsatadi
+function storeLabel(row, idx) {
+  if (idx === 0) return true
+  return allCashboxRows.value[idx - 1]?.store.id !== row.store.id
 }
 
 onMounted(load)
@@ -52,49 +49,78 @@ onMounted(load)
 
 <template>
   <div class="page-head">
-    <h1>To'lovlar (Платежи)</h1>
-    <div style="display:flex; gap:12px; align-items:center">
-      <span class="muted">Jami to'langan: <strong>{{ fmt(total) }}</strong></span>
-      <button class="btn" @click="showForm = !showForm">+ To'lov</button>
+    <div>
+      <h1>Kassalar</h1>
+      <div class="muted" style="font-size:13px">Do'konlar va kassalar holati</div>
     </div>
   </div>
 
   <div v-if="err" class="alert alert-error">{{ err }}</div>
-  <div v-if="success" class="alert alert-success">{{ success }}</div>
 
-  <form v-if="showForm" class="card" style="margin-bottom:16px" @submit.prevent="create">
-    <h3 style="margin-top:0">Yetkazib beruvchiga to'lov</h3>
-    <div class="row">
-      <div class="field">
-        <label>Yetkazib beruvchi</label>
-        <select v-model="form.supplierId" class="select" required>
-          <option value="" disabled>Tanlang...</option>
-          <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
-        <span v-if="selectedSupplier" class="muted" style="font-size:12px">
-          Joriy qarz: {{ fmt(selectedSupplier.balance) }} so'm
-        </span>
-      </div>
-      <div class="field">
-        <label>Summa</label>
-        <input v-model="form.amount" type="number" min="0" class="input" required />
-      </div>
+  <!-- Filters -->
+  <div class="card" style="margin-bottom:14px; padding:14px 18px">
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center">
+      <select v-model="filterStore" class="select" style="min-width:180px">
+        <option value="">Barcha do'konlar</option>
+        <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+      </select>
+      <select v-model="filterStatus" class="select" style="min-width:160px">
+        <option value="">Barcha holat</option>
+        <option value="active">Aktiv</option>
+        <option value="inactive">O'chiq</option>
+      </select>
+      <span class="muted" style="font-size:13px; margin-left:auto">
+        Jami kassalar: <strong>{{ allCashboxRows.length }}</strong>
+      </span>
     </div>
-    <div class="field"><label>Izoh</label><input v-model="form.comment" class="input" /></div>
-    <button class="btn">Saqlash</button>
-  </form>
+  </div>
 
+  <!-- Table -->
   <div class="card">
     <table class="table">
-      <thead><tr><th>Yetkazib beruvchi</th><th>Sana</th><th>Izoh</th><th class="text-right">Summa</th></tr></thead>
-      <tbody>
-        <tr v-for="p in payments" :key="p.id">
-          <td><strong>{{ p.supplierName }}</strong></td>
-          <td class="muted">{{ fmtDate(p.createdAt) }}</td>
-          <td class="muted">{{ p.comment || '—' }}</td>
-          <td class="text-right" style="color:var(--success)">{{ fmt(p.amount) }}</td>
+      <thead>
+        <tr>
+          <th>Do'kon</th>
+          <th>Balans</th>
+          <th>Kassa</th>
+          <th>Holat</th>
+          <th></th>
         </tr>
-        <tr v-if="!payments.length && !loading"><td colspan="4" class="muted" style="text-align:center;padding:24px">To'lov yo'q</td></tr>
+      </thead>
+      <tbody>
+        <tr v-if="loading">
+          <td colspan="5" class="muted" style="text-align:center; padding:32px">Yuklanmoqda...</td>
+        </tr>
+        <template v-for="(row, idx) in allCashboxRows" :key="row.cashbox.id">
+          <tr>
+            <td>
+              <template v-if="storeLabel(row, idx)">
+                <strong>{{ row.store.name }}</strong>
+                <div v-if="row.store.address" class="muted" style="font-size:12px">{{ row.store.address }}</div>
+              </template>
+            </td>
+            <td>
+              <template v-if="storeLabel(row, idx)">
+                <strong>{{ fmt(row.store.balance) }}</strong>
+              </template>
+            </td>
+            <td>{{ row.cashbox.name }}</td>
+            <td>
+              <span class="pill" :class="row.cashbox.isActive ? 'pill-green' : 'pill-gray'">
+                {{ row.cashbox.isActive ? 'AKTIV' : 'O\'CHIQ' }}
+              </span>
+            </td>
+            <td class="text-right">
+              <button
+                class="btn btn-ghost btn-sm"
+                @click="router.push({ name: 'cashbox', params: { id: row.cashbox.id } })"
+              >📊 Ko'rish</button>
+            </td>
+          </tr>
+        </template>
+        <tr v-if="!allCashboxRows.length && !loading">
+          <td colspan="5" class="muted" style="text-align:center; padding:32px">Kassa yo'q</td>
+        </tr>
       </tbody>
     </table>
   </div>

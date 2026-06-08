@@ -10,6 +10,12 @@ const routes = [
     meta: { superAdmin: true }
   },
   {
+    path: '/admin/roles',
+    name: 'admin-roles',
+    component: () => import('../views/SuperAdminRolesView.vue'),
+    meta: { superAdmin: true }
+  },
+  {
     path: '/admin/audit',
     name: 'audit',
     component: () => import('../views/AuditView.vue'),
@@ -116,6 +122,12 @@ const routes = [
     name: 'customers',
     component: () => import('../views/CustomersView.vue'),
     meta: { adminOnly: true }
+  },
+  {
+    path: '/cashbox/:id',
+    name: 'cashbox',
+    component: () => import('../views/CashboxView.vue'),
+    meta: { adminOnly: true }
   }
 ]
 
@@ -131,7 +143,7 @@ router.beforeEach((to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
-  // SuperAdmin faqat tashkilotlar sahifasida ishlaydi — boshqa hamma yo'l shu yerga yo'naltiriladi.
+  // SuperAdmin faqat tashkilotlar sahifasida ishlaydi.
   if (auth.isSuperAdmin) {
     if (to.name === 'login' || !to.meta.superAdmin) {
       return to.name === 'organizations' ? true : { name: 'organizations' }
@@ -139,18 +151,24 @@ router.beforeEach((to) => {
     return true
   }
 
-  // SuperAdmin bo'lmaganlar super-admin sahifasiga kira olmaydi.
   if (to.meta.superAdmin) {
-    return { name: 'pos' }
+    return { name: 'dashboard' }
   }
 
   if (to.name === 'login' && auth.isAuthenticated) {
-    return { name: 'pos' }
+    return auth.role === 'Admin' ? { name: 'dashboard' } : { name: 'pos' }
   }
-  // Admin-only sahifalar.
+
+  // Admin POS terminaliga kira olmaydi — faqat admin paneli.
+  if (to.name === 'pos' && auth.role === 'Admin') {
+    return { name: 'dashboard' }
+  }
+
+  // Admin-only sahifalar — faqat Admin roli kirishi mumkin.
   if (to.meta.adminOnly && auth.role !== 'Admin') {
     return { name: 'pos' }
   }
+
   return true
 })
 

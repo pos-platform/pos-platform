@@ -1,0 +1,69 @@
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using PosPlatform.Application.Common.Exceptions;
+using PosPlatform.Application.Common.Interfaces;
+using PosPlatform.Application.Features.RoleTemplates.Dtos;
+using PosPlatform.Domain.Entities;
+
+namespace PosPlatform.Application.Features.RoleTemplates;
+
+public class RoleTemplateService : IRoleTemplateService
+{
+    private readonly IApplicationDbContext _db;
+
+    public RoleTemplateService(IApplicationDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task<IReadOnlyList<RoleTemplateDto>> GetAllAsync(CancellationToken ct = default)
+    {
+        var templates = await _db.RoleTemplates
+            .AsNoTracking()
+            .OrderBy(t => t.Name)
+            .ToListAsync(ct);
+
+        return templates.Select(RoleTemplateDto.FromEntity).ToList();
+    }
+
+    public async Task<RoleTemplateDto> UpdateAsync(Guid id, IReadOnlyList<string> permissions, CancellationToken ct = default)
+    {
+        var template = await _db.RoleTemplates.FirstOrDefaultAsync(t => t.Id == id, ct)
+            ?? throw new NotFoundException($"Rol shabloni topilmadi: {id}");
+
+        template.PermissionsJson = JsonSerializer.Serialize(permissions.Distinct().ToList());
+        template.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return RoleTemplateDto.FromEntity(template);
+    }
+
+    public async Task<RoleTemplateDto> CreateAsync(string name, IReadOnlyList<string> permissions, CancellationToken ct = default)
+    {
+        name = name.Trim();
+        if (await _db.RoleTemplates.AnyAsync(t => t.Name == name, ct))
+            throw new ConflictException($"'{name}' nomli shablon allaqachon mavjud.");
+
+        var template = new RoleTemplate
+        {
+            Name = name,
+            IsSystem = false,
+            PermissionsJson = JsonSerializer.Serialize(permissions.Distinct().ToList()),
+            UpdatedAt = DateTime.UtcNow
+        };
+        _db.RoleTemplates.Add(template);
+        await _db.SaveChangesAsync(ct);
+        return RoleTemplateDto.FromEntity(template);
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        var template = await _db.RoleTemplates.FirstOrDefaultAsync(t => t.Id == id, ct)
+            ?? throw new NotFoundException($"Rol shabloni topilmadi: {id}");
+
+        if (template.IsSystem)
+            throw new ValidationException("Tizim shablonlarini o'chirib bo'lmaydi.");
+
+        _db.RoleTemplates.Remove(template);
+        await _db.SaveChangesAsync(ct);
+    }
+}
