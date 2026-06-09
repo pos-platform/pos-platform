@@ -57,6 +57,8 @@ public partial class LoginWindow : Window
         try
         {
             var resp = await AppState.Backend.LoginAsync(UsernameBox.Text.Trim(), CurrentPassword);
+            if (resp.Role == "Admin")
+                throw new Exception("Admin foydalanuvchilar desktop appga kira olmaydi.");
             AppState.Backend.SetToken(resp.Token);
             AppState.Token = resp.Token;
             AppState.Username = resp.Username;

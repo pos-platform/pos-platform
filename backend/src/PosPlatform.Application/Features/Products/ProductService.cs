@@ -100,7 +100,6 @@ public class ProductService : IProductService
     public async Task<ProductDto> UpdateAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default)
     {
         var product = await _db.Products
-            .Include(p => p.Stocks)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Mahsulot topilmadi: {id}");
 
@@ -132,11 +131,12 @@ public class ProductService : IProductService
         var effectiveBranchId = dto.BranchId ?? _currentUser.BranchId;
         if (effectiveBranchId.HasValue)
         {
-            var stock = product.Stocks.FirstOrDefault(s => s.BranchId == effectiveBranchId.Value);
+            var stock = await _db.BranchStocks
+                .FirstOrDefaultAsync(s => s.ProductId == id && s.BranchId == effectiveBranchId.Value, cancellationToken);
             if (stock is not null)
                 stock.Quantity = dto.Quantity;
             else if (dto.Quantity > 0)
-                product.Stocks.Add(new BranchStock { BranchId = effectiveBranchId.Value, Quantity = dto.Quantity });
+                _db.BranchStocks.Add(new BranchStock { ProductId = id, BranchId = effectiveBranchId.Value, Quantity = dto.Quantity });
         }
 
         await _db.SaveChangesAsync(cancellationToken);

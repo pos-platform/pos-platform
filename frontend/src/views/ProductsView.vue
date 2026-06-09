@@ -313,6 +313,18 @@ function closeModal() { showModal.value = false }
 async function submit() {
   error.value = ''
   success.value = ''
+
+  // Agar soni > 0 va do'kon tanlanmagan bo'lsa, yagona do'konni avtomatik tanlash
+  const qty = Number(form.quantity) || 0
+  if (qty > 0 && !form.branchId && stores.value.length === 1) {
+    form.branchId = stores.value[0].id
+  }
+  // Bir nechta do'kon bo'lsa va tanlalmagan bo'lsa — xato
+  if (qty > 0 && !form.branchId && stores.value.length > 1) {
+    error.value = 'Soni kiritish uchun avval do\'kon tanlang'
+    return
+  }
+
   saving.value = true
   try {
     const payload = {
@@ -322,7 +334,7 @@ async function submit() {
       description: form.description?.trim() || null,
       costPrice: Number(form.costPrice) || 0,
       price: Number(form.price) || 0,
-      quantity: Number(form.quantity) || 0,
+      quantity: qty,
       imageUrl: form.imageUrl || null,
       isVat: form.isVat,
       isMarked: form.isMarked,
@@ -719,7 +731,7 @@ onUnmounted(() => {
 
         <!-- Do'kon -->
         <div v-if="stores.length" class="field">
-          <label>Do'kon</label>
+          <label>Do'kon <span v-if="Number(form.quantity) > 0" class="req-star">*</span></label>
           <select v-model="form.branchId" class="select">
             <option value="">— Umumiy (do'konga bog'lanmagan) —</option>
             <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
