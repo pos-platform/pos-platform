@@ -197,13 +197,26 @@ onMounted(() => {
 
   <div class="pos">
     <div>
-      <input
-        v-model="search"
-        class="input"
-        placeholder="Shtrix-kodni urang (Enter) yoki qidiring: nom, MXIK..."
-        style="margin-bottom: 12px"
-        @keyup.enter="onScan"
-      />
+      <div style="display:flex; gap:8px; margin-bottom:12px">
+        <input
+          v-model="search"
+          class="input"
+          placeholder="Qidirish yoki shtrix-kodni urang (Enter)"
+          style="flex:1"
+          @keyup.enter="onScan"
+        />
+        <button
+          class="btn btn-ghost"
+          :disabled="loading"
+          title="Mahsulotlarni yangilash"
+          @click="loadData"
+        >
+          <svg :style="loading ? 'animation:spin .8s linear infinite' : ''" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+          </svg>
+          Yangilash
+        </button>
+      </div>
       <div class="pos-products">
         <button v-for="p in filtered" :key="p.id" class="prod-card" :disabled="!shift" @click="addToCart(p)">
           <span v-if="discPct(p) > 0" class="promo-badge">−{{ Number(discPct(p)).toFixed(0) }}%</span>
@@ -286,3 +299,9 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>

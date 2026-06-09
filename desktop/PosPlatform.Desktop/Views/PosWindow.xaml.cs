@@ -853,6 +853,20 @@ public partial class PosWindow : Window
         }
     }
 
+    private async void Refresh_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshButton.IsEnabled = false;
+        try
+        {
+            await LoadProductsAsync();
+        }
+        finally
+        {
+            RefreshButton.IsEnabled = true;
+            SearchBox.Focus();
+        }
+    }
+
     private async void Refund_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new RefundWindow { Owner = this };

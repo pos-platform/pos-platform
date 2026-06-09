@@ -317,7 +317,7 @@ async function submit() {
   try {
     const payload = {
       name: form.name.trim(),
-      mxikCode: form.mxikCode.trim(),
+      mxikCode: form.mxikCode.trim() || '00000000',
       barcode: form.barcode?.trim() || null,
       description: form.description?.trim() || null,
       costPrice: Number(form.costPrice) || 0,
@@ -461,6 +461,11 @@ onUnmounted(() => {
         style="width:110px"
         :disabled="!filterQtyOp"
       />
+      <button class="btn btn-ghost btn-sm icon-sq" title="Yangilash" :disabled="loading" @click="loadAll" style="flex-shrink:0">
+        <svg :style="loading ? 'animation:spin 0.8s linear infinite' : ''" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -514,7 +519,7 @@ onUnmounted(() => {
           <td><div class="thumb"><img v-if="p.imageUrl" :src="mediaUrl(p.imageUrl)" alt="" /></div></td>
           <td>
             <div style="font-weight:500">{{ p.name }}</div>
-            <div class="muted" style="font-size:12px">MXIK: {{ p.mxikCode }}</div>
+            <div v-if="p.mxikCode && p.mxikCode !== '00000000'" class="muted" style="font-size:12px">MXIK: {{ p.mxikCode }}</div>
             <span v-if="p.isWeighed" class="pill pill-amber" style="margin-top:2px; display:inline-block">tarozi</span>
           </td>
           <td>{{ categoryName(p.categoryId) }}</td>
@@ -878,6 +883,8 @@ onUnmounted(() => {
 }
 .ios-toggle input:checked + .ios-slider { background: var(--primary); }
 .ios-toggle input:checked + .ios-slider::before { transform: translateX(20px); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Toggle ustun (label + switch) */
 .toggle-col {

@@ -8,9 +8,8 @@ public class CreateProductDto
     [Required]
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>MXIK kodi — O'zbekiston soliq tizimi uchun majburiy.</summary>
-    [Required]
-    public string MxikCode { get; set; } = string.Empty;
+    /// <summary>MXIK kodi. Bo'sh bo'lsa "00000000" ishlatiladi.</summary>
+    public string? MxikCode { get; set; }
 
     public string? Barcode { get; set; }
 

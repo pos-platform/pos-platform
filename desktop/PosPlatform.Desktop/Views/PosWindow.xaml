@@ -215,28 +215,39 @@
 
             <!-- Products -->
             <DockPanel Grid.Column="0" Margin="0,0,16,0">
-                <Border DockPanel.Dock="Top" Background="White" CornerRadius="12" Height="50"
-                        BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,14">
-                    <Grid>
-                        <TextBox x:Name="SearchBox" BorderThickness="0" Background="Transparent"
-                                 VerticalContentAlignment="Center" FontSize="15" Padding="16,0"
-                                 TextChanged="SearchBox_TextChanged" KeyDown="SearchBox_KeyDown" />
-                        <TextBlock IsHitTestVisible="False" Foreground="#94A3B8" FontSize="15"
-                                   VerticalAlignment="Center" Margin="16,0"
-                                   Text="🔍   Qidirish yoki shtrix-kodni urang (Enter)">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
-                </Border>
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="White" CornerRadius="12" Height="50"
+                            BorderBrush="#E2E8F0" BorderThickness="1">
+                        <Grid>
+                            <TextBox x:Name="SearchBox" BorderThickness="0" Background="Transparent"
+                                     VerticalContentAlignment="Center" FontSize="15" Padding="16,0"
+                                     TextChanged="SearchBox_TextChanged" KeyDown="SearchBox_KeyDown" />
+                            <TextBlock IsHitTestVisible="False" Foreground="#94A3B8" FontSize="15"
+                                       VerticalAlignment="Center" Margin="16,0"
+                                       Text="🔍   Qidirish yoki shtrix-kodni urang (Enter)">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                    <Button x:Name="RefreshButton" Grid.Column="1" Style="{StaticResource Pill}"
+                            Width="50" Height="50" Margin="8,0,0,0"
+                            ToolTip="Mahsulotlarni yangilash" Click="Refresh_Click">
+                        <TextBlock FontSize="18">↻</TextBlock>
+                    </Button>
+                </Grid>
 
                 <!-- Kategoriya tablari -->
                 <ScrollViewer DockPanel.Dock="Top" HorizontalScrollBarVisibility="Auto"
@@ -254,7 +265,7 @@
                                 <Button Style="{StaticResource Card}" Tag="{Binding}" Click="ProductCard_Click">
                                     <StackPanel>
                                         <Border Height="84" CornerRadius="8" Background="#F1F5F9">
-                                            <Image Source="{Binding ImageFull}" Stretch="UniformToFill" />
+                                            <Image Source="{Binding ImageFull}" Stretch="Uniform" />
                                         </Border>
                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
                                                    Foreground="#1E293B" TextWrapping="Wrap"

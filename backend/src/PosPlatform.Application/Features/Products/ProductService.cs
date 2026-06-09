@@ -64,7 +64,7 @@ public class ProductService : IProductService
         var product = new Product
         {
             Name = dto.Name.Trim(),
-            MxikCode = dto.MxikCode.Trim(),
+            MxikCode = string.IsNullOrWhiteSpace(dto.MxikCode) ? "00000000" : dto.MxikCode.Trim(),
             Barcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim(),
             CostPrice = dto.CostPrice,
             Price = dto.Price,
@@ -99,7 +99,9 @@ public class ProductService : IProductService
 
     public async Task<ProductDto> UpdateAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default)
     {
-        var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
+        var product = await _db.Products
+            .Include(p => p.Stocks)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Mahsulot topilmadi: {id}");
 
         var categoryExists = await _db.Categories.AnyAsync(c => c.Id == dto.CategoryId, cancellationToken);
@@ -109,7 +111,7 @@ public class ProductService : IProductService
         }
 
         product.Name = dto.Name.Trim();
-        product.MxikCode = dto.MxikCode.Trim();
+        product.MxikCode = string.IsNullOrWhiteSpace(dto.MxikCode) ? "00000000" : dto.MxikCode.Trim();
         product.Barcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim();
         product.CostPrice = dto.CostPrice;
         product.Price = dto.Price;
@@ -123,7 +125,19 @@ public class ProductService : IProductService
         product.PluNumber = dto.PluNumber;
         product.Tare = dto.Tare;
         product.CategoryId = dto.CategoryId;
-        product.BranchId = dto.BranchId ?? product.BranchId;
+
+        product.BranchId = dto.BranchId;
+
+        // Soni (qoldiq) yangilash — faqat filial ko'rsatilgan mahsulotlar uchun
+        var effectiveBranchId = dto.BranchId ?? _currentUser.BranchId;
+        if (effectiveBranchId.HasValue)
+        {
+            var stock = product.Stocks.FirstOrDefault(s => s.BranchId == effectiveBranchId.Value);
+            if (stock is not null)
+                stock.Quantity = dto.Quantity;
+            else if (dto.Quantity > 0)
+                product.Stocks.Add(new BranchStock { BranchId = effectiveBranchId.Value, Quantity = dto.Quantity });
+        }
 
         await _db.SaveChangesAsync(cancellationToken);
 
