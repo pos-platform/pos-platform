@@ -64,22 +64,6 @@ const pageSize = ref(50)
 const showModal = ref(false)
 const editId = ref(null)
 
-// Inline add — category
-const showAddCategory = ref(false)
-const newCategoryName = ref('')
-const newCategoryNote = ref('')
-const addingCategory = ref(false)
-
-// Category management
-const showManageCategories = ref(false)
-const editingCategory = ref(null) // { id, name, note }
-const savingCategory = ref(false)
-const deletingCategoryId = ref(null)
-
-// Inline add — supplier
-const showAddSupplier = ref(false)
-const newSupplier = reactive({ name: '', phone: '', contactPerson: '' })
-const addingSupplier = ref(false)
 
 const deleteTarget = ref(null)
 const deleting = ref(false)
@@ -228,6 +212,14 @@ watch(pageSize, () => {
   currentPage.value = 1
 })
 
+function onUnitChange() {
+  if (form.unit === 'Piece') {
+    form.pluNumber = null
+    form.isWeighed = false
+    form.tare = null
+  }
+}
+
 function round2(n) { return Math.round((Number(n) || 0) * 100) / 100 }
 function recalcPrice() {
   const cost = Number(form.costPrice) || 0
@@ -282,95 +274,12 @@ async function onImageChange(event) {
   }
 }
 
-async function addCategory() {
-  if (!newCategoryName.value.trim()) return
-  addingCategory.value = true
-  try {
-    const created = await categoriesApi.create({
-      name: newCategoryName.value.trim(),
-      note: newCategoryNote.value.trim() || null
-    })
-    categories.value.push(created)
-    form.categoryId = created.id
-    newCategoryName.value = ''
-    newCategoryNote.value = ''
-    showAddCategory.value = false
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    addingCategory.value = false
-  }
-}
-
-function startEditCategory(cat) {
-  editingCategory.value = { id: cat.id, name: cat.name, note: cat.note || '' }
-}
-
-async function saveCategory() {
-  if (!editingCategory.value) return
-  savingCategory.value = true
-  try {
-    const updated = await categoriesApi.update(editingCategory.value.id, {
-      name: editingCategory.value.name.trim(),
-      note: editingCategory.value.note?.trim() || null
-    })
-    const idx = categories.value.findIndex((c) => c.id === updated.id)
-    if (idx >= 0) categories.value[idx] = updated
-    editingCategory.value = null
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    savingCategory.value = false
-  }
-}
-
-async function deleteCategory(cat) {
-  if (cat.productCount > 0) return
-  deletingCategoryId.value = cat.id
-  try {
-    await categoriesApi.remove(cat.id)
-    categories.value = categories.value.filter((c) => c.id !== cat.id)
-    if (form.categoryId === cat.id) form.categoryId = categories.value[0]?.id || ''
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    deletingCategoryId.value = null
-  }
-}
-
-async function addSupplier() {
-  if (!newSupplier.name.trim()) return
-  addingSupplier.value = true
-  try {
-    const created = await suppliersApi.create({
-      name: newSupplier.name.trim(),
-      phone: newSupplier.phone.trim() || null,
-      contactPerson: newSupplier.contactPerson.trim() || null
-    })
-    suppliers.value.push(created)
-    form.supplierId = created.id
-    newSupplier.name = ''
-    newSupplier.phone = ''
-    newSupplier.contactPerson = ''
-    showAddSupplier.value = false
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    addingSupplier.value = false
-  }
-}
 
 async function openCreate() {
   Object.assign(form, blankForm())
-  if (categories.value.length) form.categoryId = categories.value[0].id
   editId.value = null
   error.value = ''
-  showAddCategory.value = false
-  showAddSupplier.value = false
-  showManageCategories.value = false
-  editingCategory.value = null
   showModal.value = true
-  await genBarcode()
 }
 
 function openEdit(p) {
@@ -396,10 +305,6 @@ function openEdit(p) {
   })
   editId.value = p.id
   error.value = ''
-  showManageCategories.value = false
-  editingCategory.value = null
-  showAddCategory.value = false
-  showAddSupplier.value = false
   showModal.value = true
 }
 
@@ -515,34 +420,32 @@ onUnmounted(() => {
     ref="barcodeInput"
     style="position:fixed; opacity:0; pointer-events:none; width:1px; height:1px; top:0; left:0"
     @keydown="onBarcodeKey"
-    @blur="() => $nextTick(() => barcodeInput?.focus())"
+    @blur="() => $nextTick(() => { if (!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) barcodeInput?.focus() })"
   />
 
   <!-- Filters -->
-  <div class="card" style="margin-bottom:12px; padding:16px 20px">
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px">
-      <div style="position:relative; flex:1; min-width:220px; max-width:400px">
+  <div class="card" style="margin-bottom:12px; padding:12px 16px">
+    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+      <div style="position:relative; flex:2; min-width:180px">
         <input
           v-model="searchName"
           class="input"
           placeholder="Nomi yoki barkod bo'yicha qidirish"
-          style="padding-left:38px; width:100%; box-sizing:border-box"
+          style="padding-left:34px; width:100%; box-sizing:border-box"
         />
-        <svg style="position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#aaa; pointer-events:none" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#aaa; pointer-events:none" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
         </svg>
       </div>
-      <select v-model="filterCategory" class="select" style="min-width:180px">
+      <select v-model="filterCategory" class="select" style="flex:1; min-width:150px">
         <option value="">Barcha kategoriyalar</option>
         <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
-      <select v-if="stores.length" v-model="filterBranch" class="select" style="min-width:160px">
+      <select v-if="stores.length" v-model="filterBranch" class="select" style="flex:1; min-width:140px">
         <option value="">Barcha do'konlar</option>
         <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
       </select>
-    </div>
-    <div style="display:flex; gap:8px; align-items:center">
-      <select v-model="filterQtyOp" class="select" style="width:150px">
+      <select v-model="filterQtyOp" class="select" style="width:130px">
         <option value="">Qoldiq filtri</option>
         <option value="=">=</option>
         <option value=">">&gt;</option>
@@ -555,7 +458,7 @@ onUnmounted(() => {
         type="number"
         class="input"
         placeholder="Miqdor"
-        style="width:160px"
+        style="width:110px"
         :disabled="!filterQtyOp"
       />
     </div>
@@ -652,7 +555,7 @@ onUnmounted(() => {
   </div>
 
   <!-- Modal -->
-  <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+  <div v-if="showModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-head">
         <h3>{{ editId ? 'Mahsulotni tahrirlash' : 'Mahsulot qo\'shish' }}</h3>
@@ -661,122 +564,87 @@ onUnmounted(() => {
       <form class="modal-body" @submit.prevent="submit">
         <div v-if="error" class="alert alert-error">{{ error }}</div>
 
-        <div class="field">
-          <label>Rasm</label>
-          <div class="img-upload">
-            <div class="img-preview">
-              <img v-if="form.imageUrl" :src="mediaUrl(form.imageUrl)" alt="" />
-              <span v-else class="muted">rasm yo'q</span>
-            </div>
-            <div>
-              <input type="file" accept="image/*" @change="onImageChange" />
-              <div v-if="uploading" class="muted" style="font-size:12px">Yuklanmoqda...</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label>MXIK (ИКПУ) *</label>
-            <input v-model="form.mxikCode" class="input" required placeholder="Soliq uchun majburiy" />
-          </div>
-          <div class="field">
-            <label>Shtrix-kod (kod tovara)</label>
+        <!-- Shtrix-kod | PLU | Birlik -->
+        <div style="display:flex; gap:8px; margin-bottom:12px">
+          <div class="field" style="flex:2; min-width:0; margin:0">
+            <label>Shtrix-kod</label>
             <div style="display:flex; gap:6px">
-              <input v-model="form.barcode" class="input" style="flex:1" />
-              <button type="button" class="btn btn-ghost" title="Generatsiya" @click="genBarcode">🔄</button>
+              <input v-model="form.barcode" class="input" style="flex:1; min-width:0" />
+              <button type="button" class="btn btn-ghost icon-sq" title="Generatsiya" @click="genBarcode">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                </svg>
+              </button>
             </div>
           </div>
-          <div class="field" style="max-width:120px">
+          <div class="field" style="flex:2; min-width:0; margin:0">
+            <label>PLU <span v-if="form.unit === 'Kilogram'" class="req-star">*</span></label>
+            <div style="display:flex; gap:6px">
+              <input
+                v-model="form.pluNumber"
+                type="number"
+                min="0"
+                class="input"
+                style="flex:1; min-width:0"
+                :disabled="form.unit === 'Piece'"
+                :style="form.unit === 'Piece' ? 'background:var(--bg); color:var(--muted)' : ''"
+              />
+              <button
+                type="button"
+                class="btn btn-ghost icon-sq"
+                title="Keyingisi"
+                :disabled="form.unit === 'Piece'"
+                @click="genPlu"
+              >
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="field" style="flex:0 0 90px; margin:0">
             <label>Birlik</label>
-            <select v-model="form.unit" class="select">
+            <select v-model="form.unit" class="select" @change="onUnitChange">
               <option value="Piece">Dona</option>
               <option value="Kilogram">Kg</option>
             </select>
           </div>
         </div>
 
-        <div class="row">
-          <div class="field">
-            <label>Yetkazib beruvchi</label>
-            <div style="display:flex; gap:6px">
-              <select v-model="form.supplierId" class="select" style="flex:1">
-                <option value="">— tanlanmagan —</option>
+        <!-- Rasm | Yetkazib beruvchi + Kategoriya -->
+        <div style="display:flex; gap:12px; margin-bottom:12px">
+          <label class="img-upload-box" style="cursor:pointer; position:relative">
+            <img v-if="form.imageUrl" :src="mediaUrl(form.imageUrl)" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />
+            <template v-else>
+              <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:#cbd5e1">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/>
+              </svg>
+              <span style="margin-top:6px; font-size:11px; line-height:1.3">Rasm<br/>qo'shish</span>
+            </template>
+            <span v-if="uploading" style="position:absolute;bottom:4px;font-size:10px;color:var(--muted)">yuklanyapti...</span>
+            <input type="file" accept="image/*" style="display:none" @change="onImageChange" />
+          </label>
+          <div style="flex:1; display:flex; flex-direction:column; gap:10px">
+            <div class="field" style="margin:0">
+              <label>Yetkazib beruvchi</label>
+              <select v-model="form.supplierId" class="select">
+                <option value="">Yetkazib beruvchini tanlang</option>
                 <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
               </select>
-              <button type="button" class="btn-add-inline" :class="{ active: showAddSupplier }" @click="showAddSupplier = !showAddSupplier; showAddCategory = false" title="Yangi yetkazib beruvchi">+</button>
             </div>
-            <div v-if="showAddSupplier" class="inline-add-box">
-              <input v-model="newSupplier.name" class="input" placeholder="Nomi *" style="margin-bottom:6px" autofocus />
-              <input v-model="newSupplier.contactPerson" class="input" placeholder="Mas'ul shaxs" style="margin-bottom:6px" />
-              <input v-model="newSupplier.phone" class="input" placeholder="Telefon" style="margin-bottom:8px" />
-              <div style="display:flex; gap:6px">
-                <button type="button" class="btn btn-sm" :disabled="addingSupplier || !newSupplier.name.trim()" style="flex:1" @click="addSupplier">
-                  {{ addingSupplier ? '...' : 'Qo\'shish' }}
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm" @click="showAddSupplier = false">Bekor</button>
-              </div>
-            </div>
-          </div>
-          <div class="field">
-            <label>Kategoriya *</label>
-            <div style="display:flex; gap:6px">
-              <select v-model="form.categoryId" class="select" required style="flex:1">
+            <div class="field" style="margin:0">
+              <label>Kategoriya <span class="req-star">*</span></label>
+              <select v-model="form.categoryId" class="select" required>
+                <option value="" disabled>Kategoriya tanlang</option>
                 <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
-              <button type="button" class="btn-add-inline" :class="{ active: showAddCategory }" @click="showAddCategory = !showAddCategory; showAddSupplier = false; showManageCategories = false; editingCategory = null" title="Yangi kategoriya">+</button>
-              <button type="button" class="btn-add-inline" :class="{ active: showManageCategories }" @click="showManageCategories = !showManageCategories; showAddCategory = false; showAddSupplier = false; editingCategory = null" title="Kategoriyalarni boshqarish" style="font-size:15px">⚙</button>
-            </div>
-            <div v-if="showAddCategory" class="inline-add-box">
-              <input v-model="newCategoryName" class="input" placeholder="Kategoriya nomi *" style="margin-bottom:6px" autofocus />
-              <input v-model="newCategoryNote" class="input" placeholder="Izoh (ixtiyoriy)" style="margin-bottom:8px" />
-              <div style="display:flex; gap:6px">
-                <button type="button" class="btn btn-sm" :disabled="addingCategory || !newCategoryName.trim()" style="flex:1" @click="addCategory">
-                  {{ addingCategory ? '...' : 'Qo\'shish' }}
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm" @click="showAddCategory = false">Bekor</button>
-              </div>
-            </div>
-            <div v-if="showManageCategories" class="inline-add-box" style="max-height:240px; overflow-y:auto; padding:8px">
-              <div v-if="!categories.length" class="muted" style="font-size:13px; text-align:center; padding:8px">Kategoriya yo'q</div>
-              <div
-                v-for="cat in categories"
-                :key="cat.id"
-                style="padding:6px 0; border-bottom:1px solid var(--border)"
-              >
-                <div v-if="editingCategory?.id === cat.id">
-                  <input v-model="editingCategory.name" class="input" placeholder="Nomi *" style="margin-bottom:4px" />
-                  <input v-model="editingCategory.note" class="input" placeholder="Izoh (ixtiyoriy)" style="margin-bottom:6px" />
-                  <div style="display:flex; gap:4px">
-                    <button type="button" class="btn btn-sm" style="flex:1" :disabled="savingCategory || !editingCategory.name.trim()" @click="saveCategory">
-                      {{ savingCategory ? '...' : 'Saqlash' }}
-                    </button>
-                    <button type="button" class="btn btn-ghost btn-sm" @click="editingCategory = null">Bekor</button>
-                  </div>
-                </div>
-                <div v-else style="display:flex; align-items:center; gap:6px">
-                  <div style="flex:1; min-width:0">
-                    <div style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ cat.name }}</div>
-                    <div v-if="cat.note" class="muted" style="font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ cat.note }}</div>
-                    <div class="muted" style="font-size:11px">{{ cat.productCount }} ta mahsulot</div>
-                  </div>
-                  <button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0" @click="startEditCategory(cat)">✏️</button>
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-sm"
-                    style="flex-shrink:0"
-                    :disabled="cat.productCount > 0 || deletingCategoryId === cat.id"
-                    :title="cat.productCount > 0 ? 'Mahsulotlar mavjud — o\'chirib bo\'lmaydi' : 'O\'chirish'"
-                    @click="deleteCategory(cat)"
-                  >{{ deletingCategoryId === cat.id ? '...' : '🗑️' }}</button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
+        <!-- Nomi + Tavsif -->
         <div class="field">
-          <label>Nomi *</label>
+          <label>Nomi <span class="req-star">*</span></label>
           <input v-model="form.name" class="input" required />
         </div>
         <div class="field">
@@ -784,51 +652,68 @@ onUnmounted(() => {
           <input v-model="form.description" class="input" />
         </div>
 
-        <div class="row">
-          <div class="field">
-            <label>Tannarx</label>
-            <input v-model="form.costPrice" type="number" min="0" step="0.01" class="input" @input="recalcPrice" />
-          </div>
-          <div class="field">
-            <label>Ustama %</label>
-            <input v-model="form.markupPercent" type="number" step="0.1" class="input" @input="recalcPrice" />
-          </div>
-          <div class="field">
-            <label>Sotish narxi *</label>
-            <input v-model="form.price" type="number" min="0" step="0.01" class="input" required @input="recalcMarkup" />
-          </div>
-        </div>
-
-        <div class="row" style="align-items:center">
-          <div class="field" style="max-width:160px">
-            <label>Qoldiq</label>
+        <!-- Qoldiq + НДС/Маркировка toggles -->
+        <div style="display:flex; gap:12px; align-items:flex-end; margin-bottom:12px">
+          <div class="field" style="flex:1; margin:0">
+            <label>Qoldiq <span class="req-star">*</span></label>
             <input v-model="form.quantity" type="number" min="0" step="0.001" class="input" />
           </div>
-          <div class="toggle-row" style="margin-top:18px">
-            <label class="toggle"><input v-model="form.isVat" type="checkbox" /> НДС (QQS)</label>
-            <label class="toggle"><input v-model="form.isMarked" type="checkbox" /> Маркировка</label>
+          <div style="display:flex; gap:20px; padding-bottom:6px">
+            <div class="toggle-col">
+              <span>НДС</span>
+              <label class="ios-toggle">
+                <input v-model="form.isVat" type="checkbox" />
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-col">
+              <span>Маркировка</span>
+              <label class="ios-toggle">
+                <input v-model="form.isMarked" type="checkbox" />
+                <span class="ios-slider"></span>
+              </label>
+            </div>
           </div>
         </div>
 
-        <div class="checkbox">
+        <!-- Tannarx -->
+        <div class="field">
+          <label>Tannarx <span class="req-star">*</span></label>
+          <input v-model="form.costPrice" type="number" min="0" step="0.01" class="input" @input="recalcPrice" />
+        </div>
+
+        <!-- Sotish narxi | Ustama % -->
+        <div class="row">
+          <div class="field">
+            <label>Sotish narxi <span class="req-star">*</span></label>
+            <input v-model="form.price" type="number" min="0" step="0.01" class="input" required @input="recalcMarkup" />
+          </div>
+          <div class="field">
+            <label>Ustama % <span class="req-star">*</span></label>
+            <input v-model="form.markupPercent" type="number" step="0.1" class="input" @input="recalcPrice" />
+          </div>
+        </div>
+
+        <!-- MXIK -->
+        <div class="field">
+          <label>MXIK (ИКПУ)</label>
+          <input v-model="form.mxikCode" class="input" placeholder="Soliq uchun majburiy" />
+        </div>
+
+        <!-- Tarozida tortiladi -->
+        <div class="checkbox" style="margin-bottom:10px">
           <input id="weighed" v-model="form.isWeighed" type="checkbox" />
           <label for="weighed" style="margin:0">Tarozida tortiladi</label>
         </div>
-        <div v-if="form.isWeighed" class="row" style="margin-top:8px">
-          <div class="field">
-            <label>PLU raqami</label>
-            <div style="display:flex; gap:6px">
-              <input v-model="form.pluNumber" type="number" min="0" class="input" style="flex:1" />
-              <button type="button" class="btn btn-ghost" title="Generatsiya" @click="genPlu">🔄</button>
-            </div>
-          </div>
+        <div v-if="form.isWeighed" class="row" style="margin-bottom:12px">
           <div class="field">
             <label>Tara (kg)</label>
             <input v-model="form.tare" type="number" min="0" step="0.001" class="input" />
           </div>
         </div>
 
-        <div v-if="stores.length" class="field" style="margin-top:8px">
+        <!-- Do'kon -->
+        <div v-if="stores.length" class="field">
           <label>Do'kon</label>
           <select v-model="form.branchId" class="select">
             <option value="">— Umumiy (do'konga bog'lanmagan) —</option>
@@ -836,8 +721,8 @@ onUnmounted(() => {
           </select>
         </div>
 
-        <button class="btn" style="width:100%; margin-top:16px" :disabled="saving || uploading">
-          {{ saving ? 'Saqlanmoqda...' : (editId ? 'Saqlash' : 'Qo\'shish') }}
+        <button class="btn" style="width:100%; margin-top:12px" :disabled="saving || uploading">
+          {{ saving ? 'Saqlanmoqda...' : (editId ? 'Saqlash' : 'Mahsulot qo\'shish') }}
         </button>
       </form>
     </div>
@@ -927,5 +812,81 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg);
+}
+
+/* Rasm yuklash tugmasi */
+.img-upload-box {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.img-upload-box:hover { border-color: var(--primary); }
+
+/* Kvadrat icon tugma (barcode/PLU) */
+.icon-sq {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Majburiy yulduzcha */
+.req-star { color: var(--danger); }
+
+/* iOS toggle */
+.ios-toggle {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+  cursor: pointer;
+}
+.ios-toggle input { display: none; }
+.ios-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 0.2s;
+}
+.ios-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.ios-toggle input:checked + .ios-slider { background: var(--primary); }
+.ios-toggle input:checked + .ios-slider::before { transform: translateX(20px); }
+
+/* Toggle ustun (label + switch) */
+.toggle-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
 }
 </style>

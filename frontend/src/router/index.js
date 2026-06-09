@@ -25,6 +25,12 @@ const routes = [
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { adminOnly: true } },
   { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue') },
   { path: '/products', name: 'products', component: () => import('../views/ProductsView.vue') },
+  {
+    path: '/categories',
+    name: 'categories',
+    component: () => import('../views/CategoriesView.vue'),
+    meta: { adminOnly: true }
+  },
   { path: '/sales', name: 'sales', component: () => import('../views/SalesView.vue') },
   { path: '/shifts', name: 'shifts', component: () => import('../views/ShiftsView.vue') },
   {

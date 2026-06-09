@@ -31,6 +31,7 @@ const navItems = [
   { name: 'pos', key: 'nav.pos', icon: '🛒', cashierOnly: true },
   { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true },
   { name: 'products', key: 'nav.products', icon: '📦' },
+  { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true },
   { name: 'sales', key: 'nav.sales', icon: '🧾' },
   { name: 'shifts', key: 'nav.shifts', icon: '⏱️' },
   { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true },
