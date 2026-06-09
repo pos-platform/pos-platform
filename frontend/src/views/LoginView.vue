@@ -41,7 +41,9 @@ async function submit() {
   <div class="login-screen">
     <div class="login-card">
       <div class="brand">
-        <div class="brand-logo">🛒</div>
+        <div class="brand-logo">
+          <img src="/logo.png" alt="Logo" />
+        </div>
         <h1>PosPlatform</h1>
         <p class="sub">Hisobingizga kiring</p>
       </div>
@@ -90,7 +92,7 @@ async function submit() {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 45%, #3b82f6 100%);
+  background: linear-gradient(135deg, #1B5E20 0%, #1565C0 50%, #2196F3 100%);
   overflow: auto;
 }
 
@@ -105,12 +107,11 @@ async function submit() {
 
 .brand { text-align: center; margin-bottom: 24px; }
 .brand-logo {
-  width: 60px; height: 60px; margin: 0 auto 12px;
+  width: 80px; height: 70px; margin: 0 auto 12px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 30px; border-radius: 16px;
-  background: linear-gradient(135deg, #dbeafe, #eff6ff);
 }
-.brand h1 { margin: 0; font-size: 26px; font-weight: 800; color: #2563eb; letter-spacing: -0.5px; }
+.brand-logo img { width: 100%; height: 100%; object-fit: contain; }
+.brand h1 { margin: 0; font-size: 26px; font-weight: 800; color: #1565C0; letter-spacing: -0.5px; }
 .brand .sub { margin: 6px 0 0; color: #6b7480; font-size: 14px; }
 
 .field { margin-bottom: 16px; }

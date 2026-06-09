@@ -77,7 +77,10 @@ function logout() {
 <template>
   <div class="app-shell" :class="{ 'no-nav': !showNav }">
     <aside v-if="showNav" class="sidebar">
-      <div class="sidebar-brand">{{ auth.isSuperAdmin ? 'Platforma' : 'PosPlatform' }}</div>
+      <div class="sidebar-brand">
+        <img src="/logo.png" alt="Logo" class="brand-img" />
+        <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosPlatform' }}</span>
+      </div>
 
       <nav class="side-nav">
         <RouterLink

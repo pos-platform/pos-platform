@@ -494,7 +494,7 @@ onUnmounted(() => {
           <th v-if="stores.length">Do'kon</th>
           <th>Barcode</th>
           <th>PLU</th>
-          <th class="text-right">Qoldiq</th>
+          <th class="text-right">Soni</th>
           <th class="text-right">Tannarx</th>
           <th class="text-right">Ustama</th>
           <th class="text-right">Narx</th>
@@ -655,7 +655,7 @@ onUnmounted(() => {
         <!-- Qoldiq + НДС/Маркировка toggles -->
         <div style="display:flex; gap:12px; align-items:flex-end; margin-bottom:12px">
           <div class="field" style="flex:1; margin:0">
-            <label>Qoldiq <span class="req-star">*</span></label>
+            <label>Soni <span class="req-star">*</span></label>
             <input v-model="form.quantity" type="number" min="0" step="0.001" class="input" />
           </div>
           <div style="display:flex; gap:20px; padding-bottom:6px">

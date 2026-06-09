@@ -269,7 +269,7 @@ onMounted(load)
         <thead>
           <tr>
             <th>Mahsulot</th><th>Kategoriya</th><th>Barcode</th>
-            <th class="text-right">Qoldiq</th>
+            <th class="text-right">Soni</th>
             <th class="text-right">Tannarx</th>
             <th class="text-right">Narx</th>
             <th class="text-right">Qiymat (tan)</th>

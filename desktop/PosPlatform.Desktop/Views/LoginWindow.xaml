@@ -30,13 +30,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" CornerRadius="11">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#2563EB" Offset="0" />
-                                    <GradientStop Color="#1D4ED8" Offset="1" />
-                                </LinearGradientBrush>
-                            </Border.Background>
+                        <Border x:Name="b" CornerRadius="11"
+                                Background="{StaticResource PrimaryGradientBrush}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -53,25 +48,22 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
-        <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#1E3A8A" Offset="0" />
-                <GradientStop Color="#2563EB" Offset="0.5" />
-                <GradientStop Color="#0EA5A4" Offset="1" />
-            </LinearGradientBrush>
-        </Grid.Background>
+    <Grid Background="{StaticResource BrandGradientBrush}">
 
         <Border Width="440" VerticalAlignment="Center" HorizontalAlignment="Center"
-                Background="White" CornerRadius="20" Padding="44,40">
+                Background="White" CornerRadius="20" Padding="44,36">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="40" ShadowDepth="0" Opacity="0.35" Color="#0B1B3A" />
             </Border.Effect>
             <StackPanel>
-                <TextBlock Text="PosPlatform" FontSize="34" FontWeight="Bold"
-                           Foreground="#2563EB" HorizontalAlignment="Center" />
+                <!-- Logo -->
+                <Image x:Name="LogoImage" Width="110" Height="96"
+                       HorizontalAlignment="Center" Margin="0,0,0,10"
+                       Source="{StaticResource AppLogo}"/>
+                <TextBlock Text="PosPlatform" FontSize="30" FontWeight="Bold"
+                           Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center" />
                 <TextBlock Text="Kassir kirishi" FontSize="15" Foreground="#6B7480"
-                           HorizontalAlignment="Center" Margin="0,4,0,28" />
+                           HorizontalAlignment="Center" Margin="0,4,0,24" />
 
                 <TextBlock Text="Foydalanuvchi" Foreground="#475569" FontWeight="SemiBold" FontSize="14" />
                 <Border Style="{StaticResource InputBorder}">

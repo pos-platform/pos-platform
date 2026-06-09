@@ -22,4 +22,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Resources\logo.png" Condition="Exists('Resources\logo.png')" />
+  </ItemGroup>
+
 </Project>

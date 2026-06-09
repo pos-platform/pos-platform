@@ -1,5 +1,7 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Configuration;
 using PosPlatform.Desktop.Services;
 using PosPlatform.Desktop.Views;
@@ -45,5 +47,48 @@ public partial class App : Application
         AppState.Backend = new BackendClient(AppState.BaseUrl);
 
         new LoginWindow().Show();
+    }
+
+    public static BitmapSource CreateLogoIcon(int size = 64)
+    {
+        // Qidirish joylari: 1) embedded resource  2) output/Resources  3) source/Resources (dev mode)
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "Resources", "logo.png"),
+            Path.Combine(AppContext.BaseDirectory, "Resources", "logo.jpg"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Resources", "logo.png"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Resources", "logo.jpg"),
+        };
+        foreach (var path in candidates)
+        {
+            try
+            {
+                var full = Path.GetFullPath(path);
+                if (!File.Exists(full)) continue;
+                var img = new BitmapImage();
+                img.BeginInit();
+                img.UriSource    = new Uri(full);
+                img.CacheOption  = BitmapCacheOption.OnLoad;
+                img.EndInit();
+                img.Freeze();
+                return img;
+            }
+            catch { }
+        }
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Resources/logo.png");
+            return new BitmapImage(uri);
+        }
+        catch { }
+
+        // Oxirgi chora: DrawingImage dan render
+        var drawing = (DrawingImage)Current.Resources["AppLogo"];
+        var visual  = new DrawingVisual();
+        using (var ctx = visual.RenderOpen())
+            ctx.DrawImage(drawing, new Rect(0, 0, size, size));
+        var bmp = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
+        bmp.Render(visual);
+        return bmp;
     }
 }

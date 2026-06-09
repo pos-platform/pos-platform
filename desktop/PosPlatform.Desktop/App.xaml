@@ -2,5 +2,200 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
+
+        <!-- ===== BRAND COLORS ===== -->
+        <Color x:Key="PrimaryColor">#FF1565C0</Color>
+        <Color x:Key="PrimaryDarkColor">#FF0D47A1</Color>
+        <Color x:Key="PrimaryLightColor">#FF2196F3</Color>
+        <Color x:Key="AccentGreenColor">#FF43A047</Color>
+        <Color x:Key="AccentGreenDarkColor">#FF2E7D32</Color>
+
+        <SolidColorBrush x:Key="PrimaryBrush"      Color="{StaticResource PrimaryColor}"/>
+        <SolidColorBrush x:Key="PrimaryDarkBrush"  Color="{StaticResource PrimaryDarkColor}"/>
+        <SolidColorBrush x:Key="PrimaryLightBrush" Color="{StaticResource PrimaryLightColor}"/>
+        <SolidColorBrush x:Key="AccentBrush"       Color="{StaticResource AccentGreenColor}"/>
+
+        <LinearGradientBrush x:Key="BrandGradientBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF1B5E20" Offset="0"/>
+            <GradientStop Color="#FF1565C0" Offset="0.55"/>
+            <GradientStop Color="#FF2196F3" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="PrimaryGradientBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF1565C0" Offset="0"/>
+            <GradientStop Color="#FF2196F3" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="CartGradientBrush" StartPoint="0,1" EndPoint="1,0">
+            <GradientStop Color="#FF2E7D32" Offset="0"/>
+            <GradientStop Color="#FF1565C0" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- ===== LOGO as DrawingImage (stroke-based, matches SVG) ===== -->
+        <DrawingImage x:Key="AppLogo">
+            <DrawingImage.Drawing>
+                <DrawingGroup>
+
+                    <!-- BIG CLOUD (stroke only) -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Thickness="10" LineJoin="Round" StartLineCap="Round" EndLineCap="Round">
+                                <Pen.Brush>
+                                    <LinearGradientBrush StartPoint="0.3,0" EndPoint="0.7,1">
+                                        <GradientStop Color="#FF42A5F5" Offset="0"/>
+                                        <GradientStop Color="#FF1565C0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Pen.Brush>
+                            </Pen>
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M14,108 C0,108 -3,92 3,82 C-2,60 16,48 38,50 C45,28 68,14 94,18 C106,2 130,-4 146,10 C160,-2 180,4 182,24 C200,22 210,42 204,62 C218,66 222,86 214,100 C208,114 190,122 170,120 Z"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- SMALL CLOUD (stroke only) -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Thickness="9" LineJoin="Round" StartLineCap="Round" EndLineCap="Round">
+                                <Pen.Brush>
+                                    <LinearGradientBrush StartPoint="0.3,0" EndPoint="0.7,1">
+                                        <GradientStop Color="#FF42A5F5" Offset="0"/>
+                                        <GradientStop Color="#FF1565C0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Pen.Brush>
+                            </Pen>
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M114,122 C98,122 94,108 100,96 C96,78 114,66 136,70 C142,56 160,48 176,52 C184,40 202,42 206,58 C220,56 228,70 222,84 C228,88 228,100 220,112 C212,122 196,130 180,128 Z"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- UPLOAD ARROW (filled) -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Brush>
+                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                <GradientStop Color="#FF42A5F5" Offset="0"/>
+                                <GradientStop Color="#FF1565C0" Offset="1"/>
+                            </LinearGradientBrush>
+                        </GeometryDrawing.Brush>
+                        <GeometryDrawing.Geometry>
+                            <GeometryGroup FillRule="Nonzero">
+                                <PathGeometry Figures="M88,10 L62,52 L114,52 Z"/>
+                                <RectangleGeometry Rect="79,48,18,34" RadiusX="5" RadiusY="5"/>
+                            </GeometryGroup>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- FORK (filled, rotated left -22deg) -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Brush>
+                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                <GradientStop Color="#FF42A5F5" Offset="0"/>
+                                <GradientStop Color="#FF0D47A1" Offset="1"/>
+                            </LinearGradientBrush>
+                        </GeometryDrawing.Brush>
+                        <GeometryDrawing.Geometry>
+                            <GeometryGroup FillRule="Nonzero">
+                                <GeometryGroup.Transform>
+                                    <RotateTransform Angle="-22" CenterX="152" CenterY="82"/>
+                                </GeometryGroup.Transform>
+                                <RectangleGeometry Rect="148,44,4,22" RadiusX="2" RadiusY="2"/>
+                                <RectangleGeometry Rect="154,44,4,22" RadiusX="2" RadiusY="2"/>
+                                <RectangleGeometry Rect="160,44,4,22" RadiusX="2" RadiusY="2"/>
+                                <RectangleGeometry Rect="149,64,16,4"  RadiusX="1.5" RadiusY="1.5"/>
+                                <RectangleGeometry Rect="151,67,12,32" RadiusX="4" RadiusY="4"/>
+                            </GeometryGroup>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- KNIFE (filled, rotated right +22deg) -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Brush>
+                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                <GradientStop Color="#FF42A5F5" Offset="0"/>
+                                <GradientStop Color="#FF0D47A1" Offset="1"/>
+                            </LinearGradientBrush>
+                        </GeometryDrawing.Brush>
+                        <GeometryDrawing.Geometry>
+                            <GeometryGroup FillRule="Nonzero">
+                                <GeometryGroup.Transform>
+                                    <RotateTransform Angle="22" CenterX="180" CenterY="82"/>
+                                </GeometryGroup.Transform>
+                                <PathGeometry Figures="M174,44 C186,44 192,52 188,66 L174,64 Z"/>
+                                <RectangleGeometry Rect="174,62,8,37" RadiusX="4" RadiusY="4"/>
+                            </GeometryGroup>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- CART vertical handle -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Thickness="10" StartLineCap="Round" EndLineCap="Round">
+                                <Pen.Brush>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#FF43A047" Offset="0"/>
+                                        <GradientStop Color="#FF1976D2" Offset="0.55"/>
+                                        <GradientStop Color="#FF1565C0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Pen.Brush>
+                            </Pen>
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <LineGeometry StartPoint="16,118" EndPoint="16,162"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- CART horizontal top -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Thickness="10" StartLineCap="Round" EndLineCap="Round">
+                                <Pen.Brush>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#FF43A047" Offset="0"/>
+                                        <GradientStop Color="#FF1565C0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Pen.Brush>
+                            </Pen>
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <LineGeometry StartPoint="16,130" EndPoint="40,130"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- CART basket outline -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Thickness="10" LineJoin="Round" StartLineCap="Round" EndLineCap="Round">
+                                <Pen.Brush>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#FF43A047" Offset="0"/>
+                                        <GradientStop Color="#FF1976D2" Offset="0.55"/>
+                                        <GradientStop Color="#FF1565C0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Pen.Brush>
+                            </Pen>
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M38,122 L196,122 L184,160 Q180,170 170,170 L46,170 Q36,170 32,160 Z"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- WHEELS -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Brush>
+                            <SolidColorBrush Color="#FF1565C0"/>
+                        </GeometryDrawing.Brush>
+                        <GeometryDrawing.Geometry>
+                            <GeometryGroup FillRule="Nonzero">
+                                <EllipseGeometry Center="72,184"  RadiusX="11" RadiusY="11"/>
+                                <EllipseGeometry Center="148,184" RadiusX="11" RadiusY="11"/>
+                            </GeometryGroup>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
+
     </Application.Resources>
 </Application>

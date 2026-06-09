@@ -12,6 +12,9 @@ public partial class LoginWindow : Window
     public LoginWindow()
     {
         InitializeComponent();
+        var logo = App.CreateLogoIcon();
+        Icon = logo;
+        LogoImage.Source = logo;
         Loaded += (_, _) => PasswordBox.Focus();
     }
 

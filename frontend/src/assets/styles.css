@@ -4,9 +4,12 @@
   --border: #e2e5ea;
   --text: #1f2733;
   --muted: #6b7480;
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --success: #16a34a;
+  --primary: #1565C0;
+  --primary-dark: #0D47A1;
+  --primary-light: #2196F3;
+  --accent: #43A047;
+  --accent-dark: #2E7D32;
+  --success: #43A047;
   --danger: #dc2626;
   --warning: #d97706;
   --radius: 10px;
@@ -41,12 +44,21 @@ body {
   flex-direction: column;
 }
 .sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 800;
-  font-size: 18px;
+  font-size: 17px;
   color: var(--primary);
-  padding: 18px 20px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   letter-spacing: .2px;
+}
+.sidebar-brand .brand-img {
+  width: 38px;
+  height: 34px;
+  object-fit: contain;
+  flex: none;
 }
 .side-nav {
   flex: 1;

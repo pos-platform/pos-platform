@@ -27,6 +27,9 @@ public partial class PosWindow : Window
     public PosWindow()
     {
         InitializeComponent();
+        var logo = App.CreateLogoIcon();
+        Icon = logo;
+        TopLogoImage.Source = logo;
         _sessions.Add(new SaleSession());
         _cart = _sessions[0].Cart;
         CartItems.ItemsSource = _cart;
