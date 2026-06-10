@@ -193,6 +193,10 @@ public class ProductService : IProductService
         var categories = await _db.Categories.ToListAsync(cancellationToken);
         var byName = categories.ToDictionary(c => c.Name.ToLowerInvariant(), c => c);
 
+        // Filiallar — importda BranchName ustuni orqali topish uchun
+        var branches = await _db.Branches.ToListAsync(cancellationToken);
+        var branchByName = branches.ToDictionary(b => b.Name.Trim().ToLowerInvariant(), b => b);
+
         // Mavjud barcode'lar — takrorlanishni oldini olish uchun
         var existingBarcodes = (await _db.Products
             .Where(p => p.Barcode != null)
@@ -244,7 +248,17 @@ public class ProductService : IProductService
                     barcode = null; // takrorlanishni e'tiborsiz qoldiramiz
 
                 var importQty = row.Quantity ?? 0;
-                var importBranchId = _currentUser.BranchId;
+
+                // BranchId: 1) joriy foydalanuvchi filiali, 2) Excel J ustunidagi nomi, 3) yagona filial
+                Guid? importBranchId = _currentUser.BranchId;
+                if (importBranchId is null && !string.IsNullOrWhiteSpace(row.BranchName))
+                {
+                    var bKey = row.BranchName!.Trim().ToLowerInvariant();
+                    if (branchByName.TryGetValue(bKey, out var foundBranch))
+                        importBranchId = foundBranch.Id;
+                }
+                if (importBranchId is null && branches.Count == 1)
+                    importBranchId = branches[0].Id;
 
                 var importProduct = new Product
                 {
