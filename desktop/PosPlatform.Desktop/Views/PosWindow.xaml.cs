@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using PosPlatform.Desktop.Models;
 using PosPlatform.Desktop.Services;
 
@@ -17,6 +18,8 @@ public partial class PosWindow : Window
     private int _currentIndex;
     private ObservableCollection<CartLine> _cart;
     private List<ProductDto> _allProducts = new();
+    private readonly ObservableCollection<ProductDto> _displayedProducts = new();
+    private int _populateVersion;
     private ShiftDto? _shift;
     private readonly ReceiptPrinter _printer = new();
     private ReceiptData? _lastReceipt;
@@ -33,6 +36,7 @@ public partial class PosWindow : Window
         _sessions.Add(new SaleSession());
         _cart = _sessions[0].Cart;
         CartItems.ItemsSource = _cart;
+        ProductsControl.ItemsSource = _displayedProducts;
         UserText.Text = $"{AppState.Username} ({AppState.Role})";
         BuildSaleTabs();
         Loaded += async (_, _) =>
@@ -432,6 +436,7 @@ public partial class PosWindow : Window
 
     private async Task LoadProductsAsync()
     {
+        LoadingOverlay.Visibility = Visibility.Visible;
         try
         {
             _allProducts = await AppState.Backend.GetProductsAsync();
@@ -444,6 +449,10 @@ public partial class PosWindow : Window
             SetOnlineState(false);
             if (_allProducts.Count > 0)
                 ShowMessage("Oflayn rejim — keshdan yuklandi", error: false);
+        }
+        finally
+        {
+            LoadingOverlay.Visibility = Visibility.Collapsed;
         }
         ApplyFilter();
     }
@@ -466,23 +475,36 @@ public partial class PosWindow : Window
 
     // ---------- Mahsulot ro'yxati / qidiruv ----------
 
-    private void ApplyFilter()
+    private List<ProductDto> ComputeFiltered()
     {
         var q = SearchBox.Text.Trim().ToLowerInvariant();
         IEnumerable<ProductDto> items = _allProducts;
-
-        // Kategoriya bo'yicha filtr (null = barchasi).
         if (_selectedCategoryId is Guid cid)
             items = items.Where(p => p.CategoryId == cid);
-
         if (!string.IsNullOrEmpty(q))
-        {
             items = items.Where(p =>
                 p.Name.ToLowerInvariant().Contains(q) ||
                 (p.Barcode != null && p.Barcode.ToLowerInvariant().Contains(q)) ||
                 p.MxikCode.ToLowerInvariant().Contains(q));
+        return items.ToList();
+    }
+
+    private void ApplyFilter()
+    {
+        var version = ++_populateVersion;
+        _ = PopulateProductsAsync(ComputeFiltered(), version);
+    }
+
+    private async Task PopulateProductsAsync(List<ProductDto> items, int version)
+    {
+        _displayedProducts.Clear();
+        for (var i = 0; i < items.Count; i++)
+        {
+            if (_populateVersion != version) return;
+            _displayedProducts.Add(items[i]);
+            if ((i + 1) % 50 == 0)
+                await Dispatcher.Yield(DispatcherPriority.Background);
         }
-        ProductsControl.ItemsSource = items.ToList();
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
@@ -598,6 +620,13 @@ public partial class PosWindow : Window
         var paid = ParseDecimal(PaidBox.Text);
         var change = Math.Max(0, paid - total);
         ChangeText.Text = change.ToString("N0");
+
+        if (ItemCountText is not null && ItemCountRow is not null)
+        {
+            var qty = _cart.Sum(l => l.Quantity);
+            ItemCountText.Text = qty.ToString("0.###") + " ta";
+            ItemCountRow.Visibility = qty > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
     private void PaidBox_TextChanged(object sender, TextChangedEventArgs e) => RecalcTotals();

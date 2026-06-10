@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, reactive, computed, watch } from 'vue'
 import { productsApi, categoriesApi, suppliersApi, storesApi, downloadBlob } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
 import { useAuthStore } from '../stores/auth'
+import JsBarcode from 'jsbarcode'
 
 const auth = useAuthStore()
 
@@ -402,6 +403,68 @@ onMounted(async () => {
 onUnmounted(() => {
   clearInterval(stockPollTimer)
 })
+
+function printBarcode(product) {
+  if (!product.barcode) {
+    error.value = 'Bu mahsulotda barcode yo\'q'
+    setTimeout(() => { error.value = '' }, 3000)
+    return
+  }
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  try {
+    JsBarcode(svg, product.barcode, {
+      format: 'CODE128',
+      width: 2,
+      height: 60,
+      displayValue: true,
+      fontSize: 14,
+      margin: 10,
+      background: '#ffffff',
+      lineColor: '#000000'
+    })
+  } catch {
+    error.value = 'Barcode formati noto\'g\'ri'
+    setTimeout(() => { error.value = '' }, 3000)
+    return
+  }
+
+  const svgHtml = new XMLSerializer().serializeToString(svg)
+  const priceFmt = Number(product.price).toLocaleString()
+
+  const w = window.open('', '_blank', 'width=460,height=340')
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${product.name}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: flex-start; padding: 24px; background: #fff; }
+    .label { text-align: center; padding: 14px 20px; border: 1px solid #bbb; display: inline-block; }
+    .name { font-weight: bold; font-size: 15px; margin-bottom: 10px; }
+    .price { font-weight: bold; font-size: 20px; margin-top: 8px; }
+    svg { display: block; margin: 0 auto; }
+    @page { size: auto; margin: 5mm; }
+    @media print {
+      body { padding: 0; }
+      .label { border: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="label">
+    <div class="name">${product.name}</div>
+    ${svgHtml}
+    <div class="price">${priceFmt}</div>
+  </div>
+  <script>
+    setTimeout(function() { window.print(); }, 300);
+  <\/script>
+</body>
+</html>`)
+  w.document.close()
+}
 </script>
 
 <template>
@@ -545,8 +608,15 @@ onUnmounted(() => {
           <td class="text-right"><span class="pill pill-green">{{ Number(p.markupPercent).toFixed(1) }}%</span></td>
           <td class="text-right" style="font-weight:500">{{ Number(p.price).toLocaleString() }}</td>
           <td class="text-right" style="white-space:nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openEdit(p)">✏️</button>
-            <button class="btn btn-ghost btn-sm" @click="removeProduct(p)">🗑️</button>
+            <div style="display:inline-flex; gap:6px; align-items:center">
+              <button class="btn btn-print btn-sm" title="Barcode chop etish" @click="printBarcode(p)">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+                </svg>
+              </button>
+              <button class="btn btn-ghost btn-sm" @click="openEdit(p)">✏️</button>
+              <button class="btn btn-ghost btn-sm" @click="removeProduct(p)">🗑️</button>
+            </div>
           </td>
         </tr>
         <tr v-if="!paginatedProducts.length && !loading">
@@ -772,6 +842,24 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.btn-print {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  vertical-align: middle;
+}
+.btn-print:hover { background: #15803d; }
+.btn-print:active { background: #166534; }
+
 .pagination-row {
   display: flex;
   justify-content: center;
