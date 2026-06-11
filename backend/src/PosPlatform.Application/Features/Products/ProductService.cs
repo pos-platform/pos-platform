@@ -195,7 +195,25 @@ public class ProductService : IProductService
 
         // Filiallar — importda BranchName ustuni orqali topish uchun
         var branches = await _db.Branches.ToListAsync(cancellationToken);
-        var branchByName = branches.ToDictionary(b => b.Name.Trim().ToLowerInvariant(), b => b);
+
+        // Agar tashkilotda birorta ham filial bo'lmasa — Excel'dagi nom (yoki "Asosiy do'kon")
+        // bilan avtomatik yaratamiz, aks holda qoldiq (soni) hech qaerga yozilmaydi.
+        if (branches.Count == 0)
+        {
+            var firstBranchName = rows
+                .Select(r => r.BranchName)
+                .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n))?.Trim();
+            var autoBranch = new Branch
+            {
+                Name = string.IsNullOrWhiteSpace(firstBranchName) ? "Asosiy do'kon" : firstBranchName!
+            };
+            _db.Branches.Add(autoBranch); // OrganizationId SaveChanges'da avtomatik to'ldiriladi
+            branches.Add(autoBranch);
+        }
+
+        var branchByName = new Dictionary<string, Branch>();
+        foreach (var b in branches)
+            branchByName.TryAdd(NormalizeBranchKey(b.Name), b);
 
         // Mavjud barcode'lar — takrorlanishni oldini olish uchun
         var existingBarcodes = (await _db.Products
@@ -249,15 +267,15 @@ public class ProductService : IProductService
 
                 var importQty = row.Quantity ?? 0;
 
-                // BranchId: 1) joriy foydalanuvchi filiali, 2) Excel J ustunidagi nomi, 3) yagona filial
+                // BranchId: 1) joriy foydalanuvchi filiali, 2) Excel J ustunidagi nomi, 3) birinchi filial
                 Guid? importBranchId = _currentUser.BranchId;
                 if (importBranchId is null && !string.IsNullOrWhiteSpace(row.BranchName))
                 {
-                    var bKey = row.BranchName!.Trim().ToLowerInvariant();
+                    var bKey = NormalizeBranchKey(row.BranchName!);
                     if (branchByName.TryGetValue(bKey, out var foundBranch))
                         importBranchId = foundBranch.Id;
                 }
-                if (importBranchId is null && branches.Count == 1)
+                if (importBranchId is null && branches.Count > 0)
                     importBranchId = branches[0].Id;
 
                 var importProduct = new Product
@@ -346,4 +364,8 @@ public class ProductService : IProductService
     }
 
     public byte[] GetImportTemplate() => _excel.BuildTemplate();
+
+    // Faqat harf va raqamlarni qoldiradi: "Xo’ja Market" → "xojamarket"
+    private static string NormalizeBranchKey(string s) =>
+        new string(s.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
 }
