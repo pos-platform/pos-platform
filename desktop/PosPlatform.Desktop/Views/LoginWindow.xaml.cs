@@ -63,9 +63,16 @@ public partial class LoginWindow : Window
             AppState.Token = resp.Token;
             AppState.Username = resp.Username;
             AppState.Role = resp.Role;
+            AppState.BusinessType = string.IsNullOrWhiteSpace(resp.BusinessType) ? "Store" : resp.BusinessType;
 
-            var pos = new PosWindow();
-            pos.Show();
+            if (AppState.IsRestaurant)
+            {
+                new TablesWindow().Show();
+            }
+            else
+            {
+                new PosWindow().Show();
+            }
             Close();
         }
         catch (Exception ex)

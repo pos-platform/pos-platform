@@ -64,6 +64,8 @@ public class ProductService : IProductService
         var product = new Product
         {
             Name = dto.Name.Trim(),
+            ProductType = dto.ProductType,
+            PrepMinutes = dto.PrepMinutes,
             MxikCode = string.IsNullOrWhiteSpace(dto.MxikCode) ? "00000000" : dto.MxikCode.Trim(),
             Barcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim(),
             CostPrice = dto.CostPrice,
@@ -110,6 +112,8 @@ public class ProductService : IProductService
         }
 
         product.Name = dto.Name.Trim();
+        product.ProductType = dto.ProductType;
+        product.PrepMinutes = dto.PrepMinutes;
         product.MxikCode = string.IsNullOrWhiteSpace(dto.MxikCode) ? "00000000" : dto.MxikCode.Trim();
         product.Barcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim();
         product.CostPrice = dto.CostPrice;

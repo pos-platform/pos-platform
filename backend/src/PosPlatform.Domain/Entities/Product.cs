@@ -8,6 +8,18 @@ public class Product : BaseEntity
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Mahsulot turi. Restoran rejimida Dish (ovqat) sotuvda ombordan ayirilmaydi;
+    /// Good (tovar/xom-ashyo) faqat KitchenIssue orqali kamayadi. Do'kon rejimida hamma Good.
+    /// </summary>
+    public ProductType ProductType { get; set; } = ProductType.Good;
+
+    /// <summary>Tayyorlash vaqti (daqiqa) — ovqat uchun ixtiyoriy.</summary>
+    public int? PrepMinutes { get; set; }
+
+    /// <summary>Ovqat retsepti (DishIngredient) — ProductType=Dish bo'lganda tovar tarkibi.</summary>
+    public ICollection<DishIngredient> Ingredients { get; set; } = new List<DishIngredient>();
+
+    /// <summary>
     /// MXIK kodi — O'zbekiston soliq tizimi (FDS) uchun majburiy
     /// mahsulot/xizmat identifikatsiya kodi.
     /// </summary>

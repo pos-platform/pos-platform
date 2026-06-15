@@ -23,7 +23,11 @@
     "users": "Пользователи",
     "roles": "Роли",
     "organizations": "Организации",
-    "audit": "Журнал аудита"
+    "audit": "Журнал аудита",
+    "tables": "Столы",
+    "dishes": "Блюда",
+    "kitchenIssues": "Выдача повару",
+    "settings": "Настройки"
   },
   "common": {
     "save": "Сохранить",

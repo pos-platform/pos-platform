@@ -21,6 +21,12 @@ public class SaleDto
     public decimal ChangeAmount { get; set; }
     public Guid? CustomerId { get; set; }
     public decimal LoyaltyPointsEarned { get; set; }
+    public Guid? TableId { get; set; }
+    public Guid? WaiterId { get; set; }
+    public int? GuestCount { get; set; }
+    public decimal ServiceChargePercent { get; set; }
+    public decimal ServiceChargeAmount { get; set; }
+    public DateTime? OpenedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<SaleItemDto> Items { get; set; } = new();
     public ReceiptDto? Receipt { get; set; }
@@ -43,6 +49,12 @@ public class SaleDto
         ChangeAmount = s.ChangeAmount,
         CustomerId = s.CustomerId,
         LoyaltyPointsEarned = s.LoyaltyPointsEarned,
+        TableId = s.TableId,
+        WaiterId = s.WaiterId,
+        GuestCount = s.GuestCount,
+        ServiceChargePercent = s.ServiceChargePercent,
+        ServiceChargeAmount = s.ServiceChargeAmount,
+        OpenedAt = s.OpenedAt,
         CreatedAt = s.CreatedAt,
         Items = s.Items.Select(SaleItemDto.FromEntity).ToList(),
         Receipt = s.Receipt is null ? null : ReceiptDto.FromEntity(s.Receipt)
@@ -63,6 +75,8 @@ public class SaleItemDto
     public decimal VatPercent { get; set; }
     public decimal VatAmount { get; set; }
     public decimal LineTotal { get; set; }
+    public string? Note { get; set; }
+    public bool SentToKitchen { get; set; }
 
     public static SaleItemDto FromEntity(SaleItem i) => new()
     {
@@ -77,7 +91,9 @@ public class SaleItemDto
         DiscountAmount = i.DiscountAmount,
         VatPercent = i.VatPercent,
         VatAmount = i.VatAmount,
-        LineTotal = i.LineTotal
+        LineTotal = i.LineTotal,
+        Note = i.Note,
+        SentToKitchen = i.SentToKitchen
     };
 }
 

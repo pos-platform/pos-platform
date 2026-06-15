@@ -18,6 +18,7 @@ public class SaleItemConfiguration : IEntityTypeConfiguration<SaleItem>
         builder.Property(i => i.VatPercent).HasColumnType("numeric(5,2)");
         builder.Property(i => i.VatAmount).HasColumnType("numeric(18,2)");
         builder.Property(i => i.LineTotal).HasColumnType("numeric(18,2)");
+        builder.Property(i => i.Note).HasMaxLength(512);
 
         // Mahsulot o'chmasligi uchun (savdo tarixi saqlanadi) — Restrict.
         builder.HasOne(i => i.Product)

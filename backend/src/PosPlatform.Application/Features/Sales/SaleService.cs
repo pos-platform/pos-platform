@@ -171,10 +171,14 @@ public class SaleService : ISaleService
                 LineTotal = lineTotal
             });
 
-            // Filial qoldig'idan ayiramiz.
-            if (!branchStocks.TryGetValue(product.Id, out var stock) || stock.Quantity < line.Quantity)
-                throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
-            stock.Quantity -= line.Quantity;
+            // Filial qoldig'idan ayiramiz — faqat tovar (Good) uchun.
+            // Ovqat (Dish) ombordan ayirilmaydi; xom-ashyo KitchenIssue orqali kamayadi.
+            if (product.ProductType == ProductType.Good)
+            {
+                if (!branchStocks.TryGetValue(product.Id, out var stock) || stock.Quantity < line.Quantity)
+                    throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
+                stock.Quantity -= line.Quantity;
+            }
         }
 
         sale.TotalAmount = sale.Items.Sum(i => i.LineTotal);
@@ -340,6 +344,332 @@ public class SaleService : ISaleService
         await _db.SaveChangesAsync(cancellationToken);
 
         return SaleDto.FromEntity(refund);
+    }
+
+    // ===================== Restoran: ochiq buyurtma =====================
+
+    public async Task<SaleDto> OpenOrderAsync(OpenOrderRequest request, CancellationToken cancellationToken = default)
+    {
+        var userId = _currentUser.UserId
+            ?? throw new UnauthorizedException("Joriy foydalanuvchi aniqlanmadi.");
+
+        var table = await _db.RestaurantTables.FirstOrDefaultAsync(t => t.Id == request.TableId, cancellationToken)
+            ?? throw new NotFoundException("Stol topilmadi.");
+
+        var existing = await _db.Sales
+            .Include(s => s.Items)
+            .FirstOrDefaultAsync(s => s.TableId == request.TableId && s.Status == SaleStatus.Pending, cancellationToken);
+        if (existing is not null)
+            return SaleDto.FromEntity(existing); // stolda allaqachon ochiq buyurtma bor
+
+        var sale = new Sale
+        {
+            BranchId = request.BranchId ?? table.BranchId ?? _currentUser.BranchId,
+            CashierId = userId,
+            WaiterId = userId,
+            TableId = table.Id,
+            GuestCount = request.GuestCount,
+            Type = SaleType.Sale,
+            Status = SaleStatus.Pending,
+            OpenedAt = DateTime.UtcNow,
+            ReceiptNumber = await GenerateReceiptNumberAsync("O", cancellationToken)
+        };
+
+        table.Status = TableStatus.Occupied;
+
+        _db.Sales.Add(sale);
+        await _db.SaveChangesAsync(cancellationToken);
+        return SaleDto.FromEntity(sale);
+    }
+
+    public async Task<IReadOnlyList<SaleDto>> GetOpenOrdersAsync(Guid? branchId = null, CancellationToken cancellationToken = default)
+    {
+        var query = _db.Sales
+            .AsNoTracking()
+            .Include(s => s.Items)
+            .Where(s => s.Status == SaleStatus.Pending);
+
+        if (branchId.HasValue)
+            query = query.Where(s => s.BranchId == branchId);
+
+        var orders = await query.OrderBy(s => s.OpenedAt).ToListAsync(cancellationToken);
+        return orders.Select(SaleDto.FromEntity).ToList();
+    }
+
+    public async Task<SaleDto?> GetOpenOrderByTableAsync(Guid tableId, CancellationToken cancellationToken = default)
+    {
+        var order = await _db.Sales
+            .AsNoTracking()
+            .Include(s => s.Items)
+            .FirstOrDefaultAsync(s => s.TableId == tableId && s.Status == SaleStatus.Pending, cancellationToken);
+        return order is null ? null : SaleDto.FromEntity(order);
+    }
+
+    public async Task<SaleDto> SaveOrderItemsAsync(Guid saleId, SaveOrderItemsRequest request, CancellationToken cancellationToken = default)
+    {
+        var sale = await _db.Sales
+            .Include(s => s.Items)
+            .FirstOrDefaultAsync(s => s.Id == saleId, cancellationToken)
+            ?? throw new NotFoundException($"Buyurtma topilmadi: {saleId}");
+        if (sale.Status != SaleStatus.Pending)
+            throw new ValidationException("Faqat ochiq buyurtmani tahrirlash mumkin.");
+
+        var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
+        var products = await _db.Products
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, cancellationToken);
+
+        var nowUtc = DateTime.UtcNow;
+        var activePromotions = await _db.Promotions
+            .Where(p => p.IsActive && p.StartDate <= nowUtc && p.EndDate >= nowUtc)
+            .ToListAsync(cancellationToken);
+
+        var existingItems = sale.Items.ToList();
+        var matched = new HashSet<SaleItem>();
+        var finalItems = new List<SaleItem>();
+
+        foreach (var line in request.Items)
+        {
+            if (!products.TryGetValue(line.ProductId, out var product))
+                throw new NotFoundException($"Mahsulot topilmadi: {line.ProductId}");
+            if (line.Quantity <= 0)
+                throw new ValidationException($"'{product.Name}' uchun miqdor 0 dan katta bo'lishi kerak.");
+
+            var note = string.IsNullOrWhiteSpace(line.Note) ? null : line.Note.Trim();
+            var unitPrice = line.UnitPriceOverride ?? product.Price;
+            var vatPercent = DefaultVatPercent;
+            var gross = Round2(unitPrice * line.Quantity);
+            var promoPercent = PromotionCalculator.GetDiscountPercent(activePromotions, product.Id, product.CategoryId);
+            var discount = Round2(gross * promoPercent / 100m);
+            var lineTotal = Round2(gross - discount);
+            var vatAmount = Round2(lineTotal * vatPercent / (100m + vatPercent));
+
+            // Bir xil mahsulot+izoh bo'yicha mavjud qatorni topib yangilaymiz (SentToKitchen saqlanadi).
+            var item = existingItems.FirstOrDefault(e => !matched.Contains(e) && e.ProductId == line.ProductId && (e.Note ?? "") == (note ?? ""));
+            if (item is null)
+            {
+                item = new SaleItem { SaleId = sale.Id, ProductId = product.Id, SentToKitchen = false };
+                _db.SaleItems.Add(item);
+            }
+            else
+            {
+                matched.Add(item);
+            }
+
+            item.ProductName = product.Name;
+            item.MxikCode = product.MxikCode;
+            item.Barcode = product.Barcode;
+            item.Unit = product.Unit;
+            item.Quantity = line.Quantity;
+            item.UnitPrice = unitPrice;
+            item.CostPrice = product.CostPrice;
+            item.DiscountAmount = discount;
+            item.VatPercent = vatPercent;
+            item.VatAmount = vatAmount;
+            item.LineTotal = lineTotal;
+            item.Note = note;
+            finalItems.Add(item);
+        }
+
+        // Yangi ro'yxatda yo'q eski qatorlarni o'chiramiz.
+        foreach (var leftover in existingItems.Where(e => !matched.Contains(e)).ToList())
+            _db.SaleItems.Remove(leftover);
+
+        // Jami — yakuniy qatorlardan (navigatsiyaga tayanmaymiz).
+        sale.TotalAmount = finalItems.Sum(i => i.LineTotal);
+        sale.DiscountAmount = finalItems.Sum(i => i.DiscountAmount);
+        sale.VatAmount = finalItems.Sum(i => i.VatAmount);
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // Yangilangan qatorlar bilan to'liq o'qib qaytaramiz.
+        return await GetByIdAsync(saleId, cancellationToken);
+    }
+
+    public async Task<int> SendToKitchenAsync(Guid saleId, CancellationToken cancellationToken = default)
+    {
+        var sale = await _db.Sales
+            .Include(s => s.Items)
+            .Include(s => s.Table)
+            .Include(s => s.Waiter)
+            .FirstOrDefaultAsync(s => s.Id == saleId, cancellationToken)
+            ?? throw new NotFoundException($"Buyurtma topilmadi: {saleId}");
+        if (sale.Status != SaleStatus.Pending)
+            throw new ValidationException("Faqat ochiq buyurtmani oshxonaga yuborish mumkin.");
+
+        var newItems = sale.Items.Where(i => !i.SentToKitchen).ToList();
+        if (newItems.Count == 0)
+            return 0;
+
+        var ticket = new KitchenTicket
+        {
+            BranchId = sale.BranchId,
+            SaleId = sale.Id,
+            TableName = sale.Table?.Name,
+            WaiterName = sale.Waiter?.Username
+        };
+        foreach (var item in newItems)
+        {
+            ticket.Items.Add(new KitchenTicketItem
+            {
+                DishName = item.ProductName,
+                Quantity = item.Quantity,
+                Note = item.Note
+            });
+            item.SentToKitchen = true;
+        }
+
+        _db.KitchenTickets.Add(ticket);
+        await _db.SaveChangesAsync(cancellationToken);
+        return newItems.Count;
+    }
+
+    public async Task<SaleDto> PayOrderAsync(Guid saleId, PayOrderRequest request, CancellationToken cancellationToken = default)
+    {
+        var cashierId = _currentUser.UserId
+            ?? throw new UnauthorizedException("Joriy foydalanuvchi aniqlanmadi.");
+
+        var sale = await _db.Sales
+            .Include(s => s.Items)
+            .Include(s => s.Table)
+            .FirstOrDefaultAsync(s => s.Id == saleId, cancellationToken)
+            ?? throw new NotFoundException($"Buyurtma topilmadi: {saleId}");
+        if (sale.Status != SaleStatus.Pending)
+            throw new ValidationException("Bu buyurtma allaqachon yopilgan.");
+        if (sale.Items.Count == 0)
+            throw new ValidationException("Bo'sh buyurtmani yopib bo'lmaydi.");
+
+        var shift = await _db.CashShifts
+            .FirstOrDefaultAsync(s => s.CashierId == cashierId && s.Status == ShiftStatus.Open, cancellationToken)
+            ?? throw new ValidationException("To'lov uchun avval smenani oching (kassa sessiyasi).");
+
+        Debtor? debtor = null;
+        if (request.PaymentMethod == PaymentMethod.Debt)
+        {
+            if (request.DebtorId is null)
+                throw new ValidationException("Nasiya uchun qarzdorni tanlang.");
+            debtor = await _db.Debtors.FirstOrDefaultAsync(d => d.Id == request.DebtorId, cancellationToken)
+                ?? throw new NotFoundException("Qarzdor topilmadi.");
+        }
+
+        Customer? customer = null;
+        if (request.CustomerId.HasValue)
+            customer = await _db.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
+
+        // Tovar (Good) qatorlari uchun ombordan ayiramiz; ovqat (Dish) ayirilmaydi.
+        var goodIds = sale.Items
+            .Where(i => i.ProductId != Guid.Empty)
+            .Select(i => i.ProductId).Distinct().ToList();
+        var goodProducts = await _db.Products
+            .Where(p => goodIds.Contains(p.Id) && p.ProductType == ProductType.Good)
+            .ToDictionaryAsync(p => p.Id, cancellationToken);
+        if (goodProducts.Count > 0 && sale.BranchId.HasValue)
+        {
+            var stocks = await _db.BranchStocks
+                .Where(s => s.BranchId == sale.BranchId && goodProducts.Keys.Contains(s.ProductId))
+                .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+            foreach (var item in sale.Items.Where(i => goodProducts.ContainsKey(i.ProductId)))
+            {
+                if (!stocks.TryGetValue(item.ProductId, out var stock) || stock.Quantity < item.Quantity)
+                    throw new ValidationException($"'{item.ProductName}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
+                stock.Quantity -= item.Quantity;
+            }
+        }
+
+        RecalculateTotals(sale);
+
+        // Servis haqi.
+        sale.ServiceChargePercent = request.ServiceChargePercent;
+        sale.ServiceChargeAmount = Round2(sale.Items.Sum(i => i.LineTotal) * request.ServiceChargePercent / 100m);
+        sale.TotalAmount = Round2(sale.Items.Sum(i => i.LineTotal) + sale.ServiceChargeAmount);
+
+        sale.CashShiftId = shift.Id;
+        sale.CashierId = cashierId;
+        sale.PaymentMethod = request.PaymentMethod;
+        sale.DebtorId = debtor?.Id;
+        sale.CustomerId = customer?.Id;
+
+        if (request.PaymentMethod == PaymentMethod.Cash && request.PaidAmount < sale.TotalAmount)
+            throw new ValidationException("Berilgan summa savdo summasidan kam.");
+
+        if (request.PaymentMethod == PaymentMethod.Debt)
+        {
+            sale.PaidAmount = 0;
+            sale.ChangeAmount = 0;
+        }
+        else
+        {
+            sale.PaidAmount = request.PaidAmount;
+            sale.ChangeAmount = Math.Max(0, Round2(request.PaidAmount - sale.TotalAmount));
+        }
+
+        sale.Status = SaleStatus.Completed;
+        // Mavjud (tracked) savdoga 1:1 chek — DbSet orqali aniq Added qilib, navigatsiyani ham bog'laymiz.
+        var receipt = new Receipt { SaleId = sale.Id, FiscalStatus = FiscalStatus.NotSent };
+        _db.Receipts.Add(receipt);
+        sale.Receipt = receipt;
+
+        if (customer is not null)
+        {
+            var points = Round2(sale.TotalAmount * 0.01m);
+            customer.LoyaltyPoints += points;
+            sale.LoyaltyPointsEarned = points;
+            _db.LoyaltyTransactions.Add(new LoyaltyTransaction
+            {
+                CustomerId = customer.Id,
+                Points = points,
+                Amount = sale.TotalAmount,
+                Comment = $"Savdo {sale.ReceiptNumber}",
+                Sale = sale
+            });
+        }
+
+        if (debtor is not null)
+        {
+            debtor.Balance += sale.TotalAmount;
+            _db.DebtorTransactions.Add(new DebtorTransaction
+            {
+                DebtorId = debtor.Id,
+                Type = DebtTransactionType.Debt,
+                Amount = sale.TotalAmount,
+                BalanceAfter = debtor.Balance,
+                Comment = $"Savdo {sale.ReceiptNumber}"
+            });
+        }
+
+        // Stolni bo'shatamiz.
+        if (sale.Table is not null)
+            sale.Table.Status = TableStatus.Free;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        await _fiscal.EnqueueAsync(sale, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return SaleDto.FromEntity(sale);
+    }
+
+    public async Task CancelOrderAsync(Guid saleId, CancellationToken cancellationToken = default)
+    {
+        var sale = await _db.Sales
+            .Include(s => s.Table)
+            .FirstOrDefaultAsync(s => s.Id == saleId, cancellationToken)
+            ?? throw new NotFoundException($"Buyurtma topilmadi: {saleId}");
+        if (sale.Status != SaleStatus.Pending)
+            throw new ValidationException("Faqat ochiq buyurtmani bekor qilish mumkin.");
+
+        sale.Status = SaleStatus.Cancelled;
+        if (sale.Table is not null)
+            sale.Table.Status = TableStatus.Free;
+
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static void RecalculateTotals(Sale sale)
+    {
+        sale.TotalAmount = sale.Items.Sum(i => i.LineTotal);
+        sale.DiscountAmount = sale.Items.Sum(i => i.DiscountAmount);
+        sale.VatAmount = sale.Items.Sum(i => i.VatAmount);
     }
 
     /// <summary>

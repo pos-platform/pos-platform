@@ -29,6 +29,9 @@ watch(
 const navItems = [
   { name: 'dashboard', key: 'nav.dashboard', icon: '📊', admin: true },
   { name: 'pos', key: 'nav.pos', icon: '🛒', cashierOnly: true },
+  { name: 'tables', key: 'nav.tables', icon: '🍽️', admin: true, restaurantOnly: true },
+  { name: 'dishes', key: 'nav.dishes', icon: '🍲', admin: true, restaurantOnly: true },
+  { name: 'kitchen-issues', key: 'nav.kitchenIssues', icon: '👨‍🍳', admin: true, restaurantOnly: true },
   { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true },
   { name: 'products', key: 'nav.products', icon: '📦' },
   { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true },
@@ -48,7 +51,8 @@ const navItems = [
   { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true },
   { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true },
   { name: 'users', key: 'nav.users', icon: '👥', admin: true },
-  { name: 'roles', key: 'nav.roles', icon: '🔑', admin: true }
+  { name: 'roles', key: 'nav.roles', icon: '🔑', admin: true },
+  { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true }
 ]
 
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
@@ -63,6 +67,7 @@ const visibleNav = computed(() => {
   return navItems.filter((i) => {
     if (i.admin && auth.role !== 'Admin') return false
     if (i.cashierOnly && auth.role === 'Admin') return false
+    if (i.restaurantOnly && !auth.isRestaurant) return false
     return true
   })
 })

@@ -23,6 +23,7 @@ export const useAuthStore = defineStore('auth', {
       permissions: saved.permissions || [],
       organizationId: saved.organizationId || null,
       organizationName: saved.organizationName || null,
+      businessType: saved.businessType || 'Store',
       licensedUntil: saved.licensedUntil || null
     }
   },
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.token,
     isSuperAdmin: (state) => state.role === 'SuperAdmin',
     isAdmin: (state) => state.role === 'Admin',
+    isRestaurant: (state) => state.businessType === 'Restaurant',
     hasPermission: (state) => (code) => {
       if (state.role === 'SuperAdmin') return true
       return state.permissions.includes(code)
@@ -46,18 +48,27 @@ export const useAuthStore = defineStore('auth', {
       this.permissions = data.permissions || []
       this.organizationId = data.organizationId || null
       this.organizationName = data.organizationName || null
+      this.businessType = data.businessType || 'Store'
       this.licensedUntil = data.licensedUntil || null
+      this.persist()
+    },
+    setBusinessType(businessType) {
+      this.businessType = businessType || 'Store'
+      this.persist()
+    },
+    persist() {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          token: data.token,
-          username: data.username,
-          role: data.role,
+          token: this.token,
+          username: this.username,
+          role: this.role,
           roleName: this.roleName,
           appRoleId: this.appRoleId,
           permissions: this.permissions,
           organizationId: this.organizationId,
           organizationName: this.organizationName,
+          businessType: this.businessType,
           licensedUntil: this.licensedUntil
         })
       )
@@ -71,6 +82,7 @@ export const useAuthStore = defineStore('auth', {
       this.permissions = []
       this.organizationId = null
       this.organizationName = null
+      this.businessType = 'Store'
       this.licensedUntil = null
       localStorage.removeItem(STORAGE_KEY)
     }

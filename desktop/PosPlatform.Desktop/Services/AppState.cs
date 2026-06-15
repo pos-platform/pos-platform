@@ -10,6 +10,9 @@ public static class AppState
     public static string Username { get; set; } = "";
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
+    public static string BusinessType { get; set; } = "Store";
+
+    public static bool IsRestaurant => BusinessType == "Restaurant";
 
     public static bool IsOnline { get; set; } = true;
 

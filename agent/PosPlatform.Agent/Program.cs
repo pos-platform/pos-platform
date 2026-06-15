@@ -61,6 +61,7 @@ switch (printerMode)
 builder.Services.AddHostedService<FiscalWorker>();
 builder.Services.AddHostedService<ShiftReportWorker>();
 builder.Services.AddHostedService<LabelWorker>();
+builder.Services.AddHostedService<KitchenWorker>();
 
 var host = builder.Build();
 host.Run();

@@ -97,6 +97,7 @@ public class AuthService : IAuthService
             ExpiresAt = expiresAt,
             OrganizationId = user.OrganizationId,
             OrganizationName = user.Organization?.Name,
+            BusinessType = user.Organization?.BusinessType ?? BusinessType.Store,
             LicensedUntil = user.LicensedUntil,
             Permissions = permissions
         };

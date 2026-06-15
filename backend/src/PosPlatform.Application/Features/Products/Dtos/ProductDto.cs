@@ -7,6 +7,8 @@ public class ProductDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public ProductType ProductType { get; set; }
+    public int? PrepMinutes { get; set; }
     public string MxikCode { get; set; } = string.Empty;
     public string? Barcode { get; set; }
     public decimal CostPrice { get; set; }
@@ -42,6 +44,8 @@ public class ProductDto
     {
         Id = p.Id,
         Name = p.Name,
+        ProductType = p.ProductType,
+        PrepMinutes = p.PrepMinutes,
         MxikCode = p.MxikCode,
         Barcode = p.Barcode,
         CostPrice = p.CostPrice,

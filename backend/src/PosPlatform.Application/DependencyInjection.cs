@@ -6,6 +6,10 @@ using PosPlatform.Application.Features.CashMovements;
 using PosPlatform.Application.Features.Categories;
 using PosPlatform.Application.Features.Customers;
 using PosPlatform.Application.Features.Dashboard;
+using PosPlatform.Application.Features.Dishes;
+using PosPlatform.Application.Features.KitchenIssues;
+using PosPlatform.Application.Features.KitchenTickets;
+using PosPlatform.Application.Features.Tables;
 using PosPlatform.Application.Features.Debtors;
 using PosPlatform.Application.Features.Expenses;
 using PosPlatform.Application.Features.Fiscal;
@@ -63,6 +67,12 @@ public static class DependencyInjection
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IOnlinePaymentService, OnlinePaymentService>();
         services.AddScoped<ILabelService, LabelService>();
+
+        // Restoran moduli
+        services.AddScoped<IDishService, DishService>();
+        services.AddScoped<ITableService, TableService>();
+        services.AddScoped<IKitchenIssueService, KitchenIssueService>();
+        services.AddScoped<IKitchenTicketService, KitchenTicketService>();
 
         return services;
     }

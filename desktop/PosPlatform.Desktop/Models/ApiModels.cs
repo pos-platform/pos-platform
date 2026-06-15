@@ -7,6 +7,82 @@ public class AuthResponse
     public string Token { get; set; } = "";
     public string Username { get; set; } = "";
     public string Role { get; set; } = "";
+    public string BusinessType { get; set; } = "Store";
+}
+
+// ===================== Restoran modeli =====================
+
+public class TableDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = "";
+    public string? Hall { get; set; }
+    public int Seats { get; set; }
+    public string Status { get; set; } = "Free";
+    public Guid? OpenOrderId { get; set; }
+    public decimal? OpenOrderTotal { get; set; }
+
+    public bool IsOccupied => Status == "Occupied";
+    public string SeatsLabel => $"{Seats} o'rin";
+    public string TotalLabel => OpenOrderTotal.HasValue ? OpenOrderTotal.Value.ToString("N0") + " so'm" : "";
+}
+
+public class DishDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = "";
+    public decimal Price { get; set; }
+    public Guid CategoryId { get; set; }
+    public string? CategoryName { get; set; }
+    public string? ImageUrl { get; set; }
+
+    public string PriceLabel => Price.ToString("N0");
+    public string? ImageFull =>
+        string.IsNullOrEmpty(ImageUrl) ? null : AppState.BaseUrl.TrimEnd('/') + ImageUrl;
+}
+
+public class OrderItemDto
+{
+    public Guid ProductId { get; set; }
+    public string ProductName { get; set; } = "";
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal LineTotal { get; set; }
+    public string? Note { get; set; }
+    public bool SentToKitchen { get; set; }
+}
+
+public class OrderDto
+{
+    public Guid Id { get; set; }
+    public string ReceiptNumber { get; set; } = "";
+    public Guid? TableId { get; set; }
+    public int? GuestCount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal ServiceChargeAmount { get; set; }
+    public string Status { get; set; } = "";
+    public List<OrderItemDto> Items { get; set; } = new();
+}
+
+public class OpenOrderRequest
+{
+    public Guid TableId { get; set; }
+    public int? GuestCount { get; set; }
+}
+
+public class OrderItemRequest
+{
+    public Guid ProductId { get; set; }
+    public decimal Quantity { get; set; }
+    public string? Note { get; set; }
+}
+
+public class PayOrderRequest
+{
+    public string PaymentMethod { get; set; } = "Cash";
+    public decimal PaidAmount { get; set; }
+    public Guid? DebtorId { get; set; }
+    public decimal ServiceChargePercent { get; set; }
 }
 
 public class ProductDto

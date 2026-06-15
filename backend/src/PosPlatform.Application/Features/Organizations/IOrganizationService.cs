@@ -1,5 +1,6 @@
 using PosPlatform.Application.Common.Models;
 using PosPlatform.Application.Features.Organizations.Dtos;
+using PosPlatform.Domain.Enums;
 
 namespace PosPlatform.Application.Features.Organizations;
 
@@ -19,4 +20,10 @@ public interface IOrganizationService
     Task<IReadOnlyList<OrgRoleDto>> GetRolesAsync(Guid orgId, CancellationToken ct = default);
     Task<OrgUserDto> AssignAppRoleAsync(Guid userId, Guid? roleId, CancellationToken ct = default);
     Task<OrgAlertsDto> GetAlertsAsync(CancellationToken ct = default);
+
+    /// <summary>Tashkilot qisqacha ma'lumoti (statistika bilan) — org admin sozlamalar uchun.</summary>
+    Task<OrganizationDto> GetSummaryAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Tashkilot faoliyat turini (Do'kon/Restoran) o'zgartiradi.</summary>
+    Task<OrganizationDto> SetBusinessTypeAsync(Guid id, BusinessType type, CancellationToken ct = default);
 }

@@ -110,6 +110,20 @@ public class BackendClient
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<KitchenTicketDto?> GetPendingKitchenTicketAsync(CancellationToken cancellationToken)
+    {
+        var resp = await _http.GetAsync("api/kitchen/pending", cancellationToken);
+        if (resp.StatusCode == HttpStatusCode.NoContent) return null;
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<KitchenTicketDto>(cancellationToken);
+    }
+
+    public async Task MarkKitchenTicketPrintedAsync(Guid ticketId, CancellationToken cancellationToken)
+    {
+        var response = await _http.PostAsync($"api/kitchen/{ticketId}/printed", null, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     // Backend CashShiftDto bilan mos raw mapping sinfi.
     private sealed class ShiftReportRaw
     {

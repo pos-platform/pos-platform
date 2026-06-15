@@ -436,6 +436,39 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("DebtorTransactions");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.DishIngredient", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DishProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IngredientProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DishProductId");
+
+                    b.HasIndex("IngredientProductId");
+
+                    b.ToTable("DishIngredients");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Expense", b =>
                 {
                     b.Property<Guid>("Id")
@@ -551,6 +584,178 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("InventoryItems");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenIssue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ChefUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ChefUserId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.ToTable("KitchenIssues");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenIssueItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CostPrice")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DishProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IngredientProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("KitchenIssueId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DishProductId");
+
+                    b.HasIndex("IngredientProductId");
+
+                    b.HasIndex("KitchenIssueId");
+
+                    b.ToTable("KitchenIssueItems");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenTicket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Printed")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("PrintedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SaleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TableName")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WaiterName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Printed");
+
+                    b.HasIndex("SaleId");
+
+                    b.ToTable("KitchenTickets");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenTicketItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DishName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("KitchenTicketId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KitchenTicketId");
+
+                    b.ToTable("KitchenTicketItems");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.LabelPrintJob", b =>
@@ -705,6 +910,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("BusinessType")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -816,8 +1024,14 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<int?>("PluNumber")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("PrepMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("ProductType")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("uuid");
@@ -951,6 +1165,49 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.ToTable("Receipts");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.RestaurantTable", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Hall")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Seats")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.ToTable("RestaurantTables");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Role", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1049,8 +1306,14 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<int?>("GuestCount")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("LoyaltyPointsEarned")
                         .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("OpenedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
@@ -1069,8 +1332,17 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<decimal>("ServiceChargeAmount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("ServiceChargePercent")
+                        .HasColumnType("numeric(9,2)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("TableId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric(18,2)");
@@ -1083,6 +1355,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("VatAmount")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid?>("WaiterId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -1103,7 +1378,13 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("ReceiptNumber")
                         .IsUnique();
 
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TableId");
+
                     b.HasIndex("Type");
+
+                    b.HasIndex("WaiterId");
 
                     b.ToTable("Sales");
                 });
@@ -1135,6 +1416,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("Note")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
 
@@ -1151,6 +1436,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("SaleId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("SentToKitchen")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Unit")
                         .HasColumnType("integer");
@@ -1652,6 +1940,25 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Debtor");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.DishIngredient", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "DishProduct")
+                        .WithMany("Ingredients")
+                        .HasForeignKey("DishProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "IngredientProduct")
+                        .WithMany()
+                        .HasForeignKey("IngredientProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DishProduct");
+
+                    b.Navigation("IngredientProduct");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.Expense", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
@@ -1689,6 +1996,71 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Inventory");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenIssue", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("PosPlatform.Domain.Entities.User", "ChefUser")
+                        .WithMany()
+                        .HasForeignKey("ChefUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("ChefUser");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenIssueItem", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "DishProduct")
+                        .WithMany()
+                        .HasForeignKey("DishProductId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("PosPlatform.Domain.Entities.Product", "IngredientProduct")
+                        .WithMany()
+                        .HasForeignKey("IngredientProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PosPlatform.Domain.Entities.KitchenIssue", "KitchenIssue")
+                        .WithMany("Items")
+                        .HasForeignKey("KitchenIssueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DishProduct");
+
+                    b.Navigation("IngredientProduct");
+
+                    b.Navigation("KitchenIssue");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenTicket", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Sale", "Sale")
+                        .WithMany()
+                        .HasForeignKey("SaleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Sale");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenTicketItem", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.KitchenTicket", "KitchenTicket")
+                        .WithMany("Items")
+                        .HasForeignKey("KitchenTicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("KitchenTicket");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.LabelPrintJobItem", b =>
@@ -1782,6 +2154,16 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.RestaurantTable", b =>
+                {
+                    b.HasOne("PosPlatform.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.RolePermission", b =>
                 {
                     b.HasOne("PosPlatform.Domain.Entities.Permission", "Permission")
@@ -1833,6 +2215,16 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("OriginalSaleId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("PosPlatform.Domain.Entities.RestaurantTable", "Table")
+                        .WithMany()
+                        .HasForeignKey("TableId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("PosPlatform.Domain.Entities.User", "Waiter")
+                        .WithMany()
+                        .HasForeignKey("WaiterId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Branch");
 
                     b.Navigation("CashShift");
@@ -1844,6 +2236,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Debtor");
 
                     b.Navigation("OriginalSale");
+
+                    b.Navigation("Table");
+
+                    b.Navigation("Waiter");
                 });
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.SaleItem", b =>
@@ -2038,6 +2434,16 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenIssue", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("PosPlatform.Domain.Entities.KitchenTicket", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("PosPlatform.Domain.Entities.LabelPrintJob", b =>
                 {
                     b.Navigation("Items");
@@ -2057,6 +2463,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PosPlatform.Domain.Entities.Product", b =>
                 {
+                    b.Navigation("Ingredients");
+
                     b.Navigation("Stocks");
                 });
 

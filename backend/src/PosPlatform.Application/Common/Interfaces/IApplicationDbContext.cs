@@ -59,5 +59,13 @@ public interface IApplicationDbContext
 
     DbSet<RoleTemplate> RoleTemplates { get; }
 
+    // Restoran moduli
+    DbSet<DishIngredient> DishIngredients { get; }
+    DbSet<RestaurantTable> RestaurantTables { get; }
+    DbSet<KitchenIssue> KitchenIssues { get; }
+    DbSet<KitchenIssueItem> KitchenIssueItems { get; }
+    DbSet<KitchenTicket> KitchenTickets { get; }
+    DbSet<KitchenTicketItem> KitchenTicketItems { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

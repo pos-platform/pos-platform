@@ -11,6 +11,7 @@ public class OrganizationDto
     public string? Phone { get; set; }
     public string? Note { get; set; }
     public bool IsActive { get; set; }
+    public BusinessType BusinessType { get; set; }
     public DateTime CreatedAt { get; set; }
 
     /// <summary>Tashkilotdagi jami foydalanuvchilar (SuperAdmin'dan tashqari).</summary>
@@ -26,6 +27,7 @@ public class OrganizationDto
         Phone = o.Phone,
         Note = o.Note,
         IsActive = o.IsActive,
+        BusinessType = o.BusinessType,
         CreatedAt = o.CreatedAt,
         UserCount = userCount,
         LicensedCount = licensedCount
@@ -88,6 +90,7 @@ public class OrganizationDetailDto : OrganizationDto
             Phone = o.Phone,
             Note = o.Note,
             IsActive = o.IsActive,
+            BusinessType = o.BusinessType,
             CreatedAt = o.CreatedAt,
             UserCount = desktop.Count,
             LicensedCount = desktop.Count(u => u.LicensedUntil is not null && u.LicensedUntil.Value.Date >= today),
@@ -104,6 +107,9 @@ public class CreateOrganizationRequest
 
     public string? Phone { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Faoliyat turi — Do'kon (0) yoki Restoran (1).</summary>
+    public BusinessType BusinessType { get; set; } = BusinessType.Store;
 
     /// <summary>Tashkilotning bosh admin foydalanuvchisi (do'kon egasi).</summary>
     [Required]
@@ -183,6 +189,7 @@ public class UpdateOrganizationRequest
 
     public string? Phone { get; set; }
     public string? Note { get; set; }
+    public BusinessType BusinessType { get; set; } = BusinessType.Store;
 }
 
 public class OrgRoleDto

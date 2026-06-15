@@ -1,4 +1,5 @@
 using PosPlatform.Domain.Common;
+using PosPlatform.Domain.Enums;
 
 namespace PosPlatform.Domain.Entities;
 
@@ -15,6 +16,9 @@ public class Organization : BaseEntity
     public string? Phone { get; set; }
 
     public string? Note { get; set; }
+
+    /// <summary>Faoliyat turi — Do'kon yoki Restoran. Restoran rejimida stol/oshxona/ovqat modullari yoqiladi.</summary>
+    public BusinessType BusinessType { get; set; } = BusinessType.Store;
 
     /// <summary>Tashkilot bloklanmaganmi. Bloklansa — ichidagi barcha foydalanuvchilar kira olmaydi.</summary>
     public bool IsActive { get; set; } = true;

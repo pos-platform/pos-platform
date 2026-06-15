@@ -202,6 +202,52 @@ internal static class EscPosBuilder
         return ms.ToArray();
     }
 
+    /// <summary>Oshxona cheki (kitchen ticket) — stol, ofitsiant, ovqatlar (narxsiz, katta shrift).</summary>
+    public static byte[] BuildKitchenTicket(KitchenTicketDto ticket, int printWidth = 42)
+    {
+        var enc = Encoding.GetEncoding(866);
+        using var ms = new MemoryStream();
+
+        void Write(byte[] b) => ms.Write(b);
+        void WriteLine(string text = "") { ms.Write(enc.GetBytes(text)); Write(LF); }
+        void Divider() => WriteLine(new string('-', printWidth));
+
+        Write(ESC_INIT);
+
+        Write(ESC_CENTER);
+        Write(ESC_DOUBLE);
+        Write(ESC_BOLD_ON);
+        WriteLine("OSHXONA");
+        Write(ESC_NORMAL);
+        Write(ESC_BOLD_OFF);
+
+        Write(ESC_CENTER);
+        if (!string.IsNullOrEmpty(ticket.TableName))
+            WriteLine($"Stol: {ticket.TableName}");
+        if (!string.IsNullOrEmpty(ticket.WaiterName))
+            WriteLine($"Ofitsiant: {ticket.WaiterName}");
+        WriteLine(ticket.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss"));
+        Write(ESC_LEFT);
+        Divider();
+
+        foreach (var item in ticket.Items)
+        {
+            Write(ESC_BOLD_ON);
+            Write(ESC_DOUBLE);
+            WriteLine($"{item.Quantity:0.###} x {item.DishName}");
+            Write(ESC_NORMAL);
+            Write(ESC_BOLD_OFF);
+            if (!string.IsNullOrWhiteSpace(item.Note))
+                WriteLine($"   >> {item.Note}");
+        }
+
+        Divider();
+        Write(LF2);
+        Write(ESC_CUT);
+
+        return ms.ToArray();
+    }
+
     /// <summary>CODE128 shtrix-kodi (GS k m d1...dk).</summary>
     private static byte[] BuildBarcode128(string data)
     {

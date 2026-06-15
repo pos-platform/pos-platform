@@ -37,6 +37,28 @@ public class Sale : BaseEntity
     /// <summary>Ushbu savdodan topilgan ball.</summary>
     public decimal LoyaltyPointsEarned { get; set; }
 
+    // --- Restoran (ochiq buyurtma) metadatasi ---
+
+    /// <summary>Restoran stoli — ochiq buyurtma qaysi stolga tegishli (ixtiyoriy).</summary>
+    public Guid? TableId { get; set; }
+    public RestaurantTable? Table { get; set; }
+
+    /// <summary>Buyurtmani olgan ofitsiant (User, ixtiyoriy).</summary>
+    public Guid? WaiterId { get; set; }
+    public User? Waiter { get; set; }
+
+    /// <summary>Mehmonlar soni (ixtiyoriy).</summary>
+    public int? GuestCount { get; set; }
+
+    /// <summary>Servis haqi foizi (%).</summary>
+    public decimal ServiceChargePercent { get; set; }
+
+    /// <summary>Servis haqi summasi.</summary>
+    public decimal ServiceChargeAmount { get; set; }
+
+    /// <summary>Ochiq buyurtma ochilgan vaqt (Pending bo'lganda).</summary>
+    public DateTime? OpenedAt { get; set; }
+
     public SaleStatus Status { get; set; } = SaleStatus.Completed;
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;

@@ -107,6 +107,7 @@ public class OrganizationService : IOrganizationService
             Name = name,
             Phone = request.Phone?.Trim(),
             Note = request.Note?.Trim(),
+            BusinessType = request.BusinessType,
             IsActive = true
         };
         _db.Organizations.Add(org);
@@ -154,7 +155,23 @@ public class OrganizationService : IOrganizationService
         org.Name = request.Name.Trim();
         org.Phone = request.Phone?.Trim();
         org.Note = request.Note?.Trim();
+        org.BusinessType = request.BusinessType;
         await _db.SaveChangesAsync(ct);
+        return await ToDtoWithStats(org, ct);
+    }
+
+    public async Task<OrganizationDto> GetSummaryAsync(Guid id, CancellationToken ct = default)
+    {
+        var org = await GetOrgAsync(id, ct);
+        return await ToDtoWithStats(org, ct);
+    }
+
+    public async Task<OrganizationDto> SetBusinessTypeAsync(Guid id, BusinessType type, CancellationToken ct = default)
+    {
+        var org = await GetOrgAsync(id, ct);
+        org.BusinessType = type;
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("org.businessType", $"name={org.Name}, type={type}", organizationId: org.Id, ct: ct);
         return await ToDtoWithStats(org, ct);
     }
 

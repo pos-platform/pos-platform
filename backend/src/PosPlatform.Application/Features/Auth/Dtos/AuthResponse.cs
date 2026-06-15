@@ -23,6 +23,9 @@ public class AuthResponse
 
     public string? OrganizationName { get; set; }
 
+    /// <summary>Tashkilot faoliyat turi — Store yoki Restaurant. Frontend/desktop UI'ni shunga moslaydi.</summary>
+    public BusinessType BusinessType { get; set; }
+
     public DateTime? LicensedUntil { get; set; }
 
     public List<string> Permissions { get; set; } = [];

@@ -41,4 +41,10 @@ public class SaleItem : BaseEntity
 
     /// <summary>Qator yakuniy summasi = UnitPrice * Quantity - DiscountAmount.</summary>
     public decimal LineTotal { get; set; }
+
+    /// <summary>Qator izohi / oddiy modifikator (masalan "shakarsiz", "achchiq emas").</summary>
+    public string? Note { get; set; }
+
+    /// <summary>Restoran: ushbu qator oshxonaga yuborilganmi (faqat yangi qatorlar chop etiladi).</summary>
+    public bool SentToKitchen { get; set; }
 }

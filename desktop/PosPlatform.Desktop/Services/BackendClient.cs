@@ -81,6 +81,55 @@ public class BackendClient
         return (await resp.Content.ReadFromJsonAsync<SaleDto>(Json))!;
     }
 
+    // ===================== Restoran =====================
+
+    public async Task<List<TableDto>> GetTablesAsync()
+        => (await _http.GetFromJsonAsync<List<TableDto>>("api/tables", Json)) ?? new();
+
+    public async Task<List<DishDto>> GetDishesAsync()
+        => (await _http.GetFromJsonAsync<List<DishDto>>("api/dishes", Json)) ?? new();
+
+    public async Task<OrderDto> OpenOrderAsync(OpenOrderRequest request)
+    {
+        var resp = await _http.PostAsJsonAsync("api/sales/orders/open", request);
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<OrderDto>(Json))!;
+    }
+
+    public async Task<OrderDto?> GetOpenOrderByTableAsync(Guid tableId)
+    {
+        var resp = await _http.GetAsync($"api/sales/orders/by-table/{tableId}");
+        if (resp.StatusCode == HttpStatusCode.NoContent) return null;
+        await EnsureOk(resp);
+        return await resp.Content.ReadFromJsonAsync<OrderDto>(Json);
+    }
+
+    public async Task<OrderDto> SaveOrderItemsAsync(Guid orderId, List<OrderItemRequest> items)
+    {
+        var resp = await _http.PutAsJsonAsync($"api/sales/orders/{orderId}/items", new { items });
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<OrderDto>(Json))!;
+    }
+
+    public async Task SendToKitchenAsync(Guid orderId)
+    {
+        var resp = await _http.PostAsync($"api/sales/orders/{orderId}/send-to-kitchen", null);
+        await EnsureOk(resp);
+    }
+
+    public async Task<SaleDto> PayOrderAsync(Guid orderId, PayOrderRequest request)
+    {
+        var resp = await _http.PostAsJsonAsync($"api/sales/orders/{orderId}/pay", request);
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<SaleDto>(Json))!;
+    }
+
+    public async Task CancelOrderAsync(Guid orderId)
+    {
+        var resp = await _http.PostAsync($"api/sales/orders/{orderId}/cancel", null);
+        await EnsureOk(resp);
+    }
+
     /// <summary>Backend tirik ekanligini tekshiradi (/health endpoint).</summary>
     public async Task<bool> PingAsync()
     {

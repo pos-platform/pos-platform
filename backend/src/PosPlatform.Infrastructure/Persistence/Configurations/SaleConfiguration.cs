@@ -17,6 +17,21 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.Property(s => s.VatAmount).HasColumnType("numeric(18,2)");
         builder.Property(s => s.PaidAmount).HasColumnType("numeric(18,2)");
         builder.Property(s => s.ChangeAmount).HasColumnType("numeric(18,2)");
+        builder.Property(s => s.ServiceChargePercent).HasColumnType("numeric(9,2)");
+        builder.Property(s => s.ServiceChargeAmount).HasColumnType("numeric(18,2)");
+
+        // Restoran: ochiq buyurtma — stol va ofitsiant.
+        builder.HasOne(s => s.Table)
+            .WithMany()
+            .HasForeignKey(s => s.TableId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(s => s.Waiter)
+            .WithMany()
+            .HasForeignKey(s => s.WaiterId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(s => s.Status);
 
         builder.HasOne(s => s.Branch)
             .WithMany()

@@ -23,7 +23,11 @@
     "users": "Foydalanuvchilar",
     "roles": "Rollar",
     "organizations": "Tashkilotlar",
-    "audit": "Audit jurnali"
+    "audit": "Audit jurnali",
+    "tables": "Stollar",
+    "dishes": "Ovqatlar",
+    "kitchenIssues": "Oshpazga berish",
+    "settings": "Sozlamalar"
   },
   "common": {
     "save": "Saqlash",

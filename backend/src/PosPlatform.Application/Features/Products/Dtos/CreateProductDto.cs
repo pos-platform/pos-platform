@@ -8,6 +8,12 @@ public class CreateProductDto
     [Required]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Tovar (Good) yoki ovqat (Dish). Restoran rejimida ovqatlar uchun Dish.</summary>
+    public ProductType ProductType { get; set; } = ProductType.Good;
+
+    /// <summary>Tayyorlash vaqti (daqiqa) — ovqat uchun ixtiyoriy.</summary>
+    public int? PrepMinutes { get; set; }
+
     /// <summary>MXIK kodi. Bo'sh bo'lsa "00000000" ishlatiladi.</summary>
     public string? MxikCode { get; set; }
 

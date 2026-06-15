@@ -54,6 +54,14 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<LabelPrintJobItem> LabelPrintJobItems => Set<LabelPrintJobItem>();
     public DbSet<RoleTemplate> RoleTemplates => Set<RoleTemplate>();
 
+    // Restoran moduli
+    public DbSet<DishIngredient> DishIngredients => Set<DishIngredient>();
+    public DbSet<RestaurantTable> RestaurantTables => Set<RestaurantTable>();
+    public DbSet<KitchenIssue> KitchenIssues => Set<KitchenIssue>();
+    public DbSet<KitchenIssueItem> KitchenIssueItems => Set<KitchenIssueItem>();
+    public DbSet<KitchenTicket> KitchenTickets => Set<KitchenTicket>();
+    public DbSet<KitchenTicketItem> KitchenTicketItems => Set<KitchenTicketItem>();
+
     private static readonly MethodInfo SetTenantFilterMethod =
         typeof(ApplicationDbContext).GetMethod(nameof(SetTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
 
