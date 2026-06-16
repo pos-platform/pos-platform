@@ -45,6 +45,12 @@ public class StoresController : ControllerBase
     public async Task<ActionResult<StoreDto>> Deactivate(Guid id, CancellationToken cancellationToken)
         => Ok(await _stores.SetStoreActiveAsync(id, false, cancellationToken));
 
+    /// <summary>Filial faoliyat turini (Do'kon/Restoran) o'zgartirish — Admin.</summary>
+    [HttpPut("{id:guid}/business-type")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<StoreDto>> SetBusinessType(Guid id, [FromBody] SetBusinessTypeRequest request, CancellationToken cancellationToken)
+        => Ok(await _stores.SetBusinessTypeAsync(id, request.BusinessType, cancellationToken));
+
     /// <summary>Do'konga kassa qo'shish — Admin.</summary>
     [HttpPost("cashboxes")]
     [Authorize(Roles = "Admin")]

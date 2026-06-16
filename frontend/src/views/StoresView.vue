@@ -13,7 +13,7 @@ const err = ref('')
 const success = ref('')
 
 const showStoreForm = ref(false)
-const storeForm = reactive({ name: '', address: '' })
+const storeForm = reactive({ name: '', address: '', businessType: 'Store' })
 const cashboxName = reactive({})
 
 // Foydalanuvchi biriktirish
@@ -43,10 +43,11 @@ async function createStore() {
   err.value = ''
   success.value = ''
   try {
-    await storesApi.createStore({ name: storeForm.name.trim(), address: storeForm.address.trim() || null })
-    success.value = `"${storeForm.name}" do'koni qo'shildi`
+    await storesApi.createStore({ name: storeForm.name.trim(), address: storeForm.address.trim() || null, businessType: storeForm.businessType })
+    success.value = `"${storeForm.name}" filiali qo'shildi`
     storeForm.name = ''
     storeForm.address = ''
+    storeForm.businessType = 'Store'
     showStoreForm.value = false
     await load()
   } catch (e) {
@@ -147,6 +148,13 @@ onMounted(load)
         <label>Manzil</label>
         <input v-model="storeForm.address" class="input" />
       </div>
+      <div class="field">
+        <label>Faoliyat turi</label>
+        <select v-model="storeForm.businessType" class="input">
+          <option value="Store">🏪 Do'kon</option>
+          <option value="Restaurant">🍽️ Restoran</option>
+        </select>
+      </div>
     </div>
     <button class="btn">Saqlash</button>
   </form>
@@ -155,7 +163,12 @@ onMounted(load)
   <div v-for="s in stores" :key="s.id" class="card" style="margin-bottom: 14px">
     <div class="row" style="align-items: center; justify-content: space-between">
       <div>
-        <h3 style="margin: 0">{{ s.name }}</h3>
+        <h3 style="margin: 0">
+          {{ s.name }}
+          <span class="pill" :class="s.businessType === 'Restaurant' ? 'pill-green' : 'pill-gray'" style="font-size:11px; margin-left:6px">
+            {{ s.businessType === 'Restaurant' ? '🍽️ Restoran' : '🏪 Do\'kon' }}
+          </span>
+        </h3>
         <span class="muted" v-if="s.address">{{ s.address }}</span>
       </div>
       <div style="display: flex; align-items: center; gap: 12px">

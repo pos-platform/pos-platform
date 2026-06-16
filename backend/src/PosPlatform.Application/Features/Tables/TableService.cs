@@ -20,6 +20,9 @@ public class TableService : ITableService
 
     public async Task<IReadOnlyList<TableDto>> GetAllAsync(Guid? branchId = null, CancellationToken cancellationToken = default)
     {
+        // branchId berilmasa va foydalanuvchi filialga biriktirilgan bo'lsa (kassir/ofitsiant) — o'sha filial.
+        branchId ??= _currentUser.BranchId;
+
         var query = _db.RestaurantTables.AsNoTracking().AsQueryable();
         if (branchId.HasValue)
             query = query.Where(t => t.BranchId == branchId || t.BranchId == null);

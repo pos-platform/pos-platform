@@ -33,6 +33,7 @@ public class AuthService : IAuthService
 
         var user = await _db.Users
             .Include(u => u.Organization)
+            .Include(u => u.Branch)
             .Include(u => u.AppRole)
                 .ThenInclude(r => r!.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
@@ -75,10 +76,22 @@ public class AuthService : IAuthService
         await _audit.LogAsync("login.success", $"role={user.Role}", success: true,
             organizationId: user.OrganizationId, actorUserId: user.Id, actorUsername: user.Username, ct: cancellationToken);
 
-        return BuildResponse(user);
+        // Rejim filial darajasida: foydalanuvchi filialiga biriktirilgan bo'lsa — o'sha filial turi;
+        // aks holda (admin/menejer) — tashkilotda kamida bitta restoran filiali bo'lsa Restaurant.
+        BusinessType businessType;
+        if (user.Branch is not null)
+            businessType = user.Branch.BusinessType;
+        else if (user.OrganizationId is { } orgId)
+            businessType = await _db.Branches.AnyAsync(
+                b => b.OrganizationId == orgId && b.BusinessType == BusinessType.Restaurant, cancellationToken)
+                ? BusinessType.Restaurant : BusinessType.Store;
+        else
+            businessType = BusinessType.Store;
+
+        return BuildResponse(user, businessType);
     }
 
-    private AuthResponse BuildResponse(User user)
+    private AuthResponse BuildResponse(User user, BusinessType businessType)
     {
         var permissions = user.AppRole?.RolePermissions
             .Select(rp => rp.Permission.Code)
@@ -97,7 +110,7 @@ public class AuthService : IAuthService
             ExpiresAt = expiresAt,
             OrganizationId = user.OrganizationId,
             OrganizationName = user.Organization?.Name,
-            BusinessType = user.Organization?.BusinessType ?? BusinessType.Store,
+            BusinessType = businessType,
             LicensedUntil = user.LicensedUntil,
             Permissions = permissions
         };

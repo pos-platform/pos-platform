@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using PosPlatform.Domain.Entities;
+using PosPlatform.Domain.Enums;
 
 namespace PosPlatform.Application.Features.Stores.Dtos;
 
@@ -26,6 +27,7 @@ public class StoreDto
     public string? Address { get; set; }
     public decimal Balance { get; set; }
     public bool IsActive { get; set; }
+    public BusinessType BusinessType { get; set; }
     public List<CashboxDto> Cashboxes { get; set; } = new();
     public List<StoreUserDto> Users { get; set; } = new();
 
@@ -36,6 +38,7 @@ public class StoreDto
         Address = b.Address,
         Balance = b.Balance,
         IsActive = b.IsActive,
+        BusinessType = b.BusinessType,
         Cashboxes = b.Cashboxes
             .OrderBy(c => c.Name)
             .Select(CashboxDto.FromEntity)
@@ -71,6 +74,14 @@ public class CreateStoreRequest
     public string Name { get; set; } = string.Empty;
 
     public string? Address { get; set; }
+
+    /// <summary>Filial turi — Do'kon (0) yoki Restoran (1).</summary>
+    public BusinessType BusinessType { get; set; } = BusinessType.Store;
+}
+
+public class SetBusinessTypeRequest
+{
+    public BusinessType BusinessType { get; set; }
 }
 
 public class CreateCashboxRequest

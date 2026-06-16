@@ -1,9 +1,10 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { tablesApi } from '../api/catalog'
+import { tablesApi, storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const tables = ref([])
+const branches = ref([])
 const loading = ref(false)
 const err = ref('')
 const success = ref('')
@@ -11,7 +12,7 @@ const saving = ref(false)
 
 const showForm = ref(false)
 const editingId = ref(null)
-const form = reactive({ name: '', hall: '', seats: 4, isActive: true })
+const form = reactive({ name: '', hall: '', seats: 4, isActive: true, branchId: '' })
 
 function resetForm() {
   editingId.value = null
@@ -32,6 +33,7 @@ function openEdit(t) {
   form.hall = t.hall || ''
   form.seats = t.seats
   form.isActive = t.isActive
+  form.branchId = t.branchId || (branches.value[0]?.id ?? '')
   showForm.value = true
 }
 
@@ -39,7 +41,10 @@ async function load() {
   loading.value = true
   err.value = ''
   try {
-    tables.value = await tablesApi.list()
+    const [t, s] = await Promise.all([tablesApi.list(), storesApi.list()])
+    tables.value = t
+    branches.value = s
+    if (!form.branchId && s.length) form.branchId = (s.find((b) => b.businessType === 'Restaurant') || s[0]).id
   } catch (e) {
     err.value = errorMessage(e)
   } finally {
@@ -53,7 +58,7 @@ async function submit() {
   err.value = ''
   success.value = ''
   try {
-    const payload = { name: form.name.trim(), hall: form.hall.trim() || null, seats: Number(form.seats) || 0, isActive: form.isActive }
+    const payload = { name: form.name.trim(), hall: form.hall.trim() || null, seats: Number(form.seats) || 0, isActive: form.isActive, branchId: form.branchId || null }
     if (editingId.value) await tablesApi.update(editingId.value, payload)
     else await tablesApi.create(payload)
     success.value = 'Saqlandi'
@@ -95,6 +100,7 @@ onMounted(load)
   <form v-if="showForm" class="card" style="margin-bottom:16px" @submit.prevent="submit">
     <h3 style="margin-top:0">{{ editingId ? 'Stolni tahrirlash' : 'Yangi stol' }}</h3>
     <div class="row" style="gap:12px; flex-wrap:wrap">
+      <div class="field"><label>Filial</label><select v-model="form.branchId" class="input"><option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}{{ b.businessType === 'Restaurant' ? ' 🍽️' : '' }}</option></select></div>
       <div class="field"><label>Nomi/raqami</label><input v-model="form.name" class="input" placeholder="12" /></div>
       <div class="field"><label>Zal</label><input v-model="form.hall" class="input" placeholder="1-zal" /></div>
       <div class="field"><label>O'rinlar</label><input v-model="form.seats" type="number" min="0" class="input" style="width:100px" /></div>

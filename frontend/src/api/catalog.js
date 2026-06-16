@@ -123,6 +123,8 @@ export const analyticsApi = {
 export const storesApi = {
   list: () => http.get('/api/stores').then((r) => r.data),
   createStore: (payload) => http.post('/api/stores', payload).then((r) => r.data),
+  setBusinessType: (id, businessType) =>
+    http.put(`/api/stores/${id}/business-type`, { businessType }).then((r) => r.data),
   activateStore: (id) => http.post(`/api/stores/${id}/activate`).then((r) => r.data),
   deactivateStore: (id) => http.post(`/api/stores/${id}/deactivate`).then((r) => r.data),
   addCashbox: (payload) => http.post('/api/stores/cashboxes', payload).then((r) => r.data),

@@ -10,6 +10,9 @@ public interface IStoreService
 
     Task<StoreDto> SetStoreActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken = default);
 
+    /// <summary>Filial faoliyat turini (Do'kon/Restoran) o'zgartiradi.</summary>
+    Task<StoreDto> SetBusinessTypeAsync(Guid id, Domain.Enums.BusinessType type, CancellationToken cancellationToken = default);
+
     Task<CashboxDto> AddCashboxAsync(CreateCashboxRequest request, CancellationToken cancellationToken = default);
 
     Task<CashboxDto> SetCashboxActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken = default);

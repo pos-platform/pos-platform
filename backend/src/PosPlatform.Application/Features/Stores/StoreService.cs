@@ -41,10 +41,24 @@ public class StoreService : IStoreService
         {
             Name = name,
             Address = request.Address?.Trim(),
+            BusinessType = request.BusinessType,
             IsActive = true
         };
 
         _db.Branches.Add(store);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return StoreDto.FromEntity(store);
+    }
+
+    public async Task<StoreDto> SetBusinessTypeAsync(Guid id, Domain.Enums.BusinessType type, CancellationToken cancellationToken = default)
+    {
+        var store = await _db.Branches
+            .Include(b => b.Cashboxes)
+            .FirstOrDefaultAsync(b => b.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Do'kon topilmadi: {id}");
+
+        store.BusinessType = type;
         await _db.SaveChangesAsync(cancellationToken);
 
         return StoreDto.FromEntity(store);

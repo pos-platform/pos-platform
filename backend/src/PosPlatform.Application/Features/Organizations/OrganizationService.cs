@@ -122,6 +122,7 @@ public class OrganizationService : IOrganizationService
             _db.Branches.Add(new Branch
             {
                 Name = i == 1 ? "Do'kon 1" : $"Do'kon {i}",
+                BusinessType = request.BusinessType,
                 IsActive = true,
                 OrganizationId = org.Id
             });

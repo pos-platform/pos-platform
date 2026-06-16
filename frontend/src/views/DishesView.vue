@@ -11,9 +11,43 @@ const err = ref('')
 const success = ref('')
 const saving = ref(false)
 
-// Yangi ovqat formasi
+// Yangi/tahrir ovqat formasi
 const showForm = ref(false)
+const editingId = ref(null)
 const form = reactive({ name: '', categoryId: '', price: 0, prepMinutes: null })
+
+function resetForm() {
+  editingId.value = null
+  form.name = ''
+  form.price = 0
+  form.prepMinutes = null
+  if (categories.value.length) form.categoryId = categories.value[0].id
+}
+
+function openCreate() {
+  resetForm()
+  showForm.value = true
+}
+
+function openEditDish(d) {
+  editingId.value = d.id
+  form.name = d.name
+  form.categoryId = d.categoryId
+  form.price = d.price
+  form.prepMinutes = d.prepMinutes
+  showForm.value = true
+}
+
+async function removeDish(d) {
+  if (!confirm(`"${d.name}" ovqatini o'chirasizmi?`)) return
+  err.value = ''
+  try {
+    await productsApi.remove(d.id)
+    await load()
+  } catch (e) {
+    err.value = errorMessage(e)
+  }
+}
 
 // Retsept tahriri
 const recipeDish = ref(null)
@@ -53,7 +87,7 @@ async function createDish() {
   err.value = ''
   success.value = ''
   try {
-    await productsApi.create({
+    const payload = {
       name: form.name.trim(),
       productType: 'Dish',
       price: Number(form.price) || 0,
@@ -61,11 +95,15 @@ async function createDish() {
       categoryId: form.categoryId,
       isVat: true,
       quantity: 0
-    })
-    success.value = 'Ovqat qo\'shildi'
-    form.name = ''
-    form.price = 0
-    form.prepMinutes = null
+    }
+    if (editingId.value) {
+      await productsApi.update(editingId.value, payload)
+      success.value = 'Ovqat yangilandi'
+    } else {
+      await productsApi.create(payload)
+      success.value = 'Ovqat qo\'shildi'
+    }
+    resetForm()
     showForm.value = false
     await load()
   } catch (e) {
@@ -116,21 +154,21 @@ onMounted(load)
 <template>
   <div class="page-head">
     <h1>Ovqatlar (menyu)</h1>
-    <button class="btn" @click="showForm = !showForm">+ Yangi ovqat</button>
+    <button class="btn" @click="showForm ? (showForm = false) : openCreate()">+ Yangi ovqat</button>
   </div>
 
   <div v-if="err" class="alert alert-error">{{ err }}</div>
   <div v-if="success" class="alert alert-success">{{ success }}</div>
 
   <form v-if="showForm" class="card" style="margin-bottom:16px" @submit.prevent="createDish">
-    <h3 style="margin-top:0">Yangi ovqat</h3>
+    <h3 style="margin-top:0">{{ editingId ? 'Ovqatni tahrirlash' : 'Yangi ovqat' }}</h3>
     <div class="row" style="gap:12px; flex-wrap:wrap">
       <div class="field"><label>Nomi</label><input v-model="form.name" class="input" placeholder="Osh" /></div>
       <div class="field"><label>Kategoriya</label><select v-model="form.categoryId" class="input"><option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option></select></div>
       <div class="field"><label>Narx</label><input v-model="form.price" type="number" min="0" class="input" style="width:140px" /></div>
       <div class="field"><label>Tayyorlash (daq)</label><input v-model="form.prepMinutes" type="number" min="0" class="input" style="width:120px" /></div>
     </div>
-    <button class="btn" :disabled="saving">{{ saving ? '...' : 'Qo\'shish' }}</button>
+    <button class="btn" :disabled="saving">{{ saving ? '...' : (editingId ? 'Saqlash' : 'Qo\'shish') }}</button>
   </form>
 
   <div class="card">
@@ -141,7 +179,11 @@ onMounted(load)
           <td><strong>{{ d.name }}</strong> <span class="muted">{{ d.categoryName }}</span></td>
           <td class="text-right">{{ fmt(d.price) }}</td>
           <td class="muted">{{ d.ingredients.length ? d.ingredients.map(i => i.ingredientName).join(', ') : '— retsept yo\'q' }}</td>
-          <td class="text-right"><button class="btn btn-ghost btn-sm" @click="openRecipe(d)">🧾 Retsept</button></td>
+          <td class="text-right" style="white-space:nowrap">
+            <button class="btn btn-ghost btn-sm" @click="openRecipe(d)">🧾 Retsept</button>
+            <button class="btn btn-ghost btn-sm" @click="openEditDish(d)">✏️</button>
+            <button class="btn btn-ghost btn-sm" @click="removeDish(d)">🗑️</button>
+          </td>
         </tr>
         <tr v-if="!dishes.length && !loading"><td colspan="4" class="muted" style="text-align:center;padding:24px">Ovqat yo'q</td></tr>
       </tbody>

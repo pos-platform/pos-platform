@@ -1,12 +1,13 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { kitchenIssuesApi, dishesApi, productsApi } from '../api/catalog'
+import { kitchenIssuesApi, dishesApi, productsApi, storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const tab = ref('issues') // issues | report
 const issues = ref([])
 const dishes = ref([])
 const goods = ref([])
+const branches = ref([])
 const loading = ref(false)
 const err = ref('')
 const success = ref('')
@@ -15,7 +16,7 @@ const expanded = ref(null)
 
 // Yangi hujjat
 const showForm = ref(false)
-const form = reactive({ comment: '' })
+const form = reactive({ comment: '', branchId: '' })
 const lines = ref([]) // { product, dishProductId, quantity }
 const goodSearch = ref('')
 
@@ -44,10 +45,12 @@ async function load() {
   loading.value = true
   err.value = ''
   try {
-    const [i, d, p] = await Promise.all([kitchenIssuesApi.list(), dishesApi.list(), productsApi.list()])
+    const [i, d, p, s] = await Promise.all([kitchenIssuesApi.list(), dishesApi.list(), productsApi.list(), storesApi.list()])
     issues.value = i
     dishes.value = d
     goods.value = p.filter((x) => x.productType === 'Good')
+    branches.value = s
+    if (!form.branchId && s.length) form.branchId = (s.find((b) => b.businessType === 'Restaurant') || s[0]).id
   } catch (e) {
     err.value = errorMessage(e)
   } finally {
@@ -90,6 +93,7 @@ async function submit() {
   success.value = ''
   try {
     const k = await kitchenIssuesApi.create({
+      branchId: form.branchId || null,
       comment: form.comment.trim() || null,
       items: lines.value.map((l) => ({
         dishProductId: l.dishProductId || null,
@@ -141,6 +145,13 @@ onMounted(load)
   <!-- Yangi hujjat -->
   <form v-if="showForm && tab === 'issues'" class="card" style="margin-bottom:16px" @submit.prevent="submit">
     <h3 style="margin-top:0">Yangi berish hujjati</h3>
+
+    <div class="field" style="max-width:280px; margin-bottom:8px">
+      <label>Filial</label>
+      <select v-model="form.branchId" class="input">
+        <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}{{ b.businessType === 'Restaurant' ? ' 🍽️' : '' }}</option>
+      </select>
+    </div>
 
     <div class="row" style="gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:8px">
       <div class="field"><label>Ovqat (retsept bo'yicha)</label>

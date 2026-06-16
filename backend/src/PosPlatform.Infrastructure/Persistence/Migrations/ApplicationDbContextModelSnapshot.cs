@@ -74,6 +74,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Balance")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<int>("BusinessType")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
