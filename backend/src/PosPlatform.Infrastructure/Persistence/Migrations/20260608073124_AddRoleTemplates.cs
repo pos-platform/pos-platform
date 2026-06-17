@@ -40,28 +40,16 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                 column: "Name",
                 unique: true);
 
-            // Standart rollarni seed qilamiz
-            migrationBuilder.InsertData(
-                table: "RoleTemplates",
-                columns: ["Id", "Name", "IsSystem", "PermissionsJson", "UpdatedAt"],
-                values: new object[]
-                {
-                    AdminId,   "Admin",   true, AdminPerms,   DateTime.UtcNow
-                });
-            migrationBuilder.InsertData(
-                table: "RoleTemplates",
-                columns: ["Id", "Name", "IsSystem", "PermissionsJson", "UpdatedAt"],
-                values: new object[]
-                {
-                    ManagerId, "Manager", true, ManagerPerms, DateTime.UtcNow
-                });
-            migrationBuilder.InsertData(
-                table: "RoleTemplates",
-                columns: ["Id", "Name", "IsSystem", "PermissionsJson", "UpdatedAt"],
-                values: new object[]
-                {
-                    CashierId, "Cashier", true, CashierPerms, DateTime.UtcNow
-                });
+            // Standart rollarni seed qilamiz — xom SQL (model mapping'ga bog'liq emas;
+            // RoleTemplate BaseEntity'dan meros olmagani uchun InsertData ishlamaydi).
+            void SeedTemplate(Guid id, string name, string perms) =>
+                migrationBuilder.Sql(
+                    $"INSERT INTO \"RoleTemplates\" (\"Id\", \"Name\", \"IsSystem\", \"PermissionsJson\", \"UpdatedAt\") " +
+                    $"VALUES ('{id}', '{name}', true, '{perms}', NOW());");
+
+            SeedTemplate(AdminId,   "Admin",   AdminPerms);
+            SeedTemplate(ManagerId, "Manager", ManagerPerms);
+            SeedTemplate(CashierId, "Cashier", CashierPerms);
         }
 
         /// <inheritdoc />

@@ -41,83 +41,74 @@ public class ApplicationDbContextInitializer
         // Global permission katalogini seed qilamiz — bir marta, barcha orglar uchun.
         await SeedPermissionsAsync();
 
-        // Standart tashkilot (mijoz) — toza bazada ham, eski bazada ham bo'lishini ta'minlaymiz.
-        // BIRINCHI yaratiladi, chunki qolgan standart yozuvlar shunga biriktiriladi.
-        var org = await _db.Organizations.FirstOrDefaultAsync(o => o.Name == "Asosiy tashkilot");
-        if (org is null)
+        // Demo ma'lumot (standart tashkilot + admin + kategoriya + do'kon) — faqat
+        // Seed:DemoData=true bo'lsa. Standart (false) holatda toza SaaS: faqat SuperAdmin
+        // qoladi, tashkilotlarni SuperAdmin o'zi yaratadi.
+        var seedDemo = _configuration.GetValue<bool>("Seed:DemoData");
+        if (seedDemo)
         {
-            org = new Organization { Name = "Asosiy tashkilot", IsActive = true };
-            _db.Organizations.Add(org);
-            await _db.SaveChangesAsync();
-            _logger.LogInformation("Standart tashkilot yaratildi.");
-        }
-
-        // Standart kategoriya.
-        if (!await _db.Categories.AnyAsync())
-        {
-            _db.Categories.Add(new Category { Name = "Umumiy", OrganizationId = org.Id });
-            await _db.SaveChangesAsync();
-            _logger.LogInformation("Standart 'Umumiy' kategoriyasi yaratildi.");
-        }
-
-        // Standart do'kon + kassa (FENIXdagi Магазин/Касса kabi).
-        if (!await _db.Branches.AnyAsync())
-        {
-            var store = new Branch { Name = "Asosiy do'kon", IsActive = true, OrganizationId = org.Id };
-            store.Cashboxes.Add(new Cashbox { Name = "Kassa 1", IsActive = true, OrganizationId = org.Id });
-            _db.Branches.Add(store);
-            await _db.SaveChangesAsync();
-            _logger.LogInformation("Standart do'kon va kassa yaratildi.");
-        }
-
-        // Standart tashkilot uchun 3 ta tizim rolini seed qilamiz.
-        await SeedOrgRolesAsync(org.Id);
-
-        // Eski (tashkilotsiz) ma'lumotlarni standart tashkilotga biriktiramiz — bir martalik backfill.
-        // SuperAdmin foydalanuvchidan tashqari (u tashkilotsiz qoladi).
-        await BackfillOrganizationAsync(org.Id);
-
-        // Far-future = obuna amalda. Boshlang'ich admin uchun ishlatamiz (dev login uzilmasligi uchun).
-        var farFuture = DateTime.UtcNow.Date.AddYears(50);
-
-        // Boshlang'ich admin (login qilish uchun).
-        var adminUsername = _configuration["Seed:AdminUsername"] ?? "admin";
-        var adminPassword = _configuration["Seed:AdminPassword"] ?? "Admin12345!";
-
-        var admin = await _db.Users.FirstOrDefaultAsync(u => u.Username == adminUsername);
-        if (admin is null)
-        {
-            var adminRole = await _db.Roles
-                .FirstOrDefaultAsync(r => r.OrganizationId == org.Id && r.Name == "Admin");
-            _db.Users.Add(new User
+            // Standart tashkilot (mijoz). BIRINCHI yaratiladi, qolgan yozuvlar shunga biriktiriladi.
+            var org = await _db.Organizations.FirstOrDefaultAsync(o => o.Name == "Asosiy tashkilot");
+            if (org is null)
             {
-                Username = adminUsername,
-                PasswordHash = _passwordHasher.Hash(adminPassword),
-                Role = UserRole.Admin,
-                AppRoleId = adminRole?.Id,
-                OrganizationId = org.Id,
-                LicensedUntil = farFuture
-            });
-            await _db.SaveChangesAsync();
-            _logger.LogInformation(
-                "Boshlang'ich admin yaratildi: '{Username}'. DIQQAT: parolni almashtiring.",
-                adminUsername);
-        }
-        else if (admin.Role == UserRole.Admin)
-        {
-            var changed = false;
-            if (admin.OrganizationId is null) { admin.OrganizationId = org.Id; changed = true; }
-            if (admin.LicensedUntil is null) { admin.LicensedUntil = farFuture; changed = true; }
-            if (admin.AppRoleId is null)
+                org = new Organization { Name = "Asosiy tashkilot", IsActive = true };
+                _db.Organizations.Add(org);
+                await _db.SaveChangesAsync();
+                _logger.LogInformation("Standart tashkilot yaratildi.");
+            }
+
+            // Standart kategoriya.
+            if (!await _db.Categories.AnyAsync())
+            {
+                _db.Categories.Add(new Category { Name = "Umumiy", OrganizationId = org.Id });
+                await _db.SaveChangesAsync();
+                _logger.LogInformation("Standart 'Umumiy' kategoriyasi yaratildi.");
+            }
+
+            // Standart do'kon + kassa (FENIXdagi Магазин/Касса kabi).
+            if (!await _db.Branches.AnyAsync())
+            {
+                var store = new Branch { Name = "Asosiy do'kon", IsActive = true, OrganizationId = org.Id };
+                store.Cashboxes.Add(new Cashbox { Name = "Kassa 1", IsActive = true, OrganizationId = org.Id });
+                _db.Branches.Add(store);
+                await _db.SaveChangesAsync();
+                _logger.LogInformation("Standart do'kon va kassa yaratildi.");
+            }
+
+            // Standart tashkilot uchun 3 ta tizim rolini seed qilamiz.
+            await SeedOrgRolesAsync(org.Id);
+
+            // Eski (tashkilotsiz) ma'lumotlarni standart tashkilotga biriktiramiz — bir martalik backfill.
+            await BackfillOrganizationAsync(org.Id);
+
+            // Far-future = obuna amalda. Boshlang'ich admin uchun ishlatamiz (dev login uzilmasligi uchun).
+            var farFuture = DateTime.UtcNow.Date.AddYears(50);
+
+            var adminUsername = _configuration["Seed:AdminUsername"] ?? "admin";
+            var adminPassword = _configuration["Seed:AdminPassword"] ?? "Admin12345!";
+
+            var admin = await _db.Users.FirstOrDefaultAsync(u => u.Username == adminUsername);
+            if (admin is null)
             {
                 var adminRole = await _db.Roles
                     .FirstOrDefaultAsync(r => r.OrganizationId == org.Id && r.Name == "Admin");
-                if (adminRole is not null) { admin.AppRoleId = adminRole.Id; changed = true; }
+                _db.Users.Add(new User
+                {
+                    Username = adminUsername,
+                    PasswordHash = _passwordHasher.Hash(adminPassword),
+                    Role = UserRole.Admin,
+                    AppRoleId = adminRole?.Id,
+                    OrganizationId = org.Id,
+                    LicensedUntil = farFuture
+                });
+                await _db.SaveChangesAsync();
+                _logger.LogInformation(
+                    "Boshlang'ich admin yaratildi: '{Username}'. DIQQAT: parolni almashtiring.",
+                    adminUsername);
             }
-            if (changed) await _db.SaveChangesAsync();
         }
 
-        // Platforma egasi (SuperAdmin) — barcha tashkilotlarni boshqaradi.
+        // Platforma egasi (SuperAdmin) — barcha tashkilotlarni boshqaradi. Har doim ta'minlanadi.
         var superUsername = _configuration["Seed:SuperAdminUsername"] ?? "superadmin";
         var superPassword = _configuration["Seed:SuperAdminPassword"] ?? "Super12345!";
 
