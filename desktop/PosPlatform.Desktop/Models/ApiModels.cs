@@ -151,9 +151,24 @@ public class SaleDto
 {
     public Guid Id { get; set; }
     public string ReceiptNumber { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public string Type { get; set; } = "Sale";
+    public string Status { get; set; } = "";
+    public string PaymentMethod { get; set; } = "";
     public decimal TotalAmount { get; set; }
+    public decimal PaidAmount { get; set; }
     public decimal ChangeAmount { get; set; }
+    public List<SaleItemDto> Items { get; set; } = new();
     public ReceiptInfo? Receipt { get; set; }
+}
+
+public class SaleItemDto
+{
+    public Guid ProductId { get; set; }
+    public string ProductName { get; set; } = "";
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal LineTotal { get; set; }
 }
 
 /// <summary>Chekning fiskal holati (backend ReceiptDto bilan mos).</summary>
@@ -179,8 +194,16 @@ public class SaleListDto
     public string PaymentMethod { get; set; } = "";
 
     public string DateLabel => CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
-    public string TotalLabel => TotalAmount.ToString("N0");
+    public string TimeLabel => CreatedAt.ToLocalTime().ToString("HH:mm");
+    public string TotalLabel => (Type == "Refund" ? "− " : "") + TotalAmount.ToString("N0");
     public string TypeLabel => Type == "Refund" ? "Qaytarish" : (Status == "Refunded" ? "Qaytarilgan" : "Sotuv");
+    public string PaymentLabel => PaymentMethod switch
+    {
+        "Card" => "Karta",
+        "Mixed" => "Aralash",
+        "Debt" => "Nasiya",
+        _ => "Naqd"
+    };
     public bool CanRefund => Type == "Sale" && Status != "Refunded";
 }
 

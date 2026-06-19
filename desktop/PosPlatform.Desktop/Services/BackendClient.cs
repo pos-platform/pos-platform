@@ -71,6 +71,15 @@ public class BackendClient
     public async Task<List<SaleListDto>> GetSalesAsync()
         => (await _http.GetFromJsonAsync<List<SaleListDto>>("api/sales", Json)) ?? new();
 
+    /// <summary>Tanlangan kun savdolari. Kun chegarasi sana-only yuboriladi (backend UTC kalendar kuni deb oladi).</summary>
+    public async Task<List<SaleListDto>> GetSalesByDayAsync(DateTime day)
+    {
+        var from = day.Date.ToString("yyyy-MM-dd");
+        var to = day.Date.AddDays(1).ToString("yyyy-MM-dd");
+        var url = $"api/sales?from={from}&to={to}";
+        return (await _http.GetFromJsonAsync<List<SaleListDto>>(url, Json)) ?? new();
+    }
+
     /// <summary>Bitta savdoni (fiskal chek ma'lumoti bilan) Id bo'yicha oladi.</summary>
     public async Task<SaleDto?> GetSaleAsync(Guid id, CancellationToken cancellationToken = default)
     {

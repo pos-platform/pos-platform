@@ -24,7 +24,7 @@ public class SaleService : ISaleService
         _fiscal = fiscal;
     }
 
-    public async Task<IReadOnlyList<SaleDto>> GetAllAsync(Guid? branchId = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SaleDto>> GetAllAsync(Guid? branchId = null, DateTime? from = null, DateTime? to = null, CancellationToken cancellationToken = default)
     {
         var query = _db.Sales
             .AsNoTracking()
@@ -34,6 +34,19 @@ public class SaleService : ISaleService
 
         if (branchId.HasValue)
             query = query.Where(s => s.BranchId == branchId);
+
+        // Sana chegaralari UTC kalendar kuni sifatida (ReportService bilan bir xil konvensiya).
+        if (from.HasValue)
+        {
+            var fromUtc = DateTime.SpecifyKind(from.Value.Date, DateTimeKind.Utc);
+            query = query.Where(s => s.CreatedAt >= fromUtc);
+        }
+
+        if (to.HasValue)
+        {
+            var toUtc = DateTime.SpecifyKind(to.Value.Date, DateTimeKind.Utc);
+            query = query.Where(s => s.CreatedAt < toUtc);
+        }
 
         var sales = await query
             .OrderByDescending(s => s.CreatedAt)

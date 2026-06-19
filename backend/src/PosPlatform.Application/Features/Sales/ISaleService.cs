@@ -4,7 +4,8 @@ namespace PosPlatform.Application.Features.Sales;
 
 public interface ISaleService
 {
-    Task<IReadOnlyList<SaleDto>> GetAllAsync(Guid? branchId = null, CancellationToken cancellationToken = default);
+    /// <summary>Savdolar ro'yxati. from/to (UTC) berilsa shu oraliq bilan filtrlanadi (kunlik ro'yxat uchun).</summary>
+    Task<IReadOnlyList<SaleDto>> GetAllAsync(Guid? branchId = null, DateTime? from = null, DateTime? to = null, CancellationToken cancellationToken = default);
 
     Task<SaleDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 

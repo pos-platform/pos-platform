@@ -982,6 +982,13 @@ public partial class PosWindow : Window
         await LoadProductsAsync();
     }
 
+    private async void SalesHistory_Click(object sender, RoutedEventArgs e)
+    {
+        new SalesHistoryWindow { Owner = this }.ShowDialog();
+        // Oynada qaytarish qilingan bo'lishi mumkin — qoldiqni yangilaymiz.
+        await LoadProductsAsync();
+    }
+
     // ---------- Yordamchilar ----------
 
     private void ShowMessage(string text, bool error)

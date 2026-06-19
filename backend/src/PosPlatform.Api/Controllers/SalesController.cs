@@ -17,14 +17,16 @@ public class SalesController : ControllerBase
         _saleService = saleService;
     }
 
-    /// <summary>Barcha savdolar (eng yangisi birinchi). branchId bilan filtrlanadi.</summary>
+    /// <summary>Barcha savdolar (eng yangisi birinchi). branchId va from/to (UTC) bilan filtrlanadi — kunlik ro'yxat uchun.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<SaleDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<SaleDto>>> GetAll(
         [FromQuery] Guid? branchId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
         CancellationToken cancellationToken)
     {
-        var sales = await _saleService.GetAllAsync(branchId, cancellationToken);
+        var sales = await _saleService.GetAllAsync(branchId, from, to, cancellationToken);
         return Ok(sales);
     }
 

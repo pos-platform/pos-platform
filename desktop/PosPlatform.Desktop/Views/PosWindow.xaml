@@ -186,6 +186,8 @@
                     </StackPanel>
                     <Button x:Name="CloseShiftButton" Content="Smenani yopish" Style="{StaticResource Pill}"
                             Background="#FEE2E2" Foreground="#B91C1C" Click="CloseShift_Click" Visibility="Collapsed" />
+                    <Button Content="📋 Savdolar" Style="{StaticResource Pill}" Margin="8,0,0,0" Click="SalesHistory_Click"
+                            ToolTip="Kunlik savdolar va chekni qayta chop etish" />
                     <Button Content="↩ Qaytarish" Style="{StaticResource Pill}" Margin="8,0,0,0" Click="Refund_Click" />
                     <!-- Oflayn ko'rsatkich + sinxronlash tugmasi -->
                     <Border x:Name="OnlineBadge" CornerRadius="10" Padding="8,4" Margin="8,0,0,0"
