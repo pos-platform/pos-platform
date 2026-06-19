@@ -512,22 +512,7 @@ public partial class PosWindow : Window
     // COM port skanerdan barcode kelganda (ThreadPool thread) UI thread'da qayta ishlash
     private void OnBarcodeScanned(string barcode)
     {
-        Dispatcher.Invoke(() =>
-        {
-            var product = _allProducts.FirstOrDefault(p =>
-                p.Barcode != null && string.Equals(p.Barcode, barcode, StringComparison.OrdinalIgnoreCase));
-            if (product is not null)
-            {
-                AddToCart(product);
-                SearchBox.Clear();
-            }
-            else
-            {
-                SearchBox.Text = barcode;
-                ApplyFilter();
-                ShowMessage($"Topilmadi: {barcode}", error: true);
-            }
-        });
+        Dispatcher.Invoke(() => ProcessScannedCode(barcode, fallbackToFilter: true));
     }
 
     private void SearchBox_KeyDown(object sender, KeyEventArgs e)
@@ -535,21 +520,113 @@ public partial class PosWindow : Window
         if (e.Key != Key.Enter) return;
         var q = SearchBox.Text.Trim();
         if (string.IsNullOrEmpty(q)) return;
+        ProcessScannedCode(q, fallbackToFilter: false);
+    }
 
-        var product =
-            _allProducts.FirstOrDefault(p => p.Barcode != null &&
-                                             string.Equals(p.Barcode, q, StringComparison.OrdinalIgnoreCase))
-            ?? (ProductsControl.ItemsSource as IEnumerable<ProductDto>)?.FirstOrDefault();
+    /// <summary>
+    /// Skaner yoki qidiruv maydonidan kelgan kodni qayta ishlaydi.
+    /// Tarozi (vaznli) shtrix-kodlarni — "2" bilan boshlanadigan 13 xonali EAN-13 —
+    /// ajratib, vaznni miqdor sifatida savatga qo'shadi.
+    /// </summary>
+    private void ProcessScannedCode(string code, bool fallbackToFilter)
+    {
+        // 1) Tarozi vazn-kodi: "2" + 6 xonali mahsulot kodi + 5 xonali vazn (gramm) + nazorat raqami
+        if (TryParseScaleBarcode(code, out var itemCode, out var weightKg))
+        {
+            var weighed = FindByScaleItemCode(itemCode);
+            if (weighed is not null)
+            {
+                AddWeightToCart(weighed, weightKg);
+                SearchBox.Clear();
+                return;
+            }
+            ShowMessage($"Tarozi mahsuloti topilmadi (kod: {itemCode})", error: true);
+            return;
+        }
+
+        // 2) Oddiy shtrix-kod: aniq moslik
+        var product = _allProducts.FirstOrDefault(p =>
+            p.Barcode != null && string.Equals(p.Barcode, code, StringComparison.OrdinalIgnoreCase));
+
+        // Enter bosilganda ko'rinib turgan birinchi mahsulotni ham qabul qilamiz
+        if (product is null && !fallbackToFilter)
+            product = (ProductsControl.ItemsSource as IEnumerable<ProductDto>)?.FirstOrDefault();
 
         if (product is not null)
         {
             AddToCart(product);
             SearchBox.Clear();
         }
+        else if (fallbackToFilter)
+        {
+            SearchBox.Text = code;
+            ApplyFilter();
+            ShowMessage($"Topilmadi: {code}", error: true);
+        }
         else
         {
-            ShowMessage($"Topilmadi: {q}", error: true);
+            ShowMessage($"Topilmadi: {code}", error: true);
         }
+    }
+
+    /// <summary>
+    /// Tarozi tomonidan chop etilgan vazn-kodli EAN-13 ni ajratadi.
+    /// Format: "2" + 6 xonali mahsulot kodi + 5 xonali vazn (gramm) + 1 nazorat raqami.
+    /// Masalan 2000888000862 → kod=000888, vazn=00086 → 0.086 kg.
+    /// </summary>
+    private static bool TryParseScaleBarcode(string code, out string itemCode, out decimal weightKg)
+    {
+        itemCode = "";
+        weightKg = 0m;
+        if (code.Length != 13 || code[0] != '2' || !code.All(char.IsDigit))
+            return false;
+        itemCode = code.Substring(1, 6);
+        if (!int.TryParse(code.Substring(7, 5), out var grams))
+            return false;
+        weightKg = grams / 1000m;
+        return weightKg > 0m;
+    }
+
+    /// <summary>
+    /// Tarozi shtrix-kodidagi mahsulot kodini katalogdagi mahsulot bilan moslaydi.
+    /// Asosiy moslik — mahsulotning PLU raqami (tarozi shu raqam bo'yicha sozlanadi),
+    /// shu sabab katalogdagi barcha vaznli mahsulotlar avtomatik tanib olinadi.
+    /// Ehtiyot uchun shtrix-kod maydoni ham tekshiriladi.
+    /// </summary>
+    private ProductDto? FindByScaleItemCode(string itemCode)
+    {
+        // 1) PLU bo'yicha (asosiy yo'l): 000888 → 888
+        if (int.TryParse(itemCode, out var plu) && plu > 0)
+        {
+            var byPlu = _allProducts.FirstOrDefault(p => p.PluNumber == plu);
+            if (byPlu is not null) return byPlu;
+        }
+
+        // 2) Shtrix-kod maydoni bo'yicha (agar kod aynan o'sha joyga yozilgan bo'lsa)
+        var trimmed = itemCode.TrimStart('0');
+        return _allProducts.FirstOrDefault(p =>
+        {
+            var bc = p.Barcode?.Trim();
+            if (string.IsNullOrEmpty(bc)) return false;
+            if (string.Equals(bc, itemCode, StringComparison.Ordinal)) return true;        // 000888
+            if (string.Equals(bc, "2" + itemCode, StringComparison.Ordinal)) return true;  // 2000888
+            if (bc.Length == 13 && bc[0] == '2' && bc.Substring(1, 6) == itemCode)         // o'zi vazn-kod
+                return true;
+            if (trimmed.Length > 0 && bc.TrimStart('0') == trimmed) return true;           // boshidagi nollarsiz
+            return false;
+        });
+    }
+
+    /// <summary>Vaznli mahsulotni o'lchangan vazn bilan savatga qo'shadi (mavjud bo'lsa ustiga qo'shadi).</summary>
+    private void AddWeightToCart(ProductDto product, decimal weightKg)
+    {
+        var line = _cart.FirstOrDefault(l => l.Product.Id == product.Id);
+        if (line is null)
+            _cart.Add(new CartLine(product, weightKg));
+        else
+            line.Quantity += weightKg;
+        RecalcTotals();
+        SearchBox.Focus();
     }
 
     private void ProductCard_Click(object sender, RoutedEventArgs e)
@@ -768,6 +845,7 @@ public partial class PosWindow : Window
                 var sale = await AppState.Backend.CreateSaleAsync(req);
                 receipt.ReceiptNumber = sale.ReceiptNumber;
                 receipt.Change = sale.ChangeAmount;
+                receipt.SaleId = sale.Id; // fiskal QR'ni keyin so'rab olish uchun
                 _lastReceipt = receipt;
                 ReprintButton.IsEnabled = true;
                 ShowMessage($"✓ Chek {sale.ReceiptNumber} · Jami {sale.TotalAmount:N0} · Qaytim {sale.ChangeAmount:N0}", error: false);

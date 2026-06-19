@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -13,6 +14,9 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // CP866 (termal printer ESC/POS) kodlashini yoqamiz — .NET Core'da standart mavjud emas.
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         // UI oqimidagi ushlanmagan xatoliklar ilovani yiqitmasligi uchun.
         DispatcherUnhandledException += (_, args) =>

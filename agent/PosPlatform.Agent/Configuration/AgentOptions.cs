@@ -21,8 +21,20 @@ public class AgentOptions
 
     // ─── Fiskal qurilma ──────────────────────────────────────────────────────
 
-    /// <summary>true = SimulatedFiscalDevice; false = OfdFiscalDevice (haqiqiy OFD API).</summary>
+    /// <summary>
+    /// Fiskal rejim: "Simulated" (test), "YtModule" (YT.UZ FiscalDriveAPI lokal modul),
+    /// "Ofd" (umumiy OFD API). Bo'sh bo'lsa UseSimulatedFiscal flagiga qaytadi.
+    /// </summary>
+    public string FiscalMode { get; set; } = string.Empty;
+
+    /// <summary>[Eskirgan] FiscalMode bo'sh bo'lganda: true = Simulated, false = Ofd.</summary>
     public bool UseSimulatedFiscal { get; set; } = true;
+
+    /// <summary>
+    /// YT.UZ FiscalDriveAPI lokal JSON-RPC manzili (fiskal modul drayveri).
+    /// Standart: http://127.0.0.1:3448/rpc/api.
+    /// </summary>
+    public string FiscalDriveApiUrl { get; set; } = "http://127.0.0.1:3448/rpc/api";
 
     /// <summary>Haqiqiy OFD API manzili, masalan https://ofd.soliq.uz/api.</summary>
     public string OfdApiUrl { get; set; } = "https://ofd.soliq.uz/api";

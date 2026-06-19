@@ -71,6 +71,15 @@ public class BackendClient
     public async Task<List<SaleListDto>> GetSalesAsync()
         => (await _http.GetFromJsonAsync<List<SaleListDto>>("api/sales", Json)) ?? new();
 
+    /// <summary>Bitta savdoni (fiskal chek ma'lumoti bilan) Id bo'yicha oladi.</summary>
+    public async Task<SaleDto?> GetSaleAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var resp = await _http.GetAsync($"api/sales/{id}", cancellationToken);
+        if (resp.StatusCode == HttpStatusCode.NotFound) return null;
+        await EnsureOk(resp);
+        return await resp.Content.ReadFromJsonAsync<SaleDto>(Json, cancellationToken);
+    }
+
     public async Task<List<DebtorDto>> GetDebtorsAsync()
         => (await _http.GetFromJsonAsync<List<DebtorDto>>("api/debtors", Json)) ?? new();
 

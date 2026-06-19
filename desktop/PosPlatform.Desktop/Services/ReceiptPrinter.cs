@@ -12,26 +12,29 @@ namespace PosPlatform.Desktop.Services;
 /// </summary>
 public class ReceiptPrinter
 {
+    /// <summary>
+    /// Chekni termal printerga RAW ESC/POS sifatida yuboradi. FlowDocument (grafik) yo'li
+    /// "Generic / Text Only" drayveri bilan chekni oxirigacha chiqarmaydi va kesmaydi,
+    /// shuning uchun bu yerda to'g'ridan-to'g'ri ESC/POS baytlari yuboriladi.
+    /// </summary>
     public void Print(ReceiptData r, string? printerName)
-        => PrintDocument(BuildDocument(r), printerName, "Chek " + r.ReceiptNumber);
-
-    /// <summary>Tayyor hujjatni printerga yuboradi (preview oynasi ham shu metoddan foydalanadi).</summary>
-    public void PrintDocument(FlowDocument doc, string? printerName, string jobName)
     {
-        PrintQueue queue;
-        if (!string.IsNullOrWhiteSpace(printerName))
-        {
-            var server = new LocalPrintServer();
-            queue = new PrintQueue(server, printerName);
-        }
-        else
-        {
-            queue = LocalPrintServer.GetDefaultPrintQueue();
-        }
+        var name = ResolvePrinterName(printerName);
+        var data = EscPosReceipt.BuildReceipt(r);
+        EscPosReceipt.SendRaw(name, data, "Chek " + r.ReceiptNumber);
+    }
 
-        var pd = new System.Windows.Controls.PrintDialog { PrintQueue = queue };
-        doc.PageWidth = pd.PrintableAreaWidth > 0 ? Math.Min(pd.PrintableAreaWidth, 300) : 280;
-        pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, jobName);
+    /// <summary>Tanlangan printer nomini qaytaradi; bo'sh bo'lsa Windows standart printeri.</summary>
+    private static string ResolvePrinterName(string? printerName)
+    {
+        if (!string.IsNullOrWhiteSpace(printerName))
+            return printerName.Trim();
+
+        var def = LocalPrintServer.GetDefaultPrintQueue();
+        if (def == null || string.IsNullOrWhiteSpace(def.Name))
+            throw new InvalidOperationException(
+                "Printer tanlanmagan va standart printer topilmadi. Sozlamalarda printerni tanlang.");
+        return def.Name;
     }
 
     public static FlowDocument BuildDocument(ReceiptData r)
@@ -76,6 +79,37 @@ public class ReceiptPrinter
         Add($"Berilgan: {r.Paid:N0}");
         Add($"Qaytim: {r.Change:N0}");
         Add(sep);
+
+        // Fiskal belgi + QR (agent fiskalizatsiya qilgach to'ladi).
+        if (!string.IsNullOrEmpty(r.QrCodeUrl))
+        {
+            Add("*** FISKAL CHEK ***", bold: true, align: TextAlignment.Center);
+            if (!string.IsNullOrEmpty(r.FiscalReceiptNumber))
+                Add($"Fiskal raqam: {r.FiscalReceiptNumber}", align: TextAlignment.Center);
+            if (!string.IsNullOrEmpty(r.FiscalSign))
+                Add($"FP: {r.FiscalSign}", align: TextAlignment.Center);
+
+            var qr = QrImage.Generate(r.QrCodeUrl);
+            if (qr is not null)
+            {
+                var img = new System.Windows.Controls.Image
+                {
+                    Source = qr,
+                    Width = 130,
+                    Height = 130,
+                    Stretch = Stretch.Uniform
+                };
+                doc.Blocks.Add(new BlockUIContainer(img) { Margin = new Thickness(0, 4, 0, 4) });
+            }
+            Add("ofd.soliq.uz orqali tekshiring", size: 9, align: TextAlignment.Center);
+            Add(sep);
+        }
+        else if (r.SaleId is not null)
+        {
+            Add("Fiskalizatsiya kutilmoqda...", size: 9, align: TextAlignment.Center);
+            Add(sep);
+        }
+
         Add("Xaridingiz uchun rahmat!", align: TextAlignment.Center);
 
         return doc;

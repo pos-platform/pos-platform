@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Windows;
 using PosPlatform.Desktop.Models;
 using PosPlatform.Desktop.Services;
@@ -9,23 +10,61 @@ public partial class ReceiptPreviewWindow : Window
 {
     private readonly ReceiptData _receipt;
     private readonly ReceiptPrinter _printer = new();
+    private CancellationTokenSource? _pollCts;
 
     public ReceiptPreviewWindow(ReceiptData receipt)
     {
         InitializeComponent();
         _receipt = receipt;
+        Render();
+
+        // Onlayn savdo bo'lsa va QR hali yo'q bo'lsa — agent fiskalizatsiyasini kutamiz.
+        if (_receipt.SaleId is Guid && string.IsNullOrEmpty(_receipt.QrCodeUrl) && AppState.IsOnline)
+        {
+            Loaded += async (_, _) => await PollFiscalAsync();
+            Closed += (_, _) => _pollCts?.Cancel();
+        }
+    }
+
+    private void Render()
+    {
         // Ko'rsatish uchun hujjat (chop etishda yangisi quriladi — bitta hujjat ikki joyda bo'lolmaydi).
-        DocViewer.Document = ReceiptPrinter.BuildDocument(receipt);
+        DocViewer.Document = ReceiptPrinter.BuildDocument(_receipt);
+    }
+
+    /// <summary>Backenddan chekning fiskal holatini so'rab turadi; QR kelganda chekni yangilaydi.</summary>
+    private async Task PollFiscalAsync()
+    {
+        if (_receipt.SaleId is not Guid saleId) return;
+        _pollCts = new CancellationTokenSource();
+        var token = _pollCts.Token;
+
+        // ~20 soniya davomida har 2 sekundda tekshiramiz (agent poll oralig'i 5s).
+        for (var i = 0; i < 10 && !token.IsCancellationRequested; i++)
+        {
+            try
+            {
+                await Task.Delay(2000, token);
+                var sale = await AppState.Backend.GetSaleAsync(saleId, token);
+                if (sale?.Receipt is { IsRegistered: true } rc)
+                {
+                    _receipt.QrCodeUrl = rc.QrCodeUrl;
+                    _receipt.FiscalSign = rc.FiscalSign;
+                    _receipt.FiscalReceiptNumber = rc.FiscalReceiptNumber;
+                    Render();
+                    return;
+                }
+            }
+            catch (OperationCanceledException) { return; }
+            catch { /* tarmoq xatosi — keyingi urinishda qayta sinaymiz */ }
+        }
     }
 
     private void Print_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            _printer.PrintDocument(
-                ReceiptPrinter.BuildDocument(_receipt),
-                AppState.PrinterName,
-                "Chek " + _receipt.ReceiptNumber);
+            _printer.Print(_receipt, AppState.PrinterName);
             Close();
         }
         catch (System.Exception ex)

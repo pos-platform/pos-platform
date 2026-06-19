@@ -94,6 +94,9 @@ public class ProductDto
     public decimal Price { get; set; }
     public decimal Quantity { get; set; }
     public string Unit { get; set; } = "Piece";
+    public bool IsWeighed { get; set; }
+    /// <summary>Tarozi PLU raqami (vaznli mahsulot uchun). Tarozi shtrix-kodidagi kodga mos keladi.</summary>
+    public int? PluNumber { get; set; }
     public Guid CategoryId { get; set; }
 
     public string? ImageUrl { get; set; }
@@ -150,6 +153,19 @@ public class SaleDto
     public string ReceiptNumber { get; set; } = "";
     public decimal TotalAmount { get; set; }
     public decimal ChangeAmount { get; set; }
+    public ReceiptInfo? Receipt { get; set; }
+}
+
+/// <summary>Chekning fiskal holati (backend ReceiptDto bilan mos).</summary>
+public class ReceiptInfo
+{
+    /// <summary>Backend enumni satr sifatida qaytaradi: NotSent, Queued, Registered, Failed.</summary>
+    public string FiscalStatus { get; set; } = "";
+    public string? FiscalSign { get; set; }
+    public string? FiscalReceiptNumber { get; set; }
+    public string? QrCodeUrl { get; set; }
+
+    public bool IsRegistered => FiscalStatus == "Registered" && !string.IsNullOrEmpty(QrCodeUrl);
 }
 
 public class SaleListDto
@@ -179,6 +195,16 @@ public class ReceiptData
     public decimal Paid { get; set; }
     public decimal Change { get; set; }
     public List<ReceiptLine> Lines { get; set; } = new();
+
+    /// <summary>Savdoning serverdagi Id'si — fiskal holatni so'rab olish uchun (onlayn savdo).</summary>
+    public Guid? SaleId { get; set; }
+
+    /// <summary>Fiskal QR havola (agent fiskalizatsiya qilgach to'ladi).</summary>
+    public string? QrCodeUrl { get; set; }
+    /// <summary>Soliq qaytargan fiskal belgi (FP).</summary>
+    public string? FiscalSign { get; set; }
+    /// <summary>Soliq tizimidagi fiskal chek raqami.</summary>
+    public string? FiscalReceiptNumber { get; set; }
 }
 
 public class ReceiptLine

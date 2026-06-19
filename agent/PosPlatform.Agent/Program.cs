@@ -28,11 +28,34 @@ builder.Services.AddHttpClient("ofd", client =>
     client.Timeout = TimeSpan.FromSeconds(20);
 });
 
-// Fiskal qurilma: UseSimulatedFiscal=true bo'lsa simulyatsiya, aks holda haqiqiy OFD API.
-if (agentOptions.UseSimulatedFiscal)
-    builder.Services.AddSingleton<IFiscalDevice, SimulatedFiscalDevice>();
-else
-    builder.Services.AddSingleton<IFiscalDevice, OfdFiscalDevice>();
+// YT.UZ FiscalDriveAPI lokal modul uchun HttpClient.
+builder.Services.AddHttpClient("yt-fiscal", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Fiskal qurilma rejimi: FiscalMode ("Simulated"|"YtModule"|"Ofd"),
+// yoki eskicha UseSimulatedFiscal (true=Simulated, false=Ofd).
+var fiscalMode = agentOptions.FiscalMode?.Trim().ToLowerInvariant() switch
+{
+    "ytmodule" or "yt"            => "yt",
+    "ofd"                         => "ofd",
+    "simulated" or "sim" or "test" => "simulated",
+    _                             => agentOptions.UseSimulatedFiscal ? "simulated" : "ofd"
+};
+
+switch (fiscalMode)
+{
+    case "yt":
+        builder.Services.AddSingleton<IFiscalDevice, YtFiscalDevice>();
+        break;
+    case "ofd":
+        builder.Services.AddSingleton<IFiscalDevice, OfdFiscalDevice>();
+        break;
+    default:
+        builder.Services.AddSingleton<IFiscalDevice, SimulatedFiscalDevice>();
+        break;
+}
 
 // Printer rejimi: PrinterMode ("Console"|"Network"|"Usb") yoki UseConsolePrinter (eski flag).
 var printerMode = agentOptions.PrinterMode?.Trim().ToLowerInvariant() switch
