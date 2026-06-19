@@ -26,6 +26,7 @@ public partial class PosWindow : Window
     private List<CategoryDto> _categories = new();
     private Guid? _selectedCategoryId;
     private System.Windows.Threading.DispatcherTimer? _syncTimer;
+    private string _payment = "Cash";
 
     public PosWindow()
     {
@@ -321,7 +322,7 @@ public partial class PosWindow : Window
     {
         var s = _sessions[_currentIndex];
         s.Paid = PaidBox.Text;
-        s.PaymentIndex = PaymentCombo.SelectedIndex;
+        s.PaymentMethod = _payment;
         s.DebtorId = (DebtorCombo.SelectedItem as DebtorDto)?.Id;
     }
 
@@ -331,7 +332,7 @@ public partial class PosWindow : Window
         _cart = s.Cart;
         CartItems.ItemsSource = _cart;
         PaidBox.Text = s.Paid;
-        PaymentCombo.SelectedIndex = s.PaymentIndex;
+        SetPayment(s.PaymentMethod, refocus: false);
         if (s.DebtorId is Guid did && DebtorCombo.ItemsSource is IEnumerable<DebtorDto> debtors)
             DebtorCombo.SelectedItem = debtors.FirstOrDefault(d => d.Id == did);
         else
@@ -353,7 +354,7 @@ public partial class PosWindow : Window
         {
             _cart.Clear();
             PaidBox.Text = "0";
-            PaymentCombo.SelectedIndex = 0;
+            SetPayment("Cash", refocus: false);
             DebtorCombo.SelectedIndex = -1;
             RecalcTotals();
         }
@@ -512,7 +513,7 @@ public partial class PosWindow : Window
     // COM port skanerdan barcode kelganda (ThreadPool thread) UI thread'da qayta ishlash
     private void OnBarcodeScanned(string barcode)
     {
-        Dispatcher.Invoke(() => ProcessScannedCode(barcode, fallbackToFilter: true));
+        Dispatcher.Invoke(() => ProcessScannedCode(barcode, fromScanner: true));
     }
 
     private void SearchBox_KeyDown(object sender, KeyEventArgs e)
@@ -520,15 +521,18 @@ public partial class PosWindow : Window
         if (e.Key != Key.Enter) return;
         var q = SearchBox.Text.Trim();
         if (string.IsNullOrEmpty(q)) return;
-        ProcessScannedCode(q, fallbackToFilter: false);
+        ProcessScannedCode(q, fromScanner: false);
     }
 
     /// <summary>
     /// Skaner yoki qidiruv maydonidan kelgan kodni qayta ishlaydi.
     /// Tarozi (vaznli) shtrix-kodlarni — "2" bilan boshlanadigan 13 xonali EAN-13 —
     /// ajratib, vaznni miqdor sifatida savatga qo'shadi.
+    /// <paramref name="fromScanner"/> true bo'lsa kod aniq shtrix-kod sifatida qaraladi:
+    /// topilmasa "Tovar topilmadi" ko'rsatiladi (tasodifiy mahsulot qo'shilmaydi).
+    /// false bo'lsa (qidiruvda Enter) — nom bo'yicha ham qidiriladi.
     /// </summary>
-    private void ProcessScannedCode(string code, bool fallbackToFilter)
+    private void ProcessScannedCode(string code, bool fromScanner)
     {
         // 1) Tarozi vazn-kodi: "2" + 6 xonali mahsulot kodi + 5 xonali vazn (gramm) + nazorat raqami
         if (TryParseScaleBarcode(code, out var itemCode, out var weightKg))
@@ -540,33 +544,53 @@ public partial class PosWindow : Window
                 SearchBox.Clear();
                 return;
             }
-            ShowMessage($"Tarozi mahsuloti topilmadi (kod: {itemCode})", error: true);
+            ShowNotFound($"Tarozi mahsuloti topilmadi (kod: {itemCode})");
             return;
         }
 
-        // 2) Oddiy shtrix-kod: aniq moslik
+        // 2) Oddiy shtrix-kod: aniq moslik (barcode yoki MXIK kodi bo'yicha)
         var product = _allProducts.FirstOrDefault(p =>
-            p.Barcode != null && string.Equals(p.Barcode, code, StringComparison.OrdinalIgnoreCase));
+            (p.Barcode != null && string.Equals(p.Barcode, code, StringComparison.OrdinalIgnoreCase)) ||
+            string.Equals(p.MxikCode, code, StringComparison.OrdinalIgnoreCase));
 
-        // Enter bosilganda ko'rinib turgan birinchi mahsulotni ham qabul qilamiz
-        if (product is null && !fallbackToFilter)
+        // Qidiruv maydonida Enter bosilganda (skaner emas) ko'rinib turgan
+        // birinchi mahsulotni ham qabul qilamiz — nom bo'yicha tez qo'shish uchun.
+        if (product is null && !fromScanner)
             product = (ProductsControl.ItemsSource as IEnumerable<ProductDto>)?.FirstOrDefault();
 
         if (product is not null)
         {
             AddToCart(product);
             SearchBox.Clear();
+            return;
         }
-        else if (fallbackToFilter)
+
+        // Topilmadi — tasodifiy mahsulot qo'shmaymiz, aniq xabar beramiz.
+        SearchBox.Clear();
+        ShowNotFound($"Tovar topilmadi: {code}");
+    }
+
+    /// <summary>Topilmagani haqida ko'zga ko'rinarli, o'zi yo'qoladigan ogohlantirish.</summary>
+    private System.Windows.Threading.DispatcherTimer? _toastTimer;
+    private void ShowNotFound(string text)
+    {
+        try { System.Media.SystemSounds.Hand.Play(); } catch { /* ovoz bo'lmasligi mumkin */ }
+        ScanToastText.Text = "❌  " + text;
+        ScanToast.Visibility = Visibility.Visible;
+        ShowMessage(text, error: true);
+
+        _toastTimer?.Stop();
+        _toastTimer = new System.Windows.Threading.DispatcherTimer
         {
-            SearchBox.Text = code;
-            ApplyFilter();
-            ShowMessage($"Topilmadi: {code}", error: true);
-        }
-        else
+            Interval = TimeSpan.FromSeconds(2.5)
+        };
+        _toastTimer.Tick += (_, _) =>
         {
-            ShowMessage($"Topilmadi: {code}", error: true);
-        }
+            _toastTimer?.Stop();
+            ScanToast.Visibility = Visibility.Collapsed;
+        };
+        _toastTimer.Start();
+        FocusScanInput();
     }
 
     /// <summary>
@@ -622,7 +646,7 @@ public partial class PosWindow : Window
     {
         var line = _cart.FirstOrDefault(l => l.Product.Id == product.Id);
         if (line is null)
-            _cart.Add(new CartLine(product, weightKg));
+            _cart.Insert(0, new CartLine(product, weightKg));
         else
             line.Quantity += weightKg;
         RecalcTotals();
@@ -641,7 +665,8 @@ public partial class PosWindow : Window
         var line = _cart.FirstOrDefault(l => l.Product.Id == product.Id);
         if (line is null)
         {
-            _cart.Add(new CartLine(product, 1));
+            // Oxirgi qo'shilgan tovar ro'yxatning boshida (tepada) tursin.
+            _cart.Insert(0, new CartLine(product, 1));
         }
         else
         {
@@ -655,6 +680,7 @@ public partial class PosWindow : Window
     private void Inc_Click(object sender, RoutedEventArgs e)
     {
         if (((FrameworkElement)sender).Tag is CartLine l) { l.Quantity += 1; RecalcTotals(); }
+        FocusScanInput();
     }
 
     private void Dec_Click(object sender, RoutedEventArgs e)
@@ -665,11 +691,13 @@ public partial class PosWindow : Window
             else l.Quantity -= 1;
             RecalcTotals();
         }
+        FocusScanInput();
     }
 
     private void Remove_Click(object sender, RoutedEventArgs e)
     {
         if (((FrameworkElement)sender).Tag is CartLine l) { _cart.Remove(l); RecalcTotals(); }
+        FocusScanInput();
     }
 
     private void Clear_Click(object sender, RoutedEventArgs e)
@@ -677,6 +705,17 @@ public partial class PosWindow : Window
         _cart.Clear();
         PaidBox.Text = "0";
         RecalcTotals();
+        // Savatni tozalagandan keyin ham shtrix-skaner darhol ishlashi uchun
+        // fokusni qidiruv maydoniga qaytaramiz (HID skaner kiritishi shu yerga tushadi).
+        FocusScanInput();
+    }
+
+    /// <summary>Shtrix-skaner (HID) kiritishi doimo qidiruv maydoniga tushishi uchun fokusni qaytaradi.</summary>
+    private void FocusScanInput()
+    {
+        // Foydalanuvchi summa kiritayotgan bo'lsa, fokusni undan tortib olmaymiz.
+        if (Keyboard.FocusedElement is TextBox tb && tb != SearchBox) return;
+        SearchBox.Focus();
     }
 
     private void ExactCash_Click(object sender, RoutedEventArgs e)
@@ -799,7 +838,7 @@ public partial class PosWindow : Window
 
         var total = CartTotal();
         var paid = ParseDecimal(PaidBox.Text);
-        var payment = (PaymentCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Cash";
+        var payment = _payment;
         if (payment == "Cash" && paid < total)
         {
             ShowMessage("Berilgan summa yetarli emas", error: true);
@@ -899,11 +938,36 @@ public partial class PosWindow : Window
 
     // ---------- Nasiya (qarz) ----------
 
-    private async void PaymentCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void PayTab_Click(object sender, RoutedEventArgs e)
+    {
+        var method = (string)((System.Windows.Controls.Button)sender).Tag;
+        SetPayment(method);
+    }
+
+    /// <summary>To'lov turini o'rnatadi, tab uslublarini va qarzdor panelini yangilaydi.</summary>
+    private void SetPayment(string method, bool refocus = true)
+    {
+        _payment = method;
+        RefreshPayTabs();
+        UpdateDebtorPanel();
+        if (refocus) FocusScanInput();
+    }
+
+    private void RefreshPayTabs()
+    {
+        if (PayCash is null) return; // init paytida hali yaratilmagan bo'lishi mumkin
+        var tab = (Style)FindResource("PayTab");
+        var active = (Style)FindResource("PayTabActive");
+        PayCash.Style = _payment == "Cash" ? active : tab;
+        PayCard.Style = _payment == "Card" ? active : tab;
+        PayMixed.Style = _payment == "Mixed" ? active : tab;
+        PayDebt.Style = _payment == "Debt" ? active : tab;
+    }
+
+    private async void UpdateDebtorPanel()
     {
         if (DebtorPanel is null) return; // init paytida hali yaratilmagan bo'lishi mumkin
-        var payment = (PaymentCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString();
-        if (payment == "Debt")
+        if (_payment == "Debt")
         {
             DebtorPanel.Visibility = Visibility.Visible;
             if (DebtorCombo.ItemsSource is null)
@@ -937,6 +1001,42 @@ public partial class PosWindow : Window
                 Checkout_Click(this, new RoutedEventArgs());
                 e.Handled = true;
                 break;
+        }
+    }
+
+    // ─── Oyna darajasidagi shtrix-skaner ushlagichi ─────────────────────────
+    // HID (klaviatura-emulyatsiya) skanerlar belgilarni juda tez yuboradi va Enter
+    // bilan tugatadi. Fokus qaysi tugmada bo'lishidan qat'i nazar (savatni tozalash,
+    // miqdor tugmalari va h.k.) skaner kodi savatga tushishi uchun belgilarni shu yerda
+    // to'playmiz. Fokus tahrirlanadigan matn maydonida bo'lsa (qidiruv, summa) —
+    // o'sha maydon o'zi ishlaydi, biz aralashmaymiz.
+    private string _scanBuffer = "";
+    private DateTime _lastScanKey = DateTime.MinValue;
+
+    private void Window_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (Keyboard.FocusedElement is TextBox) return; // matn maydoni o'zi qabul qiladi
+        if (string.IsNullOrEmpty(e.Text)) return;
+
+        // Belgilar orasidagi tanaffus uzoq bo'lsa — yangi skan boshlanadi.
+        if ((DateTime.Now - _lastScanKey).TotalMilliseconds > 120)
+            _scanBuffer = "";
+        _lastScanKey = DateTime.Now;
+        _scanBuffer += e.Text;
+    }
+
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        if (Keyboard.FocusedElement is TextBox) return; // SearchBox/summa o'z Enter'ini ishlaydi
+        if (_scanBuffer.Length == 0) return;
+
+        var code = _scanBuffer.Trim();
+        _scanBuffer = "";
+        if (code.Length > 0)
+        {
+            ProcessScannedCode(code, fromScanner: true);
+            e.Handled = true;
         }
     }
 
