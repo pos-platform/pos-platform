@@ -129,6 +129,27 @@ async function exportExcel() {
   }
 }
 
+// Joriy filtrlangan ro'yxatni FENIX/tarozi formatida (;-ajratilgan) .txt qilib yuklaydi.
+// Qator: kod;nomi;;narx;0;0;0;kod;0;0;;01.01.01;0;0;0;0;01.01.01
+function exportFenixTxt() {
+  const list = filteredProducts.value
+  if (!list.length) {
+    error.value = 'Eksport uchun mahsulot yo\'q'
+    setTimeout(() => { error.value = '' }, 3000)
+    return
+  }
+  let seq = 0
+  const lines = list.map((p) => {
+    const code = p.pluNumber != null && Number(p.pluNumber) > 0 ? Number(p.pluNumber) : ++seq
+    const name = (p.name || '').replace(/;/g, ' ').replace(/[\r\n]+/g, ' ').trim()
+    const price = Math.round(Number(p.price) || 0)
+    return `${code};${name};;${price};0;0;0;${code};0;0;;01.01.01;0;0;0;0;01.01.01`
+  })
+  // UTF-8 BOM (﻿) — kirill harflari Notepad/eski dasturlarda buzilmasligi uchun
+  const blob = new Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/plain;charset=utf-8' })
+  downloadBlob(blob, 'mahsulotlar.txt')
+}
+
 const blankForm = () => ({
   name: '',
   mxikCode: '',
@@ -497,15 +518,20 @@ function printBarcode(product) {
   <div class="page-head">
     <h1>Mahsulotlar</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <!-- Hozircha yashirilgan (kerak bo'lsa qaytariladi): Shablon, TXT shablon, TXT import
       <button class="btn btn-ghost btn-sm" @click="downloadTemplate">📄 Shablon</button>
       <button class="btn btn-ghost btn-sm" @click="downloadTxtTemplate">📄 TXT shablon</button>
+      -->
       <button class="btn btn-ghost btn-sm" :disabled="importing" @click="triggerImport">
         {{ importing ? '⏳ Import...' : '📥 Excel import' }}
       </button>
+      <!--
       <button class="btn btn-ghost btn-sm" :disabled="importing" @click="triggerTxtImport">
         {{ importing ? '⏳ Import...' : '📄 TXT import' }}
       </button>
-      <button class="btn btn-ghost btn-sm" @click="exportExcel">📤 Eksport</button>
+      -->
+      <button class="btn btn-ghost btn-sm" @click="exportFenixTxt">📤 Eksport (.txt)</button>
+      <button class="btn btn-ghost btn-sm" @click="exportExcel">📊 Excel</button>
       <button class="btn" @click="openCreate">+ Mahsulot qo'shish</button>
       <input ref="importInput" type="file" accept=".xlsx" style="display:none" @change="onImportFile" />
       <input ref="txtImportInput" type="file" accept=".txt,.csv,.tsv" style="display:none" @change="onImportFile" />
