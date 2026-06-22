@@ -34,10 +34,12 @@ public class LicenseValidationMiddleware
 
             // Obuna faqat Kassir/Menejer uchun tekshiriladi. Admin panel bepul.
             var needsLicense = user?.Role == UserRole.Cashier || user?.Role == UserRole.Manager;
+            // Doimiy (IsLifetime) litsenziyali foydalanuvchilar obuna muddati tekshiruvidan o'tkazilmaydi.
             var invalid = user is null
                 || !user.IsActive
                 || user.Organization is { IsActive: false }
-                || (needsLicense && (user.LicensedUntil is null || user.LicensedUntil.Value.Date < today));
+                || (needsLicense && !user.IsLifetime
+                    && (user.LicensedUntil is null || user.LicensedUntil.Value.Date < today));
 
             if (invalid)
             {

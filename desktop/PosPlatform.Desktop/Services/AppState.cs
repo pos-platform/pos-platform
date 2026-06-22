@@ -12,6 +12,18 @@ public static class AppState
     public static string Token { get; set; } = "";
     public static string BusinessType { get; set; } = "Store";
 
+    /// <summary>Joriy kassir obunasi shu sanagacha amal qiladi. null = faollashtirilmagan.</summary>
+    public static DateTime? LicensedUntil { get; set; }
+
+    /// <summary>Doimiy (bir martalik to'liq sotib olingan) litsenziya — obuna hech qachon tugamaydi.</summary>
+    public static bool IsLifetime { get; set; }
+
+    /// <summary>Obuna muddati tugashiga necha kun qolgani (doimiy bo'lsa yoki muddat yo'q bo'lsa null).</summary>
+    public static int? LicenseDaysLeft =>
+        IsLifetime || LicensedUntil is null
+            ? null
+            : (int)(LicensedUntil.Value.Date - DateTime.UtcNow.Date).TotalDays;
+
     public static bool IsRestaurant => BusinessType == "Restaurant";
 
     public static bool IsOnline { get; set; } = true;

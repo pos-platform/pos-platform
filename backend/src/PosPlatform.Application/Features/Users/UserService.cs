@@ -100,6 +100,51 @@ public class UserService : IUserService
         return UserDto.FromEntity(await GetUserWithRoleAsync(id, cancellationToken));
     }
 
+    public async Task<LicenseSummaryDto> GetLicenseSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var today = DateTime.UtcNow.Date;
+        var soon = today.AddDays(7);
+
+        // Faqat shu tashkilotning Desktop foydalanuvchilari (Kassir/Menejer).
+        // Doimiy litsenziyalilar va faolsizlar eslatmaga tushmaydi.
+        var users = await _db.Users
+            .AsNoTracking()
+            .Include(u => u.Branch)
+            .Where(u => u.IsActive
+                        && !u.IsLifetime
+                        && (u.Role == Domain.Enums.UserRole.Cashier || u.Role == Domain.Enums.UserRole.Manager))
+            .ToListAsync(cancellationToken);
+
+        var needsAttention = users
+            .Select(u =>
+            {
+                string? status = u.LicensedUntil is null
+                    ? "unpaid"
+                    : u.LicensedUntil.Value.Date < today
+                        ? "expired"
+                        : u.LicensedUntil.Value.Date <= soon
+                            ? "expiring"
+                            : null; // muddati hali uzoq — eslatma kerak emas
+                if (status is null) return null;
+                return new LicenseAlertUserDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Role = u.Role,
+                    BranchName = u.Branch?.Name,
+                    LicensedUntil = u.LicensedUntil,
+                    DaysLeft = u.LicensedUntil is null ? null : (int)(u.LicensedUntil.Value.Date - today).TotalDays,
+                    Status = status
+                };
+            })
+            .Where(x => x is not null)
+            .Select(x => x!)
+            .OrderBy(x => x.DaysLeft ?? int.MinValue)
+            .ToList();
+
+        return new LicenseSummaryDto { NeedsAttention = needsAttention };
+    }
+
     private async Task<User> GetUserAsync(Guid id, CancellationToken cancellationToken) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken)
         ?? throw new NotFoundException($"Foydalanuvchi topilmadi: {id}");

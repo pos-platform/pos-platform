@@ -1,9 +1,10 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, watch, ref } from 'vue'
 import { useRoute, useRouter, RouterView, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from './stores/auth'
 import { useStoreFilterStore } from './stores/storeFilter'
+import { usersApi } from './api/catalog'
 
 const auth = useAuthStore()
 const storeFilter = useStoreFilterStore()
@@ -18,10 +19,53 @@ function setLang(lang) {
 
 const showNav = computed(() => auth.isAuthenticated && route.name !== 'login')
 
-// Foydalanuvchi tizimga kirganida do'konlar ro'yxatini yuklaydi
+// ===== Obuna (to'lov) eslatmasi — org admin uchun =====
+// Kassir/menejer obunasi 7 kun ichida tugasa, tugagan yoki to'lanmagan bo'lsa eslatadi.
+const licenseAlerts = ref([])
+const licenseDismissed = ref(false)
+
+async function loadLicenseAlerts() {
+  licenseAlerts.value = []
+  if (!auth.isAuthenticated || auth.isSuperAdmin || auth.role !== 'Admin') return
+  try {
+    const data = await usersApi.licenseSummary()
+    licenseAlerts.value = data.needsAttention || []
+  } catch {
+    // jim — eslatma asosiy ish jarayoniga xalal bermasin
+  }
+}
+
+const showLicenseBanner = computed(
+  () => !licenseDismissed.value && licenseAlerts.value.length > 0 && route.name !== 'login'
+)
+
+// Banner uchun matn (eng shoshilinch holatga qarab).
+const licenseBannerText = computed(() => {
+  const items = licenseAlerts.value
+  if (!items.length) return ''
+  const ru = locale.value === 'ru'
+  const parts = items.map((u) => {
+    if (u.status === 'unpaid')
+      return ru ? `«${u.username}» — не оплачено` : `«${u.username}» — to'lanmagan`
+    if (u.status === 'expired')
+      return ru ? `«${u.username}» — срок истёк` : `«${u.username}» — muddati tugagan`
+    const d = u.daysLeft
+    return ru ? `«${u.username}» — осталось ${d} дн.` : `«${u.username}» — ${d} kun qoldi`
+  })
+  const head = ru
+    ? 'Уважаемый клиент! Не забудьте оплатить подписку, чтобы избежать отключения: '
+    : "Hurmatli mijoz! Tizim to'xtab qolmasligi uchun obunani to'lashni unutmang: "
+  return head + parts.join(' · ')
+})
+
+// Foydalanuvchi tizimga kirganida do'konlar ro'yxatini + obuna eslatmalarini yuklaydi
 watch(
   () => auth.isAuthenticated,
-  (v) => { if (v && !auth.isSuperAdmin) storeFilter.ensureLoaded() },
+  (v) => {
+    if (v && !auth.isSuperAdmin) storeFilter.ensureLoaded()
+    licenseDismissed.value = false
+    loadLicenseAlerts()
+  },
   { immediate: true }
 )
 
@@ -126,12 +170,61 @@ function logout() {
     </aside>
 
     <main class="content">
+      <!-- Obuna to'lovi eslatmasi (org admin uchun) -->
+      <div v-if="showLicenseBanner" class="license-banner">
+        <div class="license-marquee">
+          <span class="license-text">{{ licenseBannerText }}</span>
+          <span class="license-text" aria-hidden="true">{{ licenseBannerText }}</span>
+        </div>
+        <button class="license-x" title="Yopish" @click="licenseDismissed = true">×</button>
+      </div>
       <RouterView />
     </main>
   </div>
 </template>
 
 <style scoped>
+/* Obuna to'lovi eslatmasi (yuguruvchi qator) */
+.license-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fff1f1;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  margin: 0 0 14px;
+  overflow: hidden;
+  height: 40px;
+}
+.license-marquee {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  animation: license-scroll 28s linear infinite;
+}
+.license-text {
+  padding: 0 28px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #dc2626;
+}
+.license-banner:hover .license-marquee { animation-play-state: paused; }
+.license-x {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 12px;
+}
+@keyframes license-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 .side-lang { display:flex; gap:6px; margin-bottom:8px; }
 .lang-btn { flex:1; padding:4px; border:1px solid var(--border); border-radius:4px; background:transparent; cursor:pointer; font-size:11px; color:var(--text-muted); }
 .lang-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }

@@ -65,7 +65,11 @@ export const organizationsApi = {
   getStores: (id) => http.get(`/api/organizations/${id}/stores`).then((r) => r.data),
   assignAppRole: (userId, roleId) =>
     http.put(`/api/organizations/users/${userId}/app-role`, { roleId: roleId ?? null }).then((r) => r.data),
-  getAlerts: () => http.get('/api/organizations/alerts').then((r) => r.data)
+  getAlerts: () => http.get('/api/organizations/alerts').then((r) => r.data),
+  setLifetime: (userId) =>
+    http.post(`/api/organizations/users/${userId}/set-lifetime`).then((r) => r.data),
+  unsetLifetime: (userId) =>
+    http.post(`/api/organizations/users/${userId}/unset-lifetime`).then((r) => r.data)
 }
 
 export const roleTemplatesApi = {
@@ -86,7 +90,8 @@ export const usersApi = {
     http.post(`/api/users/${id}/reset-password`, { newPassword }).then((r) => r.data),
   activate: (id) => http.post(`/api/users/${id}/activate`).then((r) => r.data),
   deactivate: (id) => http.post(`/api/users/${id}/deactivate`).then((r) => r.data),
-  assignRole: (id, roleId) => http.put(`/api/users/${id}/role`, { roleId }).then((r) => r.data)
+  assignRole: (id, roleId) => http.put(`/api/users/${id}/role`, { roleId }).then((r) => r.data),
+  licenseSummary: () => http.get('/api/users/license-summary').then((r) => r.data)
 }
 
 export const rolesApi = {

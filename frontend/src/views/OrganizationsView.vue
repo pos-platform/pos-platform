@@ -220,6 +220,36 @@ async function revoke(u) {
   }
 }
 
+async function setLifetime(u) {
+  if (!confirm(`"${u.username}" doimiy (bir martalik to'liq sotib olingan) litsenziyaga o'tkazilsinmi? Obuna hech qachon tugamaydi.`)) return
+  busy.value = true
+  err.value = ''
+  try {
+    await organizationsApi.setLifetime(u.id)
+    notify(`${u.username}: doimiy litsenziya yoqildi`)
+    await refreshSelected()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function unsetLifetime(u) {
+  if (!confirm(`"${u.username}" doimiy litsenziyasi bekor qilinsinmi? Oylik obunaga qaytadi.`)) return
+  busy.value = true
+  err.value = ''
+  try {
+    await organizationsApi.unsetLifetime(u.id)
+    notify(`${u.username}: doimiy litsenziya bekor qilindi`)
+    await refreshSelected()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
+}
+
 async function toggleUser(u) {
   busy.value = true
   try {
@@ -247,6 +277,7 @@ async function assignRole(u, roleId) {
 
 function statusOf(u) {
   if (!u.isActive) return { text: 'Passiv (kira olmaydi)', cls: 'st-blocked' }
+  if (u.isLifetime) return { text: '♾ Doimiy litsenziya', cls: 'st-ok' }
   if (u.isLicensed) return { text: `To'langan · ${u.daysLeft} kun qoldi`, cls: u.daysLeft <= 5 ? 'st-soon' : 'st-ok' }
   if (u.licensedUntil) return { text: "To'lov muddati tugagan", cls: 'st-expired' }
   return { text: "Hali to'lanmagan", cls: 'st-none' }
@@ -396,9 +427,16 @@ onMounted(load)
             </div>
           </div>
           <div class="user-acts">
-            <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)">💵 +1 oy</button>
-            <button class="btn btn-ghost btn-xs" :disabled="busy" @click="extend(u, 3)">+3 oy</button>
-            <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)">⨯</button>
+            <template v-if="u.isLifetime">
+              <span class="pill pill-lifetime">♾ Doimiy</span>
+              <button class="btn btn-ghost btn-xs" :disabled="busy" title="Doimiy litsenziyani bekor qilish" @click="unsetLifetime(u)">Bekor</button>
+            </template>
+            <template v-else>
+              <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)">💵 +1 oy</button>
+              <button class="btn btn-ghost btn-xs" :disabled="busy" @click="extend(u, 3)">+3 oy</button>
+              <button class="btn btn-ghost btn-xs" :disabled="busy" title="Doimiy (bir martalik to'liq sotib olish)" @click="setLifetime(u)">♾ Doimiy</button>
+              <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)">⨯</button>
+            </template>
             <button
               class="btn btn-xs"
               :class="u.isActive ? 'btn-danger' : 'btn-success'"
@@ -635,6 +673,7 @@ onMounted(load)
 
 .pill-blue { background: #dbeafe; color: #1d4ed8; }
 .pill-gray { background: #f1f5f9; color: #475569; }
+.pill-lifetime { background: #ede9fe; color: #6d28d9; font-weight: 700; }
 
 .btn-xs { padding: 4px 8px; font-size: 12px; }
 .btn-success { background: #16a34a; }

@@ -74,6 +74,16 @@ public class OrganizationsController : ControllerBase
     public async Task<ActionResult<OrgUserDto>> RevokeLicense(Guid userId, CancellationToken ct)
         => Ok(await _service.RevokeLicenseAsync(userId, ct));
 
+    /// <summary>Foydalanuvchini doimiy (bir martalik to'liq sotib olingan) litsenziyaga o'tkazish.</summary>
+    [HttpPost("users/{userId:guid}/set-lifetime")]
+    public async Task<ActionResult<OrgUserDto>> SetLifetime(Guid userId, CancellationToken ct)
+        => Ok(await _service.SetLifetimeAsync(userId, true, ct));
+
+    /// <summary>Doimiy litsenziyani bekor qilish (oylik obunaga qaytarish).</summary>
+    [HttpPost("users/{userId:guid}/unset-lifetime")]
+    public async Task<ActionResult<OrgUserDto>> UnsetLifetime(Guid userId, CancellationToken ct)
+        => Ok(await _service.SetLifetimeAsync(userId, false, ct));
+
     [HttpPost("users/{userId:guid}/activate")]
     public async Task<ActionResult<OrgUserDto>> ActivateUser(Guid userId, CancellationToken ct)
         => Ok(await _service.SetUserActiveAsync(userId, true, ct));

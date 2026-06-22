@@ -33,4 +33,11 @@ public class User : BaseEntity
     /// SuperAdmin rolidagi foydalanuvchilarga taalluqli emas.
     /// </summary>
     public DateTime? LicensedUntil { get; set; }
+
+    /// <summary>
+    /// Doimiy (bir martalik to'liq sotib olingan) litsenziya. true bo'lsa — obuna hech qachon
+    /// tugamaydi, oylik to'lov talab qilinmaydi va <see cref="LicensedUntil"/> e'tiborga olinmaydi.
+    /// SuperAdmin har bir kassir uchun alohida belgilaydi.
+    /// </summary>
+    public bool IsLifetime { get; set; }
 }

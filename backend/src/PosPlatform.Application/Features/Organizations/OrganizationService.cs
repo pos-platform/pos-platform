@@ -60,7 +60,7 @@ public class OrganizationService : IOrganizationService
             {
                 OrgId = g.Key,
                 Total = g.Count(),
-                Licensed = g.Count(u => u.LicensedUntil != null && u.LicensedUntil.Value.Date >= today)
+                Licensed = g.Count(u => u.IsLifetime || (u.LicensedUntil != null && u.LicensedUntil.Value.Date >= today))
             })
             .ToListAsync(ct);
 
@@ -245,6 +245,19 @@ public class OrganizationService : IOrganizationService
         return OrgUserDto.FromEntity(user, Today);
     }
 
+    public async Task<OrgUserDto> SetLifetimeAsync(Guid userId, bool isLifetime, CancellationToken ct = default)
+    {
+        var user = await GetManagedUserAsync(userId, ct);
+        if (user.Role is UserRole.Admin)
+            throw new ValidationException("Admin uchun doimiy litsenziya qo'llanmaydi — admin panel bepul.");
+
+        user.IsLifetime = isLifetime;
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync(isLifetime ? "license.lifetime.set" : "license.lifetime.unset",
+            $"username={user.Username}", organizationId: user.OrganizationId, ct: ct);
+        return OrgUserDto.FromEntity(user, Today);
+    }
+
     public async Task<OrgUserDto> SetUserActiveAsync(Guid userId, bool isActive, CancellationToken ct = default)
     {
         var user = await GetManagedUserAsync(userId, ct);
@@ -320,12 +333,14 @@ public class OrganizationService : IOrganizationService
         var soon = today.AddDays(7);
 
         // Faqat Desktop foydalanuvchilar (Kassir/Menejer) tekshiriladi.
+        // Doimiy litsenziyalilar eslatmaga tushmaydi — ularning muddati yo'q.
         var users = await _db.Users
             .AsNoTracking()
             .Include(u => u.Branch)
             .Where(u => u.OrganizationId != null
                         && u.Role != UserRole.Admin
-                        && u.Role != UserRole.SuperAdmin)
+                        && u.Role != UserRole.SuperAdmin
+                        && !u.IsLifetime)
             .ToListAsync(ct);
 
         var orgIds = users.Select(u => u.OrganizationId!.Value).Distinct().ToList();
@@ -396,7 +411,7 @@ public class OrganizationService : IOrganizationService
         var licensed = await _db.Users.CountAsync(
             u => u.OrganizationId == org.Id
                  && u.Role != UserRole.Admin && u.Role != UserRole.SuperAdmin
-                 && u.LicensedUntil != null && u.LicensedUntil.Value.Date >= today, ct);
+                 && (u.IsLifetime || (u.LicensedUntil != null && u.LicensedUntil.Value.Date >= today)), ct);
         return OrganizationDto.FromEntity(org, total, licensed);
     }
 }

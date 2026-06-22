@@ -28,5 +28,8 @@ public class AuthResponse
 
     public DateTime? LicensedUntil { get; set; }
 
+    /// <summary>Doimiy (bir martalik to'liq sotib olingan) litsenziya — obuna hech qachon tugamaydi.</summary>
+    public bool IsLifetime { get; set; }
+
     public List<string> Permissions { get; set; } = [];
 }

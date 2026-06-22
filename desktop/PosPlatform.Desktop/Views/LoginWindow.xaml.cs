@@ -64,6 +64,8 @@ public partial class LoginWindow : Window
             AppState.Username = resp.Username;
             AppState.Role = resp.Role;
             AppState.BusinessType = string.IsNullOrWhiteSpace(resp.BusinessType) ? "Store" : resp.BusinessType;
+            AppState.LicensedUntil = resp.LicensedUntil;
+            AppState.IsLifetime = resp.IsLifetime;
 
             if (AppState.IsRestaurant)
             {

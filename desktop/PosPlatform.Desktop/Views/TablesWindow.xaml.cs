@@ -18,11 +18,27 @@ public partial class TablesWindow : Window
         Icon = logo;
         TopLogoImage.Source = logo;
         UserText.Text = $"{AppState.Username} ({AppState.Role})";
+        ShowLicenseReminder();
         Loaded += async (_, _) =>
         {
             await LoadShiftAsync();
             await LoadTablesAsync();
         };
+    }
+
+    /// <summary>Obuna muddati 7 kun ichida tugayotgan bo'lsa yuqorida eslatma ko'rsatadi.
+    /// Doimiy litsenziya bo'lsa yoki muddat ko'p qolgan bo'lsa — ko'rsatilmaydi.</summary>
+    private void ShowLicenseReminder()
+    {
+        var daysLeft = AppState.LicenseDaysLeft;
+        if (daysLeft is null || daysLeft.Value > 7) return;
+
+        var until = AppState.LicensedUntil?.ToLocalTime().ToString("dd.MM.yyyy");
+        LicenseBannerText.Text = daysLeft.Value <= 0
+            ? "⚠ Hurmatli mijoz! Obunangiz muddati bugun tugaydi. Tizim to'xtab qolmasligi uchun to'lovni amalga oshiring."
+            : $"⚠ Hurmatli mijoz! Obunangiz tugashiga {daysLeft.Value} kun qoldi ({until} gacha). " +
+              "Tizimdan uzluksiz foydalanish uchun to'lovni o'z vaqtida amalga oshiring.";
+        LicenseBanner.Visibility = Visibility.Visible;
     }
 
     private async Task LoadShiftAsync()

@@ -35,11 +35,19 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!-- Obuna to'lovi eslatmasi (muddat 7 kun ichida tugasa) -->
+        <Border x:Name="LicenseBanner" Grid.Row="0" Background="#FFF1F1" Padding="16,9" Margin="0,0,0,14"
+                CornerRadius="10" BorderBrush="#FCA5A5" BorderThickness="1" Visibility="Collapsed">
+            <TextBlock x:Name="LicenseBannerText" Foreground="#DC2626" FontWeight="Bold"
+                       FontSize="14" TextWrapping="Wrap" HorizontalAlignment="Center" />
+        </Border>
+
         <!-- Top bar -->
-        <Grid Grid.Row="0" Margin="0,0,0,14">
+        <Grid Grid.Row="1" Margin="0,0,0,14">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Image x:Name="TopLogoImage" Width="34" Height="34" Margin="0,0,10,0" />
                 <TextBlock Text="Stollar" FontSize="22" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center" />
@@ -53,7 +61,7 @@
         </Grid>
 
         <!-- Shift bar -->
-        <Border Grid.Row="1" Background="White" CornerRadius="10" Padding="16,12" Margin="0,0,0,14">
+        <Border Grid.Row="2" Background="White" CornerRadius="10" Padding="16,12" Margin="0,0,0,14">
             <Grid>
                 <TextBlock x:Name="ShiftInfo" VerticalAlignment="Center" Foreground="#475569" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -68,7 +76,7 @@
         </Border>
 
         <!-- Tables -->
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="TablesControl">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -107,7 +115,7 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <TextBlock x:Name="EmptyText" Grid.Row="2" Text="Stollar yo'q. Admin paneldan stol qo'shing."
+        <TextBlock x:Name="EmptyText" Grid.Row="3" Text="Stollar yo'q. Admin paneldan stol qo'shing."
                    HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#94A3B8" Visibility="Collapsed" />
     </Grid>
 </Window>

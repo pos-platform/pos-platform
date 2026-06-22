@@ -61,7 +61,8 @@ public class AuthService : IAuthService
         }
 
         // Obuna (litsenziya) tekshiruvi — faqat Kassir va Menejer uchun. Admin panel bepul.
-        if (user.Role == UserRole.Cashier || user.Role == UserRole.Manager)
+        // Doimiy (IsLifetime) litsenziyali foydalanuvchilar tekshiruvdan o'tkazilmaydi.
+        if ((user.Role == UserRole.Cashier || user.Role == UserRole.Manager) && !user.IsLifetime)
         {
             var today = DateTime.UtcNow.Date;
             if (user.LicensedUntil is null || user.LicensedUntil.Value.Date < today)
@@ -112,6 +113,7 @@ public class AuthService : IAuthService
             OrganizationName = user.Organization?.Name,
             BusinessType = businessType,
             LicensedUntil = user.LicensedUntil,
+            IsLifetime = user.IsLifetime,
             Permissions = permissions
         };
     }

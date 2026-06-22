@@ -8,6 +8,12 @@ public class AuthResponse
     public string Username { get; set; } = "";
     public string Role { get; set; } = "";
     public string BusinessType { get; set; } = "Store";
+
+    /// <summary>Obuna shu sanagacha amal qiladi (oylik to'lov). null = faollashtirilmagan.</summary>
+    public DateTime? LicensedUntil { get; set; }
+
+    /// <summary>Doimiy (bir martalik to'liq sotib olingan) litsenziya — obuna hech qachon tugamaydi.</summary>
+    public bool IsLifetime { get; set; }
 }
 
 // ===================== Restoran modeli =====================

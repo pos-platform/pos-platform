@@ -16,6 +16,9 @@ public interface IOrganizationService
     Task<OrgUserDto> CreateUserAsync(Guid orgId, CreateOrgUserRequest request, CancellationToken ct = default);
     Task<OrgUserDto> ExtendLicenseAsync(Guid userId, int months, CancellationToken ct = default);
     Task<OrgUserDto> RevokeLicenseAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Foydalanuvchini doimiy (bir martalik to'liq sotib olingan) litsenziyaga o'tkazadi yoki qaytaradi.</summary>
+    Task<OrgUserDto> SetLifetimeAsync(Guid userId, bool isLifetime, CancellationToken ct = default);
     Task<OrgUserDto> SetUserActiveAsync(Guid userId, bool isActive, CancellationToken ct = default);
     Task<IReadOnlyList<OrgRoleDto>> GetRolesAsync(Guid orgId, CancellationToken ct = default);
     Task<OrgUserDto> AssignAppRoleAsync(Guid userId, Guid? roleId, CancellationToken ct = default);

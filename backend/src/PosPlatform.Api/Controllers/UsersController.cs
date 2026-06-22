@@ -28,6 +28,13 @@ public class UsersController : ControllerBase
         return Ok(users);
     }
 
+    /// <summary>Joriy tashkilotning e'tibor talab qiluvchi obunalari — org admin to'lov eslatmasi uchun.</summary>
+    [HttpGet("license-summary")]
+    [HasPermission(Permissions.UsersView)]
+    [ProducesResponseType(typeof(LicenseSummaryDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LicenseSummaryDto>> GetLicenseSummary(CancellationToken cancellationToken)
+        => Ok(await _userService.GetLicenseSummaryAsync(cancellationToken));
+
     [HttpPost]
     [HasPermission(Permissions.UsersCreate)]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]

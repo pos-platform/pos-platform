@@ -1751,6 +1751,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsLifetime")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("LicensedUntil")
                         .HasColumnType("timestamp with time zone");
 

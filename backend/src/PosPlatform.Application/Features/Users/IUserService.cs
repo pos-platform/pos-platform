@@ -15,4 +15,7 @@ public interface IUserService
 
     /// <summary>Foydalanuvchiga rol belgilaydi.</summary>
     Task<UserDto> AssignRoleAsync(Guid id, AssignRoleRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Joriy tashkilotning e'tibor talab qiluvchi obunalari (org admin eslatmasi uchun).</summary>
+    Task<LicenseSummaryDto> GetLicenseSummaryAsync(CancellationToken cancellationToken = default);
 }

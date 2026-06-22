@@ -42,6 +42,9 @@ public class OrgUserDto
     public bool IsActive { get; set; }
     public DateTime? LicensedUntil { get; set; }
     public bool IsLicensed { get; set; }
+
+    /// <summary>Doimiy (bir martalik to'liq sotib olingan) litsenziya — hech qachon tugamaydi.</summary>
+    public bool IsLifetime { get; set; }
     public int? DaysLeft { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid? AppRoleId { get; set; }
@@ -51,7 +54,7 @@ public class OrgUserDto
 
     public static OrgUserDto FromEntity(User u, DateTime today)
     {
-        var licensed = u.LicensedUntil is not null && u.LicensedUntil.Value.Date >= today;
+        var licensed = u.IsLifetime || (u.LicensedUntil is not null && u.LicensedUntil.Value.Date >= today);
         return new OrgUserDto
         {
             Id = u.Id,
@@ -60,7 +63,8 @@ public class OrgUserDto
             IsActive = u.IsActive,
             LicensedUntil = u.LicensedUntil,
             IsLicensed = licensed,
-            DaysLeft = u.LicensedUntil is null ? null : (int)(u.LicensedUntil.Value.Date - today).TotalDays,
+            IsLifetime = u.IsLifetime,
+            DaysLeft = u.IsLifetime || u.LicensedUntil is null ? null : (int)(u.LicensedUntil.Value.Date - today).TotalDays,
             CreatedAt = u.CreatedAt,
             AppRoleId = u.AppRoleId,
             AppRoleName = u.AppRole?.Name,
@@ -93,7 +97,7 @@ public class OrganizationDetailDto : OrganizationDto
             BusinessType = o.BusinessType,
             CreatedAt = o.CreatedAt,
             UserCount = desktop.Count,
-            LicensedCount = desktop.Count(u => u.LicensedUntil is not null && u.LicensedUntil.Value.Date >= today),
+            LicensedCount = desktop.Count(u => u.IsLifetime || (u.LicensedUntil is not null && u.LicensedUntil.Value.Date >= today)),
             Users = users.OrderBy(u => u.Role).ThenBy(u => u.Username).Select(u => OrgUserDto.FromEntity(u, today)).ToList()
         };
     }
