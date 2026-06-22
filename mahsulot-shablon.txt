@@ -1,0 +1,3 @@
+№	Nomi	Miqdor	Barcode	PLU	Tip(шт/кг)	Tannarx	Narx	Naценка%	Do'kon	Kategoriya	Chegirma	Chegirmali narx	НДС	Birlik	MXIK	Маркировка	Kod upakovki
+1	Coca-Cola 0.5L	100	4780001112223		шт	6000	8000	33.33	Asosiy do'kon	Ichimliklar	нет		нет	Dona	01905012001533005	нет
+2	Guruch Lazer	50		888	кг	15000	20000	33.33	Asosiy do'kon	Kilogram	нет		нет	Kilogramm		нет

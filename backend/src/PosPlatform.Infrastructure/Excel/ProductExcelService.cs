@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using ClosedXML.Excel;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.Products.Dtos;
@@ -76,6 +77,169 @@ public class ProductExcelService : IProductExcelService
         return rows;
     }
 
+    // ------- IMPORT (matn: .txt / .csv) -------
+
+    /// <summary>
+    /// TAB (yoki ; yoki ,) bilan ajratilgan matn faylidan o'qiydi.
+    /// Ustun tartibi Excel bilan bir xil:
+    /// 1(№) 2(Nomi) 3(Miqdor) 4(Barcode) 5(PLU) 6(шт/кг) 7(Tannarx) 8(Narx)
+    /// 9(Naценка) 10(Do'kon) 11(Kategoriya) 12(Chegirma) 13(Chegirmali narx)
+    /// 14(НДС) 15(Birlik) 16(MXIK) 17(Маркировка) 18(Kod upakovki).
+    /// Birinchi qator sarlavha bo'lsa avtomatik tashlab yuboriladi.
+    /// </summary>
+    public IReadOnlyList<ProductImportRow> ParseText(Stream stream)
+    {
+        var rows = new List<ProductImportRow>();
+        using var reader = new StreamReader(stream);
+        var text = reader.ReadToEnd();
+        var lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+
+        // Ajratuvchini aniqlash: TAB ustuvor, keyin ; va ,
+        char delimiter = '\t';
+        var firstData = lines.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l)) ?? "";
+        if (!firstData.Contains('\t'))
+            delimiter = firstData.Contains(';') ? ';' : (firstData.Contains(',') ? ',' : '\t');
+
+        // FENIX eksport formatini avtomatik aniqlash:
+        // "kod;nomi;;narx;0;0;0;kod;0;0;;01.01.01;0;0;0;0;01.01.01"
+        // Belgisi: ';' bilan, kamida 12 ustun, 1- va 8-ustun bir xil son (kod takrori).
+        if (delimiter == ';' && IsFenixRow(firstData.Split(';')))
+            return ParseFenix(lines);
+
+        var lineNo = 0;
+        var headerSkipped = false;
+        foreach (var raw in lines)
+        {
+            lineNo++;
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+
+            var f = raw.Split(delimiter);
+
+            // Birinchi mazmunli qator sarlavha bo'lsa — tashlab yuboramiz
+            if (!headerSkipped)
+            {
+                headerSkipped = true;
+                if (LooksLikeHeader(f)) continue;
+            }
+
+            var name = Field(f, 1);
+            if (string.IsNullOrWhiteSpace(name)) continue;
+
+            rows.Add(new ProductImportRow
+            {
+                RowNumber     = lineNo,
+                Name          = name,
+                Quantity      = Dec(Field(f, 2)),
+                Barcode       = Field(f, 3),
+                PluNumber     = Int(Field(f, 4)),
+                UnitType      = Field(f, 5),
+                CostPrice     = Dec(Field(f, 6)),
+                Price         = Dec(Field(f, 7)),
+                MarkupPercent = Dec(Field(f, 8)),
+                BranchName    = Field(f, 9),
+                CategoryName  = Field(f, 10),
+                HasDiscount   = YesNo(Field(f, 11)),
+                DiscountPrice = Dec(Field(f, 12)),
+                IsVat         = YesNo(Field(f, 13)),
+                Unit          = Field(f, 14),
+                MxikCode      = Field(f, 15),
+                IsMarked      = YesNo(Field(f, 16)),
+                PackageCode   = Field(f, 17)
+            });
+        }
+        return rows;
+    }
+
+    /// <summary>
+    /// FENIX/tarozi eksport formati: kod;nomi;barcode;narx;0;0;0;kod;...;01.01.01
+    /// Faqat Kod(1), Nomi(2), Narx(4) ma'noli; birlik nomdagi "kg" bo'yicha aniqlanadi.
+    /// </summary>
+    private static IReadOnlyList<ProductImportRow> ParseFenix(string[] lines)
+    {
+        var rows = new List<ProductImportRow>();
+        var lineNo = 0;
+        foreach (var raw in lines)
+        {
+            lineNo++;
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+
+            var f = raw.Split(';');
+            if (!IsFenixRow(f)) continue; // sarlavha/buzuq qatorlarni tashlab yuboramiz
+
+            var name = Field(f, 1);
+            if (string.IsNullOrWhiteSpace(name)) continue;
+
+            var isKg = IsWeightedName(name);
+            rows.Add(new ProductImportRow
+            {
+                RowNumber    = lineNo,
+                Name         = name,
+                Barcode      = Field(f, 2),
+                PluNumber    = Int(Field(f, 0)),   // kod = PLU
+                Price        = Dec(Field(f, 3)),
+                UnitType     = isKg ? "кг" : "шт",
+                Unit         = isKg ? "Kilogramm" : "Dona",
+                Quantity     = null,
+                CostPrice    = null,
+                CategoryName = null,
+            });
+        }
+        return rows;
+    }
+
+    /// <summary>FENIX qatori belgisi: ≥8 ustun, 1- va 8-ustun bir xil musbat son.</summary>
+    private static bool IsFenixRow(string[] f)
+    {
+        if (f.Length < 8) return false;
+        var c0 = f[0].Trim();
+        var c7 = f[7].Trim();
+        return c0.Length > 0 && c0 == c7
+            && int.TryParse(c0, out var n) && n > 0;
+    }
+
+    /// <summary>Nomida "kg"/"кг" bo'lsa — kilogram tovar.</summary>
+    private static bool IsWeightedName(string name)
+    {
+        var n = name.ToLowerInvariant();
+        return System.Text.RegularExpressions.Regex.IsMatch(n, @"(^|\s)(kg|кг)(\s|$|\.)");
+    }
+
+    private static bool LooksLikeHeader(string[] fields)
+    {
+        var first = fields.Length > 0 ? fields[0].Trim() : "";
+        var name = fields.Length > 1 ? fields[1].Trim().ToLowerInvariant() : "";
+        if (first == "№" || first.Equals("N", StringComparison.OrdinalIgnoreCase)) return true;
+        return name.Contains("назван") || name.Contains("nomi") || name.Contains("product") || name.Contains("название");
+    }
+
+    /// <summary>Matn ustunini xavfsiz oladi (0-bazali indeks). Bo'sh bo'lsa null.</summary>
+    private static string? Field(string[] f, int index)
+    {
+        if (index < 0 || index >= f.Length) return null;
+        var s = f[index].Trim();
+        return string.IsNullOrEmpty(s) ? null : s;
+    }
+
+    private static decimal? Dec(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return null;
+        s = s.Trim().Replace(" ", "").Replace(" ", "").Replace(",", ".");
+        return decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : null;
+    }
+
+    private static int? Int(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return null;
+        return int.TryParse(s.Trim(), out var v) && v > 0 ? v : null;
+    }
+
+    private static bool? YesNo(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return null;
+        s = s.Trim().ToLowerInvariant();
+        return s is "есть" or "ha" or "yes" or "true" or "1" or "да" or "+";
+    }
+
     // ------- EXPORT -------
 
     public byte[] Export(IEnumerable<ProductExportRow> rows)
@@ -149,6 +313,29 @@ public class ProductExcelService : IProductExcelService
         ws.Column(2).Width = 28;
         ws.Column(16).Width = 22;
         return ToBytes(wb);
+    }
+
+    // ------- TEMPLATE (matn: .txt) -------
+
+    /// <summary>
+    /// TAB bilan ajratilgan matn shabloni (.txt). UTF-8 BOM bilan yoziladi —
+    /// Excel/Notepad'da kirill harflari to'g'ri ko'rinishi uchun.
+    /// </summary>
+    public byte[] BuildTextTemplate()
+    {
+        var examples = new[]
+        {
+            new[]{ "1","Coca-Cola 0.5L","100","4780001112223","","шт","6000","8000","33.33","Asosiy do'kon","Ichimliklar","нет","","нет","Dona","01905012001533005","","" },
+            new[]{ "2","Guruch Lazer","50","","888","кг","15000","20000","33.33","Asosiy do'kon","Kilogram","нет","","нет","Kilogramm","","","" },
+        };
+
+        var sb = new StringBuilder();
+        sb.Append(string.Join('\t', Headers)).Append("\r\n");
+        foreach (var ex in examples)
+            sb.Append(string.Join('\t', ex)).Append("\r\n");
+
+        // UTF-8 BOM — kirill harflari buzilmasligi uchun
+        return new UTF8Encoding(true).GetBytes(sb.ToString());
     }
 
     // ------- Sarlavha -------

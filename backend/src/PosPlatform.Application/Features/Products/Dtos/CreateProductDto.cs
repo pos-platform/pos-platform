@@ -37,6 +37,12 @@ public class CreateProductDto
     /// <summary>Markirovka (маркировка).</summary>
     public bool IsMarked { get; set; }
 
+    /// <summary>Markirovka kodi (Код маркировки) — ixtiyoriy.</summary>
+    public string? MarkingCode { get; set; }
+
+    /// <summary>Qadoqdagi kod (Код на упаковке) — ixtiyoriy.</summary>
+    public string? PackageCode { get; set; }
+
     public Guid? SupplierId { get; set; }
 
     /// <summary>Boshlang'ich ombor qoldig'i.</summary>

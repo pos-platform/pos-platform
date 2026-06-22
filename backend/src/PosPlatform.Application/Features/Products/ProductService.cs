@@ -74,6 +74,8 @@ public class ProductService : IProductService
             Description = dto.Description?.Trim(),
             IsVat = dto.IsVat,
             IsMarked = dto.IsMarked,
+            MarkingCode = string.IsNullOrWhiteSpace(dto.MarkingCode) ? null : dto.MarkingCode.Trim(),
+            PackageCode = string.IsNullOrWhiteSpace(dto.PackageCode) ? null : dto.PackageCode.Trim(),
             SupplierId = dto.SupplierId,
             Unit = dto.Unit,
             IsWeighed = dto.IsWeighed,
@@ -122,6 +124,8 @@ public class ProductService : IProductService
         product.Description = dto.Description?.Trim();
         product.IsVat = dto.IsVat;
         product.IsMarked = dto.IsMarked;
+        product.MarkingCode = string.IsNullOrWhiteSpace(dto.MarkingCode) ? null : dto.MarkingCode.Trim();
+        product.PackageCode = string.IsNullOrWhiteSpace(dto.PackageCode) ? null : dto.PackageCode.Trim();
         product.SupplierId = dto.SupplierId;
         product.Unit = dto.Unit;
         product.IsWeighed = dto.IsWeighed;
@@ -189,8 +193,13 @@ public class ProductService : IProductService
     }
 
     public async Task<ImportResultDto> ImportAsync(Stream stream, CancellationToken cancellationToken = default)
+        => await ProcessImportAsync(_excel.Parse(stream), cancellationToken);
+
+    public async Task<ImportResultDto> ImportTextAsync(Stream stream, CancellationToken cancellationToken = default)
+        => await ProcessImportAsync(_excel.ParseText(stream), cancellationToken);
+
+    private async Task<ImportResultDto> ProcessImportAsync(IReadOnlyList<ProductImportRow> rows, CancellationToken cancellationToken)
     {
-        var rows = _excel.Parse(stream);
         var result = new ImportResultDto();
         if (rows.Count == 0) return result;
 
@@ -292,6 +301,7 @@ public class ProductService : IProductService
                     Price     = price,
                     IsVat     = row.IsVat ?? false,
                     IsMarked  = row.IsMarked ?? false,
+                    PackageCode = string.IsNullOrWhiteSpace(row.PackageCode) ? null : row.PackageCode!.Trim(),
                     Unit      = unit,
                     CategoryId = category.Id
                 };
@@ -368,6 +378,8 @@ public class ProductService : IProductService
     }
 
     public byte[] GetImportTemplate() => _excel.BuildTemplate();
+
+    public byte[] GetTextImportTemplate() => _excel.BuildTextTemplate();
 
     // Faqat harf va raqamlarni qoldiradi: "Xo’ja Market" → "xojamarket"
     private static string NormalizeBranchKey(string s) =>

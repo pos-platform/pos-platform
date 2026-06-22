@@ -37,6 +37,12 @@ public class Product : BaseEntity
     /// <summary>Markirovka (маркировка) qilinadimi.</summary>
     public bool IsMarked { get; set; }
 
+    /// <summary>Markirovka kodi (Код маркировки) — markirovkali tovar uchun KMK/DataMatrix kodi (ixtiyoriy).</summary>
+    public string? MarkingCode { get; set; }
+
+    /// <summary>Qadoqdagi kod (Код на упаковке) — agregatsiyalangan qadoq kodi (ixtiyoriy).</summary>
+    public string? PackageCode { get; set; }
+
     /// <summary>Yetkazib beruvchi (ixtiyoriy).</summary>
     public Guid? SupplierId { get; set; }
     public Supplier? Supplier { get; set; }

@@ -24,6 +24,8 @@ public class ProductDto
     public string? Description { get; set; }
     public bool IsVat { get; set; }
     public bool IsMarked { get; set; }
+    public string? MarkingCode { get; set; }
+    public string? PackageCode { get; set; }
     public Guid? SupplierId { get; set; }
     public string? SupplierName { get; set; }
     public Unit Unit { get; set; }
@@ -60,6 +62,8 @@ public class ProductDto
         Description = p.Description,
         IsVat = p.IsVat,
         IsMarked = p.IsMarked,
+        MarkingCode = p.MarkingCode,
+        PackageCode = p.PackageCode,
         SupplierId = p.SupplierId,
         SupplierName = p.Supplier?.Name,
         Unit = p.Unit,

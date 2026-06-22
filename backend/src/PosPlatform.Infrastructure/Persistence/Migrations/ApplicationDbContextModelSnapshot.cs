@@ -1011,6 +1011,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsWeighed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("MarkingCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<string>("MxikCode")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -1023,6 +1027,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("PackageCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<int?>("PluNumber")
                         .HasColumnType("integer");

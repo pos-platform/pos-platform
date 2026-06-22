@@ -19,7 +19,9 @@ export const productsApi = {
     return http.post('/api/products/import', fd).then((r) => r.data) // { created, failed, errors }
   },
   exportExcel: () => http.get('/api/products/export', { responseType: 'blob' }).then((r) => r.data),
-  importTemplate: () => http.get('/api/products/import-template', { responseType: 'blob' }).then((r) => r.data)
+  importTemplate: () => http.get('/api/products/import-template', { responseType: 'blob' }).then((r) => r.data),
+  importTemplateTxt: () =>
+    http.get('/api/products/import-template-txt', { responseType: 'blob' }).then((r) => r.data)
 }
 
 // Blob'ni fayl sifatida yuklab olish.

@@ -23,9 +23,15 @@ public interface IProductService
     /// <summary>Excel (.xlsx) dan mahsulotlarni import qiladi.</summary>
     Task<ImportResultDto> ImportAsync(Stream stream, CancellationToken cancellationToken = default);
 
+    /// <summary>Matnli fayl (.txt/.csv) dan mahsulotlarni import qiladi (TAB bilan ajratilgan).</summary>
+    Task<ImportResultDto> ImportTextAsync(Stream stream, CancellationToken cancellationToken = default);
+
     /// <summary>Mahsulotlarni .xlsx ga eksport qiladi.</summary>
     Task<byte[]> ExportAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Import shabloni (.xlsx).</summary>
     byte[] GetImportTemplate();
+
+    /// <summary>Import shabloni (.txt, TAB bilan).</summary>
+    byte[] GetTextImportTemplate();
 }

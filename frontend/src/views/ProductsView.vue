@@ -23,6 +23,7 @@ const filterBranch = ref('')
 const searchName = ref('')
 const filterQtyOp = ref('')
 const filterQtyVal = ref('')
+const filterUnit = ref('') // '' = hammasi, 'Kilogram' = kg, 'Piece' = dona
 
 // Barcode scanner
 const barcodeInput = ref(null)
@@ -71,12 +72,18 @@ const deleting = ref(false)
 
 // Excel
 const importInput = ref(null)
+const txtImportInput = ref(null)
 const importing = ref(false)
 const importResult = ref(null)
 
 function triggerImport() {
   importResult.value = null
   importInput.value?.click()
+}
+
+function triggerTxtImport() {
+  importResult.value = null
+  txtImportInput.value?.click()
 }
 
 async function onImportFile(event) {
@@ -106,6 +113,14 @@ async function downloadTemplate() {
   }
 }
 
+async function downloadTxtTemplate() {
+  try {
+    downloadBlob(await productsApi.importTemplateTxt(), 'mahsulot-shablon.txt')
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
+
 async function exportExcel() {
   try {
     downloadBlob(await productsApi.exportExcel(), 'mahsulotlar.xlsx')
@@ -126,6 +141,8 @@ const blankForm = () => ({
   imageUrl: '',
   isVat: true,
   isMarked: false,
+  markingCode: '',
+  packageCode: '',
   supplierId: '',
   unit: 'Piece',
   isWeighed: false,
@@ -146,6 +163,10 @@ const filteredProducts = computed(() => {
 
   if (filterCategory.value) {
     list = list.filter((p) => p.categoryId === filterCategory.value)
+  }
+
+  if (filterUnit.value) {
+    list = list.filter((p) => p.unit === filterUnit.value)
   }
 
   if (searchName.value.trim()) {
@@ -206,7 +227,7 @@ function setPage(p) {
   if (typeof p === 'number') currentPage.value = Math.min(Math.max(1, p), totalPages.value)
 }
 
-watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal], () => {
+watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit], () => {
   currentPage.value = 1
 })
 
@@ -297,6 +318,8 @@ function openEdit(p) {
     imageUrl: p.imageUrl || '',
     isVat: p.isVat,
     isMarked: p.isMarked,
+    markingCode: p.markingCode || '',
+    packageCode: p.packageCode || '',
     supplierId: p.supplierId || '',
     unit: p.unit,
     isWeighed: p.isWeighed,
@@ -340,6 +363,8 @@ async function submit() {
       imageUrl: form.imageUrl || null,
       isVat: form.isVat,
       isMarked: form.isMarked,
+      markingCode: form.markingCode?.trim() || null,
+      packageCode: form.packageCode?.trim() || null,
       supplierId: form.supplierId || null,
       unit: form.unit,
       isWeighed: form.isWeighed,
@@ -473,12 +498,17 @@ function printBarcode(product) {
     <h1>Mahsulotlar</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" @click="downloadTemplate">📄 Shablon</button>
+      <button class="btn btn-ghost btn-sm" @click="downloadTxtTemplate">📄 TXT shablon</button>
       <button class="btn btn-ghost btn-sm" :disabled="importing" @click="triggerImport">
         {{ importing ? '⏳ Import...' : '📥 Excel import' }}
+      </button>
+      <button class="btn btn-ghost btn-sm" :disabled="importing" @click="triggerTxtImport">
+        {{ importing ? '⏳ Import...' : '📄 TXT import' }}
       </button>
       <button class="btn btn-ghost btn-sm" @click="exportExcel">📤 Eksport</button>
       <button class="btn" @click="openCreate">+ Mahsulot qo'shish</button>
       <input ref="importInput" type="file" accept=".xlsx" style="display:none" @change="onImportFile" />
+      <input ref="txtImportInput" type="file" accept=".txt,.csv,.tsv" style="display:none" @change="onImportFile" />
     </div>
   </div>
 
@@ -516,6 +546,11 @@ function printBarcode(product) {
       <select v-model="filterCategory" class="select" style="flex:1; min-width:150px">
         <option value="">Barcha kategoriyalar</option>
         <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+      </select>
+      <select v-model="filterUnit" class="select" style="width:130px">
+        <option value="">Barcha birlik</option>
+        <option value="Kilogram">kg</option>
+        <option value="Piece">dona</option>
       </select>
       <select v-if="stores.length" v-model="filterBranch" class="select" style="flex:1; min-width:140px">
         <option value="">Barcha do'konlar</option>
@@ -786,6 +821,18 @@ function printBarcode(product) {
         <div class="field">
           <label>MXIK (ИКПУ)</label>
           <input v-model="form.mxikCode" class="input" placeholder="Soliq uchun majburiy" />
+        </div>
+
+        <!-- Qadoq kodi | Markirovka kodi -->
+        <div class="row">
+          <div class="field">
+            <label>Qadoq kodi (Код на упаковке)</label>
+            <input v-model="form.packageCode" class="input" placeholder="Ixtiyoriy" />
+          </div>
+          <div class="field">
+            <label>Markirovka kodi (Код маркировки)</label>
+            <input v-model="form.markingCode" class="input" placeholder="Ixtiyoriy" />
+          </div>
         </div>
 
         <!-- Tarozida tortiladi -->

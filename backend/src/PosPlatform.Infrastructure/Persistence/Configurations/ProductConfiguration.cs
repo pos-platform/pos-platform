@@ -16,6 +16,8 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Tare).HasColumnType("numeric(18,3)");
         builder.Property(p => p.ImageUrl).HasMaxLength(512);
         builder.Property(p => p.Description).HasMaxLength(1024);
+        builder.Property(p => p.MarkingCode).HasMaxLength(128);
+        builder.Property(p => p.PackageCode).HasMaxLength(128);
 
         builder.HasIndex(p => p.Barcode);
         builder.HasIndex(p => p.PluNumber);

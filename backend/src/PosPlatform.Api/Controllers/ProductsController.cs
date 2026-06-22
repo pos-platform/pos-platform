@@ -69,7 +69,7 @@ public class ProductsController : ControllerBase
 
     private const string XlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-    /// <summary>Excel (.xlsx) dan mahsulotlarni import qiladi.</summary>
+    /// <summary>Mahsulotlarni import qiladi: Excel (.xlsx) yoki matn (.txt/.csv, TAB bilan).</summary>
     [HttpPost("import")]
     [Authorize(Roles = "Admin,Manager")]
     [RequestSizeLimit(10 * 1024 * 1024)]
@@ -80,8 +80,11 @@ public class ProductsController : ControllerBase
         {
             return BadRequest(new { error = "Fayl bo'sh." });
         }
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         await using var stream = file.OpenReadStream();
-        var result = await _productService.ImportAsync(stream, cancellationToken);
+        var result = ext is ".txt" or ".csv" or ".tsv"
+            ? await _productService.ImportTextAsync(stream, cancellationToken)
+            : await _productService.ImportAsync(stream, cancellationToken);
         return Ok(result);
     }
 
@@ -97,6 +100,11 @@ public class ProductsController : ControllerBase
     [HttpGet("import-template")]
     public IActionResult ImportTemplate()
         => File(_productService.GetImportTemplate(), XlsxMime, "mahsulot-shablon.xlsx");
+
+    /// <summary>Matnli (.txt) import shablonini yuklab beradi.</summary>
+    [HttpGet("import-template-txt")]
+    public IActionResult ImportTemplateTxt()
+        => File(_productService.GetTextImportTemplate(), "text/plain; charset=utf-8", "mahsulot-shablon.txt");
 
     /// <summary>Noyob shtrix-kod (kod tovara) generatsiya qiladi.</summary>
     [HttpGet("generate-barcode")]
