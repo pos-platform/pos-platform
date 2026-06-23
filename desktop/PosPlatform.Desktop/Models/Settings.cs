@@ -2,7 +2,7 @@ namespace PosPlatform.Desktop.Models;
 
 public class Settings
 {
-    public string BaseUrl { get; set; } = "http://localhost:5000";
+    public string BaseUrl { get; set; } = "https://poscloud.uz";
     public bool PrinterEnabled { get; set; }
     public string? PrinterName { get; set; }
     public string? ScannerComPort { get; set; }

@@ -4,8 +4,8 @@ public class AgentOptions
 {
     public const string SectionName = "Agent";
 
-    /// <summary>Backend API manzili, masalan http://localhost:5000.</summary>
-    public string BackendBaseUrl { get; set; } = "http://localhost:5000";
+    /// <summary>Backend API manzili (cloud), masalan https://poscloud.uz.</summary>
+    public string BackendBaseUrl { get; set; } = "https://poscloud.uz";
 
     /// <summary>Backend "Agent:ApiKey" qiymati bilan mos kalit.</summary>
     public string ApiKey { get; set; } = string.Empty;

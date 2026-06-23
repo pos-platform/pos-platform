@@ -1,0 +1,48 @@
+# PosPlatform — systemd service (Linux, Docker'siz deploy)
+# Joylash:  /etc/systemd/system/posplatform.service
+# So'ng:    sudo systemctl daemon-reload && sudo systemctl enable --now posplatform
+#
+# DIQQAT: quyidagi Environment qiymatlarini haqiqiy sirlarga almashtiring.
+# Yaxshiroq variant: sirlarni alohida faylga yozib, EnvironmentFile=/etc/posplatform.env ishlating
+# (fayl huquqi 600, faqat root o'qiy oladi), shunda sirlar systemd unit ichida turmaydi.
+
+[Unit]
+Description=PosPlatform API (.NET 8)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/posplatform
+ExecStart=/usr/bin/dotnet /opt/posplatform/PosPlatform.Api.dll
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+SyslogIdentifier=posplatform
+User=posplatform
+Group=posplatform
+
+# --- Muhit o'zgaruvchilari (sirlarni to'ldiring) ---
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+Environment=Jwt__Key=CHANGE_ME_kamida_32_belgilik_tasodifiy_kalit
+Environment=ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=pos_platform;Username=posplatform_app;Password=CHANGE_ME
+Environment=Seed__AdminPassword=CHANGE_ME
+Environment=Seed__SuperAdminPassword=CHANGE_ME
+Environment=Agent__ApiKey=CHANGE_ME
+# To'lov ishlatilsa qo'shing:
+# Environment=Payme__MerchantId=...
+# Environment=Payme__SecretKey=...
+# Environment=Click__ServiceId=...
+# Environment=Click__MerchantId=...
+# Environment=Click__SecretKey=...
+
+# --- Xavfsizlik (ixtiyoriy, lekin tavsiya etiladi) ---
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+# wwwroot/uploads ga yozish uchun ReadWritePaths bering:
+ReadWritePaths=/opt/posplatform/wwwroot/uploads
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+# Sirlar git'ga tushmasin (.env.example saqlanadi)
+.env
+*.env
+!.env.example

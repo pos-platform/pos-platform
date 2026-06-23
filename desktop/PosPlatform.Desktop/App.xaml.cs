@@ -33,7 +33,7 @@ public partial class App : Application
             .AddJsonFile("appsettings.json", optional: true)
             .Build();
 
-        AppState.BaseUrl = config["Backend:BaseUrl"] ?? "http://localhost:5000";
+        AppState.BaseUrl = config["Backend:BaseUrl"] ?? "https://poscloud.uz";
         AppState.PrinterEnabled = bool.TryParse(config["Printer:Enabled"], out var pe) && pe;
         AppState.PrinterName = string.IsNullOrWhiteSpace(config["Printer:Name"]) ? null : config["Printer:Name"];
 

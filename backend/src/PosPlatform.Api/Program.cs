@@ -156,11 +156,18 @@ builder.Services.AddRateLimiter(options =>
     };
 });
 
-// --- CORS (Vue dev server) ---
+// --- CORS ---
+// Production'da front backend bilan bitta domendan (poscloud.uz) beriladi — same-origin,
+// shuning uchun CORS shart emas. Quyidagi origin'lar dev server va front alohida
+// joylangan holatlar uchun ruxsat etilgan (desktop/agent brauzer emas — ularga CORS ta'sir qilmaydi).
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicy, policy =>
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+        policy.WithOrigins(
+                  "http://localhost:5173",
+                  "http://localhost:5174",
+                  "https://poscloud.uz",
+                  "https://www.poscloud.uz")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });

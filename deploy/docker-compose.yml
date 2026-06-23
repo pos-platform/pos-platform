@@ -1,0 +1,59 @@
+# PosPlatform — Docker Compose (Postgres + API).
+# Ishlatish (loyiha ildizidan emas, shu deploy/ papkadan):
+#   1) deploy/.env faylga sirlarni yozing (.env.example dan nusxa oling)
+#   2) docker compose up -d --build
+#   3) docker compose logs -f api
+#
+# Nginx + TLS odatda hostda (konteynerdan tashqarida) turadi va api:5000 ga proxy qiladi.
+# Tashqi (managed) Postgres ishlatsangiz — "db" servisini va depends_on'ni olib tashlang,
+# ConnectionStrings__DefaultConnection'da Host'ni o'sha serverga qarating.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pos_platform
+      POSTGRES_USER: ${POSTGRES_USER:-posplatform_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD .env da berilishi shart}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-posplatform_app} -d pos_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Faqat ichki tarmoq; tashqariga port ochmaymiz.
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://0.0.0.0:5000
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=pos_platform;Username=${POSTGRES_USER:-posplatform_app};Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: ${JWT_KEY:?JWT_KEY .env da berilishi shart (>=32 belgi)}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:?berilishi shart}
+      Seed__SuperAdminPassword: ${SEED_SUPERADMIN_PASSWORD:?berilishi shart}
+      Agent__ApiKey: ${AGENT_API_KEY:?berilishi shart}
+      # To'lov ishlatilsa qo'shing:
+      # Payme__MerchantId: ${PAYME_MERCHANT_ID}
+      # Payme__SecretKey: ${PAYME_SECRET_KEY}
+      # Click__ServiceId: ${CLICK_SERVICE_ID}
+      # Click__MerchantId: ${CLICK_MERCHANT_ID}
+      # Click__SecretKey: ${CLICK_SECRET_KEY}
+    ports:
+      # Faqat localhost — nginx (hostda) shu portga proxy qiladi.
+      - "127.0.0.1:5000:5000"
+    volumes:
+      # Yuklangan rasmlar/uploads konteyner qayta yaratilsa ham saqlanadi.
+      - uploads:/app/wwwroot/uploads
+
+volumes:
+  pgdata:
+  uploads:
