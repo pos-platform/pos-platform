@@ -76,6 +76,42 @@ public partial class SettingsWindow : Window
         Close();
     }
 
+    private async void ChangePassword_Click(object sender, RoutedEventArgs e)
+    {
+        var current = CurrentPasswordBox.Password;
+        var next = NewPasswordBox.Password;
+        var confirm = ConfirmPasswordBox.Password;
+
+        if (string.IsNullOrEmpty(current))
+        {
+            ShowMessage("Joriy parolni kiriting", error: true);
+            return;
+        }
+        if (next.Length < 6)
+        {
+            ShowMessage("Yangi parol kamida 6 belgidan iborat bo'lishi kerak", error: true);
+            return;
+        }
+        if (next != confirm)
+        {
+            ShowMessage("Yangi parol va tasdiq mos kelmadi", error: true);
+            return;
+        }
+
+        try
+        {
+            await AppState.Backend.ChangePasswordAsync(current, next);
+            CurrentPasswordBox.Clear();
+            NewPasswordBox.Clear();
+            ConfirmPasswordBox.Clear();
+            ShowMessage("Parol muvaffaqiyatli o'zgartirildi", error: false);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage(ex.Message, error: true);
+        }
+    }
+
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
 
     private void TestPrint_Click(object sender, RoutedEventArgs e)

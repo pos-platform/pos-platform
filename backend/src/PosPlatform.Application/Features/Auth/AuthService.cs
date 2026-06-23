@@ -14,17 +14,20 @@ public class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IAuditService _audit;
+    private readonly ICurrentUser _currentUser;
 
     public AuthService(
         IApplicationDbContext db,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
-        IAuditService audit)
+        IAuditService audit,
+        ICurrentUser currentUser)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _audit = audit;
+        _currentUser = currentUser;
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -90,6 +93,30 @@ public class AuthService : IAuthService
             businessType = BusinessType.Store;
 
         return BuildResponse(user, businessType);
+    }
+
+    public async Task ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (_currentUser.UserId is not Guid userId)
+            throw new UnauthorizedException("Avval tizimga kiring.");
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+                   ?? throw new UnauthorizedException("Foydalanuvchi topilmadi.");
+
+        if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            await _audit.LogAsync("password.change.fail", "joriy parol noto'g'ri", success: false,
+                organizationId: user.OrganizationId, actorUserId: user.Id, actorUsername: user.Username, ct: cancellationToken);
+            throw new ValidationException("Joriy parol noto'g'ri.");
+        }
+
+        if (_passwordHasher.Verify(request.NewPassword, user.PasswordHash))
+            throw new ValidationException("Yangi parol joriy paroldan farq qilishi kerak.");
+
+        user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+        await _db.SaveChangesAsync(cancellationToken);
+        await _audit.LogAsync("password.change", "parol o'zgartirildi", success: true,
+            organizationId: user.OrganizationId, actorUserId: user.Id, actorUsername: user.Username, ct: cancellationToken);
     }
 
     private AuthResponse BuildResponse(User user, BusinessType businessType)

@@ -56,6 +56,9 @@ export const useAuthStore = defineStore('auth', {
       this.businessType = businessType || 'Store'
       this.persist()
     },
+    async changePassword(currentPassword, newPassword) {
+      await http.post('/api/auth/change-password', { currentPassword, newPassword })
+    },
     persist() {
       localStorage.setItem(
         STORAGE_KEY,

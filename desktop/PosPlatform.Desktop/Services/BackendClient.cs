@@ -34,6 +34,13 @@ public class BackendClient
         return (await resp.Content.ReadFromJsonAsync<AuthResponse>(Json))!;
     }
 
+    /// <summary>Joriy foydalanuvchi o'z parolini o'zgartiradi (joriy parolni tasdiqlab).</summary>
+    public async Task ChangePasswordAsync(string currentPassword, string newPassword)
+    {
+        var resp = await _http.PostAsJsonAsync("api/auth/change-password", new { currentPassword, newPassword });
+        await EnsureOk(resp);
+    }
+
     public async Task<List<ProductDto>> GetProductsAsync()
         => (await _http.GetFromJsonAsync<List<ProductDto>>("api/products", Json)) ?? new();
 
