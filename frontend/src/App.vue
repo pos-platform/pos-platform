@@ -76,27 +76,27 @@ const navItems = [
   { name: 'tables', key: 'nav.tables', icon: '🍽️', admin: true, restaurantOnly: true },
   { name: 'dishes', key: 'nav.dishes', icon: '🍲', admin: true, restaurantOnly: true },
   { name: 'kitchen-issues', key: 'nav.kitchenIssues', icon: '👨‍🍳', admin: true, restaurantOnly: true },
-  { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true },
-  { name: 'products', key: 'nav.products', icon: '📦' },
-  { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true },
-  { name: 'sales', key: 'nav.sales', icon: '🧾' },
+  { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true, perm: 'branches.view' },
+  { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view' },
+  { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true, perm: 'categories.view' },
+  { name: 'sales', key: 'nav.sales', icon: '🧾', perm: 'sales.view' },
   { name: 'shifts', key: 'nav.shifts', icon: '⏱️' },
-  { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true },
-  { name: 'stock-receipts', key: 'nav.stockReceipts', icon: '📥', admin: true },
-  { name: 'debtors', key: 'nav.debtors', icon: '📕', admin: true },
-  { name: 'expenses', key: 'nav.expenses', icon: '💸', admin: true },
-  { name: 'payments', key: 'nav.payments', icon: '💳', admin: true },
-  { name: 'write-offs', key: 'nav.writeOffs', icon: '🗑️', admin: true },
-  { name: 'inventories', key: 'nav.inventories', icon: '🔢', admin: true },
-  { name: 'analytics', key: 'nav.analytics', icon: '📈', admin: true },
-  { name: 'reports', key: 'nav.reports', icon: '📊', admin: true },
+  { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true, perm: 'suppliers.view' },
+  { name: 'stock-receipts', key: 'nav.stockReceipts', icon: '📥', admin: true, perm: 'inventory.view' },
+  { name: 'debtors', key: 'nav.debtors', icon: '📕', admin: true, perm: 'debtors.view' },
+  { name: 'expenses', key: 'nav.expenses', icon: '💸', admin: true, perm: 'expenses.view' },
+  { name: 'payments', key: 'nav.payments', icon: '💳', admin: true, perm: 'cashbox.view' },
+  { name: 'write-offs', key: 'nav.writeOffs', icon: '🗑️', admin: true, perm: 'inventory.view' },
+  { name: 'inventories', key: 'nav.inventories', icon: '🔢', admin: true, perm: 'inventory.view' },
+  { name: 'analytics', key: 'nav.analytics', icon: '📈', admin: true, perm: 'reports.view' },
+  { name: 'reports', key: 'nav.reports', icon: '📊', admin: true, perm: 'reports.view' },
   { name: 'promotions', key: 'nav.promotions', icon: '🏷️', admin: true },
-  { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔄', admin: true },
-  { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true },
-  { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true },
-  { name: 'users', key: 'nav.users', icon: '👥', admin: true },
-  { name: 'roles', key: 'nav.roles', icon: '🔑', admin: true },
-  { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true }
+  { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔄', admin: true, perm: 'inventory.view' },
+  { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true, perm: 'cashbox.view' },
+  { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true, perm: 'customers.view' },
+  { name: 'users', key: 'nav.users', icon: '👥', admin: true, perm: 'users.view' },
+  { name: 'roles', key: 'nav.roles', icon: '🔑', admin: true, perm: 'roles.view' },
+  { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage' }
 ]
 
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
@@ -112,6 +112,7 @@ const visibleNav = computed(() => {
     if (i.admin && auth.role !== 'Admin') return false
     if (i.cashierOnly && auth.role === 'Admin') return false
     if (i.restaurantOnly && !auth.isRestaurant) return false
+    if (i.perm && !auth.hasPermission(i.perm)) return false
     return true
   })
 })

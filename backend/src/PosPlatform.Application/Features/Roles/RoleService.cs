@@ -136,6 +136,31 @@ public class RoleService : IRoleService
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task<int> SyncSystemRolesToTemplateAsync(string templateName, IReadOnlyList<string> permissions, CancellationToken ct = default)
+    {
+        var permMap = await _db.Permissions.ToDictionaryAsync(p => p.Code, p => p.Id, ct);
+        var permIds = permissions
+            .Distinct()
+            .Where(permMap.ContainsKey)
+            .Select(c => permMap[c])
+            .ToList();
+
+        var roles = await _db.Roles
+            .Include(r => r.RolePermissions)
+            .Where(r => r.IsSystem && r.Name == templateName)
+            .ToListAsync(ct);
+
+        foreach (var role in roles)
+        {
+            role.RolePermissions.Clear();
+            foreach (var pid in permIds)
+                role.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = pid });
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return roles.Count;
+    }
+
     private async Task<List<Permission>> ResolvePermissionsAsync(IEnumerable<string> codes, CancellationToken ct)
     {
         var codeList = codes.Distinct().ToList();

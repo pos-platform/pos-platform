@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>PosPlatform.Desktop</RootNamespace>
     <AssemblyName>PosPlatform.Desktop</AssemblyName>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

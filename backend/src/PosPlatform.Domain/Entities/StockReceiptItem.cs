@@ -15,6 +15,14 @@ public class StockReceiptItem : BaseEntity
     /// <summary>Kirim tannarxi (birlik uchun).</summary>
     public decimal CostPrice { get; set; }
 
+    /// <summary>
+    /// Shu kirim partiyasidan hali sotilmay qolgan miqdor (FIFO tannarx qatlami).
+    /// Kirimda Quantity ga teng; sotuvda eng eski qatlamdan boshlab kamayadi.
+    /// Foyda hisobi shu qatlam narxlari bo'yicha yuritiladi — eski (arzon) tovar
+    /// sotilganda foyda yuqori chiqadi.
+    /// </summary>
+    public decimal RemainingQuantity { get; set; }
+
     public decimal LineTotal { get; set; }
 
     /// <summary>Partiya/seriya raqami (ixtiyoriy).</summary>

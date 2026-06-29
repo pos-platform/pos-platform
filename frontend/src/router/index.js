@@ -24,26 +24,26 @@ const routes = [
   { path: '/', redirect: { name: 'dashboard' } },
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { adminOnly: true } },
   { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue') },
-  { path: '/products', name: 'products', component: () => import('../views/ProductsView.vue') },
+  { path: '/products', name: 'products', component: () => import('../views/ProductsView.vue'), meta: { perm: 'products.view' } },
   {
     path: '/categories',
     name: 'categories',
     component: () => import('../views/CategoriesView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'categories.view' }
   },
-  { path: '/sales', name: 'sales', component: () => import('../views/SalesView.vue') },
+  { path: '/sales', name: 'sales', component: () => import('../views/SalesView.vue'), meta: { perm: 'sales.view' } },
   { path: '/shifts', name: 'shifts', component: () => import('../views/ShiftsView.vue') },
   {
     path: '/users',
     name: 'users',
     component: () => import('../views/UsersView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'users.view' }
   },
   {
     path: '/roles',
     name: 'roles',
     component: () => import('../views/RolesView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'roles.view' }
   },
   {
     path: '/promotions',
@@ -55,85 +55,85 @@ const routes = [
     path: '/stores',
     name: 'stores',
     component: () => import('../views/StoresView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'branches.view' }
   },
   {
     path: '/suppliers',
     name: 'suppliers',
     component: () => import('../views/SuppliersView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'suppliers.view' }
   },
   {
     path: '/stock-receipts',
     name: 'stock-receipts',
     component: () => import('../views/StockReceiptsView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'inventory.view' }
   },
   {
     path: '/debtors',
     name: 'debtors',
     component: () => import('../views/DebtorsView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'debtors.view' }
   },
   {
     path: '/expenses',
     name: 'expenses',
     component: () => import('../views/ExpensesView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'expenses.view' }
   },
   {
     path: '/write-offs',
     name: 'write-offs',
     component: () => import('../views/WriteOffsView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'inventory.view' }
   },
   {
     path: '/inventories',
     name: 'inventories',
     component: () => import('../views/InventoriesView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'inventory.view' }
   },
   {
     path: '/payments',
     name: 'payments',
     component: () => import('../views/PaymentsView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'cashbox.view' }
   },
   {
     path: '/analytics',
     name: 'analytics',
     component: () => import('../views/AnalyticsView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'reports.view' }
   },
   {
     path: '/reports',
     name: 'reports',
     component: () => import('../views/ReportsView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'reports.view' }
   },
   {
     path: '/stock-transfers',
     name: 'stock-transfers',
     component: () => import('../views/StockTransfersView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'inventory.view' }
   },
   {
     path: '/cash-movements',
     name: 'cash-movements',
     component: () => import('../views/CashMovementsView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'cashbox.view' }
   },
   {
     path: '/customers',
     name: 'customers',
     component: () => import('../views/CustomersView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'customers.view' }
   },
   {
     path: '/cashbox/:id',
     name: 'cashbox',
     component: () => import('../views/CashboxView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'cashbox.view' }
   },
   {
     path: '/tables',
@@ -157,7 +157,7 @@ const routes = [
     path: '/settings',
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),
-    meta: { adminOnly: true }
+    meta: { adminOnly: true, perm: 'settings.manage' }
   }
 ]
 
@@ -197,6 +197,11 @@ router.beforeEach((to) => {
   // Admin-only sahifalar — faqat Admin roli kirishi mumkin.
   if (to.meta.adminOnly && auth.role !== 'Admin') {
     return { name: 'pos' }
+  }
+
+  // Granular ruxsat talab qiladigan sahifalar — ruxsat bo'lmasa kirish yo'q.
+  if (to.meta.perm && !auth.hasPermission(to.meta.perm)) {
+    return auth.role === 'Admin' ? { name: 'dashboard' } : { name: 'pos' }
   }
 
   return true

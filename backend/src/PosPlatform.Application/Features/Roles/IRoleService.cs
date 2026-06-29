@@ -12,4 +12,10 @@ public interface IRoleService
 
     /// <summary>Yangi tashkilot uchun Admin/Manager/Cashier standart rollarini yaratadi.</summary>
     Task InitializeOrgRolesAsync(Guid orgId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Shablon yangilanganda barcha tashkilotlardagi shu nomli tizim rollarining
+    /// ruxsatlarini shablonga moslab qayta yozadi. O'zgartirilgan rollar sonini qaytaradi.
+    /// </summary>
+    Task<int> SyncSystemRolesToTemplateAsync(string templateName, IReadOnlyList<string> permissions, CancellationToken ct = default);
 }

@@ -38,7 +38,11 @@ public class StockReceiptItemConfiguration : IEntityTypeConfiguration<StockRecei
     {
         builder.Property(i => i.Quantity).HasColumnType("numeric(18,3)");
         builder.Property(i => i.CostPrice).HasColumnType("numeric(18,2)");
+        builder.Property(i => i.RemainingQuantity).HasColumnType("numeric(18,3)");
         builder.Property(i => i.LineTotal).HasColumnType("numeric(18,2)");
+
+        // FIFO tannarx qatlamlarini topish uchun: mahsulot + qolgan miqdor.
+        builder.HasIndex(i => new { i.ProductId, i.RemainingQuantity });
 
         builder.HasOne(i => i.Product)
             .WithMany()

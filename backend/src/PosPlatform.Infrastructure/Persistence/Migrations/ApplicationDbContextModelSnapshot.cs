@@ -1552,6 +1552,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Quantity")
                         .HasColumnType("numeric(18,3)");
 
+                    b.Property<decimal>("RemainingQuantity")
+                        .HasColumnType("numeric(18,3)");
+
                     b.Property<Guid>("StockReceiptId")
                         .HasColumnType("uuid");
 
@@ -1560,9 +1563,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
                     b.HasIndex("StockReceiptId");
+
+                    b.HasIndex("ProductId", "RemainingQuantity");
 
                     b.ToTable("StockReceiptItems");
                 });

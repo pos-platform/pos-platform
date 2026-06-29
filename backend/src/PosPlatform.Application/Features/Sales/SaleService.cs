@@ -111,6 +111,9 @@ public class SaleService : ISaleService
             .Where(s => s.BranchId == saleBranchId && productIds.Contains(s.ProductId))
             .ToDictionaryAsync(s => s.ProductId, cancellationToken);
 
+        // FIFO tannarx qatlamlari — shu filialning qoldig'i bor kirim partiyalari, eng eski birinchi.
+        var layersByProduct = await LoadCostLayersAsync(saleBranchId, productIds, cancellationToken);
+
         // Amaldagi aksiyalar — chegirma server tomonida hisoblanadi (mijozga ishonmaymiz).
         var nowUtc = DateTime.UtcNow;
         var activePromotions = await _db.Promotions
@@ -168,6 +171,24 @@ public class SaleService : ISaleService
             // O'zbekistonda chakana narx QQS'ni o'z ichiga oladi.
             var vatAmount = Round2(lineTotal * vatPercent / (100m + vatPercent));
 
+            // Tannarx: tovar (Good) uchun FIFO qatlamlardan (eski/arzon partiya birinchi
+            // sotiladi → eski tovar foydasi yuqori chiqadi); ovqat (Dish) uchun joriy tannarx.
+            // Ombordan ayirish ham faqat Good uchun; xom-ashyo KitchenIssue orqali kamayadi.
+            decimal costPrice;
+            if (product.ProductType == ProductType.Good)
+            {
+                if (!branchStocks.TryGetValue(product.Id, out var stock) || stock.Quantity < line.Quantity)
+                    throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
+                stock.Quantity -= line.Quantity;
+
+                layersByProduct.TryGetValue(product.Id, out var prodLayers);
+                costPrice = ConsumeFifoCost(prodLayers, line.Quantity, product.CostPrice);
+            }
+            else
+            {
+                costPrice = product.CostPrice;
+            }
+
             sale.Items.Add(new SaleItem
             {
                 ProductId = product.Id,
@@ -177,21 +198,12 @@ public class SaleService : ISaleService
                 Unit = product.Unit,
                 Quantity = line.Quantity,
                 UnitPrice = unitPrice,
-                CostPrice = product.CostPrice,
+                CostPrice = costPrice,
                 DiscountAmount = discount,
                 VatPercent = vatPercent,
                 VatAmount = vatAmount,
                 LineTotal = lineTotal
             });
-
-            // Filial qoldig'idan ayiramiz — faqat tovar (Good) uchun.
-            // Ovqat (Dish) ombordan ayirilmaydi; xom-ashyo KitchenIssue orqali kamayadi.
-            if (product.ProductType == ProductType.Good)
-            {
-                if (!branchStocks.TryGetValue(product.Id, out var stock) || stock.Quantity < line.Quantity)
-                    throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
-                stock.Quantity -= line.Quantity;
-            }
         }
 
         sale.TotalAmount = sale.Items.Sum(i => i.LineTotal);
@@ -337,6 +349,15 @@ public class SaleService : ISaleService
                 .Where(s => s.BranchId == refundBranchId && refundProductIds.Contains(s.ProductId))
                 .ToDictionaryAsync(s => s.ProductId, cancellationToken);
 
+            // Qaytarilgan miqdorni eng yangi FIFO qatlamiga qaytaramiz —
+            // "qatlamlar jami = qoldiq" invariantini saqlash uchun.
+            var refundLayers = await _db.StockReceiptItems
+                .Where(li => refundProductIds.Contains(li.ProductId) && li.StockReceipt!.BranchId == refundBranchId)
+                .ToListAsync(cancellationToken);
+            var newestLayerByProduct = refundLayers
+                .GroupBy(li => li.ProductId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(li => li.CreatedAt).First());
+
             foreach (var item in original.Items)
             {
                 if (!refundStocks.TryGetValue(item.ProductId, out var stock))
@@ -346,6 +367,9 @@ public class SaleService : ISaleService
                     refundStocks[item.ProductId] = stock;
                 }
                 stock.Quantity += item.Quantity;
+
+                if (newestLayerByProduct.TryGetValue(item.ProductId, out var layer))
+                    layer.RemainingQuantity += item.Quantity;
             }
         }
 
@@ -581,11 +605,19 @@ public class SaleService : ISaleService
             var stocks = await _db.BranchStocks
                 .Where(s => s.BranchId == sale.BranchId && goodProducts.Keys.Contains(s.ProductId))
                 .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+
+            // FIFO tannarx qatlamlari — eng eski partiya birinchi.
+            var layersByProduct = await LoadCostLayersAsync(
+                sale.BranchId.Value, goodProducts.Keys.ToList(), cancellationToken);
+
             foreach (var item in sale.Items.Where(i => goodProducts.ContainsKey(i.ProductId)))
             {
                 if (!stocks.TryGetValue(item.ProductId, out var stock) || stock.Quantity < item.Quantity)
                     throw new ValidationException($"'{item.ProductName}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
                 stock.Quantity -= item.Quantity;
+
+                layersByProduct.TryGetValue(item.ProductId, out var prodLayers);
+                item.CostPrice = ConsumeFifoCost(prodLayers, item.Quantity, goodProducts[item.ProductId].CostPrice);
             }
         }
 
@@ -703,4 +735,61 @@ public class SaleService : ISaleService
     }
 
     private static decimal Round2(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// Berilgan filial va mahsulotlar uchun qoldig'i bor FIFO tannarx qatlamlarini
+    /// (kirim partiyalari) eng eski birinchi tartibida yuklaydi. Qaytarilgan entitylar
+    /// tracking'da — RemainingQuantity o'zgarishi SaveChanges'da saqlanadi.
+    /// </summary>
+    private async Task<Dictionary<Guid, List<StockReceiptItem>>> LoadCostLayersAsync(
+        Guid branchId, IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken)
+    {
+        if (productIds.Count == 0)
+            return new Dictionary<Guid, List<StockReceiptItem>>();
+
+        var layers = await _db.StockReceiptItems
+            .Where(li => li.RemainingQuantity > 0
+                && productIds.Contains(li.ProductId)
+                && li.StockReceipt!.BranchId == branchId)
+            .OrderBy(li => li.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return layers
+            .GroupBy(li => li.ProductId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    /// <summary>
+    /// FIFO bo'yicha tannarx qatlamlaridan <paramref name="qty"/> miqdorni "iste'mol" qiladi
+    /// (eng eski qatlamdan boshlab RemainingQuantity'ni kamaytiradi) va sotilgan birlik uchun
+    /// tortilgan o'rtacha tannarxni qaytaradi. Qatlam yetmasa (qatlamsiz eski qoldiq,
+    /// ko'chirma yoki inventarizatsiya), qolgani <paramref name="fallbackCost"/> — mahsulotning
+    /// joriy tannarxi — bo'yicha hisoblanadi.
+    /// </summary>
+    private static decimal ConsumeFifoCost(List<StockReceiptItem>? layers, decimal qty, decimal fallbackCost)
+    {
+        if (qty <= 0) return fallbackCost;
+
+        decimal remaining = qty;
+        decimal totalCost = 0m;
+
+        if (layers is not null)
+        {
+            foreach (var layer in layers)
+            {
+                if (remaining <= 0) break;
+                if (layer.RemainingQuantity <= 0) continue;
+
+                var take = Math.Min(layer.RemainingQuantity, remaining);
+                layer.RemainingQuantity -= take;
+                totalCost += take * layer.CostPrice;
+                remaining -= take;
+            }
+        }
+
+        if (remaining > 0)
+            totalCost += remaining * fallbackCost;
+
+        return Round2(totalCost / qty);
+    }
 }

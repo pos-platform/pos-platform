@@ -100,6 +100,7 @@ public class StockReceiptService : IStockReceiptService
                 ProductId = product.Id,
                 Quantity = line.Quantity,
                 CostPrice = line.CostPrice,
+                RemainingQuantity = line.Quantity, // FIFO qatlami — boshида to'liq qoldiq
                 LineTotal = lineTotal,
                 BatchNumber = line.BatchNumber?.Trim(),
                 ExpiryDate = line.ExpiryDate

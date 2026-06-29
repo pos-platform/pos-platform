@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.RoleTemplates.Dtos;
+using PosPlatform.Application.Features.Roles;
 using PosPlatform.Domain.Entities;
 
 namespace PosPlatform.Application.Features.RoleTemplates;
@@ -10,10 +11,12 @@ namespace PosPlatform.Application.Features.RoleTemplates;
 public class RoleTemplateService : IRoleTemplateService
 {
     private readonly IApplicationDbContext _db;
+    private readonly IRoleService _roleService;
 
-    public RoleTemplateService(IApplicationDbContext db)
+    public RoleTemplateService(IApplicationDbContext db, IRoleService roleService)
     {
         _db = db;
+        _roleService = roleService;
     }
 
     public async Task<IReadOnlyList<RoleTemplateDto>> GetAllAsync(CancellationToken ct = default)
@@ -31,9 +34,14 @@ public class RoleTemplateService : IRoleTemplateService
         var template = await _db.RoleTemplates.FirstOrDefaultAsync(t => t.Id == id, ct)
             ?? throw new NotFoundException($"Rol shabloni topilmadi: {id}");
 
-        template.PermissionsJson = JsonSerializer.Serialize(permissions.Distinct().ToList());
+        var permList = permissions.Distinct().ToList();
+        template.PermissionsJson = JsonSerializer.Serialize(permList);
         template.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
+
+        // Shablon nomi bilan mos barcha mavjud tizim rollarini yangilangan ruxsatlarga moslaymiz.
+        await _roleService.SyncSystemRolesToTemplateAsync(template.Name, permList, ct);
+
         return RoleTemplateDto.FromEntity(template);
     }
 
