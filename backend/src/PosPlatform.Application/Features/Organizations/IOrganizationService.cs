@@ -14,6 +14,9 @@ public interface IOrganizationService
     Task<OrganizationDto> SetActiveAsync(Guid id, bool isActive, CancellationToken ct = default);
 
     Task<OrgUserDto> CreateUserAsync(Guid orgId, CreateOrgUserRequest request, CancellationToken ct = default);
+
+    /// <summary>Mavjud desktop foydalanuvchini (kassir/menejer) tahrirlaydi.</summary>
+    Task<OrgUserDto> UpdateUserAsync(Guid userId, UpdateOrgUserRequest request, CancellationToken ct = default);
     Task<OrgUserDto> ExtendLicenseAsync(Guid userId, int months, CancellationToken ct = default);
     Task<OrgUserDto> RevokeLicenseAsync(Guid userId, CancellationToken ct = default);
 

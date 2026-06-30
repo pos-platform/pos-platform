@@ -58,7 +58,7 @@ public static class EscPosReceipt
         Line($"Chek: {r.ReceiptNumber}");
         Line(r.Date.ToString("yyyy-MM-dd HH:mm"));
         Write(LEFT);
-        Line($"Kassir: {r.Cashier}");
+        Line($"Sotuvchi: {r.Cashier}");
         Divider();
 
         foreach (var l in r.Lines)

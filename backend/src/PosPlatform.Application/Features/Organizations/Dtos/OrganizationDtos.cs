@@ -161,6 +161,28 @@ public class CreateOrgUserRequest
     public Guid? BranchId { get; set; }
 }
 
+/// <summary>Mavjud desktop foydalanuvchini (kassir/menejer) tahrirlash.</summary>
+public class UpdateOrgUserRequest
+{
+    [Required]
+    [MinLength(3)]
+    public string Username { get; set; } = string.Empty;
+
+    /// <summary>Foydalanuvchining to'liq ism-sharifi (chekda kassir nomi sifatida chiqadi).</summary>
+    public string? FullName { get; set; }
+
+    /// <summary>Foydalanuvchi telefon raqami (ixtiyoriy).</summary>
+    public string? Phone { get; set; }
+
+    public UserRole Role { get; set; } = UserRole.Cashier;
+
+    /// <summary>Kassir/menejer qaysi do'konga tegishli (ixtiyoriy).</summary>
+    public Guid? BranchId { get; set; }
+
+    /// <summary>Yangi parol (ixtiyoriy). Bo'sh bo'lsa parol o'zgarmaydi; berilsa kamida 6 belgi.</summary>
+    public string? NewPassword { get; set; }
+}
+
 /// <summary>Foydalanuvchi obunasini uzaytirish (oylik to'lov qabul qilingach).</summary>
 public class ExtendLicenseRequest
 {

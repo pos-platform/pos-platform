@@ -37,6 +37,10 @@ const desktopForm = reactive({ username: '', password: '', fullName: '', phone: 
 const showDesktopForm = ref(false)
 const desktopOnlyForm = reactive({ username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
 
+// Desktop foydalanuvchini tahrirlash modali
+const showEditForm = ref(false)
+const editForm = reactive({ id: '', username: '', fullName: '', phone: '', role: 'Cashier', branchId: '', newPassword: '' })
+
 const roleLabel = { Admin: 'Admin', Manager: 'Menejer', Cashier: 'Kassir', SuperAdmin: 'SuperAdmin' }
 
 const totalUsers = computed(() => orgs.value.reduce((s, o) => s + o.userCount, 0))
@@ -188,6 +192,43 @@ async function createDesktopOnly() {
     notify('Desktop login qo\'shildi')
     Object.assign(desktopOnlyForm, { username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
     showDesktopForm.value = false
+    await refreshSelected()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+function openEdit(u) {
+  err.value = ''
+  Object.assign(editForm, {
+    id: u.id,
+    username: u.username,
+    fullName: u.fullName || '',
+    phone: u.phone || '',
+    role: u.role,
+    branchId: u.branchId || '',
+    newPassword: ''
+  })
+  showEditForm.value = true
+}
+
+async function saveEdit() {
+  err.value = ''
+  busy.value = true
+  try {
+    const payload = {
+      username: editForm.username.trim(),
+      fullName: editForm.fullName.trim(),
+      phone: editForm.phone.trim(),
+      role: editForm.role,
+      branchId: editForm.branchId || null
+    }
+    if (editForm.newPassword.trim()) payload.newPassword = editForm.newPassword.trim()
+    await organizationsApi.updateUser(editForm.id, payload)
+    notify('Foydalanuvchi yangilandi')
+    showEditForm.value = false
     await refreshSelected()
   } catch (e) {
     err.value = errorMessage(e)
@@ -418,6 +459,7 @@ onMounted(load)
           <div class="user-main">
             <div class="user-name">
               {{ u.username }}
+              <span v-if="u.fullName" class="muted" style="font-weight:500">· {{ u.fullName }}</span>
               <span class="pill pill-gray">{{ roleLabel[u.role] || u.role }}</span>
               <span v-if="u.branchName" class="store-tag">🏪 {{ u.branchName }}</span>
               <span class="status-pill" :class="u.isActive ? 'sp-on' : 'sp-off'">
@@ -427,6 +469,7 @@ onMounted(load)
             <div class="user-status">
               <span class="st-dot" :class="statusOf(u).cls"></span>
               <span>{{ statusOf(u).text }}</span>
+              <span v-if="u.phone" class="muted" style="margin-left:6px">📞 {{ u.phone }}</span>
               <span v-if="u.licensedUntil" class="muted" style="margin-left:6px">({{ fmtDate(u.licensedUntil) }} gacha)</span>
             </div>
           </div>
@@ -441,6 +484,7 @@ onMounted(load)
               <button class="btn btn-ghost btn-xs" :disabled="busy" title="Doimiy (bir martalik to'liq sotib olish)" @click="setLifetime(u)">♾ Doimiy</button>
               <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)">⨯</button>
             </template>
+            <button class="btn btn-ghost btn-xs" :disabled="busy" title="Tahrirlash" @click="openEdit(u)">✎ Tahrirlash</button>
             <button
               class="btn btn-xs"
               :class="u.isActive ? 'btn-danger' : 'btn-success'"
@@ -622,6 +666,42 @@ onMounted(load)
       </form>
     </div>
   </div>
+
+  <!-- Desktop foydalanuvchini tahrirlash modali -->
+  <div v-if="showEditForm" class="modal-overlay" @click.self="showEditForm = false">
+    <div class="modal-box" style="max-width:460px">
+      <div class="modal-head"><h3>Foydalanuvchini tahrirlash</h3><button class="modal-x" @click="showEditForm = false">×</button></div>
+      <form class="modal-body" @submit.prevent="saveEdit">
+        <div v-if="err" class="alert alert-error">{{ err }}</div>
+        <div class="row">
+          <div class="field"><label>Login *</label><input v-model="editForm.username" class="input" required /></div>
+          <div class="field">
+            <label>Rol</label>
+            <select v-model="editForm.role" class="select">
+              <option value="Cashier">Kassir</option>
+              <option value="Manager">Menejer</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Ism sharifi</label><input v-model="editForm.fullName" class="input" placeholder="Masalan: Aliyev Vali" /></div>
+          <div class="field"><label>Telefon</label><input v-model="editForm.phone" class="input" placeholder="+998 90 123 45 67" /></div>
+        </div>
+        <div v-if="orgStores.length" class="field" style="margin-top:8px">
+          <label>Do'kon</label>
+          <select v-model="editForm.branchId" class="select">
+            <option value="">— Belgilanmagan —</option>
+            <option v-for="s in orgStores" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:8px">
+          <label>Yangi parol</label>
+          <input v-model="editForm.newPassword" type="text" class="input" placeholder="Bo'sh qoldirsangiz — o'zgarmaydi (kamida 6 belgi)" />
+        </div>
+        <button class="btn" style="width:100%; margin-top:14px" :disabled="busy">Saqlash</button>
+      </form>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -668,13 +748,17 @@ onMounted(load)
 
 .row-off { opacity: 0.6; }
 
-.user-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.user-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .user-row:last-child { border-bottom: none; }
-.user-main { flex: 1; min-width: 0; }
+.user-main { flex: 1 1 260px; min-width: 0; }
 .user-name { font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .user-role-row { margin-top: 5px; }
 .user-status { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
 .user-acts { display: flex; gap: 5px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+/* Tor panelda amallar to'liq qatorni egallab, pastga tushadi (chapdan) */
+@media (max-width: 900px) {
+  .user-acts { flex: 1 1 100%; justify-content: flex-start; }
+}
 
 .st-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .st-ok { background: #16a34a; }

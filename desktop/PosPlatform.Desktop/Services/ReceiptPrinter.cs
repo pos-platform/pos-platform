@@ -65,13 +65,18 @@ public class ReceiptPrinter
             bold: true, size: 15, align: TextAlignment.Center);
         Add($"Chek: {r.ReceiptNumber}", align: TextAlignment.Center);
         Add(r.Date.ToString("yyyy-MM-dd HH:mm"), align: TextAlignment.Center);
-        Add($"Kassir: {r.Cashier}");
+        Add($"Sotuvchi: {r.Cashier}");
         Add(sep);
 
+        const int width = 32; // sep uzunligi — monospace shriftda ustunlar tekis bo'lishi uchun
         foreach (var line in r.Lines)
         {
-            Add(line.Name);
-            Add($"  {line.Quantity:0.###} x {line.Price:N0} = {line.LineTotal:N0}", align: TextAlignment.Right);
+            // Termal chek bilan bir xil: nom (chap) ... soni x narx = summa (o'ng), bitta qatorda.
+            var right = $"{line.Quantity:0.###} x {line.Price:N0} = {line.LineTotal:N0}";
+            var nameMax = Math.Max(1, width - right.Length - 1);
+            var name = line.Name.Length > nameMax ? line.Name[..nameMax] : line.Name;
+            var space = width - name.Length - right.Length;
+            Add(name + (space > 0 ? new string(' ', space) : " ") + right);
         }
 
         Add(sep);

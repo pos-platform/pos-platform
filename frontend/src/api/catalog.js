@@ -53,6 +53,8 @@ export const organizationsApi = {
   deactivate: (id) => http.post(`/api/organizations/${id}/deactivate`).then((r) => r.data),
   createUser: (id, payload) =>
     http.post(`/api/organizations/${id}/users`, payload).then((r) => r.data),
+  updateUser: (userId, payload) =>
+    http.put(`/api/organizations/users/${userId}`, payload).then((r) => r.data),
   extendLicense: (userId, months) =>
     http.post(`/api/organizations/users/${userId}/extend-license`, { months }).then((r) => r.data),
   revokeLicense: (userId) =>

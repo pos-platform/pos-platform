@@ -64,6 +64,11 @@ public class OrganizationsController : ControllerBase
     public async Task<ActionResult<OrgUserDto>> CreateUser(Guid id, CreateOrgUserRequest request, CancellationToken ct)
         => Ok(await _service.CreateUserAsync(id, request, ct));
 
+    /// <summary>Mavjud desktop foydalanuvchini (kassir/menejer) tahrirlash.</summary>
+    [HttpPut("users/{userId:guid}")]
+    public async Task<ActionResult<OrgUserDto>> UpdateUser(Guid userId, UpdateOrgUserRequest request, CancellationToken ct)
+        => Ok(await _service.UpdateUserAsync(userId, request, ct));
+
     /// <summary>Foydalanuvchi obunasini uzaytirish (oylik to'lov qabul qilingach faollashtirish).</summary>
     [HttpPost("users/{userId:guid}/extend-license")]
     public async Task<ActionResult<OrgUserDto>> ExtendLicense(Guid userId, ExtendLicenseRequest request, CancellationToken ct)

@@ -224,6 +224,58 @@ public class OrganizationService : IOrganizationService
         return OrgUserDto.FromEntity(user, Today);
     }
 
+    public async Task<OrgUserDto> UpdateUserAsync(Guid userId, UpdateOrgUserRequest request, CancellationToken ct = default)
+    {
+        var user = await _db.Users
+            .Include(u => u.AppRole)
+            .Include(u => u.Branch)
+            .FirstOrDefaultAsync(u => u.Id == userId, ct)
+            ?? throw new NotFoundException($"Foydalanuvchi topilmadi: {userId}");
+
+        if (user.Role is UserRole.SuperAdmin)
+            throw new ValidationException("SuperAdmin foydalanuvchini tahrirlab bo'lmaydi.");
+        if (request.Role is UserRole.SuperAdmin)
+            throw new ValidationException("Tashkilot ichida SuperAdmin yaratib bo'lmaydi.");
+
+        var username = request.Username.Trim();
+        if (await _db.Users.AnyAsync(u => u.Username == username && u.Id != userId, ct))
+            throw new ConflictException($"'{username}' username allaqachon band.");
+
+        // Rol o'zgargan bo'lsa — shu tashkilotning mos AppRole'ini topamiz.
+        if (request.Role != user.Role)
+        {
+            var roleName = request.Role.ToString();
+            var appRole = await _db.Roles
+                .FirstOrDefaultAsync(r => r.OrganizationId == user.OrganizationId && r.Name == roleName, ct);
+            user.AppRoleId = appRole?.Id;
+            user.AppRole = appRole;
+        }
+
+        user.Username = username;
+        user.FullName = string.IsNullOrWhiteSpace(request.FullName) ? null : request.FullName.Trim();
+        user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
+        user.Role = request.Role;
+        user.BranchId = request.BranchId;
+
+        if (!string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            if (request.NewPassword.Length < 6)
+                throw new ValidationException("Parol kamida 6 belgidan iborat bo'lishi kerak.");
+            user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+        }
+
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("user.update", $"username={username}, role={request.Role}",
+            organizationId: user.OrganizationId, ct: ct);
+
+        // Branch navigatsiyasi o'zgargan bo'lishi mumkin — DTO uchun qayta yuklaymiz.
+        if (user.BranchId != user.Branch?.Id)
+            user.Branch = user.BranchId is null ? null
+                : await _db.Branches.FirstOrDefaultAsync(b => b.Id == user.BranchId, ct);
+
+        return OrgUserDto.FromEntity(user, Today);
+    }
+
     public async Task<OrgUserDto> ExtendLicenseAsync(Guid userId, int months, CancellationToken ct = default)
     {
         if (months <= 0) throw new ValidationException("Oylar soni musbat bo'lishi kerak.");
