@@ -110,21 +110,21 @@ jobs:
             rm -rf backend-publish/wwwroot/*
             cp -r frontend-dist/* backend-publish/wwwroot/
           fi
-          rsync -az --delete \
+          rsync -az --delete --exclude 'wwwroot/uploads' \
             -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
             backend-publish/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/posplatform/
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "sudo chown -R posplatform:posplatform /opt/posplatform && sudo systemctl restart posplatform && sleep 2 && sudo systemctl status posplatform --no-pager"
+            "sudo mkdir -p /opt/posplatform/wwwroot/uploads && sudo chown -R posplatform:posplatform /opt/posplatform && sudo systemctl restart posplatform && sleep 2 && sudo systemctl status posplatform --no-pager"
 
       - name: Deploy frontend only (backend unchanged)
         if: needs.changes.outputs.backend == 'false' && needs.changes.outputs.frontend == 'true'
         run: |
-          rsync -az --delete \
+          rsync -az --delete --exclude 'uploads' \
             -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
             frontend-dist/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/posplatform/wwwroot/
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "sudo chown -R posplatform:posplatform /opt/posplatform/wwwroot && sudo systemctl restart posplatform"
+            "sudo mkdir -p /opt/posplatform/wwwroot/uploads && sudo chown -R posplatform:posplatform /opt/posplatform/wwwroot && sudo systemctl restart posplatform"
