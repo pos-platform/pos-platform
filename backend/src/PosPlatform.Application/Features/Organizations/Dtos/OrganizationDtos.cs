@@ -38,6 +38,8 @@ public class OrgUserDto
 {
     public Guid Id { get; set; }
     public string Username { get; set; } = string.Empty;
+    public string? FullName { get; set; }
+    public string? Phone { get; set; }
     public UserRole Role { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LicensedUntil { get; set; }
@@ -59,6 +61,8 @@ public class OrgUserDto
         {
             Id = u.Id,
             Username = u.Username,
+            FullName = u.FullName,
+            Phone = u.Phone,
             Role = u.Role,
             IsActive = u.IsActive,
             LicensedUntil = u.LicensedUntil,
@@ -141,6 +145,12 @@ public class CreateOrgUserRequest
     [Required]
     [MinLength(6)]
     public string Password { get; set; } = string.Empty;
+
+    /// <summary>Foydalanuvchining to'liq ism-sharifi (chekda kassir nomi sifatida chiqadi).</summary>
+    public string? FullName { get; set; }
+
+    /// <summary>Foydalanuvchi telefon raqami (ixtiyoriy).</summary>
+    public string? Phone { get; set; }
 
     public UserRole Role { get; set; } = UserRole.Cashier;
 

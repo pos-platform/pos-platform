@@ -1751,6 +1751,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("FullName")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -1765,6 +1768,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Phone")
                         .HasColumnType("text");
 
                     b.Property<int>("Role")

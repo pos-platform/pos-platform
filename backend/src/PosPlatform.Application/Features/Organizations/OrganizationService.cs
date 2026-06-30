@@ -207,6 +207,8 @@ public class OrganizationService : IOrganizationService
         var user = new User
         {
             Username = username,
+            FullName = string.IsNullOrWhiteSpace(request.FullName) ? null : request.FullName.Trim(),
+            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
             PasswordHash = _passwordHasher.Hash(request.Password),
             Role = request.Role,
             AppRoleId = appRole?.Id,

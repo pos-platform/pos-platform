@@ -884,7 +884,8 @@ public partial class PosWindow : Window
             };
             var receipt = new ReceiptData
             {
-                Cashier = AppState.Username,
+                StoreName = AppState.StoreName,
+                Cashier = AppState.CashierDisplay,
                 Payment = payment,
                 Total = total,
                 Paid = req.PaidAmount,

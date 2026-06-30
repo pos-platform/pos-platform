@@ -8,6 +8,9 @@ public class AuthResponse
 
     public string Username { get; set; } = string.Empty;
 
+    /// <summary>Foydalanuvchining to'liq ism-sharifi (chekda kassir nomi sifatida chiqadi).</summary>
+    public string? FullName { get; set; }
+
     public UserRole Role { get; set; }
 
     /// <summary>DB darajasidagi rol nomi (Admin/Manager/Cashier yoki custom).</summary>
@@ -22,6 +25,9 @@ public class AuthResponse
     public Guid? OrganizationId { get; set; }
 
     public string? OrganizationName { get; set; }
+
+    /// <summary>Foydalanuvchi biriktirilgan do'kon (filial) nomi — chek sarlavhasida ishlatiladi.</summary>
+    public string? BranchName { get; set; }
 
     /// <summary>Tashkilot faoliyat turi — Store yoki Restaurant. Frontend/desktop UI'ni shunga moslaydi.</summary>
     public BusinessType BusinessType { get; set; }

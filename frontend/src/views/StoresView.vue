@@ -14,7 +14,6 @@ const success = ref('')
 
 const showStoreForm = ref(false)
 const storeForm = reactive({ name: '', address: '', businessType: 'Store' })
-const cashboxName = reactive({})
 
 // Foydalanuvchi biriktirish
 const assignModal = ref(null) // { store }
@@ -60,19 +59,6 @@ async function toggleStore(s) {
   try {
     if (s.isActive) await storesApi.deactivateStore(s.id)
     else await storesApi.activateStore(s.id)
-    await load()
-  } catch (e) {
-    err.value = errorMessage(e)
-  }
-}
-
-async function addCashbox(s) {
-  const name = (cashboxName[s.id] || '').trim()
-  if (!name) return
-  err.value = ''
-  try {
-    await storesApi.addCashbox({ branchId: s.id, name })
-    cashboxName[s.id] = ''
     await load()
   } catch (e) {
     err.value = errorMessage(e)
@@ -237,10 +223,6 @@ onMounted(load)
             </tr>
           </tbody>
         </table>
-        <div class="row" style="max-width: 320px">
-          <input v-model="cashboxName[s.id]" class="input" placeholder="Yangi kassa nomi" style="flex: 1" />
-          <button class="btn btn-ghost" @click="addCashbox(s)">+ Kassa</button>
-        </div>
       </div>
     </div>
   </div>

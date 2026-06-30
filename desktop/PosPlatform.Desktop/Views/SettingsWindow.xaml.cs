@@ -119,7 +119,8 @@ public partial class SettingsWindow : Window
         var sample = new ReceiptData
         {
             ReceiptNumber = "TEST-0001",
-            Cashier = AppState.Username,
+            StoreName = AppState.StoreName,
+            Cashier = AppState.CashierDisplay,
             Payment = "Cash",
             Total = 10000,
             Paid = 10000,

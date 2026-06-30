@@ -321,6 +321,10 @@ async function onImageChange(event) {
 
 async function openCreate() {
   Object.assign(form, blankForm())
+  // Agar bitta do'kon bo'lsa — avtomatik tanlash (polya yashiriladi)
+  if (stores.value.length === 1) {
+    form.branchId = stores.value[0].id
+  }
   editId.value = null
   error.value = ''
   showModal.value = true
@@ -347,7 +351,7 @@ function openEdit(p) {
     pluNumber: p.pluNumber,
     tare: p.tare,
     categoryId: p.categoryId,
-    branchId: p.branchId || ''
+    branchId: p.branchId || (stores.value.length === 1 ? stores.value[0].id : '')
   })
   editId.value = p.id
   error.value = ''
@@ -873,8 +877,8 @@ function printBarcode(product) {
           </div>
         </div>
 
-        <!-- Do'kon -->
-        <div v-if="stores.length" class="field">
+        <!-- Do'kon (faqat bir nechta do'kon bo'lsa ko'rinadi) -->
+        <div v-if="stores.length > 1" class="field">
           <label>Do'kon <span v-if="Number(form.quantity) > 0" class="req-star">*</span></label>
           <select v-model="form.branchId" class="select">
             <option value="">— Umumiy (do'konga bog'lanmagan) —</option>

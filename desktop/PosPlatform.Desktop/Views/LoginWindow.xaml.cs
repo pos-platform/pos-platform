@@ -62,6 +62,9 @@ public partial class LoginWindow : Window
             AppState.Backend.SetToken(resp.Token);
             AppState.Token = resp.Token;
             AppState.Username = resp.Username;
+            AppState.CashierName = resp.FullName ?? "";
+            AppState.StoreName = !string.IsNullOrWhiteSpace(resp.BranchName) ? resp.BranchName!
+                : (resp.OrganizationName ?? "");
             AppState.Role = resp.Role;
             AppState.BusinessType = string.IsNullOrWhiteSpace(resp.BusinessType) ? "Store" : resp.BusinessType;
             AppState.LicensedUntil = resp.LicensedUntil;

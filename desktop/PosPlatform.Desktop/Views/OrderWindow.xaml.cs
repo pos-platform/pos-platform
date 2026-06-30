@@ -197,7 +197,8 @@ public partial class OrderWindow : Window
             var receipt = new ReceiptData
             {
                 ReceiptNumber = sale.ReceiptNumber,
-                Cashier = AppState.Username,
+                StoreName = AppState.StoreName,
+                Cashier = AppState.CashierDisplay,
                 Payment = pay.Value.method,
                 Total = sale.TotalAmount,
                 Paid = pay.Value.method == "Cash" ? pay.Value.paid : sale.TotalAmount,

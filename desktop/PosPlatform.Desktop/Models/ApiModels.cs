@@ -6,8 +6,17 @@ public class AuthResponse
 {
     public string Token { get; set; } = "";
     public string Username { get; set; } = "";
+
+    /// <summary>Foydalanuvchining to'liq ism-sharifi (chekda kassir nomi sifatida chiqadi).</summary>
+    public string? FullName { get; set; }
     public string Role { get; set; } = "";
     public string BusinessType { get; set; } = "Store";
+
+    /// <summary>Tashkilot nomi.</summary>
+    public string? OrganizationName { get; set; }
+
+    /// <summary>Biriktirilgan do'kon (filial) nomi — chek sarlavhasida ishlatiladi.</summary>
+    public string? BranchName { get; set; }
 
     /// <summary>Obuna shu sanagacha amal qiladi (oylik to'lov). null = faollashtirilmagan.</summary>
     public DateTime? LicensedUntil { get; set; }
@@ -218,6 +227,9 @@ public class ReceiptData
 {
     public string ReceiptNumber { get; set; } = "";
     public DateTime Date { get; set; } = DateTime.Now;
+
+    /// <summary>Chek sarlavhasidagi do'kon nomi. Bo'sh bo'lsa "PosPlatform" ishlatiladi.</summary>
+    public string StoreName { get; set; } = "";
     public string Cashier { get; set; } = "";
     public string Payment { get; set; } = "";
     public decimal Total { get; set; }

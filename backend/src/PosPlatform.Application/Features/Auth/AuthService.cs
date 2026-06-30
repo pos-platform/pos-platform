@@ -131,6 +131,7 @@ public class AuthService : IAuthService
         {
             UserId = user.Id,
             Username = user.Username,
+            FullName = user.FullName,
             Role = user.Role,
             RoleName = user.AppRole?.Name,
             AppRoleId = user.AppRoleId,
@@ -138,6 +139,7 @@ public class AuthService : IAuthService
             ExpiresAt = expiresAt,
             OrganizationId = user.OrganizationId,
             OrganizationName = user.Organization?.Name,
+            BranchName = user.Branch?.Name,
             BusinessType = businessType,
             LicensedUntil = user.LicensedUntil,
             IsLifetime = user.IsLifetime,

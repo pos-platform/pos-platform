@@ -51,7 +51,7 @@ public static class EscPosReceipt
         Write(CENTER);
         Write(DOUBLE);
         Write(BOLD_ON);
-        Line("PosPlatform");
+        Line(string.IsNullOrWhiteSpace(r.StoreName) ? "PosPlatform" : r.StoreName);
         Write(NORMAL);
         Write(BOLD_OFF);
 

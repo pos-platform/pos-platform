@@ -61,7 +61,8 @@ public class ReceiptPrinter
         }
 
         const string sep = "--------------------------------";
-        Add("PosPlatform", bold: true, size: 15, align: TextAlignment.Center);
+        Add(string.IsNullOrWhiteSpace(r.StoreName) ? "PosPlatform" : r.StoreName,
+            bold: true, size: 15, align: TextAlignment.Center);
         Add($"Chek: {r.ReceiptNumber}", align: TextAlignment.Center);
         Add(r.Date.ToString("yyyy-MM-dd HH:mm"), align: TextAlignment.Center);
         Add($"Kassir: {r.Cashier}");

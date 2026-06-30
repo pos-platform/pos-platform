@@ -31,11 +31,11 @@ const STORE_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const showAdminForm = ref(false)
 const createDesktop = ref(true)
 const adminForm = reactive({ username: '', password: '' })
-const desktopForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
+const desktopForm = reactive({ username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
 
 // Faqat desktop login qo'shish modali
 const showDesktopForm = ref(false)
-const desktopOnlyForm = reactive({ username: '', password: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
+const desktopOnlyForm = reactive({ username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
 
 const roleLabel = { Admin: 'Admin', Manager: 'Menejer', Cashier: 'Kassir', SuperAdmin: 'SuperAdmin' }
 
@@ -150,6 +150,8 @@ async function createAdminWithDesktop() {
       const dp = {
         username: desktopForm.username.trim(),
         password: desktopForm.password,
+        fullName: desktopForm.fullName.trim(),
+        phone: desktopForm.phone.trim(),
         role: desktopForm.role,
         licenseMonths: Number(desktopForm.licenseMonths) || 0
       }
@@ -158,7 +160,7 @@ async function createAdminWithDesktop() {
     }
     notify('Login(lar) qo\'shildi')
     Object.assign(adminForm, { username: '', password: '' })
-    Object.assign(desktopForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
+    Object.assign(desktopForm, { username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
     createDesktop.value = true
     showAdminForm.value = false
     await refreshSelected()
@@ -176,13 +178,15 @@ async function createDesktopOnly() {
     const payload = {
       username: desktopOnlyForm.username.trim(),
       password: desktopOnlyForm.password,
+      fullName: desktopOnlyForm.fullName.trim(),
+      phone: desktopOnlyForm.phone.trim(),
       role: desktopOnlyForm.role,
       licenseMonths: Number(desktopOnlyForm.licenseMonths) || 0
     }
     if (desktopOnlyForm.branchId) payload.branchId = desktopOnlyForm.branchId
     await organizationsApi.createUser(selected.value.id, payload)
     notify('Desktop login qo\'shildi')
-    Object.assign(desktopOnlyForm, { username: '', password: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
+    Object.assign(desktopOnlyForm, { username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
     showDesktopForm.value = false
     await refreshSelected()
   } catch (e) {
@@ -516,6 +520,10 @@ onMounted(load)
             <div class="field"><label>Parol *</label><input v-model="desktopForm.password" type="text" class="input" :required="createDesktop" placeholder="kamida 6 belgi" /></div>
           </div>
           <div class="row">
+            <div class="field"><label>Ism sharifi</label><input v-model="desktopForm.fullName" class="input" placeholder="Masalan: Aliyev Vali" /></div>
+            <div class="field"><label>Telefon</label><input v-model="desktopForm.phone" class="input" placeholder="+998 90 123 45 67" /></div>
+          </div>
+          <div class="row">
             <div class="field">
               <label>Rol</label>
               <select v-model="desktopForm.role" class="select">
@@ -587,6 +595,10 @@ onMounted(load)
         <div class="row">
           <div class="field"><label>Login *</label><input v-model="desktopOnlyForm.username" class="input" required /></div>
           <div class="field"><label>Parol *</label><input v-model="desktopOnlyForm.password" type="text" class="input" required placeholder="kamida 6 belgi" /></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Ism sharifi</label><input v-model="desktopOnlyForm.fullName" class="input" placeholder="Masalan: Aliyev Vali" /></div>
+          <div class="field"><label>Telefon</label><input v-model="desktopOnlyForm.phone" class="input" placeholder="+998 90 123 45 67" /></div>
         </div>
         <div class="row">
           <div class="field">

@@ -8,6 +8,12 @@ public static class AppState
 
     public static string BaseUrl { get; set; } = "https://poscloud.uz";
     public static string Username { get; set; } = "";
+
+    /// <summary>Joriy foydalanuvchining to'liq ism-sharifi (chekda kassir nomi). Bo'sh bo'lsa Username ishlatiladi.</summary>
+    public static string CashierName { get; set; } = "";
+
+    /// <summary>Joriy do'kon (filial yoki tashkilot) nomi — chek sarlavhasida ishlatiladi.</summary>
+    public static string StoreName { get; set; } = "";
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
     public static string BusinessType { get; set; } = "Store";
@@ -23,6 +29,9 @@ public static class AppState
         IsLifetime || LicensedUntil is null
             ? null
             : (int)(LicensedUntil.Value.Date - DateTime.UtcNow.Date).TotalDays;
+
+    /// <summary>Chekda ko'rsatiladigan kassir nomi (to'liq ism bo'lsa o'sha, aks holda login).</summary>
+    public static string CashierDisplay => string.IsNullOrWhiteSpace(CashierName) ? Username : CashierName;
 
     public static bool IsRestaurant => BusinessType == "Restaurant";
 

@@ -108,7 +108,8 @@ public partial class SalesHistoryWindow : Window
     {
         ReceiptNumber = s.ReceiptNumber,
         Date = s.CreatedAt.ToLocalTime(),
-        Cashier = AppState.Username,
+        StoreName = AppState.StoreName,
+        Cashier = AppState.CashierDisplay,
         Payment = s.PaymentMethod,
         Total = s.TotalAmount,
         Paid = s.PaidAmount,

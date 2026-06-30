@@ -7,6 +7,12 @@ public class User : BaseEntity
 {
     public string Username { get; set; } = string.Empty;
 
+    /// <summary>Foydalanuvchining to'liq ism-sharifi (chekda kassir nomi sifatida chiqadi).</summary>
+    public string? FullName { get; set; }
+
+    /// <summary>Foydalanuvchi telefon raqami (ixtiyoriy).</summary>
+    public string? Phone { get; set; }
+
     public string PasswordHash { get; set; } = string.Empty;
 
     public UserRole Role { get; set; } = UserRole.Cashier;
