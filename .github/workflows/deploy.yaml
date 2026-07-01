@@ -1,9 +1,7 @@
 name: Deploy PosPlatform
-
 on:
   push:
     branches: [main]
-
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -20,61 +18,52 @@ jobs:
               - 'frontend/**'
             backend:
               - 'backend/**'
-
   build-frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-
       - name: Install deps
         working-directory: frontend
         run: npm ci
-
       - name: Build frontend
         working-directory: frontend
+        env:
+          VITE_API_BASE: https://poscloud.uz
         run: npm run build
-
       - name: Upload frontend artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: frontend/dist
           retention-days: 1
-
   build-backend:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-
       - name: Restore
         working-directory: backend
         run: dotnet restore src/PosPlatform.Api
-
       - name: Publish backend
         working-directory: backend
         run: dotnet publish src/PosPlatform.Api -c Release -o ./publish
-
       - name: Upload backend artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-publish
           path: backend/publish
           retention-days: 1
-
   deploy:
     needs: [changes, build-frontend, build-backend]
     if: always() && (needs.build-frontend.result == 'success' || needs.build-backend.result == 'success')
@@ -86,25 +75,21 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-
       - name: Download frontend artifact
         if: needs.changes.outputs.frontend == 'true'
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: frontend-dist
-
       - name: Download backend artifact
         if: needs.changes.outputs.backend == 'true'
         uses: actions/download-artifact@v4
         with:
           name: backend-publish
           path: backend-publish
-
       - name: Deploy backend (and merge frontend if changed)
         if: needs.changes.outputs.backend == 'true'
         run: |
-          # Backend publish papkasiga frontend ham qo'shilsin (agar shu push'da o'zgargan bo'lsa)
           if [ -d frontend-dist ]; then
             mkdir -p backend-publish/wwwroot
             rm -rf backend-publish/wwwroot/*
@@ -117,7 +102,6 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "sudo mkdir -p /opt/posplatform/wwwroot/uploads && sudo chown -R posplatform:posplatform /opt/posplatform && sudo systemctl restart posplatform && sleep 2 && sudo systemctl status posplatform --no-pager"
-
       - name: Deploy frontend only (backend unchanged)
         if: needs.changes.outputs.backend == 'false' && needs.changes.outputs.frontend == 'true'
         run: |
