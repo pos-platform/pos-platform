@@ -74,14 +74,31 @@ internal static class EscPosBuilder
         Divider();
 
         Write(ESC_CENTER);
+        Write(ESC_BOLD_ON);
         WriteLine("*** FISKAL CHEK ***");
-        WriteLine($"FP: {fiscal.FiscalSign}");
+        Write(ESC_BOLD_OFF);
+        if (!string.IsNullOrEmpty(fiscal.FiscalReceiptNumber))
+            WriteLine($"Chek: {fiscal.FiscalReceiptNumber}");
+        if (!string.IsNullOrEmpty(fiscal.FiscalSign))
+            WriteLine($"FB: {fiscal.FiscalSign}");
+        if (!string.IsNullOrEmpty(fiscal.FiscalModuleId))
+            WriteLine($"FM: {fiscal.FiscalModuleId}");
+        if (!string.IsNullOrEmpty(fiscal.FiscalRegistrationNumber))
+            WriteLine($"RS: {fiscal.FiscalRegistrationNumber}");
+
         if (!string.IsNullOrEmpty(fiscal.QrCodeUrl))
         {
+            Write(ESC_BOLD_ON);
+            WriteLine("Soliq QR kodi");
+            Write(ESC_BOLD_OFF);
             Write(LF);
             Write(BuildQrCode(fiscal.QrCodeUrl));
             Write(LF);
+            WriteLine("Siz xaridning 1% miqdorida");
+            WriteLine("\"Keshbek\" olish huquqiga");
+            WriteLine("ega bo'ldingiz");
         }
+        Write(ESC_LEFT);
 
         Write(LF2);
         Write(ESC_CUT);

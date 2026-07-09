@@ -78,6 +78,9 @@ public class YtFiscalDevice : IFiscalDevice
                 Success = true,
                 FiscalSign = rpc.Result.FiscalSign,
                 FiscalModuleId = rpc.Result.TerminalID,
+                FiscalRegistrationNumber = string.IsNullOrWhiteSpace(rpc.Result.RegisterNumber)
+                    ? _options.FiscalRegistrationNumber
+                    : rpc.Result.RegisterNumber,
                 FiscalReceiptNumber = rpc.Result.ReceiptSeq,
                 QrCodeUrl = rpc.Result.QRCodeURL,
                 FiscalizedAt = ParseDateTime(rpc.Result.DateTime)
@@ -171,6 +174,8 @@ public class YtFiscalDevice : IFiscalDevice
     private sealed class ReceiptResult
     {
         public string? TerminalID { get; set; }
+        /// <summary>Kassa ro'yxatga olish raqami (RS) — modul bersa.</summary>
+        public string? RegisterNumber { get; set; }
         public string? ReceiptSeq { get; set; }
         public string? DateTime { get; set; }
         public string? FiscalSign { get; set; }

@@ -50,6 +50,8 @@ public partial class ReceiptPreviewWindow : Window
                 {
                     _receipt.QrCodeUrl = rc.QrCodeUrl;
                     _receipt.FiscalSign = rc.FiscalSign;
+                    _receipt.FiscalModuleId = rc.FiscalModuleId;
+                    _receipt.FiscalRegistrationNumber = rc.FiscalRegistrationNumber;
                     _receipt.FiscalReceiptNumber = rc.FiscalReceiptNumber;
                     Render();
                     return;

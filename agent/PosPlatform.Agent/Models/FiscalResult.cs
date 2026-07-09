@@ -6,6 +6,8 @@ public class FiscalResult
     public bool Success { get; set; }
     public string? FiscalSign { get; set; }
     public string? FiscalModuleId { get; set; }
+    /// <summary>Kassa apparatining ro'yxatga olish raqami (RS).</summary>
+    public string? FiscalRegistrationNumber { get; set; }
     public string? FiscalReceiptNumber { get; set; }
     public string? QrCodeUrl { get; set; }
     public DateTime? FiscalizedAt { get; set; }

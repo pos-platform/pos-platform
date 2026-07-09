@@ -124,6 +124,8 @@ public partial class SalesHistoryWindow : Window
         }).ToList(),
         QrCodeUrl = s.Receipt?.QrCodeUrl,
         FiscalSign = s.Receipt?.FiscalSign,
+        FiscalModuleId = s.Receipt?.FiscalModuleId,
+        FiscalRegistrationNumber = s.Receipt?.FiscalRegistrationNumber,
         FiscalReceiptNumber = s.Receipt?.FiscalReceiptNumber
     };
 

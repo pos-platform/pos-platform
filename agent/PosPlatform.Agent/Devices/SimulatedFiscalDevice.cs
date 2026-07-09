@@ -29,6 +29,7 @@ public class SimulatedFiscalDevice : IFiscalDevice
             Success = true,
             FiscalSign = fiscalSign,
             FiscalModuleId = _options.FiscalModuleId,
+            FiscalRegistrationNumber = _options.FiscalRegistrationNumber,
             FiscalReceiptNumber = fiscalReceiptNumber,
             QrCodeUrl = $"https://ofd.soliq.uz/check?t={_options.FiscalModuleId}&r={fiscalReceiptNumber}&s={fiscalSign}",
             FiscalizedAt = DateTime.UtcNow

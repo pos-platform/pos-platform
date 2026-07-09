@@ -64,6 +64,9 @@ public class OfdFiscalDevice : IFiscalDevice
                 Success = true,
                 FiscalSign = ofdResponse.FiscalSign,
                 FiscalModuleId = ofdResponse.ModuleId ?? _options.FiscalModuleId,
+                FiscalRegistrationNumber = string.IsNullOrWhiteSpace(ofdResponse.RegistrationNumber)
+                    ? _options.FiscalRegistrationNumber
+                    : ofdResponse.RegistrationNumber,
                 FiscalReceiptNumber = ofdResponse.FiscalReceiptNumber ?? receipt.ReceiptNumber.Replace("R-", "F-"),
                 QrCodeUrl = ofdResponse.QrCodeUrl
                     ?? $"https://ofd.soliq.uz/check?t={_options.FiscalModuleId}&r={ofdResponse.FiscalReceiptNumber}&s={ofdResponse.FiscalSign}",
@@ -103,6 +106,7 @@ public class OfdFiscalDevice : IFiscalDevice
     {
         public string FiscalSign { get; set; } = string.Empty;
         public string? ModuleId { get; set; }
+        public string? RegistrationNumber { get; set; }
         public string? FiscalReceiptNumber { get; set; }
         public string? QrCodeUrl { get; set; }
         public DateTime? FiscalizedAt { get; set; }

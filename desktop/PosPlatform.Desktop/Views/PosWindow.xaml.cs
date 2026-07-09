@@ -759,6 +759,9 @@ public partial class PosWindow : Window
             ItemCountText.Text = qty.ToString("0.###") + " ta";
             ItemCountRow.Visibility = qty > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
+
+        if (EmptyCartHint is not null)
+            EmptyCartHint.Visibility = _cart.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void PaidBox_TextChanged(object sender, TextChangedEventArgs e) => RecalcTotals();

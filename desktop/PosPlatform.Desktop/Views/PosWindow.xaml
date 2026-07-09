@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="PosPlatform — Kassa"
         WindowStartupLocation="CenterScreen" WindowState="Maximized"
-        Height="800" Width="1280" Background="#EEF2F6"
+        Height="800" Width="1280" Background="#F1F5F9"
+        FontFamily="Segoe UI"
         KeyDown="Window_KeyDown"
         PreviewTextInput="Window_PreviewTextInput"
         PreviewKeyDown="Window_PreviewKeyDown">
@@ -21,7 +22,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="9"
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
                         </Border>
@@ -40,36 +41,38 @@
 
         <!-- Kategoriya chip -->
         <Style x:Key="Chip" TargetType="Button" BasedOn="{StaticResource Pill}">
-            <Setter Property="Height" Value="36" />
-            <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="#475569" />
+            <Setter Property="Padding" Value="12,0" />
         </Style>
-        <Style x:Key="ChipActive" TargetType="Button" BasedOn="{StaticResource Pill}">
-            <Setter Property="Height" Value="36" />
-            <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+        <Style x:Key="ChipActive" TargetType="Button" BasedOn="{StaticResource Chip}">
+            <Setter Property="Background" Value="#0F172A" />
             <Setter Property="Foreground" Value="White" />
         </Style>
 
-        <!-- Miqdor +/- tugmasi -->
+        <!-- Miqdor +/- tugmasi (oq fon, ramka) -->
         <Style x:Key="QtyBtn" TargetType="Button">
-            <Setter Property="Foreground" Value="#1E293B" />
-            <Setter Property="Background" Value="#EEF2F6" />
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#334155" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="Black" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Width" Value="34" />
-            <Setter Property="Height" Value="34" />
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="8">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="7"
+                                BorderBrush="#E2E8F0" BorderThickness="1">
                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#DCE3EC" />
+                                <Setter TargetName="b" Property="Background" Value="#EFF6FF" />
+                                <Setter TargetName="b" Property="BorderBrush" Value="#BFDBFE" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -77,17 +80,45 @@
             </Setter>
         </Style>
 
-        <!-- Mahsulot kartochkasi -->
-        <Style x:Key="Card" TargetType="Button">
+        <!-- Qatordagi o'chirish (✕) tugmasi -->
+        <Style x:Key="RowDeleteBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="#DC2626" />
+            <Setter Property="Background" Value="#FEF2F2" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="Height" Value="172" />
-            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="White" CornerRadius="14"
-                                BorderBrush="#E2E8F0" BorderThickness="1" Padding="10">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="8"
+                                BorderBrush="#FECACA" BorderThickness="1">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#DC2626" />
+                                <Setter TargetName="b" Property="BorderBrush" Value="#DC2626" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Mahsulot kartochkasi (ixcham) -->
+        <Style x:Key="Card" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Height" Value="132" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="White" CornerRadius="12"
+                                BorderBrush="#E2E8F0" BorderThickness="1" Padding="7">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -104,21 +135,21 @@
         <!-- To'lov turi tab tugmasi -->
         <Style x:Key="PayTab" TargetType="Button">
             <Setter Property="Foreground" Value="#475569" />
-            <Setter Property="Background" Value="#F1F5F9" />
+            <Setter Property="Background" Value="White" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Height" Value="40" />
+            <Setter Property="Height" Value="38" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="10"
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="9"
                                 BorderBrush="#E2E8F0" BorderThickness="1">
                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Opacity" Value="0.88" />
+                                <Setter TargetName="b" Property="Background" Value="#F8FAFC" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -130,28 +161,28 @@
             <Setter Property="Foreground" Value="White" />
         </Style>
 
-        <!-- To'lash tugmasi -->
+        <!-- To'lash tugmasi (yashil-teal gradient) -->
         <Style x:Key="PayBtn" TargetType="Button">
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontSize" Value="17" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Height" Value="56" />
+            <Setter Property="Height" Value="52" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" CornerRadius="12">
+                        <Border x:Name="b" CornerRadius="11">
                             <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#16A34A" Offset="0" />
-                                    <GradientStop Color="#15803D" Offset="1" />
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#059669" Offset="0" />
+                                    <GradientStop Color="#0D9488" Offset="1" />
                                 </LinearGradientBrush>
                             </Border.Background>
                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Opacity" Value="0.92" />
+                                <Setter TargetName="b" Property="Opacity" Value="0.93" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="b" Property="Opacity" Value="0.5" />
@@ -203,17 +234,18 @@
         </Border>
 
         <!-- Top bar -->
-        <Border Grid.Row="1" Background="White" Padding="18,0" Height="66"
+        <Border Grid.Row="1" Background="White" Padding="18,0" Height="62"
                 BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
             <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Image x:Name="TopLogoImage" Source="{StaticResource AppLogo}"
-                           Width="40" Height="34"
-                           VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock Text="PosPlatform" FontWeight="Bold" FontSize="19"
-                               Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" />
-                    <Border Width="1" Height="26" Background="#E2E8F0" Margin="16,0" />
-                    <TextBlock x:Name="ShiftInfo" VerticalAlignment="Center" Foreground="#64748B" FontSize="13" />
+                           Width="38" Height="32"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="PosPlatform" FontWeight="Bold" FontSize="17"
+                                   Foreground="#0F172A" />
+                        <TextBlock x:Name="ShiftInfo" Foreground="#64748B" FontSize="11" Margin="0,1,0,0" />
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <StackPanel x:Name="OpenShiftPanel" Orientation="Horizontal" VerticalAlignment="Center">
@@ -223,55 +255,290 @@
                         <Button Content="Smenani ochish" Margin="8,0,0,0" Style="{StaticResource Pill}"
                                 Background="#DBEAFE" Foreground="{StaticResource PrimaryDarkBrush}" Click="OpenShift_Click" />
                     </StackPanel>
-                    <Button x:Name="CloseShiftButton" Content="Smenani yopish" Style="{StaticResource Pill}"
-                            Background="#FEE2E2" Foreground="#B91C1C" Click="CloseShift_Click" Visibility="Collapsed" />
-                    <Button Content="📋 Savdolar" Style="{StaticResource Pill}" Margin="8,0,0,0" Click="SalesHistory_Click"
+                    <Button Content="📋 Savdolar" Style="{StaticResource Pill}" Margin="0,0,8,0" Click="SalesHistory_Click"
                             ToolTip="Kunlik savdolar va chekni qayta chop etish" />
-                    <Button Content="↩ Qaytarish" Style="{StaticResource Pill}" Margin="8,0,0,0" Click="Refund_Click" />
+                    <Button Content="↩ Qaytarish" Style="{StaticResource Pill}" Margin="0,0,8,0" Click="Refund_Click" />
                     <!-- Oflayn ko'rsatkich + sinxronlash tugmasi -->
-                    <Border x:Name="OnlineBadge" CornerRadius="10" Padding="8,4" Margin="8,0,0,0"
+                    <Border x:Name="OnlineBadge" CornerRadius="10" Padding="8,4" Margin="0,0,8,0"
                             Background="#DCFCE7" ToolTip="Internet bor — onlayn rejim">
                         <TextBlock x:Name="OnlineText" Text="● Onlayn" Foreground="#16A34A"
                                    FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </Border>
-                    <Button x:Name="SyncButton" Style="{StaticResource Pill}" Margin="6,0,0,0"
+                    <Button x:Name="SyncButton" Style="{StaticResource Pill}" Margin="0,0,8,0"
                             Click="Sync_Click" Visibility="Collapsed" ToolTip="Oflayn savdolarni serverga yuborish">
                         <TextBlock x:Name="SyncText" Text="↑ Sync" FontSize="12"/>
                     </Button>
-                    <Button Content="⚙" Style="{StaticResource Pill}" Margin="8,0,0,0" Click="Settings_Click" ToolTip="Sozlamalar" />
-                    <Border Width="1" Height="26" Background="#E2E8F0" Margin="14,0" />
-                    <TextBlock x:Name="UserText" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#1E293B" />
+                    <Button Content="⚙" Style="{StaticResource Pill}" Margin="0,0,10,0" Click="Settings_Click" ToolTip="Sozlamalar" />
+                    <Border Width="1" Height="26" Background="#E2E8F0" Margin="2,0,12,0" />
+                    <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="10"
+                            Padding="6,4" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="28" Height="28" CornerRadius="8" Background="#DBEAFE">
+                                <TextBlock Text="👤" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock x:Name="UserText" VerticalAlignment="Center" FontWeight="SemiBold"
+                                       FontSize="12" Foreground="#1E293B" Margin="8,0,4,0" />
+                        </StackPanel>
+                    </Border>
+                    <Button x:Name="CloseShiftButton" Content="Smenani yopish" Style="{StaticResource Pill}"
+                            Background="#FEE2E2" Foreground="#B91C1C" Margin="0,0,8,0"
+                            Click="CloseShift_Click" Visibility="Collapsed" />
                     <Button Content="Chiqish" Style="{StaticResource Pill}" Background="#FEE2E2" Foreground="#B91C1C"
-                            Margin="12,0,0,0" Click="Logout_Click" />
+                            Click="Logout_Click" />
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Main -->
-        <Grid Grid.Row="2" Margin="16">
+        <Grid Grid.Row="2" Margin="12">
             <Grid.ColumnDefinitions>
-                <!-- Savatcha (asosiy ish maydoni) — 60% -->
-                <ColumnDefinition Width="3*" />
-                <!-- Mahsulotlar — 40% -->
-                <ColumnDefinition Width="2*" />
+                <!-- Savatcha (asosiy ish maydoni) — ~58% -->
+                <ColumnDefinition Width="7*" />
+                <!-- Mahsulotlar — ~42% -->
+                <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Products (o'ng tomon, 40%) -->
+            <!-- Cart (chap tomon, asosiy) -->
+            <Border Grid.Column="0" Margin="0,0,12,0" Background="White" CornerRadius="14"
+                    BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border.Effect>
+                    <DropShadowEffect Color="#94A3B8" BlurRadius="14" ShadowDepth="1" Opacity="0.14" />
+                </Border.Effect>
+                <DockPanel Margin="16">
+                    <!-- Parallel savdo tablari + savatni tozalash -->
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled" HorizontalAlignment="Left">
+                            <StackPanel x:Name="SaleTabs" Orientation="Horizontal" />
+                        </ScrollViewer>
+                        <Button Content="🗑  Savatni tozalash" Style="{StaticResource GhostBtn}"
+                                Background="#FEF2F2" Foreground="#B91C1C" Height="34" Padding="14,0"
+                                HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold"
+                                Click="Clear_Click" ToolTip="Savatchani bo'shatish" />
+                    </Grid>
+
+                    <!-- Pastdagi yakun + to'lov -->
+                    <Border DockPanel.Dock="Bottom" Background="#F8FAFC" CornerRadius="12"
+                            BorderBrush="#E2E8F0" BorderThickness="1" Padding="14" Margin="0,12,0,0">
+                        <StackPanel>
+                            <Grid x:Name="ItemCountRow" Margin="0,0,0,6" Visibility="Collapsed">
+                                <TextBlock Text="Tovarlar soni" FontSize="12" Foreground="#94A3B8"
+                                           FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <TextBlock x:Name="ItemCountText" Text="0 ta" FontSize="12" FontWeight="Bold"
+                                           Foreground="#475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            </Grid>
+
+                            <!-- Jami summa kartochkasi -->
+                            <Border Background="White" CornerRadius="9" BorderBrush="#E2E8F0" BorderThickness="1"
+                                    Padding="14,10" Margin="0,0,0,10">
+                                <Grid>
+                                    <TextBlock Text="JAMI SUMMA:" FontSize="12" FontWeight="Bold"
+                                               Foreground="#94A3B8" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <TextBlock x:Name="TotalText" Text="0" FontSize="24" FontWeight="Black"
+                                                   Foreground="#0F172A" />
+                                        <TextBlock Text="so'm" FontSize="12" FontWeight="Bold"
+                                                   Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="5,0,0,4" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- To'lov turi -->
+                            <UniformGrid Columns="4" Margin="0,0,0,10">
+                                <Button x:Name="PayCash" Content="💵 Naqd" Tag="Cash" Margin="0,0,6,0"
+                                        Style="{StaticResource PayTabActive}" Click="PayTab_Click" />
+                                <Button x:Name="PayCard" Content="💳 Karta" Tag="Card" Margin="0,0,6,0"
+                                        Style="{StaticResource PayTab}" Click="PayTab_Click" />
+                                <Button x:Name="PayMixed" Content="🔀 Aralash" Tag="Mixed" Margin="0,0,6,0"
+                                        Style="{StaticResource PayTab}" Click="PayTab_Click" />
+                                <Button x:Name="PayDebt" Content="📒 Nasiya" Tag="Debt"
+                                        Style="{StaticResource PayTab}" Click="PayTab_Click" />
+                            </UniformGrid>
+
+                            <StackPanel x:Name="DebtorPanel" Visibility="Collapsed" Margin="0,0,0,10">
+                                <TextBlock Text="QARZDOR" Foreground="#94A3B8" FontWeight="Bold" FontSize="11" Margin="0,0,0,4" />
+                                <ComboBox x:Name="DebtorCombo" Height="42" Padding="10" FontSize="14" DisplayMemberPath="Display" />
+                            </StackPanel>
+
+                            <!-- Olingan summa + Qaytim -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="OLINGAN SUMMA" Foreground="#94A3B8" FontWeight="Bold"
+                                               FontSize="11" Margin="0,0,0,4" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="PaidBox" Grid.Column="0" Height="42" Text="0" Padding="10,0"
+                                                 FontSize="16" FontWeight="Bold"
+                                                 VerticalContentAlignment="Center" TextChanged="PaidBox_TextChanged" />
+                                        <Button Grid.Column="1" Content="To'liq" Style="{StaticResource GhostBtn}"
+                                                Background="#DBEAFE" Foreground="#1D4ED8" Height="42" Padding="14,0"
+                                                Margin="6,0,0,0" FontSize="13" FontWeight="Bold" Click="ExactCash_Click"
+                                                ToolTip="Berilgan summani jamiga tenglashtirish" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="QAYTIM" Foreground="#94A3B8" FontWeight="Bold"
+                                               FontSize="11" Margin="0,0,0,4" />
+                                    <Border Height="42" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1"
+                                            CornerRadius="9" Padding="10,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock x:Name="ChangeText" Text="0" FontWeight="Black" FontSize="16"
+                                                       Foreground="#C2410C" VerticalAlignment="Center" />
+                                            <TextBlock Text="so'm" FontSize="11" FontWeight="Bold"
+                                                       Foreground="#EA9A6B" VerticalAlignment="Center" Margin="5,0,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <Button x:Name="CheckoutButton" Content="✓  To'lash va Chek chiqarish (F12)"
+                                    Style="{StaticResource PayBtn}" Margin="0,12,0,0" Click="Checkout_Click" />
+
+                            <Button x:Name="ReprintButton" Content="🖨  Chekni ko'rish va chop etish"
+                                    Style="{StaticResource GhostBtn}" Margin="0,8,0,0" Height="34" FontSize="12"
+                                    Click="Reprint_Click" IsEnabled="False"
+                                    ToolTip="Oxirgi chekni ko'rib chiqib chop etish" />
+
+                            <TextBlock x:Name="MessageText" TextWrapping="Wrap" Margin="0,8,0,0" FontSize="13"
+                                       FontWeight="SemiBold" Visibility="Collapsed" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Savat jadvali -->
+                    <Border BorderBrush="#EEF2F6" BorderThickness="1" CornerRadius="10">
+                        <DockPanel>
+                            <!-- Jadval sarlavhasi -->
+                            <Border DockPanel.Dock="Top" Background="#F8FAFC" CornerRadius="9,9,0,0"
+                                    BorderBrush="#EEF2F6" BorderThickness="0,0,0,1" Padding="10,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MinWidth="150" />
+                                        <ColumnDefinition Width="58" />
+                                        <ColumnDefinition Width="82" />
+                                        <ColumnDefinition Width="72" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="118" />
+                                        <ColumnDefinition Width="44" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="MAHSULOT / KOD / QOLDIQ" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="BIRLIK" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="ASL NARXI" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="3" Text="CHEGIRMA" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="4" Text="JAMI SUMMA" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="5" Text="SONI" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="6" Text="" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Bo'sh savat holati -->
+                            <TextBlock x:Name="EmptyCartHint" DockPanel.Dock="Bottom"
+                                       Text="🛒  Savatcha bo'sh — mahsulotni tanlang yoki shtrix-kodni skanerlang"
+                                       Foreground="#94A3B8" FontSize="13" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Margin="0,40" TextAlignment="Center" />
+
+                            <!-- Qatorlar -->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="6,4">
+                                <ItemsControl x:Name="CartItems">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="White" BorderBrush="#F1F5F9" BorderThickness="0,0,0,1"
+                                                    Padding="4,6">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" MinWidth="150" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="82" />
+                                                        <ColumnDefinition Width="72" />
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="118" />
+                                                        <ColumnDefinition Width="44" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <!-- Mahsulot / kod / qoldiq -->
+                                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                        <TextBlock Text="{Binding Product.Name}" FontWeight="Bold" FontSize="13"
+                                                                   Foreground="#1E293B" TextTrimming="CharacterEllipsis" />
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <TextBlock Text="{Binding Product.Barcode}" FontSize="10"
+                                                                       Foreground="#94A3B8" FontFamily="Consolas" VerticalAlignment="Center" />
+                                                            <Border Background="#ECFDF5" CornerRadius="4" Padding="4,1" Margin="6,0,0,0">
+                                                                <TextBlock Text="{Binding Product.QtyLabel, StringFormat='Qoldiq: {0}'}"
+                                                                           FontSize="9" FontWeight="SemiBold" Foreground="#047857" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <!-- Birlik -->
+                                                    <TextBlock Grid.Column="1" Text="{Binding Product.UnitLabel}" FontSize="12"
+                                                               Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <!-- Asl narxi -->
+                                                    <TextBlock Grid.Column="2" Text="{Binding Product.PriceLabel}" FontSize="12"
+                                                               Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <!-- Chegirma -->
+                                                    <TextBlock Grid.Column="3" Text="0" FontSize="12" FontWeight="SemiBold"
+                                                               Foreground="#DC2626" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <!-- Jami summa -->
+                                                    <TextBlock Grid.Column="4" Text="{Binding LineTotalLabel}" FontSize="14" FontWeight="Bold"
+                                                               Foreground="#0F172A" HorizontalAlignment="Right" VerticalAlignment="Center" />
+
+                                                    <!-- Soni (+/-) -->
+                                                    <Border Grid.Column="5" Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1"
+                                                            CornerRadius="9" Padding="2" Margin="6,0" VerticalAlignment="Center">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <Button Grid.Column="0" Content="−" Style="{StaticResource QtyBtn}" Tag="{Binding}" Click="Dec_Click" />
+                                                            <TextBlock Grid.Column="1" Text="{Binding QtyLabel}" TextAlignment="Center" FontSize="14"
+                                                                       VerticalAlignment="Center" FontWeight="Black" Foreground="#0F172A" />
+                                                            <Button Grid.Column="2" Content="+" Style="{StaticResource QtyBtn}" Tag="{Binding}" Click="Inc_Click" />
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- O'chirish -->
+                                                    <Button Grid.Column="6" Content="✕" Style="{StaticResource RowDeleteBtn}"
+                                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                            Tag="{Binding}" Click="Remove_Click" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </DockPanel>
+            </Border>
+
+            <!-- Products (o'ng tomon) -->
             <DockPanel Grid.Column="1" Margin="0">
-                <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Background="White" CornerRadius="12" Height="50"
+                    <Border Grid.Column="0" Background="White" CornerRadius="12" Height="46"
                             BorderBrush="#E2E8F0" BorderThickness="1">
                         <Grid>
                             <TextBox x:Name="SearchBox" BorderThickness="0" Background="Transparent"
-                                     VerticalContentAlignment="Center" FontSize="15" Padding="16,0"
+                                     VerticalContentAlignment="Center" FontSize="14" Padding="16,0"
                                      TextChanged="SearchBox_TextChanged" KeyDown="SearchBox_KeyDown" />
-                            <TextBlock IsHitTestVisible="False" Foreground="#94A3B8" FontSize="15"
+                            <TextBlock IsHitTestVisible="False" Foreground="#94A3B8" FontSize="14"
                                        VerticalAlignment="Center" Margin="16,0"
-                                       Text="🔍   Qidirish yoki shtrix-kodni urang (Enter)">
+                                       Text="🔍   Tezkor qidiruv yoki shtrix-kod (Enter)">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Collapsed" />
@@ -286,15 +553,15 @@
                         </Grid>
                     </Border>
                     <Button x:Name="RefreshButton" Grid.Column="1" Style="{StaticResource Pill}"
-                            Width="50" Height="50" Margin="8,0,0,0"
+                            Background="White" Width="46" Height="46" Margin="8,0,0,0"
                             ToolTip="Mahsulotlarni yangilash" Click="Refresh_Click">
-                        <TextBlock FontSize="18">↻</TextBlock>
+                        <TextBlock FontSize="17">↻</TextBlock>
                     </Button>
                 </Grid>
 
                 <!-- Kategoriya tablari -->
                 <ScrollViewer DockPanel.Dock="Top" HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Disabled" Margin="0,0,0,12">
+                              VerticalScrollBarVisibility="Disabled" Margin="0,0,0,10">
                     <StackPanel x:Name="CategoryBar" Orientation="Horizontal" />
                 </ScrollViewer>
 
@@ -308,15 +575,21 @@
                                 <DataTemplate>
                                     <Button Style="{StaticResource Card}" Tag="{Binding}" Click="ProductCard_Click">
                                         <StackPanel>
-                                            <Border Height="74" CornerRadius="8" Background="#F1F5F9">
-                                                <Image Source="{Binding ImageFull}" Stretch="Uniform" />
+                                            <Border Height="52" CornerRadius="8" Background="#F1F5F9">
+                                                <Image Source="{Binding ImageFull}" Stretch="Uniform" Margin="4" />
                                             </Border>
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="11"
                                                        Foreground="#1E293B" TextWrapping="Wrap"
-                                                       TextTrimming="CharacterEllipsis" MaxHeight="34" Margin="0,7,0,2" />
-                                            <TextBlock Text="{Binding PriceLabel}" Foreground="#2563EB" FontWeight="Bold" FontSize="15" />
-                                            <TextBlock Text="{Binding QtyLabel, StringFormat='qoldiq: {0}'}"
-                                                       Foreground="#94A3B8" FontSize="11" Margin="0,1,0,0" />
+                                                       TextTrimming="CharacterEllipsis" MaxHeight="30" Margin="0,6,0,3"
+                                                       TextAlignment="Center" HorizontalAlignment="Center" />
+                                            <Border Background="#F8FAFC" CornerRadius="6" Padding="0,3">
+                                                <StackPanel HorizontalAlignment="Center">
+                                                    <TextBlock Text="{Binding PriceLabel}" Foreground="#2563EB" FontWeight="Bold"
+                                                               FontSize="12" HorizontalAlignment="Center" />
+                                                    <TextBlock Text="{Binding QtyLabel, StringFormat='Qoldiq: {0}'}"
+                                                               Foreground="#94A3B8" FontSize="9" HorizontalAlignment="Center" />
+                                                </StackPanel>
+                                            </Border>
                                         </StackPanel>
                                     </Button>
                                 </DataTemplate>
@@ -343,121 +616,6 @@
                     </Border>
                 </Grid>
             </DockPanel>
-
-            <!-- Cart (chap tomon, asosiy 60%) -->
-            <Border Grid.Column="0" Margin="0,0,16,0" Background="White" CornerRadius="14"
-                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="22">
-                <DockPanel>
-                    <!-- Parallel savdo tablari -->
-                    <ScrollViewer DockPanel.Dock="Top" HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Disabled" Margin="0,0,0,10">
-                        <StackPanel x:Name="SaleTabs" Orientation="Horizontal" />
-                    </ScrollViewer>
-                    <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
-                        <TextBlock Text="Savatcha" FontWeight="Bold" FontSize="24" Foreground="#1E293B" VerticalAlignment="Center" />
-                        <Button Content="🗑  Savatni tozalash" Style="{StaticResource GhostBtn}"
-                                Background="#FEE2E2" Foreground="#B91C1C" Height="42" Padding="18,0"
-                                HorizontalAlignment="Right" FontSize="14" FontWeight="SemiBold"
-                                Click="Clear_Click" ToolTip="Savatchani bo'shatish" />
-                    </Grid>
-
-                    <!-- Pastdagi yakun + to'lov -->
-                    <StackPanel DockPanel.Dock="Bottom">
-                        <Border Height="1" Background="#E2E8F0" Margin="0,4" />
-                        <Grid x:Name="ItemCountRow" Margin="0,0,0,2" Visibility="Collapsed">
-                            <TextBlock Text="Tovarlar soni" FontSize="14" Foreground="#64748B" VerticalAlignment="Center" />
-                            <TextBlock x:Name="ItemCountText" Text="0 ta" FontSize="14" FontWeight="SemiBold"
-                                       Foreground="#1E293B" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                        </Grid>
-                        <Grid Margin="0,2">
-                            <TextBlock Text="Jami" FontSize="24" FontWeight="Bold" Foreground="#1E293B" VerticalAlignment="Center" />
-                            <TextBlock x:Name="TotalText" Text="0" FontSize="28" FontWeight="Bold"
-                                       Foreground="#16A34A" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                        </Grid>
-
-                        <TextBlock Text="To'lov turi" Foreground="#64748B" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,3" />
-                        <UniformGrid Columns="4">
-                            <Button x:Name="PayCash" Content="💵 Naqd" Tag="Cash" Margin="0,0,6,0"
-                                    Style="{StaticResource PayTabActive}" Click="PayTab_Click" />
-                            <Button x:Name="PayCard" Content="💳 Karta" Tag="Card" Margin="0,0,6,0"
-                                    Style="{StaticResource PayTab}" Click="PayTab_Click" />
-                            <Button x:Name="PayMixed" Content="🔀 Aralash" Tag="Mixed" Margin="0,0,6,0"
-                                    Style="{StaticResource PayTab}" Click="PayTab_Click" />
-                            <Button x:Name="PayDebt" Content="📒 Nasiya" Tag="Debt"
-                                    Style="{StaticResource PayTab}" Click="PayTab_Click" />
-                        </UniformGrid>
-
-                        <StackPanel x:Name="DebtorPanel" Visibility="Collapsed">
-                            <TextBlock Text="Qarzdor" Foreground="#64748B" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,3" />
-                            <ComboBox x:Name="DebtorCombo" Height="44" Padding="10" FontSize="15" DisplayMemberPath="Display" />
-                        </StackPanel>
-
-                        <Grid Margin="0,8,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Berilgan summa" Foreground="#64748B" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" />
-                            <Button Grid.Column="1" Content="💵  To'liq summa" Style="{StaticResource GhostBtn}"
-                                    Background="#DBEAFE" Foreground="#1D4ED8" Height="32" Padding="12,0"
-                                    FontSize="13" FontWeight="SemiBold" Click="ExactCash_Click"
-                                    ToolTip="Berilgan summani jamiga tenglashtirish" />
-                        </Grid>
-                        <TextBox x:Name="PaidBox" Height="44" Text="0" Padding="12,0" FontSize="17"
-                                 VerticalContentAlignment="Center" Margin="0,4,0,0" TextChanged="PaidBox_TextChanged" />
-
-                        <Grid Margin="0,6,0,0">
-                            <TextBlock Text="Qaytim" FontWeight="SemiBold" FontSize="14" Foreground="#64748B" VerticalAlignment="Center" />
-                            <TextBlock x:Name="ChangeText" Text="0" FontWeight="Bold" FontSize="17"
-                                       Foreground="#1E293B" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                        </Grid>
-
-                        <Button x:Name="CheckoutButton" Content="To'lash  (F12)" Style="{StaticResource PayBtn}"
-                                Margin="0,10,0,0" Click="Checkout_Click" />
-
-                        <Button x:Name="ReprintButton" Content="🖨  Chekni ko'rish va chop etish"
-                                Style="{StaticResource GhostBtn}" Margin="0,6,0,0" Height="36" FontSize="13"
-                                Click="Reprint_Click" IsEnabled="False"
-                                ToolTip="Oxirgi chekni ko'rib chiqib chop etish" />
-
-                        <TextBlock x:Name="MessageText" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="14"
-                                   FontWeight="SemiBold" Visibility="Collapsed" />
-                    </StackPanel>
-
-                    <!-- Savat qatorlari -->
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,6,0,0">
-                        <ItemsControl x:Name="CartItems">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="#F8FAFC" CornerRadius="9" Padding="10,6" Margin="0,0,0,6">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Product.Name}" FontWeight="SemiBold" FontSize="15"
-                                                           Foreground="#1E293B" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding LineTotalLabel}" FontSize="14"
-                                                           Foreground="#2563EB" FontWeight="Bold" Margin="0,1,0,0" />
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Button Content="−" Style="{StaticResource QtyBtn}" Tag="{Binding}" Click="Dec_Click" />
-                                                <TextBlock Text="{Binding QtyLabel}" Width="46" TextAlignment="Center" FontSize="16"
-                                                           VerticalAlignment="Center" FontWeight="SemiBold" />
-                                                <Button Content="+" Style="{StaticResource QtyBtn}" Tag="{Binding}" Click="Inc_Click" />
-                                                <Button Content="✕" Style="{StaticResource QtyBtn}" Background="#FEE2E2"
-                                                        Foreground="#DC2626" FontSize="15" Margin="8,0,0,0"
-                                                        Tag="{Binding}" Click="Remove_Click" />
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </DockPanel>
-            </Border>
         </Grid>
     </Grid>
 </Window>

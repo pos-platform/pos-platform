@@ -102,6 +102,8 @@ public class ReceiptDto
     public Guid Id { get; set; }
     public FiscalStatus FiscalStatus { get; set; }
     public string? FiscalSign { get; set; }
+    public string? FiscalModuleId { get; set; }
+    public string? FiscalRegistrationNumber { get; set; }
     public string? FiscalReceiptNumber { get; set; }
     public string? QrCodeUrl { get; set; }
     public DateTime? FiscalizedAt { get; set; }
@@ -111,6 +113,8 @@ public class ReceiptDto
         Id = r.Id,
         FiscalStatus = r.FiscalStatus,
         FiscalSign = r.FiscalSign,
+        FiscalModuleId = r.FiscalModuleId,
+        FiscalRegistrationNumber = r.FiscalRegistrationNumber,
         FiscalReceiptNumber = r.FiscalReceiptNumber,
         QrCodeUrl = r.QrCodeUrl,
         FiscalizedAt = r.FiscalizedAt

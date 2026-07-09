@@ -19,6 +19,12 @@ public class AgentOptions
     /// <summary>Fiskal modul (terminal) identifikatori.</summary>
     public string FiscalModuleId { get; set; } = "SIM-FISCAL-0001";
 
+    /// <summary>
+    /// Kassa apparatining soliq tizimidagi ro'yxatga olish raqami (RS — Ro'yxat raqami).
+    /// Har bir qurilmaga bir marta beriladi. Fiskal modul javobida bo'lmasa, chekda shu qiymat chop etiladi.
+    /// </summary>
+    public string FiscalRegistrationNumber { get; set; } = string.Empty;
+
     // ─── Fiskal qurilma ──────────────────────────────────────────────────────
 
     /// <summary>

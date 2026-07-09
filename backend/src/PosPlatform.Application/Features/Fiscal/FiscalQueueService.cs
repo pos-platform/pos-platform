@@ -46,6 +46,7 @@ public class FiscalQueueService : IFiscalQueueService
             receipt.FiscalStatus = FiscalStatus.Registered;
             receipt.FiscalSign = result.FiscalSign;
             receipt.FiscalModuleId = result.FiscalModuleId;
+            receipt.FiscalRegistrationNumber = result.FiscalRegistrationNumber;
             receipt.FiscalReceiptNumber = result.FiscalReceiptNumber;
             receipt.QrCodeUrl = result.QrCodeUrl;
             receipt.FiscalizedAt = result.FiscalizedAt ?? DateTime.UtcNow;

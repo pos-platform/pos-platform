@@ -192,6 +192,8 @@ public class ReceiptInfo
     /// <summary>Backend enumni satr sifatida qaytaradi: NotSent, Queued, Registered, Failed.</summary>
     public string FiscalStatus { get; set; } = "";
     public string? FiscalSign { get; set; }
+    public string? FiscalModuleId { get; set; }
+    public string? FiscalRegistrationNumber { get; set; }
     public string? FiscalReceiptNumber { get; set; }
     public string? QrCodeUrl { get; set; }
 
@@ -242,8 +244,12 @@ public class ReceiptData
 
     /// <summary>Fiskal QR havola (agent fiskalizatsiya qilgach to'ladi).</summary>
     public string? QrCodeUrl { get; set; }
-    /// <summary>Soliq qaytargan fiskal belgi (FP).</summary>
+    /// <summary>Soliq qaytargan fiskal belgi (FB).</summary>
     public string? FiscalSign { get; set; }
+    /// <summary>Fiskal modul identifikatori (FM).</summary>
+    public string? FiscalModuleId { get; set; }
+    /// <summary>Kassa apparatining ro'yxatga olish raqami (RS).</summary>
+    public string? FiscalRegistrationNumber { get; set; }
     /// <summary>Soliq tizimidagi fiskal chek raqami.</summary>
     public string? FiscalReceiptNumber { get; set; }
 }

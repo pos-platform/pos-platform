@@ -90,12 +90,22 @@ public static class EscPosReceipt
             Line("*** FISKAL CHEK ***");
             Write(BOLD_OFF);
             if (!string.IsNullOrEmpty(r.FiscalReceiptNumber))
-                Line($"Fiskal: {r.FiscalReceiptNumber}");
+                Line($"Chek: {r.FiscalReceiptNumber}");
             if (!string.IsNullOrEmpty(r.FiscalSign))
-                Line($"FP: {r.FiscalSign}");
+                Line($"FB: {r.FiscalSign}");
+            if (!string.IsNullOrEmpty(r.FiscalModuleId))
+                Line($"FM: {r.FiscalModuleId}");
+            if (!string.IsNullOrEmpty(r.FiscalRegistrationNumber))
+                Line($"RS: {r.FiscalRegistrationNumber}");
+            Write(BOLD_ON);
+            Line("Soliq QR kodi");
+            Write(BOLD_OFF);
             Write(BuildQrCode(r.QrCodeUrl));
             Write(LF);
             Line("ofd.soliq.uz orqali tekshiring");
+            Line("Siz xaridning 1% miqdorida");
+            Line("\"Keshbek\" olish huquqiga");
+            Line("ega bo'ldingiz");
             Write(LEFT);
             Divider();
         }

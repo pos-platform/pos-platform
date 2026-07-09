@@ -20,6 +20,9 @@ public class Receipt : BaseEntity
     /// <summary>Fiskal modul identifikatori (terminal ID).</summary>
     public string? FiscalModuleId { get; set; }
 
+    /// <summary>Kassa apparatining soliq tizimidagi ro'yxatga olish raqami (RS).</summary>
+    public string? FiscalRegistrationNumber { get; set; }
+
     /// <summary>Soliq tizimidagi chek raqami.</summary>
     public string? FiscalReceiptNumber { get; set; }
 

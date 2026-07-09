@@ -91,9 +91,14 @@ public class ReceiptPrinter
         {
             Add("*** FISKAL CHEK ***", bold: true, align: TextAlignment.Center);
             if (!string.IsNullOrEmpty(r.FiscalReceiptNumber))
-                Add($"Fiskal raqam: {r.FiscalReceiptNumber}", align: TextAlignment.Center);
+                Add($"Chek: {r.FiscalReceiptNumber}", align: TextAlignment.Center);
             if (!string.IsNullOrEmpty(r.FiscalSign))
-                Add($"FP: {r.FiscalSign}", align: TextAlignment.Center);
+                Add($"FB: {r.FiscalSign}", align: TextAlignment.Center);
+            if (!string.IsNullOrEmpty(r.FiscalModuleId))
+                Add($"FM: {r.FiscalModuleId}", align: TextAlignment.Center);
+            if (!string.IsNullOrEmpty(r.FiscalRegistrationNumber))
+                Add($"RS: {r.FiscalRegistrationNumber}", align: TextAlignment.Center);
+            Add("Soliq QR kodi", bold: true, align: TextAlignment.Center);
 
             var qr = QrImage.Generate(r.QrCodeUrl);
             if (qr is not null)
@@ -108,6 +113,8 @@ public class ReceiptPrinter
                 doc.Blocks.Add(new BlockUIContainer(img) { Margin = new Thickness(0, 4, 0, 4) });
             }
             Add("ofd.soliq.uz orqali tekshiring", size: 9, align: TextAlignment.Center);
+            Add("Siz xaridning 1% miqdorida \"Keshbek\"", size: 9, align: TextAlignment.Center);
+            Add("olish huquqiga ega bo'ldingiz", size: 9, align: TextAlignment.Center);
             Add(sep);
         }
         else if (r.SaleId is not null)

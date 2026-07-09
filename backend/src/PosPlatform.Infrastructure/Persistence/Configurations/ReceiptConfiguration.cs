@@ -10,6 +10,7 @@ public class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
     {
         builder.Property(r => r.FiscalSign).HasMaxLength(256);
         builder.Property(r => r.FiscalModuleId).HasMaxLength(64);
+        builder.Property(r => r.FiscalRegistrationNumber).HasMaxLength(64);
         builder.Property(r => r.FiscalReceiptNumber).HasMaxLength(64);
         builder.Property(r => r.QrCodeUrl).HasMaxLength(512);
         builder.Property(r => r.ErrorMessage).HasMaxLength(1024);
