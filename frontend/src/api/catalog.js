@@ -65,6 +65,8 @@ export const organizationsApi = {
     http.post(`/api/organizations/users/${userId}/deactivate`).then((r) => r.data),
   getRoles: (id) => http.get(`/api/organizations/${id}/roles`).then((r) => r.data),
   getStores: (id) => http.get(`/api/organizations/${id}/stores`).then((r) => r.data),
+  setStoreBusinessType: (storeId, businessType) =>
+    http.put(`/api/organizations/stores/${storeId}/business-type`, { businessType }).then((r) => r.data),
   assignAppRole: (userId, roleId) =>
     http.put(`/api/organizations/users/${userId}/app-role`, { roleId: roleId ?? null }).then((r) => r.data),
   getAlerts: () => http.get('/api/organizations/alerts').then((r) => r.data),
@@ -132,8 +134,6 @@ export const analyticsApi = {
 export const storesApi = {
   list: () => http.get('/api/stores').then((r) => r.data),
   createStore: (payload) => http.post('/api/stores', payload).then((r) => r.data),
-  setBusinessType: (id, businessType) =>
-    http.put(`/api/stores/${id}/business-type`, { businessType }).then((r) => r.data),
   activateStore: (id) => http.post(`/api/stores/${id}/activate`).then((r) => r.data),
   deactivateStore: (id) => http.post(`/api/stores/${id}/deactivate`).then((r) => r.data),
   addCashbox: (payload) => http.post('/api/stores/cashboxes', payload).then((r) => r.data),

@@ -95,7 +95,7 @@ const navItems = [
   { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true, perm: 'cashbox.view' },
   { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true, perm: 'customers.view' },
   { name: 'users', key: 'nav.users', icon: '👥', admin: true, perm: 'users.view' },
-  { name: 'roles', key: 'nav.roles', icon: '🔑', admin: true, perm: 'roles.view' },
+  // Rollar boshqaruvi faqat SuperAdmin'da (superNavItems → admin-roles). Org admin ko'rmaydi.
   { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage' }
 ]
 

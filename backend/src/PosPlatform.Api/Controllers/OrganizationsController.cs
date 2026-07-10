@@ -106,6 +106,11 @@ public class OrganizationsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<StoreDto>>> GetStores(Guid id, CancellationToken ct)
         => Ok(await _stores.GetByOrgAsync(id, ct));
 
+    /// <summary>Filial faoliyat turini (Do'kon/Restoran) o'zgartirish — faqat SuperAdmin.</summary>
+    [HttpPut("stores/{storeId:guid}/business-type")]
+    public async Task<ActionResult<StoreDto>> SetStoreBusinessType(Guid storeId, [FromBody] SetBusinessTypeRequest request, CancellationToken ct)
+        => Ok(await _stores.SetBusinessTypeAsync(storeId, request.BusinessType, ct));
+
     [HttpPut("users/{userId:guid}/app-role")]
     public async Task<ActionResult<OrgUserDto>> AssignAppRole(Guid userId, AssignOrgUserRoleRequest request, CancellationToken ct)
         => Ok(await _service.AssignAppRoleAsync(userId, request.RoleId, ct));

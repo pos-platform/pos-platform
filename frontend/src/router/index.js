@@ -40,12 +40,6 @@ const routes = [
     meta: { adminOnly: true, perm: 'users.view' }
   },
   {
-    path: '/roles',
-    name: 'roles',
-    component: () => import('../views/RolesView.vue'),
-    meta: { adminOnly: true, perm: 'roles.view' }
-  },
-  {
     path: '/promotions',
     name: 'promotions',
     component: () => import('../views/PromotionsView.vue'),
