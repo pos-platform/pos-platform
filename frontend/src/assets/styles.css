@@ -303,3 +303,137 @@ body {
 @media (max-width: 880px) {
   .pos { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   RESPONSIVE — kichik ekranlar (planshet + telefon)
+   Sidebar off-canvas drawerga aylanadi, jadvallar gorizontal scroll,
+   sarlavha/filtrlar o'raladi. Barcha sahifalar uchun umumiy.
+   ===================================================================== */
+
+/* Mobil yuqori panel (hamburger) — desktopda yashirin */
+.mobile-topbar { display: none; }
+
+@media (max-width: 860px) {
+  /* App shell endi ustma-ust (sidebar ustidan suzadi) */
+  .app-shell { display: block; }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 9px 14px;
+    height: 56px;
+  }
+  .mobile-topbar .hamb {
+    flex: none;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 9px;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mobile-topbar .mt-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--primary);
+    min-width: 0;
+  }
+  .mobile-topbar .mt-brand img { width: 30px; height: 28px; object-fit: contain; flex: none; }
+  .mobile-topbar .mt-brand span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Sidebar → chapdan chiqadigan drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    width: 264px;
+    max-width: 82vw;
+    flex: none;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 0 0 44px rgba(15, 23, 42, 0.28);
+  }
+  .app-shell.nav-open .sidebar { transform: translateX(0); }
+
+  .nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(15, 23, 42, 0.5);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+
+  .sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .sidebar-close:hover { background: var(--bg); color: var(--text); }
+
+  .content { padding: 16px 14px; max-width: 100%; }
+
+  /* Sarlavha satri o'raladi (title + tugmalar) */
+  .page-head { flex-wrap: wrap; row-gap: 10px; }
+  .page-head > div { flex-wrap: wrap; }
+}
+
+/* Desktopda sidebar ichidagi yopish tugmasi ko'rinmaydi */
+.sidebar-close { display: none; }
+
+@media (max-width: 640px) {
+  .content { padding: 12px 10px; }
+  .page-head h1 { font-size: 18px; }
+  .card { padding: 14px; }
+
+  /* Keng jadvallar siqilib ketmasin — gorizontal scroll bilan ko'rinadi.
+     Jadval bitta (real) table bo'lib qolgani uchun ustunlar tekis turadi. */
+  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table th, .table td { white-space: nowrap; padding: 9px 10px; }
+
+  /* Modallar to'liq kenglikda, kichik paddinglar bilan */
+  .modal-overlay { padding: 12px 8px; }
+  .modal-head { padding: 14px 16px; }
+  .modal-body { padding: 16px; max-height: 80vh; }
+  .modal { padding: 18px; }
+  .modal-box, .modal { max-width: 100%; }
+
+  /* Modallar ichidagi ikki ustunli satrlar telefon uchun ustma-ust */
+  .row { gap: 10px; }
+}
+
+@media (max-width: 420px) {
+  .content { padding: 10px 8px; }
+  .btn { padding: 8px 12px; }
+  .page-head h1 { font-size: 17px; }
+}

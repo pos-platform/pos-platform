@@ -19,6 +19,10 @@ function setLang(lang) {
 
 const showNav = computed(() => auth.isAuthenticated && route.name !== 'login')
 
+// Mobil off-canvas menyu holati. Sahifa almashganda avtomatik yopiladi.
+const mobileNavOpen = ref(false)
+watch(() => route.name, () => { mobileNavOpen.value = false })
+
 // ===== Obuna (to'lov) eslatmasi — org admin uchun =====
 // Kassir/menejer obunasi 7 kun ichida tugasa, tugagan yoki to'lanmagan bo'lsa eslatadi.
 const licenseAlerts = ref([])
@@ -125,11 +129,24 @@ function logout() {
 </script>
 
 <template>
-  <div class="app-shell" :class="{ 'no-nav': !showNav }">
+  <div class="app-shell" :class="{ 'no-nav': !showNav, 'nav-open': mobileNavOpen }">
+    <!-- Mobil yuqori panel: hamburger + brend (faqat kichik ekranda ko'rinadi) -->
+    <header v-if="showNav" class="mobile-topbar">
+      <button class="hamb" aria-label="Menyu" @click="mobileNavOpen = true">☰</button>
+      <div class="mt-brand">
+        <img src="/logo.png" alt="" />
+        <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosPlatform' }}</span>
+      </div>
+    </header>
+
+    <!-- Drawer ochiq bo'lganda orqa fon -->
+    <div v-if="showNav && mobileNavOpen" class="nav-backdrop" @click="mobileNavOpen = false"></div>
+
     <aside v-if="showNav" class="sidebar">
       <div class="sidebar-brand">
         <img src="/logo.png" alt="Logo" class="brand-img" />
         <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosPlatform' }}</span>
+        <button class="sidebar-close" aria-label="Yopish" @click="mobileNavOpen = false">×</button>
       </div>
 
       <nav class="side-nav">
