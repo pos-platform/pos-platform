@@ -8,6 +8,7 @@ jobs:
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
+      agent: ${{ steps.filter.outputs.agent }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -18,6 +19,8 @@ jobs:
               - 'frontend/**'
             backend:
               - 'backend/**'
+            agent:
+              - 'agent/**'
   build-frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
@@ -64,6 +67,41 @@ jobs:
           name: backend-publish
           path: backend/publish
           retention-days: 1
+  # Kassa kompyuteri uchun fiskal/printer agenti (Windows, self-contained).
+  # DIQQAT: agent kassa kompida ishlaydi — CI uni kompga o'rnata olmaydi (ular ulanmaydi).
+  # Bu job faqat tayyor ZIP build qiladi; uni Actions run'dan yuklab olib kassaga o'rnatasiz.
+  build-agent:
+    needs: changes
+    if: needs.changes.outputs.agent == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish agent (Windows self-contained)
+        working-directory: agent/PosPlatform.Agent
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o ./publish
+      - name: Inject Agent API key (GitHub secret)
+        working-directory: agent/PosPlatform.Agent/publish
+        env:
+          AGENT_API_KEY: ${{ secrets.AGENT_API_KEY }}
+        run: |
+          if [ -z "$AGENT_API_KEY" ]; then
+            echo "::warning::AGENT_API_KEY secret bo'sh — agent 401 oladi. GitHub repo Settings > Secrets ga AGENT_API_KEY qo'shing (server bilan bir xil)."
+          fi
+          tmp=$(mktemp)
+          jq --arg k "$AGENT_API_KEY" '.Agent.ApiKey = $k' appsettings.json > "$tmp" && mv "$tmp" appsettings.json
+          echo "ApiKey o'rnatildi (uzunlik: ${#AGENT_API_KEY})"
+      - name: Zip agent
+        working-directory: agent/PosPlatform.Agent
+        run: cd publish && zip -qr ../PosPlatform-Agent.zip .
+      - name: Upload agent build
+        uses: actions/upload-artifact@v4
+        with:
+          name: PosPlatform-Agent
+          path: agent/PosPlatform.Agent/PosPlatform-Agent.zip
+          retention-days: 30
   deploy:
     needs: [changes, build-frontend, build-backend]
     if: always() && (needs.build-frontend.result == 'success' || needs.build-backend.result == 'success')

@@ -27,7 +27,10 @@
     "tables": "Столы",
     "dishes": "Блюда",
     "kitchenIssues": "Выдача повару",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "groupSales": "Продажи и касса",
+    "groupCatalog": "Каталог и склад",
+    "groupFinance": "Финансы и управление"
   },
   "common": {
     "save": "Сохранить",

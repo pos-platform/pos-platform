@@ -1,29 +1,51 @@
 :root {
-  --bg: #f4f5f7;
+  /* Neytral palitra — zamonaviy, salqin kulrang */
+  --bg: #f1f3f7;
   --surface: #ffffff;
-  --border: #e2e5ea;
-  --text: #1f2733;
-  --muted: #6b7480;
-  --primary: #1565C0;
-  --primary-dark: #0D47A1;
-  --primary-light: #2196F3;
-  --accent: #43A047;
-  --accent-dark: #2E7D32;
-  --success: #43A047;
-  --danger: #dc2626;
+  --surface-2: #f7f8fa;
+  --border: #e6e8ee;
+  --border-strong: #d7dbe3;
+  --text: #0f172a;
+  --muted: #64748b;
+  --muted-2: #94a3b8;
+
+  /* Brend — ko'k (biroz to'yingan, zamonaviyroq) */
+  --primary: #1d5fd6;
+  --primary-dark: #1749ab;
+  --primary-light: #3b82f6;
+  --primary-soft: #eaf1fd;
+
+  --accent: #16a34a;
+  --accent-dark: #15803d;
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --danger: #e11d48;
+  --danger-soft: #ffe4e6;
   --warning: #d97706;
-  --radius: 10px;
-  --shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --warning-soft: #fef3c7;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 12px 28px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12), 0 24px 56px rgba(15, 23, 42, 0.12);
+  --ring: 0 0 0 3px rgba(29, 95, 214, 0.16);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+  font-family: 'Inter', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* ----- App shell (sidebar + content) ----- */
@@ -35,8 +57,8 @@ body {
   position: sticky;
   top: 0;
   align-self: flex-start;
-  width: 232px;
-  flex: 0 0 232px;
+  width: 244px;
+  flex: 0 0 244px;
   height: 100vh;
   background: var(--surface);
   border-right: 1px solid var(--border);
@@ -50,40 +72,57 @@ body {
   font-weight: 800;
   font-size: 17px;
   color: var(--primary);
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--border);
-  letter-spacing: .2px;
+  letter-spacing: -0.01em;
 }
 .sidebar-brand .brand-img {
-  width: 38px;
-  height: 34px;
+  width: 36px;
+  height: 32px;
   object-fit: contain;
   flex: none;
 }
 .side-nav {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 .side-link {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
   text-decoration: none;
   color: var(--muted);
-  padding: 10px 12px;
-  border-radius: 9px;
+  padding: 9px 12px;
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13.5px;
   white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease;
 }
-.side-link:hover { background: var(--bg); color: var(--text); }
-.side-link.router-link-active { background: var(--primary); color: #fff; }
-.side-ico { font-size: 16px; width: 20px; text-align: center; flex: none; }
+.side-link:hover { background: var(--surface-2); color: var(--text); }
+.side-link.router-link-active {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.side-link.router-link-active .side-ico { filter: none; }
+.side-ico { font-size: 16px; width: 22px; text-align: center; flex: none; }
 .side-label { overflow: hidden; text-overflow: ellipsis; }
+
+/* Menyu bo'limlari (3 ta tip) */
+.side-group { display: flex; flex-direction: column; gap: 3px; }
+.side-group + .side-group { margin-top: 14px; }
+.side-group-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted-2);
+  padding: 4px 12px 6px;
+}
 
 .sidebar-store-filter {
   padding: 10px 12px;
@@ -113,11 +152,11 @@ body {
 .side-user { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .side-username { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .badge {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .03em;
-  background: #eef1f5; color: var(--muted); padding: 3px 8px; border-radius: 999px; flex: none;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .03em; font-weight: 700;
+  background: var(--primary-soft); color: var(--primary-dark); padding: 3px 9px; border-radius: 999px; flex: none;
 }
 
-.content { flex: 1; min-width: 0; padding: 24px; max-width: 1320px; }
+.content { flex: 1; min-width: 0; padding: 26px 28px; max-width: 1360px; }
 
 /* ----- Cards / panels ----- */
 .card {
@@ -125,10 +164,15 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 18px;
+  padding: 20px;
+  /* Keng jadvallar sahifani emas, kartaning o'zi ichida scroll bo'ladi
+     (o'ng tomondagi tugmalar qirqilib qolmasligi uchun) */
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
-.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.page-head h1 { font-size: 20px; margin: 0; }
+.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 12px; }
+.page-head h1 { font-size: 21px; margin: 0; letter-spacing: -0.01em; }
 
 /* ----- Modal ----- */
 .modal-overlay {
@@ -186,59 +230,80 @@ body {
 /* ----- Buttons ----- */
 .btn {
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 9px;
   padding: 9px 16px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   background: var(--primary);
   color: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.04s ease, filter 0.15s ease;
 }
-.btn:hover { background: var(--primary-dark); }
-.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn:hover { background: var(--primary-dark); box-shadow: 0 2px 8px rgba(16, 24, 40, 0.16); }
+.btn-ghost { box-shadow: none; }
+.btn-ghost:hover { box-shadow: none; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: var(--bg); color: var(--text); }
 .btn-success { background: var(--success); }
 .btn-success:hover { filter: brightness(.95); }
-.btn-sm { padding: 5px 10px; font-size: 13px; }
+.btn-sm { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
 .btn-danger { background: var(--danger); }
+.btn-danger:hover { filter: brightness(.95); }
 
 /* ----- Forms ----- */
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .field label { font-weight: 600; font-size: 13px; color: var(--muted); }
 .input, .select {
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 9px 11px;
+  border-radius: 9px;
+  padding: 10px 12px;
   font-size: 14px;
   background: #fff;
   width: 100%;
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.input:focus, .select:focus { outline: 2px solid #c7d7fe; border-color: var(--primary); }
+.input::placeholder { color: #9aa3af; }
+.input:hover, .select:hover { border-color: #cbd2db; }
+.input:focus, .select:focus { outline: none; border-color: var(--primary); box-shadow: var(--ring); }
 .row { display: flex; gap: 12px; flex-wrap: wrap; }
 .row > .field { flex: 1; min-width: 140px; }
 .checkbox { display: flex; align-items: center; gap: 8px; }
 
 /* ----- Tables ----- */
 .table { width: 100%; border-collapse: collapse; }
-.table th, .table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-.table th { font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: .03em; }
-.table tbody tr:hover { background: #fafbfc; }
+.table th, .table td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+.table th {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  color: var(--muted-2); letter-spacing: .05em;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.table th:first-child { border-top-left-radius: 10px; }
+.table th:last-child { border-top-right-radius: 10px; }
+.table td { font-size: 13.5px; }
+.table tbody tr { transition: background 0.12s ease; }
+.table tbody tr:hover { background: var(--surface-2); }
+.table tbody tr:last-child td { border-bottom: none; }
 .text-right { text-align: right; }
 .text-center { text-align: center; }
 .muted { color: var(--muted); }
 
 /* ----- Status pills ----- */
-.pill { padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-.pill-green { background: #dcfce7; color: #166534; }
-.pill-amber { background: #fef3c7; color: #92400e; }
-.pill-red { background: #fee2e2; color: #991b1b; }
+.pill { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-block; }
+.pill-green { background: var(--success-soft); color: #166534; }
+.pill-amber { background: var(--warning-soft); color: #92400e; }
+.pill-red { background: var(--danger-soft); color: #9f1239; }
 .pill-gray { background: #eef1f5; color: #475569; }
 
 /* ----- Alerts ----- */
-.alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-weight: 500; }
-.alert-error { background: #fee2e2; color: #991b1b; }
-.alert-success { background: #dcfce7; color: #166534; }
+.alert { padding: 11px 15px; border-radius: 10px; margin-bottom: 14px; font-weight: 500; font-size: 13.5px; }
+.alert-error { background: var(--danger-soft); color: #9f1239; }
+.alert-success { background: var(--success-soft); color: #166534; }
 
 /* ----- Images ----- */
 .thumb {
@@ -416,9 +481,7 @@ body {
   .page-head h1 { font-size: 18px; }
   .card { padding: 14px; }
 
-  /* Keng jadvallar siqilib ketmasin — gorizontal scroll bilan ko'rinadi.
-     Jadval bitta (real) table bo'lib qolgani uchun ustunlar tekis turadi. */
-  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Keng jadvallar siqilib ketmasin — karta ichida gorizontal scroll (base'da). */
   .table th, .table td { white-space: nowrap; padding: 9px 10px; }
 
   /* Modallar to'liq kenglikda, kichik paddinglar bilan */

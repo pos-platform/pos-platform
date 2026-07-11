@@ -14,11 +14,13 @@ x86/
 project.lock.json
 artifacts/
 
-# Publish / build chiqishi (desktop binarlari — git'ga tushmasin)
+# Publish / build chiqishi (desktop/agent binarlari — git'ga tushmasin)
 publish/
+publish-*/
 *.exe
 *.pdb
 *.dll
+*.zip
 
 # Rider / Visual Studio
 .idea/

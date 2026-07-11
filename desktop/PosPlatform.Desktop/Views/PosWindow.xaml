@@ -382,9 +382,9 @@
 
                     <!-- Pastdagi yakun + to'lov -->
                     <Border DockPanel.Dock="Bottom" Background="#F8FAFC" CornerRadius="12"
-                            BorderBrush="#E2E8F0" BorderThickness="1" Padding="11" Margin="0,10,0,0">
+                            BorderBrush="#E2E8F0" BorderThickness="1" Padding="9" Margin="0,8,0,0">
                         <StackPanel>
-                            <Grid x:Name="ItemCountRow" Margin="0,0,0,5" Visibility="Collapsed">
+                            <Grid x:Name="ItemCountRow" Margin="0,0,0,4" Visibility="Collapsed">
                                 <TextBlock Text="Tovarlar soni" FontSize="12" Foreground="#94A3B8"
                                            FontWeight="SemiBold" VerticalAlignment="Center" />
                                 <TextBlock x:Name="ItemCountText" Text="0 ta" FontSize="12" FontWeight="Bold"
@@ -393,12 +393,12 @@
 
                             <!-- Jami summa kartochkasi -->
                             <Border Background="White" CornerRadius="9" BorderBrush="#E2E8F0" BorderThickness="1"
-                                    Padding="11,7" Margin="0,0,0,8">
+                                    Padding="10,5" Margin="0,0,0,6">
                                 <Grid>
                                     <TextBlock Text="JAMI SUMMA:" FontSize="12" FontWeight="Bold"
                                                Foreground="#94A3B8" VerticalAlignment="Center" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                        <TextBlock x:Name="TotalText" Text="0" FontSize="21" FontWeight="Black"
+                                        <TextBlock x:Name="TotalText" Text="0" FontSize="20" FontWeight="Black"
                                                    Foreground="#0F172A" />
                                         <TextBlock Text="so'm" FontSize="12" FontWeight="Bold"
                                                    Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="5,0,0,3" />
@@ -407,7 +407,7 @@
                             </Border>
 
                             <!-- To'lov turi -->
-                            <UniformGrid Columns="4" Margin="0,0,0,8">
+                            <UniformGrid Columns="4" Margin="0,0,0,6">
                                 <Button x:Name="PayCash" Content="💵 Naqd" Tag="Cash" Margin="0,0,6,0"
                                         Style="{StaticResource PayTabActive}" Click="PayTab_Click" />
                                 <Button x:Name="PayCard" Content="💳 Karta" Tag="Card" Margin="0,0,6,0"
@@ -434,12 +434,12 @@
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="OLINGAN SUMMA" Foreground="#94A3B8" FontWeight="Bold"
                                                FontSize="11" Margin="0,0,0,4" />
-                                    <TextBox x:Name="PaidBox" Height="42" Text="0" Style="{StaticResource MoneyInput}"
+                                    <TextBox x:Name="PaidBox" Height="38" Text="0" Style="{StaticResource MoneyInput}"
                                              FontSize="18" FontWeight="Bold" VerticalContentAlignment="Center"
                                              TextChanged="PaidBox_TextChanged" />
                                     <Button x:Name="ExactCashButton" Content="💵  To'liq summani qo'yish"
                                             Style="{StaticResource AccentBtn}"
-                                            Height="32" Margin="0,6,0,0" FontSize="12"
+                                            Height="28" Margin="0,5,0,0" FontSize="12"
                                             Click="ExactCash_Click"
                                             ToolTip="Mijoz to'liq summa berdi — olingan summani jamiga tenglashtiradi (qaytimsiz)" />
                                 </StackPanel>
@@ -447,7 +447,7 @@
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="QAYTIM" Foreground="#94A3B8" FontWeight="Bold"
                                                FontSize="11" Margin="0,0,0,4" />
-                                    <Border Height="42" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1"
+                                    <Border Height="38" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1"
                                             CornerRadius="10" Padding="10,0">
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock x:Name="ChangeText" Text="0" FontWeight="Black" FontSize="16"
@@ -460,14 +460,14 @@
                             </Grid>
 
                             <Button x:Name="CheckoutButton" Content="✓  To'lash va Chek chiqarish (F12)"
-                                    Style="{StaticResource PayBtn}" Margin="0,10,0,0" Click="Checkout_Click" />
+                                    Style="{StaticResource PayBtn}" Height="44" Margin="0,8,0,0" Click="Checkout_Click" />
 
                             <Button x:Name="ReprintButton" Content="🖨  Chekni ko'rish va chop etish"
-                                    Style="{StaticResource GhostBtn}" Margin="0,6,0,0" Height="30" FontSize="12"
+                                    Style="{StaticResource GhostBtn}" Margin="0,5,0,0" Height="28" FontSize="12"
                                     Click="Reprint_Click" IsEnabled="False"
                                     ToolTip="Oxirgi chekni ko'rib chiqib chop etish" />
 
-                            <TextBlock x:Name="MessageText" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="13"
+                            <TextBlock x:Name="MessageText" TextWrapping="Wrap" Margin="0,5,0,0" FontSize="13"
                                        FontWeight="SemiBold" Visibility="Collapsed" />
                         </StackPanel>
                     </Border>
@@ -480,21 +480,17 @@
                                     BorderBrush="#EEF2F6" BorderThickness="0,0,0,1" Padding="10,8">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" MinWidth="130" />
-                                        <ColumnDefinition Width="46" />
-                                        <ColumnDefinition Width="70" />
-                                        <ColumnDefinition Width="56" />
-                                        <ColumnDefinition Width="92" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="*" MinWidth="120" />
+                                        <ColumnDefinition Width="82" />
+                                        <ColumnDefinition Width="95" />
+                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="34" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="MAHSULOT / KOD / QOLDIQ" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Text="BIRLIK" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="2" Text="ASL NARXI" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="3" Text="CHEGIRMA" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="4" Text="JAMI SUMMA" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="5" Text="SONI" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="6" Text="" />
+                                    <TextBlock Grid.Column="1" Text="NARX / CHEGIRMA" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="JAMI SUMMA" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="3" Text="SONI" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="4" Text="" />
                                 </Grid>
                             </Border>
 
@@ -514,13 +510,11 @@
                                                     Padding="4,6">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" MinWidth="130" />
-                                                        <ColumnDefinition Width="46" />
-                                                        <ColumnDefinition Width="70" />
-                                                        <ColumnDefinition Width="56" />
-                                                        <ColumnDefinition Width="92" />
-                                                        <ColumnDefinition Width="100" />
-                                                        <ColumnDefinition Width="40" />
+                                                        <ColumnDefinition Width="*" MinWidth="120" />
+                                                        <ColumnDefinition Width="82" />
+                                                        <ColumnDefinition Width="95" />
+                                                        <ColumnDefinition Width="104" />
+                                                        <ColumnDefinition Width="34" />
                                                     </Grid.ColumnDefinitions>
 
                                                     <!-- Mahsulot / kod / qoldiq -->
@@ -537,21 +531,19 @@
                                                         </StackPanel>
                                                     </StackPanel>
 
-                                                    <!-- Birlik -->
-                                                    <TextBlock Grid.Column="1" Text="{Binding Product.UnitLabel}" FontSize="12"
-                                                               Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                    <!-- Asl narxi -->
-                                                    <TextBlock Grid.Column="2" Text="{Binding Product.PriceLabel}" FontSize="12"
-                                                               Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                    <!-- Chegirma -->
-                                                    <TextBlock Grid.Column="3" Text="0" FontSize="12" FontWeight="SemiBold"
-                                                               Foreground="#DC2626" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <!-- Asl narxi + chegirma (kichik, ostida) -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Product.PriceLabel}" FontSize="12"
+                                                                   Foreground="#64748B" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="Chegirma: 0" FontSize="9" FontWeight="SemiBold"
+                                                                   Foreground="#DC2626" HorizontalAlignment="Center" Margin="0,1,0,0" />
+                                                    </StackPanel>
                                                     <!-- Jami summa -->
-                                                    <TextBlock Grid.Column="4" Text="{Binding LineTotalLabel}" FontSize="14" FontWeight="Bold"
+                                                    <TextBlock Grid.Column="2" Text="{Binding LineTotalLabel}" FontSize="14" FontWeight="Bold"
                                                                Foreground="#0F172A" HorizontalAlignment="Right" VerticalAlignment="Center" />
 
                                                     <!-- Soni (+/-) -->
-                                                    <Border Grid.Column="5" Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1"
+                                                    <Border Grid.Column="3" Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1"
                                                             CornerRadius="9" Padding="2" Margin="6,0" VerticalAlignment="Center">
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
@@ -567,7 +559,7 @@
                                                     </Border>
 
                                                     <!-- O'chirish -->
-                                                    <Button Grid.Column="6" Content="✕" Style="{StaticResource RowDeleteBtn}"
+                                                    <Button Grid.Column="4" Content="✕" Style="{StaticResource RowDeleteBtn}"
                                                             HorizontalAlignment="Center" VerticalAlignment="Center"
                                                             Tag="{Binding}" Click="Remove_Click" />
                                                 </Grid>

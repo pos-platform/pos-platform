@@ -67,7 +67,22 @@
 
                 <TextBlock Text="Foydalanuvchi" Foreground="#475569" FontWeight="SemiBold" FontSize="14" />
                 <Border Style="{StaticResource InputBorder}">
-                    <TextBox x:Name="UsernameBox" Style="{StaticResource Field}" Text="admin" />
+                    <Grid>
+                        <TextBox x:Name="UsernameBox" Style="{StaticResource Field}" />
+                        <TextBlock IsHitTestVisible="False" Text="Foydalanuvchi nomi"
+                                   Foreground="#94A3B8" FontSize="16" VerticalAlignment="Center" Margin="14,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Text, ElementName=UsernameBox}" Value="">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
                 </Border>
 
                 <TextBlock Text="Parol" Foreground="#475569" FontWeight="SemiBold" FontSize="14" />

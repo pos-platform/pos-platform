@@ -73,34 +73,47 @@ watch(
   { immediate: true }
 )
 
-// Sidebar menyu. admin: true bo'lsa faqat Admin ko'radi.
+// Sidebar menyu 3 ta mantiqiy tipga bo'lingan.
+// admin: true bo'lsa faqat Admin ko'radi. group — qaysi bo'limga tegishli.
 const navItems = [
-  { name: 'dashboard', key: 'nav.dashboard', icon: '📊', admin: true },
-  { name: 'pos', key: 'nav.pos', icon: '🛒', cashierOnly: true },
-  { name: 'tables', key: 'nav.tables', icon: '🍽️', admin: true, restaurantOnly: true },
-  { name: 'dishes', key: 'nav.dishes', icon: '🍲', admin: true, restaurantOnly: true },
-  { name: 'kitchen-issues', key: 'nav.kitchenIssues', icon: '👨‍🍳', admin: true, restaurantOnly: true },
-  { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true, perm: 'branches.view' },
-  { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view' },
-  { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true, perm: 'categories.view' },
-  { name: 'sales', key: 'nav.sales', icon: '🧾', perm: 'sales.view' },
-  { name: 'shifts', key: 'nav.shifts', icon: '⏱️' },
-  { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true, perm: 'suppliers.view' },
-  { name: 'stock-receipts', key: 'nav.stockReceipts', icon: '📥', admin: true, perm: 'inventory.view' },
-  { name: 'debtors', key: 'nav.debtors', icon: '📕', admin: true, perm: 'debtors.view' },
-  { name: 'expenses', key: 'nav.expenses', icon: '💸', admin: true, perm: 'expenses.view' },
-  { name: 'payments', key: 'nav.payments', icon: '💳', admin: true, perm: 'cashbox.view' },
-  { name: 'write-offs', key: 'nav.writeOffs', icon: '🗑️', admin: true, perm: 'inventory.view' },
-  { name: 'inventories', key: 'nav.inventories', icon: '🔢', admin: true, perm: 'inventory.view' },
-  { name: 'analytics', key: 'nav.analytics', icon: '📈', admin: true, perm: 'reports.view' },
-  { name: 'reports', key: 'nav.reports', icon: '📊', admin: true, perm: 'reports.view' },
-  { name: 'promotions', key: 'nav.promotions', icon: '🏷️', admin: true },
-  { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔄', admin: true, perm: 'inventory.view' },
-  { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true, perm: 'cashbox.view' },
-  { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true, perm: 'customers.view' },
-  { name: 'users', key: 'nav.users', icon: '👥', admin: true, perm: 'users.view' },
+  // 1) Savdo va kassa
+  { name: 'dashboard', key: 'nav.dashboard', icon: '📊', admin: true, group: 'sales' },
+  { name: 'pos', key: 'nav.pos', icon: '🛒', cashierOnly: true, group: 'sales' },
+  { name: 'tables', key: 'nav.tables', icon: '🍽️', admin: true, restaurantOnly: true, group: 'sales' },
+  { name: 'dishes', key: 'nav.dishes', icon: '🍲', admin: true, restaurantOnly: true, group: 'sales' },
+  { name: 'kitchen-issues', key: 'nav.kitchenIssues', icon: '👨‍🍳', admin: true, restaurantOnly: true, group: 'sales' },
+  { name: 'sales', key: 'nav.sales', icon: '🧾', perm: 'sales.view', group: 'sales' },
+  { name: 'shifts', key: 'nav.shifts', icon: '⏱️', group: 'sales' },
+  { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true, perm: 'customers.view', group: 'sales' },
+  { name: 'debtors', key: 'nav.debtors', icon: '📕', admin: true, perm: 'debtors.view', group: 'sales' },
+  { name: 'promotions', key: 'nav.promotions', icon: '🎉', admin: true, group: 'sales' },
+
+  // 2) Katalog va ombor
+  { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view', group: 'catalog' },
+  { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true, perm: 'categories.view', group: 'catalog' },
+  { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true, perm: 'branches.view', group: 'catalog' },
+  { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true, perm: 'suppliers.view', group: 'catalog' },
+  { name: 'stock-receipts', key: 'nav.stockReceipts', icon: '📥', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔄', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'write-offs', key: 'nav.writeOffs', icon: '🗑️', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'inventories', key: 'nav.inventories', icon: '🔢', admin: true, perm: 'inventory.view', group: 'catalog' },
+
+  // 3) Moliya va boshqaruv
+  { name: 'expenses', key: 'nav.expenses', icon: '💸', admin: true, perm: 'expenses.view', group: 'finance' },
+  { name: 'payments', key: 'nav.payments', icon: '💳', admin: true, perm: 'cashbox.view', group: 'finance' },
+  { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true, perm: 'cashbox.view', group: 'finance' },
+  { name: 'analytics', key: 'nav.analytics', icon: '📈', admin: true, perm: 'reports.view', group: 'finance' },
+  { name: 'reports', key: 'nav.reports', icon: '📊', admin: true, perm: 'reports.view', group: 'finance' },
+  { name: 'users', key: 'nav.users', icon: '👥', admin: true, perm: 'users.view', group: 'finance' },
   // Rollar boshqaruvi faqat SuperAdmin'da (superNavItems → admin-roles). Org admin ko'rmaydi.
-  { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage' }
+  { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage', group: 'finance' }
+]
+
+// Bo'lim tartibi va sarlavhalari
+const navGroups = [
+  { id: 'sales', label: 'nav.groupSales' },
+  { id: 'catalog', label: 'nav.groupCatalog' },
+  { id: 'finance', label: 'nav.groupFinance' }
 ]
 
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
@@ -110,16 +123,32 @@ const superNavItems = [
   { name: 'audit', key: 'nav.audit', icon: '🛡️' }
 ]
 
-const visibleNav = computed(() => {
-  if (auth.isSuperAdmin) return superNavItems
-  return navItems.filter((i) => {
-    if (i.admin && auth.role !== 'Admin') return false
-    if (i.cashierOnly && auth.role === 'Admin') return false
-    if (i.restaurantOnly && !auth.isRestaurant) return false
-    if (i.perm && !auth.hasPermission(i.perm)) return false
-    return true
-  })
+function canSee(i) {
+  if (i.admin && auth.role !== 'Admin') return false
+  if (i.cashierOnly && auth.role === 'Admin') return false
+  if (i.restaurantOnly && !auth.isRestaurant) return false
+  if (i.perm && !auth.hasPermission(i.perm)) return false
+  return true
+}
+
+// Guruhlangan, ruxsatga qarab filtrlangan menyu. Bo'sh guruhlar ko'rsatilmaydi.
+const visibleGroups = computed(() => {
+  return navGroups
+    .map((g) => ({ ...g, items: navItems.filter((i) => i.group === g.id && canSee(i)) }))
+    .filter((g) => g.items.length > 0)
 })
+
+// Bo'limlarni ochib-yopish (akkordeon). Holati localStorage'da saqlanadi.
+const COLLAPSE_KEY = 'pos_nav_collapsed'
+function loadCollapsed() {
+  try { return JSON.parse(localStorage.getItem(COLLAPSE_KEY)) || {} } catch { return {} }
+}
+const collapsedGroups = ref(loadCollapsed())
+function isCollapsed(id) { return !!collapsedGroups.value[id] }
+function toggleGroup(id) {
+  collapsedGroups.value = { ...collapsedGroups.value, [id]: !collapsedGroups.value[id] }
+  localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsedGroups.value))
+}
 
 function logout() {
   storeFilter.reset()
@@ -150,15 +179,44 @@ function logout() {
       </div>
 
       <nav class="side-nav">
-        <RouterLink
-          v-for="item in visibleNav"
-          :key="item.name"
-          :to="{ name: item.name }"
-          class="side-link"
-        >
-          <span class="side-ico">{{ item.icon }}</span>
-          <span class="side-label">{{ t(item.key) }}</span>
-        </RouterLink>
+        <!-- SuperAdmin: guruhsiz oddiy ro'yxat -->
+        <template v-if="auth.isSuperAdmin">
+          <RouterLink
+            v-for="item in superNavItems"
+            :key="item.name"
+            :to="{ name: item.name }"
+            class="side-link"
+          >
+            <span class="side-ico">{{ item.icon }}</span>
+            <span class="side-label">{{ t(item.key) }}</span>
+          </RouterLink>
+        </template>
+
+        <!-- Admin/kassir: 3 ta tipga bo'lingan, ochilib-yopiladigan menyu -->
+        <template v-else>
+          <div
+            v-for="g in visibleGroups"
+            :key="g.id"
+            class="side-group"
+            :class="{ collapsed: isCollapsed(g.id) }"
+          >
+            <button type="button" class="side-group-label" @click="toggleGroup(g.id)">
+              <span>{{ t(g.label) }}</span>
+              <span class="side-group-chevron">▾</span>
+            </button>
+            <div v-show="!isCollapsed(g.id)" class="side-group-items">
+              <RouterLink
+                v-for="item in g.items"
+                :key="item.name"
+                :to="{ name: item.name }"
+                class="side-link"
+              >
+                <span class="side-ico">{{ item.icon }}</span>
+                <span class="side-label">{{ t(item.key) }}</span>
+              </RouterLink>
+            </div>
+          </div>
+        </template>
       </nav>
 
       <!-- Ko'p filiali bo'lgan Admin uchun global do'kon filtri -->

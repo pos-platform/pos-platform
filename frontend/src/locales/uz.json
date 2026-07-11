@@ -27,7 +27,10 @@
     "tables": "Stollar",
     "dishes": "Ovqatlar",
     "kitchenIssues": "Oshpazga berish",
-    "settings": "Sozlamalar"
+    "settings": "Sozlamalar",
+    "groupSales": "Savdo va kassa",
+    "groupCatalog": "Katalog va ombor",
+    "groupFinance": "Moliya va boshqaruv"
   },
   "common": {
     "save": "Saqlash",

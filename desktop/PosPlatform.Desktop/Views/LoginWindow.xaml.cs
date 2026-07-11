@@ -15,7 +15,7 @@ public partial class LoginWindow : Window
         var logo = App.CreateLogoIcon();
         Icon = logo;
         LogoImage.Source = logo;
-        Loaded += (_, _) => PasswordBox.Focus();
+        Loaded += (_, _) => UsernameBox.Focus();
     }
 
     private string CurrentPassword => _showPassword ? PasswordVisible.Text : PasswordBox.Password;
