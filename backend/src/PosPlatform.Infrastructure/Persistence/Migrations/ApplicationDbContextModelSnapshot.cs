@@ -1068,6 +1068,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("SupplierId");
 
+                    b.HasIndex("OrganizationId", "Name");
+
                     b.ToTable("Products");
                 });
 

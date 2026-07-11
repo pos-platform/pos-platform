@@ -18,8 +18,10 @@ public partial class PosWindow : Window
     private int _currentIndex;
     private ObservableCollection<CartLine> _cart;
     private List<ProductDto> _allProducts = new();
-    private readonly ObservableCollection<ProductDto> _displayedProducts = new();
-    private int _populateVersion;
+    // ListBox virtualizatsiyasi uchun mahsulotlar 4 tadan qatorlarga bo'linadi.
+    private readonly ObservableCollection<IReadOnlyList<ProductDto>> _productRows = new();
+    private const int ProductColumns = 4;
+    private DispatcherTimer? _searchDebounce;
     private ShiftDto? _shift;
     private readonly ReceiptPrinter _printer = new();
     private ReceiptData? _lastReceipt;
@@ -37,15 +39,14 @@ public partial class PosWindow : Window
         _sessions.Add(new SaleSession());
         _cart = _sessions[0].Cart;
         CartItems.ItemsSource = _cart;
-        ProductsControl.ItemsSource = _displayedProducts;
+        ProductsControl.ItemsSource = _productRows;
         UserText.Text = $"{AppState.Username} ({AppState.Role})";
         ShowLicenseReminder();
         BuildSaleTabs();
         Loaded += async (_, _) =>
         {
-            await LoadShiftAsync();
-            await LoadCategoriesAsync();
-            await LoadProductsAsync();
+            // Uchala so'rov bir-biriga bog'liq emas — parallel yuklaymiz (startni tezlashtiradi).
+            await Task.WhenAll(LoadShiftAsync(), LoadCategoriesAsync(), LoadProductsAsync());
             StartSyncTimer();
             AppState.Scanner.BarcodeReceived += OnBarcodeScanned;
             AppState.RestartScanner();
@@ -54,6 +55,7 @@ public partial class PosWindow : Window
         Closed += (_, _) =>
         {
             _syncTimer?.Stop();
+            _searchDebounce?.Stop();
             NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
             AppState.Scanner.BarcodeReceived -= OnBarcodeScanned;
             AppState.Scanner.Stop();
@@ -508,23 +510,29 @@ public partial class PosWindow : Window
 
     private void ApplyFilter()
     {
-        var version = ++_populateVersion;
-        _ = PopulateProductsAsync(ComputeFiltered(), version);
+        // Virtualizatsiya tufayli faqat ko'rinadigan qatorlar yaratiladi — qatorlarni
+        // bir zumda o'rnataveramiz (avvalgidek 50 tadan asta qo'shish shart emas).
+        var items = ComputeFiltered();
+        _productRows.Clear();
+        for (var i = 0; i < items.Count; i += ProductColumns)
+            _productRows.Add(items.GetRange(i, Math.Min(ProductColumns, items.Count - i)));
     }
 
-    private async Task PopulateProductsAsync(List<ProductDto> items, int version)
+    // Har bir bosilishda butun ro'yxatni qayta qurmaslik uchun qidiruvni "debounce" qilamiz.
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        _displayedProducts.Clear();
-        for (var i = 0; i < items.Count; i++)
+        if (_searchDebounce is null)
         {
-            if (_populateVersion != version) return;
-            _displayedProducts.Add(items[i]);
-            if ((i + 1) % 50 == 0)
-                await Dispatcher.Yield(DispatcherPriority.Background);
+            _searchDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
+            _searchDebounce.Tick += (_, _) =>
+            {
+                _searchDebounce!.Stop();
+                ApplyFilter();
+            };
         }
+        _searchDebounce.Stop();
+        _searchDebounce.Start();
     }
-
-    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
 
     // COM port skanerdan barcode kelganda (ThreadPool thread) UI thread'da qayta ishlash
     private void OnBarcodeScanned(string barcode)
@@ -571,8 +579,9 @@ public partial class PosWindow : Window
 
         // Qidiruv maydonida Enter bosilganda (skaner emas) ko'rinib turgan
         // birinchi mahsulotni ham qabul qilamiz — nom bo'yicha tez qo'shish uchun.
+        // Qidiruv "debounce" bo'lgani uchun ro'yxatni shu yerda yangidan hisoblaymiz.
         if (product is null && !fromScanner)
-            product = (ProductsControl.ItemsSource as IEnumerable<ProductDto>)?.FirstOrDefault();
+            product = ComputeFiltered().FirstOrDefault();
 
         if (product is not null)
         {
@@ -908,8 +917,17 @@ public partial class PosWindow : Window
                 _lastReceipt = receipt;
                 ReprintButton.IsEnabled = true;
                 ShowMessage($"✓ Chek {sale.ReceiptNumber} · Jami {sale.TotalAmount:N0} · Qaytim {sale.ChangeAmount:N0}", error: false);
+
+                // Qoldiqlarni lokal kamaytiramiz — butun katalogni serverdan qayta yuklamaymiz
+                // (har savdodan keyingi to'liq yuklash sotuvni sezilarli sekinlashtirardi).
+                foreach (var line in _cart)
+                {
+                    var cached = _allProducts.FirstOrDefault(p => p.Id == line.Product.Id);
+                    if (cached is not null) cached.Quantity -= line.Quantity;
+                }
+                AppState.Offline.SaveProducts(_allProducts);
                 CloseCurrentSessionAfterSale();
-                await LoadProductsAsync();
+                ApplyFilter();
             }
             else
             {

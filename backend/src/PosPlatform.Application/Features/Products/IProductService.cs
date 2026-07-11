@@ -6,6 +6,9 @@ public interface IProductService
 {
     Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Kassa (POS) uchun yengil ro'yxat — faqat zarur maydonlar, SQL proyeksiyasi bilan.</summary>
+    Task<IReadOnlyList<PosProductDto>> GetForPosAsync(CancellationToken cancellationToken = default);
+
     Task<ProductDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<ProductDto> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default);

@@ -22,6 +22,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasIndex(p => p.Barcode);
         builder.HasIndex(p => p.PluNumber);
 
+        // GET /api/products har doim tashkilot filtri bilan ketadi va Name bo'yicha saralanadi.
+        // (OrganizationId, Name) kompozit index — filtr + ORDER BY ni to'liq qoplaydi.
+        builder.HasIndex(p => new { p.OrganizationId, p.Name });
+
         builder.HasOne(p => p.Category)
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)

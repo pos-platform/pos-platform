@@ -61,7 +61,7 @@ function onBarcodeKey(e) {
 
 // Pagination
 const currentPage = ref(1)
-const pageSize = ref(50)
+const pageSize = ref(25)
 
 const showModal = ref(false)
 const editId = ref(null)
@@ -423,12 +423,12 @@ async function confirmDelete() {
   deleting.value = true
   try {
     await productsApi.remove(deleteTarget.value.id)
-    deleteTarget.value = null
     await loadAll()
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
     deleting.value = false
+    deleteTarget.value = null
   }
 }
 

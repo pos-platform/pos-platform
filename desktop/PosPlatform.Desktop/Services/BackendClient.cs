@@ -42,7 +42,7 @@ public class BackendClient
     }
 
     public async Task<List<ProductDto>> GetProductsAsync()
-        => (await _http.GetFromJsonAsync<List<ProductDto>>("api/products", Json)) ?? new();
+        => (await _http.GetFromJsonAsync<List<ProductDto>>("api/products/pos", Json)) ?? new();
 
     public async Task<List<CategoryDto>> GetCategoriesAsync()
         => (await _http.GetFromJsonAsync<List<CategoryDto>>("api/categories", Json)) ?? new();

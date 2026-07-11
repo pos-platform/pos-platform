@@ -36,6 +36,39 @@ public class ProductService : IProductService
         return products.Select(p => ProductDto.FromEntity(p, _currentUser.BranchId)).ToList();
     }
 
+    public async Task<IReadOnlyList<PosProductDto>> GetForPosAsync(CancellationToken cancellationToken = default)
+    {
+        var branchId = _currentUser.BranchId;
+
+        IQueryable<Product> query = _db.Products.AsNoTracking();
+        if (branchId is not null)
+            query = query.Where(p => p.BranchId == branchId || p.BranchId == null);
+
+        // SQL proyeksiyasi: faqat kerakli ustunlar o'qiladi, Supplier/Branch JOIN qilinmaydi,
+        // qoldiq esa subquery orqali hisoblanadi (BranchStocks indeksidan foydalanadi).
+        // branchId ko'rsatilsa — shu filial qoldig'i (unikal indeks tufayli bitta yozuv),
+        // aks holda (admin) — barcha filiallar yig'indisi.
+        return await query
+            .OrderBy(p => p.Name)
+            .Select(p => new PosProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Barcode = p.Barcode,
+                MxikCode = p.MxikCode,
+                Price = p.Price,
+                Quantity = p.Stocks
+                    .Where(s => branchId == null || s.BranchId == branchId)
+                    .Sum(s => s.Quantity),
+                Unit = p.Unit,
+                IsWeighed = p.IsWeighed,
+                PluNumber = p.PluNumber,
+                CategoryId = p.CategoryId,
+                ImageUrl = p.ImageUrl
+            })
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<ProductDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var product = await _db.Products

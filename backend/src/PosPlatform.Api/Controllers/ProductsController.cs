@@ -29,6 +29,12 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
 
+    /// <summary>Kassa (POS) uchun yengil mahsulotlar ro'yxati — faqat zarur maydonlar.</summary>
+    [HttpGet("pos")]
+    [ProducesResponseType(typeof(IReadOnlyList<PosProductDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<PosProductDto>>> GetForPos(CancellationToken cancellationToken)
+        => Ok(await _productService.GetForPosAsync(cancellationToken));
+
     /// <summary>Id bo'yicha mahsulot.</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
