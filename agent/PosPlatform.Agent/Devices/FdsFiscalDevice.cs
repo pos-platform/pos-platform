@@ -34,8 +34,13 @@ public class FdsFiscalDevice : IFiscalDevice
     /// <summary>Avtomatik topilgan FactoryID keshi (config'da berilmagan bo'lsa).</summary>
     private string? _factoryId;
 
-    private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web)
+    // Server (Go) maydon nomlarini PascalCase kutadi (Receipt, Time, Items ...) —
+    // camelCase yuborsak validatsiya "required" xatosini beradi. Javobni o'qishда esa
+    // katta-kichik harfga bee'tibor bo'lamiz.
+    private static readonly JsonSerializerOptions _json = new()
     {
+        PropertyNamingPolicy = null,             // PascalCase chiqishi
+        PropertyNameCaseInsensitive = true,      // javobni moslashuvchan o'qish
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
@@ -57,11 +62,11 @@ public class FdsFiscalDevice : IFiscalDevice
             var baseUrl = _options.FiscalDriveServiceUrl.TrimEnd('/');
 
             // ── 1-bosqich: chekni bazaga yozib TXID olish ──────────────────────
-            // Drayver "JsonReceipt" maydonida chekning JSON matnini (string) kutadi.
-            var receiptJson = JsonSerializer.Serialize(BuildReceipt(receipt), _json);
+            // Chek body sifatida to'g'ridan-to'g'ri (o'rovsiz), PascalCase maydonlar bilan
+            // yuboriladi — Swagger namunasi: { "Time":..., "Type":0, "Items":[...] }.
             var getTxResponse = await _http.PostAsJsonAsync(
                 $"{baseUrl}/FiscalDrive/Receipt/GetTXID/{factoryId}",
-                new { JsonReceipt = receiptJson }, _json, cancellationToken);
+                BuildReceipt(receipt), _json, cancellationToken);
             var getTxBody = await getTxResponse.Content.ReadAsStringAsync(cancellationToken);
 
             if (!getTxResponse.IsSuccessStatusCode)
@@ -75,9 +80,14 @@ public class FdsFiscalDevice : IFiscalDevice
                 return FiscalResult.Failure($"Fiskal modul TXID qaytarmadi: {getTxBody}");
 
             // ── 2-bosqich: TXID bo'yicha modulda ro'yxatga olish ───────────────
-            var registerResponse = await _http.PostAsJsonAsync(
-                $"{baseUrl}/FiscalDrive/Receipt/RegisterTXID/{factoryId}",
-                new { TXID = txid.Value }, _json, cancellationToken);
+            // TXID form-data (application/x-www-form-urlencoded) sifatida yuboriladi — JSON emas
+            // (Swagger: TXID integer, formData). POS-lock yo'q bo'lsa X-POS-Auth header shart emas.
+            var form = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("TXID", txid.Value.ToString(CultureInfo.InvariantCulture))
+            });
+            var registerResponse = await _http.PostAsync(
+                $"{baseUrl}/FiscalDrive/Receipt/RegisterTXID/{factoryId}", form, cancellationToken);
             var registerBody = await registerResponse.Content.ReadAsStringAsync(cancellationToken);
 
             if (!registerResponse.IsSuccessStatusCode)
@@ -123,9 +133,18 @@ public class FdsFiscalDevice : IFiscalDevice
             return _factoryId;
 
         var baseUrl = _options.FiscalDriveServiceUrl.TrimEnd('/');
-        var modules = await _http.GetFromJsonAsync<List<FiscalModuleInfo>>(
-            $"{baseUrl}/FiscalDrive/List", _json, cancellationToken);
 
+        // FiscalDriveService da BARCHA endpointlar POST (GET bo'lsa 405 Method Not Allowed).
+        using var listResponse = await _http.PostAsync(
+            $"{baseUrl}/FiscalDrive/List", null, cancellationToken);
+        var listBody = await listResponse.Content.ReadAsStringAsync(cancellationToken);
+        if (!listResponse.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("FiscalDriveService List HTTP {Status}: {Body}", (int)listResponse.StatusCode, listBody);
+            return null;
+        }
+
+        var modules = JsonSerializer.Deserialize<List<FiscalModuleInfo>>(listBody, _json);
         var chosen = modules?.FirstOrDefault(m => m.AppletVersion == "0400")
                      ?? modules?.FirstOrDefault();
 
