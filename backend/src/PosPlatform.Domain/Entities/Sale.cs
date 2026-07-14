@@ -20,6 +20,13 @@ public class Sale : BaseEntity
     public Guid? CashShiftId { get; set; }
     public CashShift? CashShift { get; set; }
 
+    /// <summary>
+    /// Savdo qaysi kassa stantsiyasida (PC/terminal) amalga oshirilgani — masalan "KASSA-1".
+    /// Fiskal agent shu qiymat bo'yicha faqat o'z terminaliga tegishli cheklarni oladi
+    /// (har terminalda o'z fiskal moduli bo'lganda). Bo'sh bo'lsa — bitta agent hammasini oladi.
+    /// </summary>
+    public string? TerminalId { get; set; }
+
     public SaleType Type { get; set; } = SaleType.Sale;
 
     /// <summary>Refund bo'lsa — qaytarilayotgan asl savdo.</summary>

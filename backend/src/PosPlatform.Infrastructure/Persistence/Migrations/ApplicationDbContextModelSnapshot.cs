@@ -1361,6 +1361,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("TableId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("TerminalId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric(18,2)");
 
@@ -1398,6 +1402,8 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("Status");
 
                     b.HasIndex("TableId");
+
+                    b.HasIndex("TerminalId");
 
                     b.HasIndex("Type");
 

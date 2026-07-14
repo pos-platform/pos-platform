@@ -36,6 +36,7 @@ public partial class App : Application
         AppState.BaseUrl = config["Backend:BaseUrl"] ?? "https://poscloud.uz";
         AppState.PrinterEnabled = bool.TryParse(config["Printer:Enabled"], out var pe) && pe;
         AppState.PrinterName = string.IsNullOrWhiteSpace(config["Printer:Name"]) ? null : config["Printer:Name"];
+        AppState.TerminalId = string.IsNullOrWhiteSpace(config["Terminal:Id"]) ? null : config["Terminal:Id"];
 
         // Foydalanuvchi sozlamalari (%APPDATA%) — agar bor bo'lsa, ustun.
         var saved = SettingsService.Load();
@@ -44,6 +45,7 @@ public partial class App : Application
             if (!string.IsNullOrWhiteSpace(saved.BaseUrl)) AppState.BaseUrl = saved.BaseUrl;
             AppState.PrinterEnabled = saved.PrinterEnabled;
             AppState.PrinterName = string.IsNullOrWhiteSpace(saved.PrinterName) ? null : saved.PrinterName;
+            if (!string.IsNullOrWhiteSpace(saved.TerminalId)) AppState.TerminalId = saved.TerminalId;
             AppState.ScannerComPort = string.IsNullOrWhiteSpace(saved.ScannerComPort) ? null : saved.ScannerComPort;
             AppState.ScannerBaudRate = saved.ScannerBaudRate > 0 ? saved.ScannerBaudRate : 9600;
         }

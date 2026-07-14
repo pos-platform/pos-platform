@@ -12,6 +12,10 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.HasIndex(s => s.ReceiptNumber).IsUnique();
         builder.HasIndex(s => s.CreatedAt);
 
+        builder.Property(s => s.TerminalId).HasMaxLength(64);
+        // Fiskal agent navbatni terminal bo'yicha filtrlaydi (per-terminal fiskal modul).
+        builder.HasIndex(s => s.TerminalId);
+
         builder.Property(s => s.TotalAmount).HasColumnType("numeric(18,2)");
         builder.Property(s => s.DiscountAmount).HasColumnType("numeric(18,2)");
         builder.Property(s => s.VatAmount).HasColumnType("numeric(18,2)");

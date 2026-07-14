@@ -768,8 +768,8 @@ onMounted(load)
 .alert-status.st-expired { color: #dc2626; }
 
 .layout { display: flex; gap: 16px; align-items: flex-start; }
-.list-card { flex: 1.3; min-width: 380px; }
-.detail-card { flex: 1; min-width: 360px; max-width: 480px; }
+.list-card { flex: 1; min-width: 380px; }
+.detail-card { flex: 1.15; min-width: 380px; max-width: 640px; }
 
 .row-active { background: #eff6ff; }
 .bal-tag { font-weight: 700; padding: 3px 10px; border-radius: 20px; font-size: 13px; }

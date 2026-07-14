@@ -20,6 +20,13 @@ public class AgentOptions
     public string FiscalModuleId { get; set; } = "SIM-FISCAL-0001";
 
     /// <summary>
+    /// Kassa stantsiyasi identifikatori (masalan "KASSA-1") — shu PC'dagi desktop bilan bir xil.
+    /// Berilsa, agent faqat shu terminalning cheklarini oladi (har terminalda o'z fiskal moduli).
+    /// Bo'sh bo'lsa — barcha kutayotgan cheklarni oladi (bitta agentli rejim).
+    /// </summary>
+    public string FiscalTerminalId { get; set; } = string.Empty;
+
+    /// <summary>
     /// Kassa apparatining soliq tizimidagi ro'yxatga olish raqami (RS — Ro'yxat raqami).
     /// Har bir qurilmaga bir marta beriladi. Fiskal modul javobida bo'lmasa, chekda shu qiymat chop etiladi.
     /// </summary>

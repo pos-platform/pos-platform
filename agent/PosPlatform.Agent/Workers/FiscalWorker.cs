@@ -66,7 +66,7 @@ public class FiscalWorker : BackgroundService
         using var scope = _services.CreateScope();
         var backend = scope.ServiceProvider.GetRequiredService<BackendClient>();
 
-        var pending = await backend.GetPendingAsync(_options.BatchSize, cancellationToken);
+        var pending = await backend.GetPendingAsync(_options.BatchSize, _options.FiscalTerminalId, cancellationToken);
         if (pending.Count == 0)
         {
             return;

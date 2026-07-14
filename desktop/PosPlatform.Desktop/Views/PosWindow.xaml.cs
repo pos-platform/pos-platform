@@ -894,6 +894,7 @@ public partial class PosWindow : Window
                 PaymentMethod = payment,
                 PaidAmount = payment == "Debt" ? 0 : (paid > 0 ? paid : total),
                 DebtorId = debtorId,
+                TerminalId = AppState.TerminalId,
                 Items = _cart.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity }).ToList()
             };
             var receipt = new ReceiptData

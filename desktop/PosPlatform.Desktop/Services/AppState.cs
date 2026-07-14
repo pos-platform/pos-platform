@@ -12,7 +12,7 @@ public static class AppState
     /// <summary>Joriy foydalanuvchining to'liq ism-sharifi (chekda kassir nomi). Bo'sh bo'lsa Username ishlatiladi.</summary>
     public static string CashierName { get; set; } = "";
 
-    /// <summary>Joriy do'kon (filial yoki tashkilot) nomi — chek sarlavhasida ishlatiladi.</summary>
+    /// <summary>Chek sarlavhasida ko'rsatiladigan nom — tashkilot nomi (bo'lmasa filial nomi).</summary>
     public static string StoreName { get; set; } = "";
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
@@ -39,6 +39,10 @@ public static class AppState
 
     public static bool PrinterEnabled { get; set; }
     public static string? PrinterName { get; set; }
+
+    /// <summary>Kassa stantsiyasi ID (masalan "KASSA-1") — har sotuvda backendga yuboriladi,
+    /// fiskal agent shu bo'yicha o'z terminalining cheklarini oladi. Bo'sh bo'lishi mumkin.</summary>
+    public static string? TerminalId { get; set; }
 
     public static BarcodeScanner Scanner { get; } = new();
     public static string? ScannerComPort { get; set; }

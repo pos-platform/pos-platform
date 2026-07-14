@@ -21,14 +21,18 @@ public class FiscalController : ControllerBase
         _fiscalQueue = fiscalQueue;
     }
 
-    /// <summary>Fiskalizatsiya kutayotgan cheklar (Queued).</summary>
+    /// <summary>
+    /// Fiskalizatsiya kutayotgan cheklar (Queued). <paramref name="terminalId"/> berilsa —
+    /// faqat shu kassa stantsiyasining cheklari (har terminalda o'z fiskal moduli/agenti bo'lganda).
+    /// </summary>
     [HttpGet("pending")]
     [ProducesResponseType(typeof(IReadOnlyList<PendingReceiptDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<PendingReceiptDto>>> GetPending(
         [FromQuery] int max = 20,
+        [FromQuery] string? terminalId = null,
         CancellationToken cancellationToken = default)
     {
-        var pending = await _fiscalQueue.GetPendingAsync(max, cancellationToken);
+        var pending = await _fiscalQueue.GetPendingAsync(max, terminalId, cancellationToken);
         return Ok(pending);
     }
 

@@ -15,10 +15,13 @@ public class BackendClient
         _http = http;
     }
 
-    public async Task<IReadOnlyList<PendingReceipt>> GetPendingAsync(int max, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PendingReceipt>> GetPendingAsync(int max, string? terminalId, CancellationToken cancellationToken)
     {
-        var result = await _http.GetFromJsonAsync<List<PendingReceipt>>(
-            $"api/fiscal/pending?max={max}", cancellationToken);
+        var url = $"api/fiscal/pending?max={max}";
+        if (!string.IsNullOrWhiteSpace(terminalId))
+            url += $"&terminalId={Uri.EscapeDataString(terminalId)}";
+
+        var result = await _http.GetFromJsonAsync<List<PendingReceipt>>(url, cancellationToken);
 
         return result ?? new List<PendingReceipt>();
     }

@@ -15,15 +15,23 @@ public class FiscalQueueService : IFiscalQueueService
         _db = db;
     }
 
-    public async Task<IReadOnlyList<PendingReceiptDto>> GetPendingAsync(int max, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PendingReceiptDto>> GetPendingAsync(int max, string? terminalId = null, CancellationToken cancellationToken = default)
     {
         max = Math.Clamp(max, 1, 100);
+        terminalId = string.IsNullOrWhiteSpace(terminalId) ? null : terminalId.Trim();
 
-        var sales = await _db.Sales
+        var query = _db.Sales
             .AsNoTracking()
             .Include(s => s.Items)
             .Include(s => s.Receipt)
-            .Where(s => s.Receipt != null && s.Receipt.FiscalStatus == FiscalStatus.Queued)
+            .Where(s => s.Receipt != null && s.Receipt.FiscalStatus == FiscalStatus.Queued);
+
+        // terminalId berilsa — faqat shu stantsiyaning cheklari (har terminalda o'z moduli/agenti).
+        // Bo'sh bo'lsa — barcha cheklar (bitta agentli eski rejim, ortga moslik).
+        if (terminalId is not null)
+            query = query.Where(s => s.TerminalId == terminalId);
+
+        var sales = await query
             .OrderBy(s => s.CreatedAt)
             .Take(max)
             .ToListAsync(cancellationToken);

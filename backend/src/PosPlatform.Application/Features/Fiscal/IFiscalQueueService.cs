@@ -8,7 +8,11 @@ namespace PosPlatform.Application.Features.Fiscal;
 /// </summary>
 public interface IFiscalQueueService
 {
-    Task<IReadOnlyList<PendingReceiptDto>> GetPendingAsync(int max, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Fiskalizatsiya kutayotgan cheklar. <paramref name="terminalId"/> berilsa — faqat shu
+    /// kassa stantsiyasining cheklari; bo'sh bo'lsa — barcha (bitta agentli eski rejim).
+    /// </summary>
+    Task<IReadOnlyList<PendingReceiptDto>> GetPendingAsync(int max, string? terminalId = null, CancellationToken cancellationToken = default);
 
     Task ApplyResultAsync(Guid saleId, FiscalResultDto result, CancellationToken cancellationToken = default);
 }

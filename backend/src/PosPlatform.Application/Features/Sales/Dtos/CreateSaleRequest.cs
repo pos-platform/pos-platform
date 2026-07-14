@@ -8,6 +8,12 @@ public class CreateSaleRequest
     /// <summary>Filial. Bo'sh bo'lsa, joriy kassirning filiali olinadi.</summary>
     public Guid? BranchId { get; set; }
 
+    /// <summary>
+    /// Kassa stantsiyasi (PC/terminal) identifikatori, masalan "KASSA-1".
+    /// Desktop shu qiymatni yuboradi; fiskal agent shu bo'yicha o'z terminalining cheklarini oladi.
+    /// </summary>
+    public string? TerminalId { get; set; }
+
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
 
     /// <summary>Nasiya (Debt) sotuvda majburiy — qaysi qarzdorga.</summary>

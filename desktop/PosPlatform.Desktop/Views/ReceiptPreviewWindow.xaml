@@ -24,7 +24,8 @@
                                       Background="White" Margin="8" />
         </Border>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+        <StackPanel x:Name="ActionButtons" Grid.Row="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,14,0,0" Visibility="Collapsed">
             <Button Content="Yopish" Width="100" Height="42" Margin="0,0,8,0"
                     IsCancel="True" Click="Close_Click"
                     Background="White" BorderBrush="#CBD5E1" />

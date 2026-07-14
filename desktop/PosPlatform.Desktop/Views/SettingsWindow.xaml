@@ -16,6 +16,13 @@
         <TextBlock Text="Printer (bo'sh = standart)" Foreground="#6B7480" FontWeight="SemiBold" />
         <ComboBox x:Name="PrinterCombo" Height="32" Padding="6" IsEditable="True" Margin="0,4,0,8" />
 
+        <TextBlock Text="Kassa stantsiyasi ID (masalan KASSA-1)" Foreground="#6B7480" FontWeight="SemiBold" />
+        <TextBox x:Name="TerminalIdBox" Height="32" Padding="8,5" Margin="0,4,0,4"
+                 VerticalContentAlignment="Center"
+                 ToolTip="Shu PC'dagi fiskal agent FiscalTerminalId bilan bir xil bo'lsin. Har kassada o'z fiskal moduli bo'lsa to'ldiring; bitta modul bo'lsa bo'sh qoldiring." />
+        <TextBlock Text="Har kassada alohida fiskal modul bo'lsa to'ldiring; bitta modul bo'lsa bo'sh qoldiring."
+                   Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+
         <Separator Margin="0,8,0,8" />
 
         <TextBlock Text="Barcode skaner (COM port)" Foreground="#6B7480" FontWeight="SemiBold" />

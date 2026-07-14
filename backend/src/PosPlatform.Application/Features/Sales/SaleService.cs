@@ -132,6 +132,7 @@ public class SaleService : ISaleService
             BranchId = request.BranchId ?? _currentUser.BranchId,
             CashierId = cashierId,
             CashShiftId = shift.Id,
+            TerminalId = string.IsNullOrWhiteSpace(request.TerminalId) ? null : request.TerminalId.Trim(),
             Type = SaleType.Sale,
             PaymentMethod = request.PaymentMethod,
             DebtorId = debtor?.Id,

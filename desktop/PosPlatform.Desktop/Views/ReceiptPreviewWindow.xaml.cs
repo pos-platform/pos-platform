@@ -19,7 +19,11 @@ public partial class ReceiptPreviewWindow : Window
         Render();
 
         // Onlayn savdo bo'lsa va QR hali yo'q bo'lsa — agent fiskalizatsiyasini kutamiz.
-        if (_receipt.SaleId is Guid && string.IsNullOrEmpty(_receipt.QrCodeUrl) && AppState.IsOnline)
+        // Fiskal chek (QR) kelgunicha "Yopish"/"Chop etish" tugmalarini yashirib turamiz.
+        var expectingFiscal = _receipt.SaleId is Guid && string.IsNullOrEmpty(_receipt.QrCodeUrl) && AppState.IsOnline;
+        ActionButtons.Visibility = expectingFiscal ? Visibility.Collapsed : Visibility.Visible;
+
+        if (expectingFiscal)
         {
             Loaded += async (_, _) => await PollFiscalAsync();
             Closed += (_, _) => _pollCts?.Cancel();
@@ -39,26 +43,36 @@ public partial class ReceiptPreviewWindow : Window
         _pollCts = new CancellationTokenSource();
         var token = _pollCts.Token;
 
-        // ~20 soniya davomida har 2 sekundda tekshiramiz (agent poll oralig'i 5s).
-        for (var i = 0; i < 10 && !token.IsCancellationRequested; i++)
+        try
         {
-            try
+            // ~20 soniya davomida har 2 sekundda tekshiramiz (agent poll oralig'i 5s).
+            for (var i = 0; i < 10 && !token.IsCancellationRequested; i++)
             {
-                await Task.Delay(2000, token);
-                var sale = await AppState.Backend.GetSaleAsync(saleId, token);
-                if (sale?.Receipt is { IsRegistered: true } rc)
+                try
                 {
-                    _receipt.QrCodeUrl = rc.QrCodeUrl;
-                    _receipt.FiscalSign = rc.FiscalSign;
-                    _receipt.FiscalModuleId = rc.FiscalModuleId;
-                    _receipt.FiscalRegistrationNumber = rc.FiscalRegistrationNumber;
-                    _receipt.FiscalReceiptNumber = rc.FiscalReceiptNumber;
-                    Render();
-                    return;
+                    await Task.Delay(2000, token);
+                    var sale = await AppState.Backend.GetSaleAsync(saleId, token);
+                    if (sale?.Receipt is { IsRegistered: true } rc)
+                    {
+                        _receipt.QrCodeUrl = rc.QrCodeUrl;
+                        _receipt.FiscalSign = rc.FiscalSign;
+                        _receipt.FiscalModuleId = rc.FiscalModuleId;
+                        _receipt.FiscalRegistrationNumber = rc.FiscalRegistrationNumber;
+                        _receipt.FiscalReceiptNumber = rc.FiscalReceiptNumber;
+                        Render();
+                        return;
+                    }
                 }
+                catch (OperationCanceledException) { return; }
+                catch { /* tarmoq xatosi — keyingi urinishda qayta sinaymiz */ }
             }
-            catch (OperationCanceledException) { return; }
-            catch { /* tarmoq xatosi — keyingi urinishda qayta sinaymiz */ }
+        }
+        finally
+        {
+            // QR keldi yoki timeout bo'ldi — ikkalasida ham tugmalarni ko'rsatamiz
+            // (oyna yopilgan bo'lsa ham zararsiz).
+            if (!token.IsCancellationRequested)
+                ActionButtons.Visibility = Visibility.Visible;
         }
     }
 

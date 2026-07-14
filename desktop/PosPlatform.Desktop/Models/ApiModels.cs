@@ -159,6 +159,8 @@ public class CreateSaleRequest
     public string PaymentMethod { get; set; } = "Cash";
     public decimal PaidAmount { get; set; }
     public Guid? DebtorId { get; set; }
+    /// <summary>Kassa stantsiyasi ID (masalan "KASSA-1") — fiskal agent shu bo'yicha filtrlaydi.</summary>
+    public string? TerminalId { get; set; }
     public List<SaleItemRequest> Items { get; set; } = new();
 }
 
