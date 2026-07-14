@@ -9,6 +9,7 @@ public class OrganizationDto
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }
+    public string? Stir { get; set; }
     public string? Note { get; set; }
     public bool IsActive { get; set; }
     public BusinessType BusinessType { get; set; }
@@ -25,6 +26,7 @@ public class OrganizationDto
         Id = o.Id,
         Name = o.Name,
         Phone = o.Phone,
+        Stir = o.Stir,
         Note = o.Note,
         IsActive = o.IsActive,
         BusinessType = o.BusinessType,
@@ -96,6 +98,7 @@ public class OrganizationDetailDto : OrganizationDto
             Id = o.Id,
             Name = o.Name,
             Phone = o.Phone,
+            Stir = o.Stir,
             Note = o.Note,
             IsActive = o.IsActive,
             BusinessType = o.BusinessType,
@@ -114,6 +117,10 @@ public class CreateOrganizationRequest
     public string Name { get; set; } = string.Empty;
 
     public string? Phone { get; set; }
+
+    /// <summary>Soliq to'lovchi identifikatsiya raqami (STIR / ИНН) — fiskal chekda chiqadi.</summary>
+    public string? Stir { get; set; }
+
     public string? Note { get; set; }
 
     /// <summary>Faoliyat turi — Do'kon (0) yoki Restoran (1).</summary>
@@ -224,6 +231,10 @@ public class UpdateOrganizationRequest
     public string Name { get; set; } = string.Empty;
 
     public string? Phone { get; set; }
+
+    /// <summary>Soliq to'lovchi identifikatsiya raqami (STIR / ИНН) — fiskal chekda chiqadi.</summary>
+    public string? Stir { get; set; }
+
     public string? Note { get; set; }
     public BusinessType BusinessType { get; set; } = BusinessType.Store;
 }

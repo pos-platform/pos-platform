@@ -900,13 +900,17 @@ public partial class PosWindow : Window
             var receipt = new ReceiptData
             {
                 StoreName = AppState.StoreName,
+                Stir = AppState.OrgStir,
+                Address = AppState.BranchAddress,
+                Kassa = AppState.TerminalId,
                 Cashier = AppState.CashierDisplay,
                 Payment = payment,
                 Total = total,
                 Paid = req.PaidAmount,
                 Lines = _cart.Select(l => new ReceiptLine
                 {
-                    Name = l.Product.Name, Quantity = l.Quantity, Price = l.Product.Price, LineTotal = l.LineTotal
+                    Name = l.Product.Name, Quantity = l.Quantity, Price = l.Product.Price, LineTotal = l.LineTotal,
+                    MxikCode = l.Product.MxikCode, Barcode = l.Product.Barcode, IsVat = l.Product.IsVat
                 }).ToList()
             };
 

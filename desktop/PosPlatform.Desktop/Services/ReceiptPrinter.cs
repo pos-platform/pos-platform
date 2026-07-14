@@ -63,24 +63,43 @@ public class ReceiptPrinter
         const string sep = "--------------------------------";
         Add(string.IsNullOrWhiteSpace(r.StoreName) ? "PosPlatform" : r.StoreName,
             bold: true, size: 15, align: TextAlignment.Center);
-        Add($"Chek: {r.ReceiptNumber}", align: TextAlignment.Center);
-        Add(r.Date.ToString("yyyy-MM-dd HH:mm"), align: TextAlignment.Center);
+        if (!string.IsNullOrWhiteSpace(r.Stir))
+            Add($"STIR: {r.Stir}", align: TextAlignment.Center);
+        if (!string.IsNullOrWhiteSpace(r.Address))
+            Add(r.Address, align: TextAlignment.Center);
+        Add(sep);
+
+        // Kassa raqami · Smena (mavjud bo'lgani ko'rsatiladi).
+        var idParts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(r.Kassa)) idParts.Add($"Kassa: {r.Kassa}");
+        if (!string.IsNullOrWhiteSpace(r.FiscalShiftNumber)) idParts.Add($"Smena: {r.FiscalShiftNumber}");
+        if (idParts.Count > 0) Add(string.Join("   ", idParts));
+
+        Add($"Chek: {r.ReceiptNumber}");
+        Add(r.Date.ToString("yyyy-MM-dd HH:mm"));
         Add($"Sotuvchi: {r.Cashier}");
         Add(sep);
 
-        const int width = 32; // sep uzunligi — monospace shriftda ustunlar tekis bo'lishi uchun
         foreach (var line in r.Lines)
         {
-            // Termal chek bilan bir xil: nom (chap) ... soni x narx = summa (o'ng), bitta qatorda.
-            var right = $"{line.Quantity:0.###} x {line.Price:N0} = {line.LineTotal:N0}";
-            var nameMax = Math.Max(1, width - right.Length - 1);
-            var name = line.Name.Length > nameMax ? line.Name[..nameMax] : line.Name;
-            var space = width - name.Length - right.Length;
-            Add(name + (space > 0 ? new string(' ', space) : " ") + right);
+            // Mahsulot bloki: nom → Shtrix/MXIK → soni x narx = summa (o'ng) → QQS.
+            Add(line.Name);
+
+            var meta = new List<string>();
+            if (!string.IsNullOrWhiteSpace(line.Barcode)) meta.Add($"Shtrix: {line.Barcode}");
+            if (HasMxik(line.MxikCode)) meta.Add($"MXIK: {line.MxikCode}");
+            if (meta.Count > 0) Add("  " + string.Join("   ", meta), size: 10);
+
+            Add($"{line.Quantity:0.###} x {line.Price:N0} = {line.LineTotal:N0}", align: TextAlignment.Right);
+
+            if (line.IsVat)
+                Add($"  QQS 12%: {Math.Round(line.LineTotal * 12m / 112m):N0}", size: 10);
         }
 
         Add(sep);
         Add($"JAMI: {r.Total:N0} so'm", bold: true, size: 13);
+        if (r.VatTotal > 0)
+            Add($"QQS jami (12%): {r.VatTotal:N0}");
         Add($"To'lov: {PaymentLabel(r.Payment)}");
         Add($"Berilgan: {r.Paid:N0}");
         Add($"Qaytim: {r.Change:N0}");
@@ -134,4 +153,8 @@ public class ReceiptPrinter
         "Mixed" => "Aralash",
         _ => "Naqd"
     };
+
+    /// <summary>MXIK kodi mazmunli (bo'sh emas va faqat nol emas)mi.</summary>
+    private static bool HasMxik(string? code) =>
+        !string.IsNullOrWhiteSpace(code) && code.Trim('0').Length > 0;
 }

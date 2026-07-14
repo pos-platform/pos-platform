@@ -15,6 +15,9 @@ public class PosProductDto
     public string Name { get; set; } = string.Empty;
     public string? Barcode { get; set; }
     public string MxikCode { get; set; } = string.Empty;
+
+    /// <summary>QQS (НДС) bilanmi — fiskal chekda satr QQSi hisoblanadi.</summary>
+    public bool IsVat { get; set; }
     public decimal Price { get; set; }
     public decimal Quantity { get; set; }
     public Unit Unit { get; set; }

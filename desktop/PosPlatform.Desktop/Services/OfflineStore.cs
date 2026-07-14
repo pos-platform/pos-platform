@@ -42,7 +42,8 @@ public class OfflineStore : IDisposable
                 Quantity    REAL NOT NULL,
                 Unit        TEXT NOT NULL,
                 CategoryId  TEXT NOT NULL,
-                ImageUrl    TEXT
+                ImageUrl    TEXT,
+                IsVat       INTEGER NOT NULL DEFAULT 1
             );
             CREATE TABLE IF NOT EXISTS CategoryCache (
                 Id   TEXT PRIMARY KEY,
@@ -69,6 +70,21 @@ public class OfflineStore : IDisposable
             );
             INSERT OR IGNORE INTO ShiftCache(Key, Payload) VALUES('current', NULL);
         ");
+
+        // Eski keshda IsVat ustuni bo'lmasligi mumkin — bo'lmasa qo'shamiz (fiskal chek QQSi uchun).
+        if (!ColumnExists("ProductCache", "IsVat"))
+            Exec("ALTER TABLE ProductCache ADD COLUMN IsVat INTEGER NOT NULL DEFAULT 1");
+    }
+
+    /// <summary>Jadvalda ustun mavjudligini tekshiradi (sxema migratsiyasi uchun).</summary>
+    private bool ColumnExists(string table, string column)
+    {
+        using var cmd = Cmd($"PRAGMA table_info({table})");
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+            if (string.Equals(r.GetString(1), column, StringComparison.OrdinalIgnoreCase))
+                return true;
+        return false;
     }
 
     // ─── Mahsulotlar ────────────────────────────────────────────────────────
@@ -79,7 +95,7 @@ public class OfflineStore : IDisposable
         Exec("DELETE FROM ProductCache", tx);
         foreach (var p in products)
         {
-            var cmd = Cmd("INSERT OR REPLACE INTO ProductCache VALUES(@Id,@Name,@Barcode,@MxikCode,@Price,@Qty,@Unit,@CatId,@Img)", tx);
+            var cmd = Cmd("INSERT OR REPLACE INTO ProductCache VALUES(@Id,@Name,@Barcode,@MxikCode,@Price,@Qty,@Unit,@CatId,@Img,@IsVat)", tx);
             cmd.Parameters.AddWithValue("@Id",     p.Id.ToString());
             cmd.Parameters.AddWithValue("@Name",   p.Name);
             cmd.Parameters.AddWithValue("@Barcode",p.Barcode ?? (object)DBNull.Value);
@@ -89,6 +105,7 @@ public class OfflineStore : IDisposable
             cmd.Parameters.AddWithValue("@Unit",   p.Unit);
             cmd.Parameters.AddWithValue("@CatId",  p.CategoryId.ToString());
             cmd.Parameters.AddWithValue("@Img",    p.ImageUrl ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@IsVat",  p.IsVat ? 1 : 0);
             cmd.ExecuteNonQuery();
         }
         tx.Commit();
@@ -97,7 +114,7 @@ public class OfflineStore : IDisposable
     public List<ProductDto> LoadProducts()
     {
         var list = new List<ProductDto>();
-        using var cmd = Cmd("SELECT Id,Name,Barcode,MxikCode,Price,Quantity,Unit,CategoryId,ImageUrl FROM ProductCache ORDER BY Name");
+        using var cmd = Cmd("SELECT Id,Name,Barcode,MxikCode,Price,Quantity,Unit,CategoryId,ImageUrl,IsVat FROM ProductCache ORDER BY Name");
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
@@ -111,7 +128,8 @@ public class OfflineStore : IDisposable
                 Quantity   = (decimal)r.GetDouble(5),
                 Unit       = r.GetString(6),
                 CategoryId = Guid.Parse(r.GetString(7)),
-                ImageUrl   = r.IsDBNull(8) ? null : r.GetString(8)
+                ImageUrl   = r.IsDBNull(8) ? null : r.GetString(8),
+                IsVat      = !r.IsDBNull(9) && r.GetInt64(9) != 0
             });
         }
         return list;

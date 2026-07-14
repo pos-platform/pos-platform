@@ -15,8 +15,14 @@ public class AuthResponse
     /// <summary>Tashkilot nomi.</summary>
     public string? OrganizationName { get; set; }
 
+    /// <summary>Tashkilot STIR (ИНН) — fiskal chek sarlavhasida chiqadi.</summary>
+    public string? OrganizationStir { get; set; }
+
     /// <summary>Biriktirilgan do'kon (filial) nomi — chek sarlavhasida ishlatiladi.</summary>
     public string? BranchName { get; set; }
+
+    /// <summary>Filial manzili — fiskal chek sarlavhasida chiqadi.</summary>
+    public string? BranchAddress { get; set; }
 
     /// <summary>Obuna shu sanagacha amal qiladi (oylik to'lov). null = faollashtirilmagan.</summary>
     public DateTime? LicensedUntil { get; set; }
@@ -106,6 +112,9 @@ public class ProductDto
     public string Name { get; set; } = "";
     public string? Barcode { get; set; }
     public string MxikCode { get; set; } = "";
+
+    /// <summary>QQS (НДС) bilanmi — fiskal chekda satr QQSi hisoblanadi.</summary>
+    public bool IsVat { get; set; }
     public decimal Price { get; set; }
     public decimal Quantity { get; set; }
     public string Unit { get; set; } = "Piece";
@@ -232,14 +241,30 @@ public class ReceiptData
     public string ReceiptNumber { get; set; } = "";
     public DateTime Date { get; set; } = DateTime.Now;
 
-    /// <summary>Chek sarlavhasidagi do'kon nomi. Bo'sh bo'lsa "PosPlatform" ishlatiladi.</summary>
+    /// <summary>Chek sarlavhasidagi tashkilot nomi. Bo'sh bo'lsa "PosPlatform" ishlatiladi.</summary>
     public string StoreName { get; set; } = "";
+
+    /// <summary>Tashkilot STIR (ИНН) — sarlavhada chiqadi (ixtiyoriy).</summary>
+    public string? Stir { get; set; }
+
+    /// <summary>Filial manzili — sarlavhada chiqadi (ixtiyoriy).</summary>
+    public string? Address { get; set; }
+
+    /// <summary>Kassa raqami (TerminalId) — sarlavhada chiqadi (ixtiyoriy).</summary>
+    public string? Kassa { get; set; }
+
+    /// <summary>Fiskal modul qaytargan smena raqami (ixtiyoriy).</summary>
+    public string? FiscalShiftNumber { get; set; }
+
     public string Cashier { get; set; } = "";
     public string Payment { get; set; } = "";
     public decimal Total { get; set; }
     public decimal Paid { get; set; }
     public decimal Change { get; set; }
     public List<ReceiptLine> Lines { get; set; } = new();
+
+    /// <summary>QQS (НДС) jami — narxga kiritilgan 12% (faqat QQSli satrlar). 0 bo'lsa ko'rsatilmaydi.</summary>
+    public decimal VatTotal => Lines.Where(l => l.IsVat).Sum(l => Math.Round(l.LineTotal * 12m / 112m, 2));
 
     /// <summary>Savdoning serverdagi Id'si — fiskal holatni so'rab olish uchun (onlayn savdo).</summary>
     public Guid? SaleId { get; set; }
@@ -262,4 +287,13 @@ public class ReceiptLine
     public decimal Quantity { get; set; }
     public decimal Price { get; set; }
     public decimal LineTotal { get; set; }
+
+    /// <summary>MXIK (ИКПУ) kodi — fiskal chekda mahsulot ostida chiqadi.</summary>
+    public string MxikCode { get; set; } = "";
+
+    /// <summary>Shtrix-kod (ШК) — fiskal chekda mahsulot ostida chiqadi (ixtiyoriy).</summary>
+    public string? Barcode { get; set; }
+
+    /// <summary>QQS (НДС) bilanmi — narxga kiritilgan 12%.</summary>
+    public bool IsVat { get; set; }
 }

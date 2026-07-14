@@ -67,6 +67,8 @@ public partial class LoginWindow : Window
             // bo'lmasa filial nomiga qaytamiz.
             AppState.StoreName = !string.IsNullOrWhiteSpace(resp.OrganizationName) ? resp.OrganizationName!
                 : (resp.BranchName ?? "");
+            AppState.OrgStir = resp.OrganizationStir;
+            AppState.BranchAddress = resp.BranchAddress;
             AppState.Role = resp.Role;
             AppState.BusinessType = string.IsNullOrWhiteSpace(resp.BusinessType) ? "Store" : resp.BusinessType;
             AppState.LicensedUntil = resp.LicensedUntil;

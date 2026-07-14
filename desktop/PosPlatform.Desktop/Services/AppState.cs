@@ -14,6 +14,12 @@ public static class AppState
 
     /// <summary>Chek sarlavhasida ko'rsatiladigan nom — tashkilot nomi (bo'lmasa filial nomi).</summary>
     public static string StoreName { get; set; } = "";
+
+    /// <summary>Tashkilot STIR (ИНН) — fiskal chek sarlavhasida chiqadi.</summary>
+    public static string? OrgStir { get; set; }
+
+    /// <summary>Filial manzili — fiskal chek sarlavhasida chiqadi.</summary>
+    public static string? BranchAddress { get; set; }
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
     public static string BusinessType { get; set; } = "Store";

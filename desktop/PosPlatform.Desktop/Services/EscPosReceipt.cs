@@ -54,20 +54,38 @@ public static class EscPosReceipt
         Line(string.IsNullOrWhiteSpace(r.StoreName) ? "PosPlatform" : r.StoreName);
         Write(NORMAL);
         Write(BOLD_OFF);
+        if (!string.IsNullOrWhiteSpace(r.Stir))
+            Line($"STIR: {r.Stir}");
+        if (!string.IsNullOrWhiteSpace(r.Address))
+            Line(r.Address);
+        Write(LEFT);
+        Divider();
+
+        // Kassa raqami · Smena (mavjud bo'lgani ko'rsatiladi).
+        var idParts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(r.Kassa)) idParts.Add($"Kassa: {r.Kassa}");
+        if (!string.IsNullOrWhiteSpace(r.FiscalShiftNumber)) idParts.Add($"Smena: {r.FiscalShiftNumber}");
+        if (idParts.Count > 0) Line(string.Join("  ", idParts));
 
         Line($"Chek: {r.ReceiptNumber}");
         Line(r.Date.ToString("yyyy-MM-dd HH:mm"));
-        Write(LEFT);
         Line($"Sotuvchi: {r.Cashier}");
         Divider();
 
         foreach (var l in r.Lines)
         {
-            // Bitta qator: nom (chap) ... soni x narx + summa (o'ng).
-            var right = $"{l.Quantity:0.###} x {l.Price:N0}  {l.LineTotal:N0}";
-            var nameMax = Math.Max(1, printWidth - right.Length - 1);
-            var name = l.Name.Length > nameMax ? l.Name[..nameMax] : l.Name;
-            Line(Row(name, right));
+            // Mahsulot bloki: nom → Shtrix/MXIK → soni x narx = summa → QQS.
+            Line(l.Name.Length > printWidth ? l.Name[..printWidth] : l.Name);
+
+            var meta = new List<string>();
+            if (!string.IsNullOrWhiteSpace(l.Barcode)) meta.Add($"Shtrix: {l.Barcode}");
+            if (HasMxik(l.MxikCode)) meta.Add($"MXIK: {l.MxikCode}");
+            if (meta.Count > 0) Line("  " + string.Join("  ", meta));
+
+            Line(Row("", $"{l.Quantity:0.###} x {l.Price:N0} = {l.LineTotal:N0}"));
+
+            if (l.IsVat)
+                Line($"  QQS 12%: {Math.Round(l.LineTotal * 12m / 112m):N0}");
         }
 
         Divider();
@@ -77,6 +95,8 @@ public static class EscPosReceipt
         Line($"JAMI: {r.Total:N0} so'm");
         Write(NORMAL);
         Write(BOLD_OFF);
+        if (r.VatTotal > 0)
+            Line($"QQS jami (12%): {r.VatTotal:N0}");
         Line($"To'lov: {PaymentLabel(r.Payment)}");
         Line($"Berilgan: {r.Paid:N0}");
         Line($"Qaytim: {r.Change:N0}");
@@ -152,6 +172,10 @@ public static class EscPosReceipt
         "Mixed" => "Aralash",
         _ => "Naqd"
     };
+
+    /// <summary>MXIK kodi mazmunli (bo'sh emas va faqat nol emas)mi.</summary>
+    private static bool HasMxik(string? code) =>
+        !string.IsNullOrWhiteSpace(code) && code.Trim('0').Length > 0;
 
     // ── Windows raw printer API (winspool.drv) ──────────────────────────────
 

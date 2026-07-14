@@ -56,6 +56,7 @@ public class ProductService : IProductService
                 Name = p.Name,
                 Barcode = p.Barcode,
                 MxikCode = p.MxikCode,
+                IsVat = p.IsVat,
                 Price = p.Price,
                 Quantity = p.Stocks
                     .Where(s => branchId == null || s.BranchId == branchId)

@@ -13,8 +13,9 @@
         <TextBlock Grid.Row="0" Text="Chek ko'rinishi" FontSize="17" FontWeight="Bold"
                    Foreground="#1E293B" Margin="0,0,0,12" />
 
-        <!-- Qog'oz chek ko'rinishi -->
+        <!-- Qog'oz chek ko'rinishi (kenglik matnga moslangan, markazda) -->
         <Border Grid.Row="1" Background="White" CornerRadius="6" Padding="0"
+                Width="300" HorizontalAlignment="Center"
                 BorderBrush="#D7DDE5" BorderThickness="1">
             <Border.Effect>
                 <DropShadowEffect Color="#22000000" BlurRadius="14" ShadowDepth="2" />

@@ -20,10 +20,12 @@ const selected = ref(null)
 const busy = ref(false)
 const orgRoles = ref([])
 const orgStores = ref([]) // tanlangan tashkilotning do'konlari
+const stirDraft = ref('') // tanlangan tashkilotning STIR tahriri
+const savingStir = ref(false)
 
 // Yangi tashkilot modali
 const showOrgForm = ref(false)
-const orgForm = reactive({ name: '', phone: '', note: '', adminUsername: '', adminPassword: '', storeCount: 1 })
+const orgForm = reactive({ name: '', phone: '', stir: '', note: '', adminUsername: '', adminPassword: '', storeCount: 1 })
 
 const STORE_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -90,6 +92,7 @@ async function openOrg(o) {
       organizationsApi.getRoles(o.id),
       organizationsApi.getStores(o.id)
     ])
+    stirDraft.value = selected.value?.stir || ''
   } catch (e) {
     err.value = errorMessage(e)
   }
@@ -102,8 +105,30 @@ async function refreshSelected() {
       organizationsApi.getRoles(selected.value.id),
       organizationsApi.getStores(selected.value.id)
     ])
+    stirDraft.value = selected.value?.stir || ''
   }
   await load()
+}
+
+async function saveStir() {
+  if (!selected.value) return
+  savingStir.value = true
+  err.value = ''
+  try {
+    await organizationsApi.update(selected.value.id, {
+      name: selected.value.name,
+      phone: selected.value.phone || null,
+      stir: stirDraft.value.trim() || null,
+      note: selected.value.note || null,
+      businessType: selected.value.businessType
+    })
+    notify('STIR saqlandi')
+    await refreshSelected()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    savingStir.value = false
+  }
 }
 
 async function createOrg() {
@@ -112,6 +137,7 @@ async function createOrg() {
     await organizationsApi.create({
       name: orgForm.name.trim(),
       phone: orgForm.phone.trim() || null,
+      stir: orgForm.stir.trim() || null,
       note: orgForm.note.trim() || null,
       adminUsername: orgForm.adminUsername.trim(),
       adminPassword: orgForm.adminPassword,
@@ -119,7 +145,7 @@ async function createOrg() {
       storeCount: Number(orgForm.storeCount) || 1
     })
     notify(`"${orgForm.name}" tashkiloti yaratildi`)
-    Object.assign(orgForm, { name: '', phone: '', note: '', adminUsername: '', adminPassword: '', storeCount: 1 })
+    Object.assign(orgForm, { name: '', phone: '', stir: '', note: '', adminUsername: '', adminPassword: '', storeCount: 1 })
     showOrgForm.value = false
     await load()
   } catch (e) {
@@ -429,6 +455,20 @@ onMounted(load)
         </button>
       </div>
 
+      <!-- STIR (ИНН) — fiskal chek sarlavhasida chiqadi -->
+      <div class="panel-section">
+        <div class="panel-section-head">
+          <span class="panel-label">STIR (ИНН)</span>
+        </div>
+        <p class="panel-hint">Fiskal chek sarlavhasida ko'rsatiladi. Filial manzili "Do'konlar" bo'limida kiritiladi.</p>
+        <div class="stir-row">
+          <input v-model="stirDraft" class="input" placeholder="9 raqamli STIR" />
+          <button class="btn btn-sm" :disabled="savingStir || (stirDraft.trim() === (selected.stir || ''))" @click="saveStir">
+            {{ savingStir ? '...' : 'Saqlash' }}
+          </button>
+        </div>
+      </div>
+
       <!-- Filiallar — faoliyat turi (Do'kon / Restoran) -->
       <div class="panel-section">
         <div class="panel-section-head">
@@ -558,6 +598,9 @@ onMounted(load)
         <div class="row">
           <div class="field"><label>Tashkilot nomi *</label><input v-model="orgForm.name" class="input" required placeholder="Do'kon / firma nomi" /></div>
           <div class="field"><label>Telefon</label><input v-model="orgForm.phone" class="input" placeholder="+998 ..." /></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>STIR (ИНН)</label><input v-model="orgForm.stir" class="input" placeholder="9 raqamli STIR — chekda chiqadi" /></div>
         </div>
         <div class="row">
           <div class="field" style="flex:2"><label>Izoh</label><input v-model="orgForm.note" class="input" placeholder="Ixtiyoriy" /></div>
@@ -778,6 +821,8 @@ onMounted(load)
 
 .detail-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 .org-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.stir-row { display: flex; gap: 8px; align-items: center; }
+.stir-row .input { flex: 1; }
 
 /* Panel sections */
 .panel-section { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }

@@ -106,6 +106,7 @@ public class OrganizationService : IOrganizationService
         {
             Name = name,
             Phone = request.Phone?.Trim(),
+            Stir = request.Stir?.Trim(),
             Note = request.Note?.Trim(),
             BusinessType = request.BusinessType,
             IsActive = true
@@ -155,6 +156,7 @@ public class OrganizationService : IOrganizationService
         var org = await GetOrgAsync(id, ct);
         org.Name = request.Name.Trim();
         org.Phone = request.Phone?.Trim();
+        org.Stir = request.Stir?.Trim();
         org.Note = request.Note?.Trim();
         org.BusinessType = request.BusinessType;
         await _db.SaveChangesAsync(ct);

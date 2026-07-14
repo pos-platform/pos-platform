@@ -26,8 +26,14 @@ public class AuthResponse
 
     public string? OrganizationName { get; set; }
 
+    /// <summary>Tashkilot STIR (ИНН) — fiskal chek sarlavhasida chiqadi.</summary>
+    public string? OrganizationStir { get; set; }
+
     /// <summary>Foydalanuvchi biriktirilgan do'kon (filial) nomi — chek sarlavhasida ishlatiladi.</summary>
     public string? BranchName { get; set; }
+
+    /// <summary>Filial manzili — fiskal chek sarlavhasida chiqadi.</summary>
+    public string? BranchAddress { get; set; }
 
     /// <summary>Tashkilot faoliyat turi — Store yoki Restaurant. Frontend/desktop UI'ni shunga moslaydi.</summary>
     public BusinessType BusinessType { get; set; }

@@ -15,6 +15,9 @@ public class Organization : BaseEntity
 
     public string? Phone { get; set; }
 
+    /// <summary>Soliq to'lovchi identifikatsiya raqami (STIR / ИНН) — fiskal chek sarlavhasida chiqadi.</summary>
+    public string? Stir { get; set; }
+
     public string? Note { get; set; }
 
     /// <summary>Faoliyat turi — Do'kon yoki Restoran. Restoran rejimida stol/oshxona/ovqat modullari yoqiladi.</summary>
