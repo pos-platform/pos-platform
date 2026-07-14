@@ -37,10 +37,22 @@ public class AgentOptions
     public bool UseSimulatedFiscal { get; set; } = true;
 
     /// <summary>
-    /// YT.UZ FiscalDriveAPI lokal JSON-RPC manzili (fiskal modul drayveri).
-    /// Standart: http://127.0.0.1:3448/rpc/api.
+    /// [Eskirgan — ФМ 0400 uchun ishlamaydi] YT.UZ FiscalDriveAPI lokal JSON-RPC manzili.
+    /// Standart: http://127.0.0.1:3448/rpc/api. Yangi modullar uchun FiscalDriveService ishlatiladi.
     /// </summary>
     public string FiscalDriveApiUrl { get; set; } = "http://127.0.0.1:3448/rpc/api";
+
+    /// <summary>
+    /// YT.UZ FiscalDriveService lokal REST-API manzili (ФМ 0400 uchun, FiscalDriveAPI o'rniga).
+    /// Standart: http://127.0.0.1:3449.
+    /// </summary>
+    public string FiscalDriveServiceUrl { get; set; } = "http://127.0.0.1:3449";
+
+    /// <summary>
+    /// Fiskal modulning zavod raqami (FactoryID). Bo'sh qoldirilsa, agent
+    /// <c>/FiscalDrive/List</c> orqali ulangan modulni (applet 0400) avtomatik topadi.
+    /// </summary>
+    public string FiscalFactoryId { get; set; } = string.Empty;
 
     /// <summary>Haqiqiy OFD API manzili, masalan https://ofd.soliq.uz/api.</summary>
     public string OfdApiUrl { get; set; } = "https://ofd.soliq.uz/api";

@@ -112,17 +112,36 @@ body {
 .side-ico { font-size: 16px; width: 22px; text-align: center; flex: none; }
 .side-label { overflow: hidden; text-overflow: ellipsis; }
 
-/* Menyu bo'limlari (3 ta tip) */
+/* Menyu bo'limlari (3 ta tip) — ochilib-yopiladigan */
 .side-group { display: flex; flex-direction: column; gap: 3px; }
-.side-group + .side-group { margin-top: 14px; }
+.side-group + .side-group { margin-top: 10px; }
 .side-group-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--muted-2);
-  padding: 4px 12px 6px;
+  padding: 7px 12px 6px;
+  border-radius: 8px;
+  transition: color 0.14s ease, background 0.14s ease;
 }
+.side-group-label:hover { color: var(--muted); background: var(--surface-2); }
+.side-group-chevron {
+  font-size: 11px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.side-group.collapsed .side-group-chevron { transform: rotate(-90deg); }
+.side-group-items { display: flex; flex-direction: column; gap: 3px; }
 
 .sidebar-store-filter {
   padding: 10px 12px;

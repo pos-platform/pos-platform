@@ -206,9 +206,12 @@ public class ProductService : IProductService
     public async Task<string> GenerateBarcodeAsync(CancellationToken cancellationToken = default)
     {
         // 13 xonali tasodifiy raqamli kod, bazada mavjud emasligi tekshiriladi.
+        // MUHIM: "2" bilan boshlamaymiz — POS "2" + 13 xonali kodni tarozi vazn-kodi deb o'qiydi.
+        // Ichki (restricted) "04" prefiksi bilan boshlaymiz: haqiqiy tovar EAN'lari bilan ham,
+        // tarozi vazn-kodlari bilan ham to'qnashmaydi.
         for (var attempt = 0; attempt < 20; attempt++)
         {
-            var code = "2" + Random.Shared.NextInt64(100_000_000_000L, 999_999_999_999L).ToString();
+            var code = "04" + Random.Shared.NextInt64(10_000_000_000L, 99_999_999_999L).ToString();
             var exists = await _db.Products.AnyAsync(p => p.Barcode == code, cancellationToken);
             if (!exists)
             {
@@ -216,7 +219,7 @@ public class ProductService : IProductService
             }
         }
         // Juda kam ehtimol — fallback sifatida vaqt asosidagi kod.
-        return "2" + DateTime.UtcNow.Ticks.ToString()[^12..];
+        return "04" + DateTime.UtcNow.Ticks.ToString()[^11..];
     }
 
     public async Task<int> GetNextPluAsync(CancellationToken cancellationToken = default)

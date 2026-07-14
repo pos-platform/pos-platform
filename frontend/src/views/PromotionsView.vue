@@ -130,7 +130,7 @@ onMounted(load)
 
       <div class="field">
         <label>Chegirma foizi (%)</label>
-        <input v-model="form.discountPercent" type="number" min="0" max="100" step="0.1" class="input" required />
+        <input v-model="form.discountPercent" type="number" min="0" max="100" step="any" class="input" required />
       </div>
 
       <div class="field">

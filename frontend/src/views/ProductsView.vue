@@ -843,7 +843,7 @@ function printBarcode(product) {
           </div>
           <div class="field">
             <label>Ustama % <span class="req-star">*</span></label>
-            <input v-model="form.markupPercent" type="number" step="0.1" class="input" @input="recalcPrice" />
+            <input v-model="form.markupPercent" type="number" step="any" class="input" @input="recalcPrice" />
           </div>
         </div>
 

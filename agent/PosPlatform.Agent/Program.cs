@@ -28,8 +28,14 @@ builder.Services.AddHttpClient("ofd", client =>
     client.Timeout = TimeSpan.FromSeconds(20);
 });
 
-// YT.UZ FiscalDriveAPI lokal modul uchun HttpClient.
+// YT.UZ FiscalDriveAPI lokal modul uchun HttpClient (eskirgan, JSON-RPC).
 builder.Services.AddHttpClient("yt-fiscal", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// YT.UZ FiscalDriveService lokal modul uchun HttpClient (ФМ 0400, REST-API).
+builder.Services.AddHttpClient("fds-fiscal", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
 });
@@ -38,6 +44,7 @@ builder.Services.AddHttpClient("yt-fiscal", client =>
 // yoki eskicha UseSimulatedFiscal (true=Simulated, false=Ofd).
 var fiscalMode = agentOptions.FiscalMode?.Trim().ToLowerInvariant() switch
 {
+    "fiscaldriveservice" or "fds" => "fds",
     "ytmodule" or "yt"            => "yt",
     "ofd"                         => "ofd",
     "simulated" or "sim" or "test" => "simulated",
@@ -46,6 +53,9 @@ var fiscalMode = agentOptions.FiscalMode?.Trim().ToLowerInvariant() switch
 
 switch (fiscalMode)
 {
+    case "fds":
+        builder.Services.AddSingleton<IFiscalDevice, FdsFiscalDevice>();
+        break;
     case "yt":
         builder.Services.AddSingleton<IFiscalDevice, YtFiscalDevice>();
         break;

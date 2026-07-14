@@ -558,18 +558,20 @@ public partial class PosWindow : Window
     /// </summary>
     private void ProcessScannedCode(string code, bool fromScanner)
     {
-        // 1) Tarozi vazn-kodi: "2" + 6 xonali mahsulot kodi + 5 xonali vazn (gramm) + nazorat raqami
+        // 1) Tarozi vazn-kodi: "2" + 6 xonali mahsulot kodi + 5 xonali vazn (gramm) + nazorat raqami.
+        //    Vazn deb faqat topilgan mahsulot ROSTDAN tarozili (IsWeighed) bo'lsagina qabul qilamiz.
+        //    Aks holda ichki generatsiya qilingan "2..." shtrix-kodli Dona tovarlar xato ravishda
+        //    vaznga aylanib qolardi (masalan 2297438359950 → 35.995 kg).
         if (TryParseScaleBarcode(code, out var itemCode, out var weightKg))
         {
             var weighed = FindByScaleItemCode(itemCode);
-            if (weighed is not null)
+            if (weighed is not null && weighed.IsWeighed)
             {
                 AddWeightToCart(weighed, weightKg);
                 SearchBox.Clear();
                 return;
             }
-            ShowNotFound($"Tarozi mahsuloti topilmadi (kod: {itemCode})");
-            return;
+            // Tarozili mahsulot emas — pastdagi oddiy shtrix-kod mosligiga o'tamiz.
         }
 
         // 2) Oddiy shtrix-kod: aniq moslik (barcode yoki MXIK kodi bo'yicha)
