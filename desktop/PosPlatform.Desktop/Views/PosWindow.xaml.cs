@@ -861,7 +861,12 @@ public partial class PosWindow : Window
 
     // ---------- To'lash ----------
 
-    private async void Checkout_Click(object sender, RoutedEventArgs e)
+    // Tepadagi yashil "To'lash va Chek chiqarish" (va F12) — fiskalizatsiyani kutadi.
+    private void Checkout_Click(object sender, RoutedEventArgs e) => _ = CheckoutAsync(allowImmediatePrint: false);
+
+    /// <param name="allowImmediatePrint">Chek oynasi fiskalizatsiya kelishini kutmasdan
+    /// "Chop etish" tugmasini darhol ko'rsatadimi (pastdagi "Chop etish" tugmasi uchun true).</param>
+    private async Task CheckoutAsync(bool allowImmediatePrint)
     {
         if (_shift is null) { ShowMessage("Avval smenani oching", error: true); return; }
         if (_cart.Count == 0) { ShowMessage("Savatcha bo'sh", error: true); return; }
@@ -962,7 +967,7 @@ public partial class PosWindow : Window
                 ApplyFilter();
             }
 
-            new ReceiptPreviewWindow(receipt) { Owner = this }.ShowDialog();
+            new ReceiptPreviewWindow(receipt, allowImmediatePrint) { Owner = this }.ShowDialog();
         }
         catch (Exception ex)
         {
@@ -1091,7 +1096,20 @@ public partial class PosWindow : Window
 
     private void Reprint_Click(object sender, RoutedEventArgs e)
     {
-        if (_lastReceipt is null) return;
+        // Savatchada mahsulot bo'lsa — bu tugma ham to'lovni bajaradi (yashil tugma kabi),
+        // ammo chek oynasi fiskalizatsiyani kutmasdan darhol chop etishga ruxsat beradi.
+        if (_cart.Count > 0)
+        {
+            _ = CheckoutAsync(allowImmediatePrint: true);
+            return;
+        }
+
+        // Savatcha bo'sh — oxirgi to'lov qilingan chekni qayta chop etadi.
+        if (_lastReceipt is null)
+        {
+            ShowMessage("Chop etadigan chek yo'q — avval to'lov qiling", error: true);
+            return;
+        }
         if (PrintReceiptSafe(_lastReceipt))
             ShowMessage("✓ Chek chop etildi", error: false);
     }

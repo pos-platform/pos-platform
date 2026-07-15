@@ -36,9 +36,6 @@
                          VerticalContentAlignment="Center"
                          ToolTip="Tashkilotning yuridik manzili — chek sarlavhasidagi 'Yur.Manzil' qatorida chiqadi. Bo'sh qoldirsangiz qator chiqmaydi." />
 
-                <TextBlock Text="Fiskal QR rejimi" Foreground="#6B7480" FontWeight="SemiBold" Margin="0,2,0,2" />
-                <TextBlock x:Name="QrModeText" FontSize="12" Margin="0,0,0,8" TextWrapping="Wrap" />
-
                 <Separator Margin="0,8,0,8" />
 
                 <TextBlock Text="Barcode skaner (COM port)" Foreground="#6B7480" FontWeight="SemiBold" />
@@ -79,23 +76,9 @@
         <!-- Pastda doim ko'rinadigan saqlash paneli -->
         <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0">
             <StackPanel Margin="22,12,22,14">
-                <TextBlock Text="Saqlash — do'kon QR'ni qayerdan chiqarishiga qarab tanlang:"
-                           Foreground="#6B7480" FontSize="12" Margin="0,0,0,6" TextWrapping="Wrap" />
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Content="✓ QR bilan saqlash" Height="44"
-                            Background="#16A34A" Foreground="White" FontWeight="Bold" BorderThickness="0"
-                            Click="SaveWithQr_Click"
-                            ToolTip="Chek QR shu programmadan chiqadi (odatiy holat)." />
-                    <Button Grid.Column="2" Content="QR'siz saqlash" Height="44"
-                            Background="#334155" Foreground="White" FontWeight="Bold" BorderThickness="0"
-                            Click="SaveWithoutQr_Click"
-                            ToolTip="QR tashqi apparatdan chiqadi — programma o'z QR'ini bosmaydi (butun kassa uchun)." />
-                </Grid>
+                <Button Content="✓ Saqlash" Height="44"
+                        Background="#16A34A" Foreground="White" FontWeight="Bold" BorderThickness="0"
+                        Click="Save_Click" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                     <Button Content="🖨 Test chek" Padding="12,6" Margin="0,0,8,0" Click="TestPrint_Click" />
                     <Button Content="Bekor" Padding="12,6" IsCancel="True" Click="Cancel_Click" />

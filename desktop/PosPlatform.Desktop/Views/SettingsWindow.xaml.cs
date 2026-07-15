@@ -27,7 +27,6 @@ public partial class SettingsWindow : Window
         PrinterCombo.Text = AppState.PrinterName ?? "";
         TerminalIdBox.Text = AppState.TerminalId ?? "";
         LegalAddressBox.Text = AppState.LegalAddress ?? "";
-        UpdateQrModeText(AppState.ExternalFiscalDevice);
 
         // COM port skaner
         foreach (var port in BarcodeScanner.GetAvailablePorts())
@@ -36,26 +35,9 @@ public partial class SettingsWindow : Window
         BaudRateBox.Text = AppState.ScannerBaudRate > 0 ? AppState.ScannerBaudRate.ToString() : "9600";
     }
 
-    // QR shu programmadan chiqadigan (odatiy) rejimda saqlash.
-    private void SaveWithQr_Click(object sender, RoutedEventArgs e) => Save(externalFiscal: false);
-
-    // QR tashqi apparatdan chiqadigan — programma QR bosmaydigan rejimda saqlash.
-    private void SaveWithoutQr_Click(object sender, RoutedEventArgs e) => Save(externalFiscal: true);
-
-    /// <summary>Joriy fiskal QR rejimini izohlab beradi (butun kassa uchun qo'llanadi).</summary>
-    private void UpdateQrModeText(bool externalFiscal)
-    {
-        if (externalFiscal)
-        {
-            QrModeText.Text = "Hozirgi rejim: QR'siz — QR tashqi apparatdan chiqadi, programma QR bosmaydi.";
-            QrModeText.Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55));
-        }
-        else
-        {
-            QrModeText.Text = "Hozirgi rejim: QR bilan — chek QR shu programmadan chiqadi (odatiy).";
-            QrModeText.Foreground = new SolidColorBrush(Color.FromRgb(0x16, 0xA3, 0x4A));
-        }
-    }
+    // Sozlamalarni saqlash — fiskal QR rejimi (ExternalFiscalDevice) o'zgarmaydi,
+    // joriy qiymat saqlab qolinadi.
+    private void Save_Click(object sender, RoutedEventArgs e) => Save(externalFiscal: AppState.ExternalFiscalDevice);
 
     private void Save(bool externalFiscal)
     {

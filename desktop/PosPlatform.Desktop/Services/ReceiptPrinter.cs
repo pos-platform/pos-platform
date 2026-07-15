@@ -37,7 +37,9 @@ public class ReceiptPrinter
         return def.Name;
     }
 
-    public static FlowDocument BuildDocument(ReceiptData r)
+    /// <param name="showFiscalPending">false bo'lsa "Fiskalizatsiya kutilmoqda..." matni
+    /// ko'rsatilmaydi (darhol-chop rejimi uchun).</param>
+    public static FlowDocument BuildDocument(ReceiptData r, bool showFiscalPending = true)
     {
         // Ekrandagi ko'rinish uchun shrift kattaroq — 32 belgilik qator qog'ozning to'liq
         // enini egallaydi, o'ngda bo'sh joy qolmaydi. (Termal RAW chekka ta'sir qilmaydi.)
@@ -153,7 +155,7 @@ public class ReceiptPrinter
             Add("olish huquqiga ega bo'ldingiz", size: 12, align: TextAlignment.Center);
             Add(sep);
         }
-        else if (!r.ExternalFiscalDevice && r.SaleId is not null)
+        else if (showFiscalPending && !r.ExternalFiscalDevice && r.SaleId is not null)
         {
             Add("Fiskalizatsiya kutilmoqda...", size: 12, align: TextAlignment.Center);
             Add(sep);

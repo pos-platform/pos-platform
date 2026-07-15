@@ -12,14 +12,30 @@ public partial class ReceiptPreviewWindow : Window
     private readonly ReceiptPrinter _printer = new();
     private CancellationTokenSource? _pollCts;
 
-    public ReceiptPreviewWindow(ReceiptData receipt)
+    /// <summary>Pastdagi "Chop etish" tugmasidan ochilgan — fiskalizatsiya kutilmaydi
+    /// (na poll so'rovi, na "Fiskalizatsiya kutilmoqda..." matni).</summary>
+    private readonly bool _immediatePrint;
+
+    /// <param name="allowImmediatePrint">true bo'lsa "Chop etish" tugmasi fiskalizatsiya
+    /// kelishini kutmasdan darhol ko'rsatiladi (pastdagi "Chop etish" tugmasi uchun).
+    /// false bo'lsa (tepadagi "To'lash" tugmasi) fiskalizatsiya kelguncha tugmalar yashiriladi.</param>
+    public ReceiptPreviewWindow(ReceiptData receipt, bool allowImmediatePrint = false)
     {
         InitializeComponent();
         _receipt = receipt;
+        _immediatePrint = allowImmediatePrint;
         Render();
 
-        // Onlayn savdo bo'lsa va QR hali yo'q bo'lsa — agent fiskalizatsiyasini kutamiz.
-        // Fiskal chek (QR) kelgunicha "Yopish"/"Chop etish" tugmalarini yashirib turamiz.
+        // Pastdagi "Chop etish" tugmasidan ochilgan bo'lsa — fiskalizatsiya kutilmaydi:
+        // poll so'rovi yuborilmaydi, tugmalar darhol ko'rinadi, "kutilmoqda" matni chiqmaydi.
+        if (_immediatePrint)
+        {
+            ActionButtons.Visibility = Visibility.Visible;
+            return;
+        }
+
+        // Tepadagi "To'lash" tugmasidan: QR hali yo'q bo'lsa agent fiskalizatsiyasini fonda
+        // kutamiz va QR kelganda chekni yangilaymiz. QR kelguncha tugmalar yashirin turadi.
         // Tashqi fiskal qurilma QR'ni o'zi chiqarsa, POS fiskalizatsiyani kutmaydi.
         var expectingFiscal = !_receipt.ExternalFiscalDevice
                               && _receipt.SaleId is Guid && string.IsNullOrEmpty(_receipt.QrCodeUrl) && AppState.IsOnline;
@@ -35,7 +51,8 @@ public partial class ReceiptPreviewWindow : Window
     private void Render()
     {
         // Ko'rsatish uchun hujjat (chop etishda yangisi quriladi — bitta hujjat ikki joyda bo'lolmaydi).
-        DocViewer.Document = ReceiptPrinter.BuildDocument(_receipt);
+        // Darhol-chop rejimida "Fiskalizatsiya kutilmoqda..." matni ko'rsatilmaydi.
+        DocViewer.Document = ReceiptPrinter.BuildDocument(_receipt, showFiscalPending: !_immediatePrint);
     }
 
     /// <summary>Backenddan chekning fiskal holatini so'rab turadi; QR kelganda chekni yangilaydi.</summary>
