@@ -74,15 +74,17 @@ public static class EscPosReceipt
 
         foreach (var l in r.Lines)
         {
-            // Mahsulot bloki: nom → Shtrix/MXIK → soni x narx = summa → QQS.
-            Line(l.Name.Length > printWidth ? l.Name[..printWidth] : l.Name);
+            // 1-qator: nom (chap) ... soni x narx = summa (o'ng), bitta qatorda.
+            var amount = $"{l.Quantity:0.###} x {l.Price:N0} = {l.LineTotal:N0}";
+            var nameMax = Math.Max(1, printWidth - amount.Length - 1);
+            var name = l.Name.Length > nameMax ? l.Name[..nameMax] : l.Name;
+            Line(Row(name, amount));
 
-            var meta = new List<string>();
-            if (!string.IsNullOrWhiteSpace(l.Barcode)) meta.Add($"Shtrix: {l.Barcode}");
-            if (HasMxik(l.MxikCode)) meta.Add($"MXIK: {l.MxikCode}");
-            if (meta.Count > 0) Line("  " + string.Join("  ", meta));
-
-            Line(Row("", $"{l.Quantity:0.###} x {l.Price:N0} = {l.LineTotal:N0}"));
+            // 2-qator: Shtrix (bo'lsa) + MXIK (har doim — fiskal chek uchun majburiy).
+            var codes = new List<string>();
+            if (!string.IsNullOrWhiteSpace(l.Barcode)) codes.Add($"Shtrix: {l.Barcode}");
+            codes.Add($"MXIK: {(string.IsNullOrWhiteSpace(l.MxikCode) ? "00000000" : l.MxikCode)}");
+            Line("  " + string.Join("   ", codes));
 
             if (l.IsVat)
                 Line($"  QQS 12%: {Math.Round(l.LineTotal * 12m / 112m):N0}");
@@ -103,7 +105,9 @@ public static class EscPosReceipt
         Divider();
 
         // Fiskal belgi + QR (agent fiskalizatsiya qilgach to'ladi).
-        if (!string.IsNullOrEmpty(r.QrCodeUrl))
+        // Tashqi fiskal qurilma (ФМ/fleshka) QR'ni o'zi chiqarsa, POS QR'ni bosmaydi —
+        // bir chekda ikkita QR / double-registratsiya bo'lmasligi uchun.
+        if (!r.ExternalFiscalDevice && !string.IsNullOrEmpty(r.QrCodeUrl))
         {
             Write(CENTER);
             Write(BOLD_ON);
@@ -172,10 +176,6 @@ public static class EscPosReceipt
         "Mixed" => "Aralash",
         _ => "Naqd"
     };
-
-    /// <summary>MXIK kodi mazmunli (bo'sh emas va faqat nol emas)mi.</summary>
-    private static bool HasMxik(string? code) =>
-        !string.IsNullOrWhiteSpace(code) && code.Trim('0').Length > 0;
 
     // ── Windows raw printer API (winspool.drv) ──────────────────────────────
 

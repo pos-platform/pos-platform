@@ -80,17 +80,26 @@ public class ReceiptPrinter
         Add($"Sotuvchi: {r.Cashier}");
         Add(sep);
 
+        const int width = 32; // monospace ustun kengligi (sep uzunligi)
+        string Row(string left, string right)
+        {
+            var space = width - left.Length - right.Length;
+            return left + (space > 0 ? new string(' ', space) : " ") + right;
+        }
+
         foreach (var line in r.Lines)
         {
-            // Mahsulot bloki: nom → Shtrix/MXIK → soni x narx = summa (o'ng) → QQS.
-            Add(line.Name);
+            // 1-qator: nom (chap) ... soni x narx = summa (o'ng), bitta qatorda.
+            var amount = $"{line.Quantity:0.###} x {line.Price:N0} = {line.LineTotal:N0}";
+            var nameMax = Math.Max(1, width - amount.Length - 1);
+            var name = line.Name.Length > nameMax ? line.Name[..nameMax] : line.Name;
+            Add(Row(name, amount));
 
-            var meta = new List<string>();
-            if (!string.IsNullOrWhiteSpace(line.Barcode)) meta.Add($"Shtrix: {line.Barcode}");
-            if (HasMxik(line.MxikCode)) meta.Add($"MXIK: {line.MxikCode}");
-            if (meta.Count > 0) Add("  " + string.Join("   ", meta), size: 10);
-
-            Add($"{line.Quantity:0.###} x {line.Price:N0} = {line.LineTotal:N0}", align: TextAlignment.Right);
+            // 2-qator: Shtrix (bo'lsa) + MXIK (har doim — fiskal chek uchun majburiy).
+            var codes = new List<string>();
+            if (!string.IsNullOrWhiteSpace(line.Barcode)) codes.Add($"Shtrix: {line.Barcode}");
+            codes.Add($"MXIK: {(string.IsNullOrWhiteSpace(line.MxikCode) ? "00000000" : line.MxikCode)}");
+            Add("  " + string.Join("   ", codes), size: 10);
 
             if (line.IsVat)
                 Add($"  QQS 12%: {Math.Round(line.LineTotal * 12m / 112m):N0}", size: 10);
@@ -106,7 +115,9 @@ public class ReceiptPrinter
         Add(sep);
 
         // Fiskal belgi + QR (agent fiskalizatsiya qilgach to'ladi).
-        if (!string.IsNullOrEmpty(r.QrCodeUrl))
+        // Tashqi fiskal qurilma (ФМ/fleshka) QR'ni o'zi chiqarsa, POS QR'ni bosmaydi —
+        // bir chekda ikkita QR / double-registratsiya bo'lmasligi uchun.
+        if (!r.ExternalFiscalDevice && !string.IsNullOrEmpty(r.QrCodeUrl))
         {
             Add("*** FISKAL CHEK ***", bold: true, align: TextAlignment.Center);
             if (!string.IsNullOrEmpty(r.FiscalReceiptNumber))
@@ -136,7 +147,7 @@ public class ReceiptPrinter
             Add("olish huquqiga ega bo'ldingiz", size: 9, align: TextAlignment.Center);
             Add(sep);
         }
-        else if (r.SaleId is not null)
+        else if (!r.ExternalFiscalDevice && r.SaleId is not null)
         {
             Add("Fiskalizatsiya kutilmoqda...", size: 9, align: TextAlignment.Center);
             Add(sep);
@@ -153,8 +164,4 @@ public class ReceiptPrinter
         "Mixed" => "Aralash",
         _ => "Naqd"
     };
-
-    /// <summary>MXIK kodi mazmunli (bo'sh emas va faqat nol emas)mi.</summary>
-    private static bool HasMxik(string? code) =>
-        !string.IsNullOrWhiteSpace(code) && code.Trim('0').Length > 0;
 }

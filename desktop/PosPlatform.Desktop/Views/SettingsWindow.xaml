@@ -23,6 +23,13 @@
         <TextBlock Text="Har kassada alohida fiskal modul bo'lsa to'ldiring; bitta modul bo'lsa bo'sh qoldiring."
                    Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
 
+        <CheckBox x:Name="ExternalFiscalBox"
+                  Content="Fiskal QR alohida qurilmadan chiqadi (POS QR bosmasin)"
+                  Margin="0,0,0,2"
+                  ToolTip="Bu kassada fiskal chek/QR alohida qurilma (ФМ/fleshka) tomonidan chiqarilsa yoqing. POS o'z QR blokini bosmaydi — bir chekda ikkita QR (double-registratsiya) chiqmaydi." />
+        <TextBlock Text="Yoqilsa: bu kassaning barcha cheklarida POS QR bosilmaydi (QR alohida qurilmadan chiqadi)."
+                   Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+
         <Separator Margin="0,8,0,8" />
 
         <TextBlock Text="Barcode skaner (COM port)" Foreground="#6B7480" FontWeight="SemiBold" />

@@ -20,7 +20,9 @@ public partial class ReceiptPreviewWindow : Window
 
         // Onlayn savdo bo'lsa va QR hali yo'q bo'lsa — agent fiskalizatsiyasini kutamiz.
         // Fiskal chek (QR) kelgunicha "Yopish"/"Chop etish" tugmalarini yashirib turamiz.
-        var expectingFiscal = _receipt.SaleId is Guid && string.IsNullOrEmpty(_receipt.QrCodeUrl) && AppState.IsOnline;
+        // Tashqi fiskal qurilma QR'ni o'zi chiqarsa, POS fiskalizatsiyani kutmaydi.
+        var expectingFiscal = !_receipt.ExternalFiscalDevice
+                              && _receipt.SaleId is Guid && string.IsNullOrEmpty(_receipt.QrCodeUrl) && AppState.IsOnline;
         ActionButtons.Visibility = expectingFiscal ? Visibility.Collapsed : Visibility.Visible;
 
         if (expectingFiscal)

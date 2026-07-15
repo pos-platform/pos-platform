@@ -904,6 +904,7 @@ public partial class PosWindow : Window
                 Address = AppState.BranchAddress,
                 Kassa = AppState.TerminalId,
                 Cashier = AppState.CashierDisplay,
+                ExternalFiscalDevice = AppState.ExternalFiscalDevice,
                 Payment = payment,
                 Total = total,
                 Paid = req.PaidAmount,

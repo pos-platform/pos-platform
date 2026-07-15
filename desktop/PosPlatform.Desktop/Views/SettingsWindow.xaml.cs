@@ -26,6 +26,7 @@ public partial class SettingsWindow : Window
 
         PrinterCombo.Text = AppState.PrinterName ?? "";
         TerminalIdBox.Text = AppState.TerminalId ?? "";
+        ExternalFiscalBox.IsChecked = AppState.ExternalFiscalDevice;
 
         // COM port skaner
         foreach (var port in BarcodeScanner.GetAvailablePorts())
@@ -49,6 +50,7 @@ public partial class SettingsWindow : Window
             PrinterEnabled = PrinterEnabledBox.IsChecked == true,
             PrinterName = string.IsNullOrWhiteSpace(PrinterCombo.Text) ? null : PrinterCombo.Text.Trim(),
             TerminalId = string.IsNullOrWhiteSpace(TerminalIdBox.Text) ? null : TerminalIdBox.Text.Trim(),
+            ExternalFiscalDevice = ExternalFiscalBox.IsChecked == true,
             ScannerComPort = string.IsNullOrWhiteSpace(ScannerPortCombo.Text) ? null : ScannerPortCombo.Text.Trim(),
             ScannerBaudRate = int.TryParse(BaudRateBox.Text, out var br) && br > 0 ? br : 9600
         };
@@ -68,6 +70,7 @@ public partial class SettingsWindow : Window
         AppState.PrinterEnabled = settings.PrinterEnabled;
         AppState.PrinterName = settings.PrinterName;
         AppState.TerminalId = settings.TerminalId;
+        AppState.ExternalFiscalDevice = settings.ExternalFiscalDevice;
         var scannerChanged = AppState.ScannerComPort != settings.ScannerComPort
                              || AppState.ScannerBaudRate != settings.ScannerBaudRate;
         AppState.ScannerComPort = settings.ScannerComPort;

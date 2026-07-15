@@ -279,6 +279,11 @@ public class ReceiptData
     public string? FiscalRegistrationNumber { get; set; }
     /// <summary>Soliq tizimidagi fiskal chek raqami.</summary>
     public string? FiscalReceiptNumber { get; set; }
+
+    /// <summary>Bu kassada fiskal QR alohida qurilma (masalan ФМ/fleshka) tomonidan chiqariladi.
+    /// Yoqilgan bo'lsa, POS o'z QR blokini bosmaydi va fiskalizatsiyani kutmaydi —
+    /// bir chekda ikkita QR (ikkilanish/double-registratsiya) chiqishining oldini oladi.</summary>
+    public bool ExternalFiscalDevice { get; set; }
 }
 
 public class ReceiptLine

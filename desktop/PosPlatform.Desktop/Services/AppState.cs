@@ -50,6 +50,11 @@ public static class AppState
     /// fiskal agent shu bo'yicha o'z terminalining cheklarini oladi. Bo'sh bo'lishi mumkin.</summary>
     public static string? TerminalId { get; set; }
 
+    /// <summary>Bu kassada fiskal QR alohida qurilma (ФМ/fleshka) tomonidan chiqariladi.
+    /// Yoqilgan bo'lsa POS o'z QR blokini bosmaydi — bir chekda ikkita QR / double-registratsiya
+    /// bo'lishining oldini oladi. Butun terminal uchun izchil qo'llaniladi.</summary>
+    public static bool ExternalFiscalDevice { get; set; }
+
     public static BarcodeScanner Scanner { get; } = new();
     public static string? ScannerComPort { get; set; }
     public static int ScannerBaudRate { get; set; } = 9600;

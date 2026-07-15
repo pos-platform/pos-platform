@@ -37,6 +37,7 @@ public partial class App : Application
         AppState.PrinterEnabled = bool.TryParse(config["Printer:Enabled"], out var pe) && pe;
         AppState.PrinterName = string.IsNullOrWhiteSpace(config["Printer:Name"]) ? null : config["Printer:Name"];
         AppState.TerminalId = string.IsNullOrWhiteSpace(config["Terminal:Id"]) ? null : config["Terminal:Id"];
+        AppState.ExternalFiscalDevice = bool.TryParse(config["Fiscal:ExternalDevice"], out var ext) && ext;
 
         // Foydalanuvchi sozlamalari (%APPDATA%) — agar bor bo'lsa, ustun.
         var saved = SettingsService.Load();
@@ -46,6 +47,7 @@ public partial class App : Application
             AppState.PrinterEnabled = saved.PrinterEnabled;
             AppState.PrinterName = string.IsNullOrWhiteSpace(saved.PrinterName) ? null : saved.PrinterName;
             if (!string.IsNullOrWhiteSpace(saved.TerminalId)) AppState.TerminalId = saved.TerminalId;
+            AppState.ExternalFiscalDevice = saved.ExternalFiscalDevice;
             AppState.ScannerComPort = string.IsNullOrWhiteSpace(saved.ScannerComPort) ? null : saved.ScannerComPort;
             AppState.ScannerBaudRate = saved.ScannerBaudRate > 0 ? saved.ScannerBaudRate : 9600;
         }
