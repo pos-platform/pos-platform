@@ -198,6 +198,10 @@ public partial class OrderWindow : Window
             {
                 ReceiptNumber = sale.ReceiptNumber,
                 StoreName = AppState.StoreName,
+                Stir = AppState.OrgStir,
+                Address = AppState.BranchAddress,
+                LegalAddress = AppState.LegalAddress,
+                Kassa = AppState.TerminalId,
                 Cashier = AppState.CashierDisplay,
                 Payment = pay.Value.method,
                 Total = sale.TotalAmount,

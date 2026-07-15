@@ -250,6 +250,9 @@ public class ReceiptData
     /// <summary>Filial manzili — sarlavhada chiqadi (ixtiyoriy).</summary>
     public string? Address { get; set; }
 
+    /// <summary>Tashkilotning yuridik manzili (Yur.Manzil) — sarlavhada chiqadi (ixtiyoriy).</summary>
+    public string? LegalAddress { get; set; }
+
     /// <summary>Kassa raqami (TerminalId) — sarlavhada chiqadi (ixtiyoriy).</summary>
     public string? Kassa { get; set; }
 

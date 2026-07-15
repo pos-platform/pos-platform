@@ -902,6 +902,7 @@ public partial class PosWindow : Window
                 StoreName = AppState.StoreName,
                 Stir = AppState.OrgStir,
                 Address = AppState.BranchAddress,
+                LegalAddress = AppState.LegalAddress,
                 Kassa = AppState.TerminalId,
                 Cashier = AppState.CashierDisplay,
                 ExternalFiscalDevice = AppState.ExternalFiscalDevice,
@@ -1091,18 +1092,21 @@ public partial class PosWindow : Window
     private void Reprint_Click(object sender, RoutedEventArgs e)
     {
         if (_lastReceipt is null) return;
-        new ReceiptPreviewWindow(_lastReceipt) { Owner = this }.ShowDialog();
+        if (PrintReceiptSafe(_lastReceipt))
+            ShowMessage("✓ Chek chop etildi", error: false);
     }
 
-    private void PrintReceiptSafe(ReceiptData receipt)
+    private bool PrintReceiptSafe(ReceiptData receipt)
     {
         try
         {
             _printer.Print(receipt, AppState.PrinterName);
+            return true;
         }
         catch (Exception ex)
         {
             ShowMessage("Chek chop etilmadi: " + ex.Message, error: true);
+            return false;
         }
     }
 

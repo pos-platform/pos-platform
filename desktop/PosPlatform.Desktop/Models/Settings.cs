@@ -12,4 +12,6 @@ public class Settings
     public bool ExternalFiscalDevice { get; set; }
     public string? ScannerComPort { get; set; }
     public int ScannerBaudRate { get; set; } = 9600;
+    /// <summary>Tashkilotning yuridik manzili (Yur.Manzil) — chek sarlavhasida chiqadi.</summary>
+    public string? LegalAddress { get; set; }
 }

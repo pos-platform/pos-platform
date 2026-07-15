@@ -54,22 +54,31 @@ public static class EscPosReceipt
         Line(string.IsNullOrWhiteSpace(r.StoreName) ? "PosPlatform" : r.StoreName);
         Write(NORMAL);
         Write(BOLD_OFF);
-        if (!string.IsNullOrWhiteSpace(r.Stir))
-            Line($"STIR: {r.Stir}");
-        if (!string.IsNullOrWhiteSpace(r.Address))
-            Line(r.Address);
         Write(LEFT);
         Divider();
 
-        // Kassa raqami · Smena (mavjud bo'lgani ko'rsatiladi).
-        var idParts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(r.Kassa)) idParts.Add($"Kassa: {r.Kassa}");
-        if (!string.IsNullOrWhiteSpace(r.FiscalShiftNumber)) idParts.Add($"Smena: {r.FiscalShiftNumber}");
-        if (idParts.Count > 0) Line(string.Join("  ", idParts));
+        // Sarlavha: "Label ⟶ Qiymat" ustunli blok (uzun qiymatlar o'raladi).
+        void Labeled(string label, string? value)
+        {
+            foreach (var ln in ReceiptLayout.LabeledRows(label, value, printWidth))
+                Line(ln);
+        }
+        Labeled("Manzil", r.Address);
+        Labeled("Yur.Manzil", r.LegalAddress);
+        Labeled("STIR/JSHSHR", r.Stir);
+        Labeled("Kassa", r.Kassa);
+        Labeled("Smena", r.FiscalShiftNumber);
+        Labeled("Sana va vaqt", r.Date.ToString("dd-MM-yyyy HH:mm:ss"));
+        Labeled("Chek", r.ReceiptNumber);
+        Labeled("Sotuvchi", r.Cashier);
+        Divider();
 
-        Line($"Chek: {r.ReceiptNumber}");
-        Line(r.Date.ToString("yyyy-MM-dd HH:mm"));
-        Line($"Sotuvchi: {r.Cashier}");
+        // Tovarlar bo'limi sarlavhasi.
+        Write(CENTER);
+        Write(BOLD_ON);
+        Line("Savdo");
+        Write(BOLD_OFF);
+        Write(LEFT);
         Divider();
 
         foreach (var l in r.Lines)

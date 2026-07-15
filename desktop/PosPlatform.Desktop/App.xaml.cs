@@ -50,6 +50,7 @@ public partial class App : Application
             AppState.ExternalFiscalDevice = saved.ExternalFiscalDevice;
             AppState.ScannerComPort = string.IsNullOrWhiteSpace(saved.ScannerComPort) ? null : saved.ScannerComPort;
             AppState.ScannerBaudRate = saved.ScannerBaudRate > 0 ? saved.ScannerBaudRate : 9600;
+            AppState.LegalAddress = string.IsNullOrWhiteSpace(saved.LegalAddress) ? null : saved.LegalAddress;
         }
 
         AppState.Backend = new BackendClient(AppState.BaseUrl);

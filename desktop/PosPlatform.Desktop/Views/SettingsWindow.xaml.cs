@@ -26,7 +26,8 @@ public partial class SettingsWindow : Window
 
         PrinterCombo.Text = AppState.PrinterName ?? "";
         TerminalIdBox.Text = AppState.TerminalId ?? "";
-        ExternalFiscalBox.IsChecked = AppState.ExternalFiscalDevice;
+        LegalAddressBox.Text = AppState.LegalAddress ?? "";
+        UpdateQrModeText(AppState.ExternalFiscalDevice);
 
         // COM port skaner
         foreach (var port in BarcodeScanner.GetAvailablePorts())
@@ -35,7 +36,28 @@ public partial class SettingsWindow : Window
         BaudRateBox.Text = AppState.ScannerBaudRate > 0 ? AppState.ScannerBaudRate.ToString() : "9600";
     }
 
-    private void Save_Click(object sender, RoutedEventArgs e)
+    // QR shu programmadan chiqadigan (odatiy) rejimda saqlash.
+    private void SaveWithQr_Click(object sender, RoutedEventArgs e) => Save(externalFiscal: false);
+
+    // QR tashqi apparatdan chiqadigan — programma QR bosmaydigan rejimda saqlash.
+    private void SaveWithoutQr_Click(object sender, RoutedEventArgs e) => Save(externalFiscal: true);
+
+    /// <summary>Joriy fiskal QR rejimini izohlab beradi (butun kassa uchun qo'llanadi).</summary>
+    private void UpdateQrModeText(bool externalFiscal)
+    {
+        if (externalFiscal)
+        {
+            QrModeText.Text = "Hozirgi rejim: QR'siz — QR tashqi apparatdan chiqadi, programma QR bosmaydi.";
+            QrModeText.Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55));
+        }
+        else
+        {
+            QrModeText.Text = "Hozirgi rejim: QR bilan — chek QR shu programmadan chiqadi (odatiy).";
+            QrModeText.Foreground = new SolidColorBrush(Color.FromRgb(0x16, 0xA3, 0x4A));
+        }
+    }
+
+    private void Save(bool externalFiscal)
     {
         var baseUrl = BaseUrlBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(baseUrl))
@@ -50,9 +72,10 @@ public partial class SettingsWindow : Window
             PrinterEnabled = PrinterEnabledBox.IsChecked == true,
             PrinterName = string.IsNullOrWhiteSpace(PrinterCombo.Text) ? null : PrinterCombo.Text.Trim(),
             TerminalId = string.IsNullOrWhiteSpace(TerminalIdBox.Text) ? null : TerminalIdBox.Text.Trim(),
-            ExternalFiscalDevice = ExternalFiscalBox.IsChecked == true,
+            ExternalFiscalDevice = externalFiscal,
             ScannerComPort = string.IsNullOrWhiteSpace(ScannerPortCombo.Text) ? null : ScannerPortCombo.Text.Trim(),
-            ScannerBaudRate = int.TryParse(BaudRateBox.Text, out var br) && br > 0 ? br : 9600
+            ScannerBaudRate = int.TryParse(BaudRateBox.Text, out var br) && br > 0 ? br : 9600,
+            LegalAddress = string.IsNullOrWhiteSpace(LegalAddressBox.Text) ? null : LegalAddressBox.Text.Trim()
         };
 
         try
@@ -75,6 +98,7 @@ public partial class SettingsWindow : Window
                              || AppState.ScannerBaudRate != settings.ScannerBaudRate;
         AppState.ScannerComPort = settings.ScannerComPort;
         AppState.ScannerBaudRate = settings.ScannerBaudRate;
+        AppState.LegalAddress = settings.LegalAddress;
         if (urlChanged) AppState.RebuildBackend();
         if (scannerChanged) AppState.RestartScanner();
 
@@ -126,6 +150,10 @@ public partial class SettingsWindow : Window
         {
             ReceiptNumber = "TEST-0001",
             StoreName = AppState.StoreName,
+            Stir = AppState.OrgStir,
+            Address = AppState.BranchAddress,
+            LegalAddress = string.IsNullOrWhiteSpace(LegalAddressBox.Text) ? AppState.LegalAddress : LegalAddressBox.Text.Trim(),
+            Kassa = AppState.TerminalId,
             Cashier = AppState.CashierDisplay,
             Payment = "Cash",
             Total = 10000,

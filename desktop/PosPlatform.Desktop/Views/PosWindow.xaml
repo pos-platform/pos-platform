@@ -462,7 +462,7 @@
                             <Button x:Name="CheckoutButton" Content="✓  To'lash va Chek chiqarish (F12)"
                                     Style="{StaticResource PayBtn}" Height="44" Margin="0,8,0,0" Click="Checkout_Click" />
 
-                            <Button x:Name="ReprintButton" Content="🖨  Chekni ko'rish va chop etish"
+                            <Button x:Name="ReprintButton" Content="🖨  Chop etish"
                                     Style="{StaticResource GhostBtn}" Margin="0,5,0,0" Height="28" FontSize="12"
                                     Click="Reprint_Click" IsEnabled="False"
                                     ToolTip="Oxirgi chekni ko'rib chiqib chop etish" />

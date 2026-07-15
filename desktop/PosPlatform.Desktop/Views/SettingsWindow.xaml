@@ -3,73 +3,104 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Sozlamalar" Height="700" Width="440"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="#F4F5F7">
-    <StackPanel Margin="22">
-        <TextBlock Text="Sozlamalar" FontSize="18" FontWeight="Bold" Margin="0,0,0,14" />
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-        <TextBlock Text="Backend manzili (URL)" Foreground="#6B7480" FontWeight="SemiBold" />
-        <TextBox x:Name="BaseUrlBox" Height="32" Padding="8,5" Margin="0,4,0,12"
-                 VerticalContentAlignment="Center" />
+        <!-- Scroll qilinadigan sozlamalar -->
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="22,22,22,0">
+            <StackPanel>
+                <TextBlock Text="Sozlamalar" FontSize="18" FontWeight="Bold" Margin="0,0,0,14" />
 
-        <CheckBox x:Name="PrinterEnabledBox" Content="Sotuvdan keyin chekni avtomatik chop etish"
-                  Margin="0,0,0,10" />
+                <TextBlock Text="Backend manzili (URL)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBox x:Name="BaseUrlBox" Height="32" Padding="8,5" Margin="0,4,0,12"
+                         VerticalContentAlignment="Center" />
 
-        <TextBlock Text="Printer (bo'sh = standart)" Foreground="#6B7480" FontWeight="SemiBold" />
-        <ComboBox x:Name="PrinterCombo" Height="32" Padding="6" IsEditable="True" Margin="0,4,0,8" />
+                <CheckBox x:Name="PrinterEnabledBox" Content="Sotuvdan keyin chekni avtomatik chop etish"
+                          Margin="0,0,0,10" />
 
-        <TextBlock Text="Kassa stantsiyasi ID (masalan KASSA-1)" Foreground="#6B7480" FontWeight="SemiBold" />
-        <TextBox x:Name="TerminalIdBox" Height="32" Padding="8,5" Margin="0,4,0,4"
-                 VerticalContentAlignment="Center"
-                 ToolTip="Shu PC'dagi fiskal agent FiscalTerminalId bilan bir xil bo'lsin. Har kassada o'z fiskal moduli bo'lsa to'ldiring; bitta modul bo'lsa bo'sh qoldiring." />
-        <TextBlock Text="Har kassada alohida fiskal modul bo'lsa to'ldiring; bitta modul bo'lsa bo'sh qoldiring."
-                   Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+                <TextBlock Text="Printer (bo'sh = standart)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <ComboBox x:Name="PrinterCombo" Height="32" Padding="6" IsEditable="True" Margin="0,4,0,8" />
 
-        <CheckBox x:Name="ExternalFiscalBox"
-                  Content="Fiskal QR alohida qurilmadan chiqadi (POS QR bosmasin)"
-                  Margin="0,0,0,2"
-                  ToolTip="Bu kassada fiskal chek/QR alohida qurilma (ФМ/fleshka) tomonidan chiqarilsa yoqing. POS o'z QR blokini bosmaydi — bir chekda ikkita QR (double-registratsiya) chiqmaydi." />
-        <TextBlock Text="Yoqilsa: bu kassaning barcha cheklarida POS QR bosilmaydi (QR alohida qurilmadan chiqadi)."
-                   Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+                <TextBlock Text="Kassa stantsiyasi ID (masalan KASSA-1)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBox x:Name="TerminalIdBox" Height="32" Padding="8,5" Margin="0,4,0,4"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Shu PC'dagi fiskal agent FiscalTerminalId bilan bir xil bo'lsin. Har kassada o'z fiskal moduli bo'lsa to'ldiring; bitta modul bo'lsa bo'sh qoldiring." />
+                <TextBlock Text="Har kassada alohida fiskal modul bo'lsa to'ldiring; bitta modul bo'lsa bo'sh qoldiring."
+                           Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
 
-        <Separator Margin="0,8,0,8" />
+                <TextBlock Text="Yuridik manzil (chekda Yur.Manzil)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBox x:Name="LegalAddressBox" Height="32" Padding="8,5" Margin="0,4,0,8"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Tashkilotning yuridik manzili — chek sarlavhasidagi 'Yur.Manzil' qatorida chiqadi. Bo'sh qoldirsangiz qator chiqmaydi." />
 
-        <TextBlock Text="Barcode skaner (COM port)" Foreground="#6B7480" FontWeight="SemiBold" />
-        <Grid Margin="0,4,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="110" />
-            </Grid.ColumnDefinitions>
-            <ComboBox x:Name="ScannerPortCombo" Grid.Column="0" Height="32" Padding="6"
-                      IsEditable="True" ToolTip="COM port (masalan, COM3). Bo'sh qoldiring = o'chirilgan." />
-            <TextBox x:Name="BaudRateBox" Grid.Column="2" Height="32" Padding="8,5"
-                     VerticalContentAlignment="Center" ToolTip="Baud rate (standart: 9600)" />
-        </Grid>
-        <TextBlock Text="Baud rate o'ngda (standart 9600). USB HID skaner uchun bo'sh qoldiring."
-                   Foreground="#9AA3AF" FontSize="11" Margin="0,3,0,8" TextWrapping="Wrap" />
+                <TextBlock Text="Fiskal QR rejimi" Foreground="#6B7480" FontWeight="SemiBold" Margin="0,2,0,2" />
+                <TextBlock x:Name="QrModeText" FontSize="12" Margin="0,0,0,8" TextWrapping="Wrap" />
 
-        <Separator Margin="0,8,0,10" />
+                <Separator Margin="0,8,0,8" />
 
-        <TextBlock Text="Parolni o'zgartirish" FontWeight="Bold" Margin="0,0,0,6" />
-        <TextBlock Text="Joriy parol" Foreground="#6B7480" FontWeight="SemiBold" FontSize="12" />
-        <PasswordBox x:Name="CurrentPasswordBox" Height="32" Padding="8,5" Margin="0,4,0,8"
-                     VerticalContentAlignment="Center" />
-        <TextBlock Text="Yangi parol (kamida 6 belgi)" Foreground="#6B7480" FontWeight="SemiBold" FontSize="12" />
-        <PasswordBox x:Name="NewPasswordBox" Height="32" Padding="8,5" Margin="0,4,0,8"
-                     VerticalContentAlignment="Center" />
-        <TextBlock Text="Yangi parol (tasdiq)" Foreground="#6B7480" FontWeight="SemiBold" FontSize="12" />
-        <PasswordBox x:Name="ConfirmPasswordBox" Height="32" Padding="8,5" Margin="0,4,0,8"
-                     VerticalContentAlignment="Center" />
-        <Button Content="Parolni o'zgartirish" Padding="12,6" HorizontalAlignment="Right"
-                Background="#16A34A" Foreground="White" FontWeight="Bold" BorderThickness="0"
-                Click="ChangePassword_Click" />
+                <TextBlock Text="Barcode skaner (COM port)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <Grid Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="110" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox x:Name="ScannerPortCombo" Grid.Column="0" Height="32" Padding="6"
+                              IsEditable="True" ToolTip="COM port (masalan, COM3). Bo'sh qoldiring = o'chirilgan." />
+                    <TextBox x:Name="BaudRateBox" Grid.Column="2" Height="32" Padding="8,5"
+                             VerticalContentAlignment="Center" ToolTip="Baud rate (standart: 9600)" />
+                </Grid>
+                <TextBlock Text="Baud rate o'ngda (standart 9600). USB HID skaner uchun bo'sh qoldiring."
+                           Foreground="#9AA3AF" FontSize="11" Margin="0,3,0,8" TextWrapping="Wrap" />
 
-        <TextBlock x:Name="MsgText" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
+                <Separator Margin="0,8,0,10" />
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="🖨 Test chek" Padding="12,6" Margin="0,0,8,0" Click="TestPrint_Click" />
-            <Button Content="Bekor" Padding="12,6" Margin="0,0,8,0" IsCancel="True" Click="Cancel_Click" />
-            <Button Content="Saqlash" Padding="14,6" Background="#2563EB" Foreground="White"
-                    FontWeight="Bold" BorderThickness="0" Click="Save_Click" />
-        </StackPanel>
-    </StackPanel>
+                <TextBlock Text="Parolni o'zgartirish" FontWeight="Bold" Margin="0,0,0,6" />
+                <TextBlock Text="Joriy parol" Foreground="#6B7480" FontWeight="SemiBold" FontSize="12" />
+                <PasswordBox x:Name="CurrentPasswordBox" Height="32" Padding="8,5" Margin="0,4,0,8"
+                             VerticalContentAlignment="Center" />
+                <TextBlock Text="Yangi parol (kamida 6 belgi)" Foreground="#6B7480" FontWeight="SemiBold" FontSize="12" />
+                <PasswordBox x:Name="NewPasswordBox" Height="32" Padding="8,5" Margin="0,4,0,8"
+                             VerticalContentAlignment="Center" />
+                <TextBlock Text="Yangi parol (tasdiq)" Foreground="#6B7480" FontWeight="SemiBold" FontSize="12" />
+                <PasswordBox x:Name="ConfirmPasswordBox" Height="32" Padding="8,5" Margin="0,4,0,8"
+                             VerticalContentAlignment="Center" />
+                <Button Content="Parolni o'zgartirish" Padding="12,6" HorizontalAlignment="Right"
+                        Background="#16A34A" Foreground="White" FontWeight="Bold" BorderThickness="0"
+                        Click="ChangePassword_Click" />
+
+                <TextBlock x:Name="MsgText" TextWrapping="Wrap" Margin="0,8,0,12" Visibility="Collapsed" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Pastda doim ko'rinadigan saqlash paneli -->
+        <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0">
+            <StackPanel Margin="22,12,22,14">
+                <TextBlock Text="Saqlash — do'kon QR'ni qayerdan chiqarishiga qarab tanlang:"
+                           Foreground="#6B7480" FontSize="12" Margin="0,0,0,6" TextWrapping="Wrap" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Content="✓ QR bilan saqlash" Height="44"
+                            Background="#16A34A" Foreground="White" FontWeight="Bold" BorderThickness="0"
+                            Click="SaveWithQr_Click"
+                            ToolTip="Chek QR shu programmadan chiqadi (odatiy holat)." />
+                    <Button Grid.Column="2" Content="QR'siz saqlash" Height="44"
+                            Background="#334155" Foreground="White" FontWeight="Bold" BorderThickness="0"
+                            Click="SaveWithoutQr_Click"
+                            ToolTip="QR tashqi apparatdan chiqadi — programma o'z QR'ini bosmaydi (butun kassa uchun)." />
+                </Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                    <Button Content="🖨 Test chek" Padding="12,6" Margin="0,0,8,0" Click="TestPrint_Click" />
+                    <Button Content="Bekor" Padding="12,6" IsCancel="True" Click="Cancel_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Window>

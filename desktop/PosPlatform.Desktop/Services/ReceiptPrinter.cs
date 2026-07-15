@@ -39,16 +39,18 @@ public class ReceiptPrinter
 
     public static FlowDocument BuildDocument(ReceiptData r)
     {
+        // Ekrandagi ko'rinish uchun shrift kattaroq — 32 belgilik qator qog'ozning to'liq
+        // enini egallaydi, o'ngda bo'sh joy qolmaydi. (Termal RAW chekka ta'sir qilmaydi.)
         var doc = new FlowDocument
         {
             PageWidth = 280,
             PagePadding = new Thickness(6),
             ColumnWidth = 280,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 11
+            FontSize = 15
         };
 
-        void Add(string text, bool bold = false, double size = 11, TextAlignment align = TextAlignment.Left)
+        void Add(string text, bool bold = false, double size = 15, TextAlignment align = TextAlignment.Left)
         {
             var p = new Paragraph(new Run(text))
             {
@@ -60,27 +62,31 @@ public class ReceiptPrinter
             doc.Blocks.Add(p);
         }
 
+        const int width = 32; // monospace ustun kengligi (sep uzunligi)
         const string sep = "--------------------------------";
         Add(string.IsNullOrWhiteSpace(r.StoreName) ? "PosPlatform" : r.StoreName,
-            bold: true, size: 15, align: TextAlignment.Center);
-        if (!string.IsNullOrWhiteSpace(r.Stir))
-            Add($"STIR: {r.Stir}", align: TextAlignment.Center);
-        if (!string.IsNullOrWhiteSpace(r.Address))
-            Add(r.Address, align: TextAlignment.Center);
+            bold: true, size: 19, align: TextAlignment.Center);
         Add(sep);
 
-        // Kassa raqami · Smena (mavjud bo'lgani ko'rsatiladi).
-        var idParts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(r.Kassa)) idParts.Add($"Kassa: {r.Kassa}");
-        if (!string.IsNullOrWhiteSpace(r.FiscalShiftNumber)) idParts.Add($"Smena: {r.FiscalShiftNumber}");
-        if (idParts.Count > 0) Add(string.Join("   ", idParts));
-
-        Add($"Chek: {r.ReceiptNumber}");
-        Add(r.Date.ToString("yyyy-MM-dd HH:mm"));
-        Add($"Sotuvchi: {r.Cashier}");
+        // Sarlavha: "Label ⟶ Qiymat" ustunli blok (uzun qiymatlar o'raladi).
+        void Labeled(string label, string? value)
+        {
+            foreach (var ln in ReceiptLayout.LabeledRows(label, value, width))
+                Add(ln);
+        }
+        Labeled("Manzil", r.Address);
+        Labeled("Yur.Manzil", r.LegalAddress);
+        Labeled("STIR/JSHSHR", r.Stir);
+        Labeled("Kassa", r.Kassa);
+        Labeled("Smena", r.FiscalShiftNumber);
+        Labeled("Sana va vaqt", r.Date.ToString("dd-MM-yyyy HH:mm:ss"));
+        Labeled("Chek", r.ReceiptNumber);
+        Labeled("Sotuvchi", r.Cashier);
         Add(sep);
 
-        const int width = 32; // monospace ustun kengligi (sep uzunligi)
+        // Tovarlar bo'limi sarlavhasi.
+        Add("Savdo", bold: true, align: TextAlignment.Center);
+        Add(sep);
         string Row(string left, string right)
         {
             var space = width - left.Length - right.Length;
@@ -99,14 +105,14 @@ public class ReceiptPrinter
             var codes = new List<string>();
             if (!string.IsNullOrWhiteSpace(line.Barcode)) codes.Add($"Shtrix: {line.Barcode}");
             codes.Add($"MXIK: {(string.IsNullOrWhiteSpace(line.MxikCode) ? "00000000" : line.MxikCode)}");
-            Add("  " + string.Join("   ", codes), size: 10);
+            Add("  " + string.Join("   ", codes), size: 13);
 
             if (line.IsVat)
-                Add($"  QQS 12%: {Math.Round(line.LineTotal * 12m / 112m):N0}", size: 10);
+                Add($"  QQS 12%: {Math.Round(line.LineTotal * 12m / 112m):N0}", size: 13);
         }
 
         Add(sep);
-        Add($"JAMI: {r.Total:N0} so'm", bold: true, size: 13);
+        Add($"JAMI: {r.Total:N0} so'm", bold: true, size: 17);
         if (r.VatTotal > 0)
             Add($"QQS jami (12%): {r.VatTotal:N0}");
         Add($"To'lov: {PaymentLabel(r.Payment)}");
@@ -142,14 +148,14 @@ public class ReceiptPrinter
                 };
                 doc.Blocks.Add(new BlockUIContainer(img) { Margin = new Thickness(0, 4, 0, 4) });
             }
-            Add("ofd.soliq.uz orqali tekshiring", size: 9, align: TextAlignment.Center);
-            Add("Siz xaridning 1% miqdorida \"Keshbek\"", size: 9, align: TextAlignment.Center);
-            Add("olish huquqiga ega bo'ldingiz", size: 9, align: TextAlignment.Center);
+            Add("ofd.soliq.uz orqali tekshiring", size: 12, align: TextAlignment.Center);
+            Add("Siz xaridning 1% miqdorida \"Keshbek\"", size: 12, align: TextAlignment.Center);
+            Add("olish huquqiga ega bo'ldingiz", size: 12, align: TextAlignment.Center);
             Add(sep);
         }
         else if (!r.ExternalFiscalDevice && r.SaleId is not null)
         {
-            Add("Fiskalizatsiya kutilmoqda...", size: 9, align: TextAlignment.Center);
+            Add("Fiskalizatsiya kutilmoqda...", size: 12, align: TextAlignment.Center);
             Add(sep);
         }
 

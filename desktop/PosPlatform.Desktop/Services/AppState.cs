@@ -20,6 +20,10 @@ public static class AppState
 
     /// <summary>Filial manzili — fiskal chek sarlavhasida chiqadi.</summary>
     public static string? BranchAddress { get; set; }
+
+    /// <summary>Tashkilotning yuridik manzili (Yur.Manzil) — chek sarlavhasida chiqadi.
+    /// Sozlamalar oynasidan kiritiladi (%APPDATA% da saqlanadi).</summary>
+    public static string? LegalAddress { get; set; }
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
     public static string BusinessType { get; set; } = "Store";
