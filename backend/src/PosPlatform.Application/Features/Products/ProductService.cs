@@ -265,12 +265,23 @@ public class ProductService : IProductService
         foreach (var b in branches)
             branchByName.TryAdd(NormalizeBranchKey(b.Name), b);
 
-        // Mavjud barcode'lar — takrorlanishni oldini olish uchun
-        var existingBarcodes = (await _db.Products
-            .Where(p => p.Barcode != null)
-            .Select(p => p.Barcode!)
-            .ToListAsync(cancellationToken))
-            .ToHashSet();
+        // Mavjud mahsulotlar — importda yangilash (upsert) uchun tracking bilan yuklanadi.
+        // Moslik kaliti: barcode → PLU → nomi (kichik harf, katta-kichik farqsiz).
+        var existingProducts = await _db.Products
+            .Include(p => p.Stocks)
+            .ToListAsync(cancellationToken);
+
+        var byBarcode = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);
+        var byPlu = new Dictionary<int, Product>();
+        var byProductName = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);
+        foreach (var ep in existingProducts)
+        {
+            if (!string.IsNullOrWhiteSpace(ep.Barcode))
+                byBarcode.TryAdd(ep.Barcode!.Trim(), ep);
+            if (ep.PluNumber is > 0)
+                byPlu.TryAdd(ep.PluNumber.Value, ep);
+            byProductName.TryAdd(ep.Name.Trim(), ep);
+        }
 
         foreach (var row in rows)
         {
@@ -312,10 +323,12 @@ public class ProductService : IProductService
                 }
 
                 var barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode!.Trim();
-                if (barcode != null && existingBarcodes.Contains(barcode))
-                    barcode = null; // takrorlanishni e'tiborsiz qoldiramiz
 
-                var importQty = row.Quantity ?? 0;
+                // Mavjud mahsulotni topish: barcode → PLU → nomi
+                Product? existing = null;
+                if (barcode != null) byBarcode.TryGetValue(barcode, out existing);
+                if (existing is null && row.PluNumber is > 0) byPlu.TryGetValue(row.PluNumber.Value, out existing);
+                if (existing is null) byProductName.TryGetValue(row.Name!.Trim(), out existing);
 
                 // BranchId: 1) joriy foydalanuvchi filiali, 2) Excel J ustunidagi nomi, 3) birinchi filial
                 Guid? importBranchId = _currentUser.BranchId;
@@ -328,33 +341,81 @@ public class ProductService : IProductService
                 if (importBranchId is null && branches.Count > 0)
                     importBranchId = branches[0].Id;
 
-                var importProduct = new Product
+                if (existing is not null)
                 {
-                    Name      = row.Name!.Trim(),
-                    MxikCode  = string.IsNullOrWhiteSpace(row.MxikCode) ? "00000000" : row.MxikCode!.Trim(),
-                    Barcode   = barcode,
-                    PluNumber = row.PluNumber,
-                    CostPrice = cost,
-                    Price     = price,
-                    IsVat     = row.IsVat ?? false,
-                    IsMarked  = row.IsMarked ?? false,
-                    PackageCode = string.IsNullOrWhiteSpace(row.PackageCode) ? null : row.PackageCode!.Trim(),
-                    Unit      = unit,
-                    CategoryId = category.Id
-                };
+                    // --- YANGILASH (upsert): faqat importda mavjud qiymatlar ustiga yoziladi ---
+                    existing.Name = row.Name!.Trim();
 
-                if (importQty > 0 && importBranchId.HasValue)
-                {
-                    importProduct.Stocks.Add(new BranchStock
+                    // Barcode faqat bo'sh yoki shu mahsulotning o'ziga tegishli bo'lsa yangilanadi
+                    if (barcode != null && (!byBarcode.TryGetValue(barcode, out var owner) || ReferenceEquals(owner, existing)))
                     {
-                        BranchId = importBranchId.Value,
-                        Quantity = importQty
-                    });
-                }
+                        existing.Barcode = barcode;
+                        byBarcode[barcode] = existing;
+                    }
+                    if (row.PluNumber is > 0)
+                    {
+                        existing.PluNumber = row.PluNumber;
+                        byPlu[row.PluNumber.Value] = existing;
+                    }
+                    if (row.CostPrice.HasValue) existing.CostPrice = cost;
+                    // Narx faqat import narx yoki ustama bergan bo'lsa qayta yoziladi (aks holda eskisi saqlanadi)
+                    if (row.Price is > 0 || row.MarkupPercent is > 0) existing.Price = price;
+                    if (!string.IsNullOrWhiteSpace(unitRaw)) existing.Unit = unit;
+                    if (!string.IsNullOrWhiteSpace(row.MxikCode)) existing.MxikCode = row.MxikCode!.Trim();
+                    if (row.IsVat.HasValue) existing.IsVat = row.IsVat.Value;
+                    if (row.IsMarked.HasValue) existing.IsMarked = row.IsMarked.Value;
+                    if (!string.IsNullOrWhiteSpace(row.PackageCode)) existing.PackageCode = row.PackageCode!.Trim();
+                    existing.CategoryId = category.Id;
 
-                _db.Products.Add(importProduct);
-                if (barcode != null) existingBarcodes.Add(barcode);
-                result.Created++;
+                    // Qoldiq — faqat importda soni ko'rsatilgan bo'lsa yangilanadi (o'rniga qo'yiladi)
+                    if (row.Quantity.HasValue && importBranchId.HasValue)
+                    {
+                        var st = existing.Stocks.FirstOrDefault(s => s.BranchId == importBranchId.Value);
+                        if (st is not null) st.Quantity = row.Quantity.Value;
+                        else if (row.Quantity.Value != 0)
+                            existing.Stocks.Add(new BranchStock { BranchId = importBranchId.Value, Quantity = row.Quantity.Value });
+                    }
+
+                    result.Updated++;
+                }
+                else
+                {
+                    // --- YANGI mahsulot ---
+                    var newBarcode = barcode;
+                    if (newBarcode != null && byBarcode.ContainsKey(newBarcode))
+                        newBarcode = null; // barcode boshqa mahsulotга tegishli — e'tiborsiz qoldiramiz
+
+                    var importProduct = new Product
+                    {
+                        Name      = row.Name!.Trim(),
+                        MxikCode  = string.IsNullOrWhiteSpace(row.MxikCode) ? "00000000" : row.MxikCode!.Trim(),
+                        Barcode   = newBarcode,
+                        PluNumber = row.PluNumber,
+                        CostPrice = cost,
+                        Price     = price,
+                        IsVat     = row.IsVat ?? false,
+                        IsMarked  = row.IsMarked ?? false,
+                        PackageCode = string.IsNullOrWhiteSpace(row.PackageCode) ? null : row.PackageCode!.Trim(),
+                        Unit      = unit,
+                        CategoryId = category.Id
+                    };
+
+                    var importQty = row.Quantity ?? 0;
+                    if (importQty > 0 && importBranchId.HasValue)
+                    {
+                        importProduct.Stocks.Add(new BranchStock
+                        {
+                            BranchId = importBranchId.Value,
+                            Quantity = importQty
+                        });
+                    }
+
+                    _db.Products.Add(importProduct);
+                    if (newBarcode != null) byBarcode[newBarcode] = importProduct;
+                    if (importProduct.PluNumber is > 0) byPlu.TryAdd(importProduct.PluNumber.Value, importProduct);
+                    byProductName.TryAdd(importProduct.Name, importProduct);
+                    result.Created++;
+                }
             }
             catch (Exception ex)
             {

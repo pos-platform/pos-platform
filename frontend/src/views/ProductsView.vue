@@ -95,7 +95,7 @@ async function onImportFile(event) {
   importing.value = true
   try {
     importResult.value = await productsApi.importExcel(file)
-    success.value = `Import: ${importResult.value.created} ta qo'shildi, ${importResult.value.failed} ta xato`
+    success.value = `Import: ${importResult.value.created} ta qo'shildi, ${importResult.value.updated} ta yangilandi, ${importResult.value.failed} ta xato`
     await loadAll()
   } catch (e) {
     error.value = errorMessage(e)
@@ -219,6 +219,22 @@ const paginatedProducts = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return filteredProducts.value.slice(start, start + pageSize.value)
 })
+
+// Filtrlangan ro'yxat bo'yicha umumiy qiymatlar (tannarx, sotuv qiymati, foyda)
+const summary = computed(() => {
+  let cost = 0
+  let value = 0
+  for (const p of filteredProducts.value) {
+    const qty = Number(p.quantity) || 0
+    cost += qty * (Number(p.costPrice) || 0)
+    value += qty * (Number(p.price) || 0)
+  }
+  return { cost, value, profit: value - cost }
+})
+
+function fmtSum(n) {
+  return Math.round(Number(n) || 0).toLocaleString('ru-RU')
+}
 
 const pageNumbers = computed(() => {
   const total = totalPages.value
@@ -610,6 +626,22 @@ function printBarcode(product) {
     </div>
   </div>
 
+  <!-- Umumiy qiymatlar: filtrlangan ro'yxat bo'yicha -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Umumiy tannarx</div>
+      <div class="stat-val">{{ fmtSum(summary.cost) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Umumiy qiymat (sotuv)</div>
+      <div class="stat-val">{{ fmtSum(summary.value) }}</div>
+    </div>
+    <div class="stat-card stat-profit">
+      <div class="stat-label">Kutilayotgan foyda</div>
+      <div class="stat-val">{{ fmtSum(summary.profit) }}</div>
+    </div>
+  </div>
+
   <div class="card">
     <!-- Top bar: info + page size -->
     <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 4px 12px; border-bottom:1px solid var(--border)">
@@ -920,6 +952,32 @@ function printBarcode(product) {
 </template>
 
 <style scoped>
+/* Umumiy qiymat kartochkalari */
+.stats-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.stat-card {
+  flex: 1;
+  min-width: 160px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.stat-val {
+  font-size: 20px;
+  font-weight: 700;
+}
+.stat-profit .stat-val { color: #16a34a; }
+
 .btn-print {
   background: #16a34a;
   color: #fff;
