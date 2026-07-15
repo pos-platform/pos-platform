@@ -6,22 +6,23 @@
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="Chek ko'rinishi" FontSize="17" FontWeight="Bold"
                    Foreground="#1E293B" Margin="0,0,0,12" />
 
-        <!-- Qog'oz chek ko'rinishi — balandligi mazmunga moslangan (ochiq joy qolmaydi). -->
+        <!-- Qog'oz chek ko'rinishi — qolgan bo'sh joyni to'ldiradi va uzun bo'lsa scroll qiladi
+             (tugmalar doim pastda ko'rinib turadi). -->
         <Border Grid.Row="1" Background="White" CornerRadius="6" Padding="0"
-                Width="300" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Width="300" HorizontalAlignment="Center" VerticalAlignment="Stretch"
                 BorderBrush="#D7DDE5" BorderThickness="1">
             <Border.Effect>
                 <DropShadowEffect Color="#22000000" BlurRadius="14" ShadowDepth="2" />
             </Border.Effect>
             <FlowDocumentScrollViewer x:Name="DocViewer" VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Disabled" MaxHeight="740"
+                                      HorizontalScrollBarVisibility="Disabled"
                                       Background="White" Margin="8" />
         </Border>
 

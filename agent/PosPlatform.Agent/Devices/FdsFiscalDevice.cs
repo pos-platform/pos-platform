@@ -44,6 +44,12 @@ public class FdsFiscalDevice : IFiscalDevice
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    // Modul har chek vaqti oldingisidan QAT'IY katta bo'lishini talab qiladi (sekund aniqligida):
+    // Receipt.Time <= LastOperationTime => "receipt time is in the past". Bir sekundда bir nechta
+    // chek ketsa, ularga qat'iy o'suvchi vaqt beramiz (real soatdan oldinga o'tmasdan).
+    private static readonly SemaphoreSlim _timeGate = new(1, 1);
+    private static DateTime _lastReceiptTime = DateTime.MinValue;
+
     public FdsFiscalDevice(IOptions<AgentOptions> options, IHttpClientFactory factory, ILogger<FdsFiscalDevice> logger)
     {
         _options = options.Value;
@@ -64,9 +70,10 @@ public class FdsFiscalDevice : IFiscalDevice
             // ── 1-bosqich: chekni bazaga yozib TXID olish ──────────────────────
             // Chek body sifatida to'g'ridan-to'g'ri (o'rovsiz), PascalCase maydonlar bilan
             // yuboriladi — Swagger namunasi: { "Time":..., "Type":0, "Items":[...] }.
+            var receiptTime = await NextReceiptTimeAsync(cancellationToken);
             var getTxResponse = await _http.PostAsJsonAsync(
                 $"{baseUrl}/FiscalDrive/Receipt/GetTXID/{factoryId}",
-                BuildReceipt(receipt), _json, cancellationToken);
+                BuildReceipt(receipt, receiptTime), _json, cancellationToken);
             var getTxBody = await getTxResponse.Content.ReadAsStringAsync(cancellationToken);
 
             if (!getTxResponse.IsSuccessStatusCode)
@@ -164,7 +171,7 @@ public class FdsFiscalDevice : IFiscalDevice
     /// teng (drayver: ReceivedCard + ReceivedCash − Σ(Price − Discount − Other) ≤ 100 so'm).
     /// </para>
     /// </summary>
-    private static object BuildReceipt(PendingReceipt r)
+    private static object BuildReceipt(PendingReceipt r, DateTime receiptTime)
     {
         var isCard = r.PaymentMethod.Equals("Card", StringComparison.OrdinalIgnoreCase);
 
@@ -186,7 +193,7 @@ public class FdsFiscalDevice : IFiscalDevice
 
         return new
         {
-            Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+            Time = receiptTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
             Type = 0,       // 0 = standart savdo cheki
             Operation = 0,  // 0 = Sale (sotuv)
             ReceivedCash = isCard ? 0L : totalTiyin,
@@ -194,6 +201,36 @@ public class FdsFiscalDevice : IFiscalDevice
             Items = items
         };
     }
+
+    /// <summary>
+    /// Chek uchun qat'iy o'suvchi vaqt (sekund aniqligida) — modul Receipt.Time > LastOperationTime
+    /// bo'lishini talab qiladi. Ketma-ket cheklar kamida 1 soniya oraliq bilan, real soatdan
+    /// oldinga o'tmasdan (kelajak vaqtni modul rad etishi mumkin) yuboriladi.
+    /// </summary>
+    private static async Task<DateTime> NextReceiptTimeAsync(CancellationToken cancellationToken)
+    {
+        await _timeGate.WaitAsync(cancellationToken);
+        try
+        {
+            var now = TruncateToSecond(DateTime.Now);
+            var next = now <= _lastReceiptTime ? _lastReceiptTime.AddSeconds(1) : now;
+
+            // Real soat "next" ga yetmagan bo'lsa kutamiz — kelajak vaqt yubormaymiz.
+            var wait = next - DateTime.Now;
+            if (wait > TimeSpan.Zero)
+                await Task.Delay(wait, cancellationToken);
+
+            _lastReceiptTime = next;
+            return next;
+        }
+        finally
+        {
+            _timeGate.Release();
+        }
+    }
+
+    private static DateTime TruncateToSecond(DateTime dt) =>
+        new(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, dt.Kind);
 
     /// <summary>So'mni tiyinga aylantiradi (× 100).</summary>
     private static long ToTiyin(decimal sum) => (long)Math.Round(sum * 100m, MidpointRounding.AwayFromZero);

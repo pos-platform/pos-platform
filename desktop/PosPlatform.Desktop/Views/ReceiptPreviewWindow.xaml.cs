@@ -22,6 +22,11 @@ public partial class ReceiptPreviewWindow : Window
     public ReceiptPreviewWindow(ReceiptData receipt, bool allowImmediatePrint = false)
     {
         InitializeComponent();
+
+        // Oyna ekran ish sohasidan baland bo'lmasin — aks holda pastdagi tugmalar ekran
+        // tashqarisiga chiqib ketadi. Uzun chek endi ichida scroll qilinadi.
+        MaxHeight = SystemParameters.WorkArea.Height - 24;
+
         _receipt = receipt;
         _immediatePrint = allowImmediatePrint;
         Render();
