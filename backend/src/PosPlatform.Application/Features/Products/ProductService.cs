@@ -361,6 +361,8 @@ public class ProductService : IProductService
                     // Narx faqat import narx yoki ustama bergan bo'lsa qayta yoziladi (aks holda eskisi saqlanadi)
                     if (row.Price is > 0 || row.MarkupPercent is > 0) existing.Price = price;
                     if (!string.IsNullOrWhiteSpace(unitRaw)) existing.Unit = unit;
+                    // Kilogramli mahsulot tarozida sotiladi — kassa tarozi shtrix-kodini shu belgi orqali taniydi.
+                    if (unit == Unit.Kilogram) existing.IsWeighed = true;
                     if (!string.IsNullOrWhiteSpace(row.MxikCode)) existing.MxikCode = row.MxikCode!.Trim();
                     if (row.IsVat.HasValue) existing.IsVat = row.IsVat.Value;
                     if (row.IsMarked.HasValue) existing.IsMarked = row.IsMarked.Value;
@@ -397,6 +399,7 @@ public class ProductService : IProductService
                         IsMarked  = row.IsMarked ?? false,
                         PackageCode = string.IsNullOrWhiteSpace(row.PackageCode) ? null : row.PackageCode!.Trim(),
                         Unit      = unit,
+                        IsWeighed = unit == Unit.Kilogram,
                         CategoryId = category.Id
                     };
 

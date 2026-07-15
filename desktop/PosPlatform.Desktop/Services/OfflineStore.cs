@@ -74,6 +74,12 @@ public class OfflineStore : IDisposable
         // Eski keshda IsVat ustuni bo'lmasligi mumkin — bo'lmasa qo'shamiz (fiskal chek QQSi uchun).
         if (!ColumnExists("ProductCache", "IsVat"))
             Exec("ALTER TABLE ProductCache ADD COLUMN IsVat INTEGER NOT NULL DEFAULT 1");
+
+        // Tarozi shtrix-kodlari oflaynda ham ishlashi uchun (PLU bo'yicha qidiruv).
+        if (!ColumnExists("ProductCache", "IsWeighed"))
+            Exec("ALTER TABLE ProductCache ADD COLUMN IsWeighed INTEGER NOT NULL DEFAULT 0");
+        if (!ColumnExists("ProductCache", "PluNumber"))
+            Exec("ALTER TABLE ProductCache ADD COLUMN PluNumber INTEGER");
     }
 
     /// <summary>Jadvalda ustun mavjudligini tekshiradi (sxema migratsiyasi uchun).</summary>
@@ -95,7 +101,9 @@ public class OfflineStore : IDisposable
         Exec("DELETE FROM ProductCache", tx);
         foreach (var p in products)
         {
-            var cmd = Cmd("INSERT OR REPLACE INTO ProductCache VALUES(@Id,@Name,@Barcode,@MxikCode,@Price,@Qty,@Unit,@CatId,@Img,@IsVat)", tx);
+            var cmd = Cmd(
+                "INSERT OR REPLACE INTO ProductCache(Id,Name,Barcode,MxikCode,Price,Quantity,Unit,CategoryId,ImageUrl,IsVat,IsWeighed,PluNumber) " +
+                "VALUES(@Id,@Name,@Barcode,@MxikCode,@Price,@Qty,@Unit,@CatId,@Img,@IsVat,@IsWeighed,@Plu)", tx);
             cmd.Parameters.AddWithValue("@Id",     p.Id.ToString());
             cmd.Parameters.AddWithValue("@Name",   p.Name);
             cmd.Parameters.AddWithValue("@Barcode",p.Barcode ?? (object)DBNull.Value);
@@ -106,6 +114,8 @@ public class OfflineStore : IDisposable
             cmd.Parameters.AddWithValue("@CatId",  p.CategoryId.ToString());
             cmd.Parameters.AddWithValue("@Img",    p.ImageUrl ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@IsVat",  p.IsVat ? 1 : 0);
+            cmd.Parameters.AddWithValue("@IsWeighed", p.IsWeighed ? 1 : 0);
+            cmd.Parameters.AddWithValue("@Plu",    p.PluNumber.HasValue ? p.PluNumber.Value : (object)DBNull.Value);
             cmd.ExecuteNonQuery();
         }
         tx.Commit();
@@ -114,7 +124,7 @@ public class OfflineStore : IDisposable
     public List<ProductDto> LoadProducts()
     {
         var list = new List<ProductDto>();
-        using var cmd = Cmd("SELECT Id,Name,Barcode,MxikCode,Price,Quantity,Unit,CategoryId,ImageUrl,IsVat FROM ProductCache ORDER BY Name");
+        using var cmd = Cmd("SELECT Id,Name,Barcode,MxikCode,Price,Quantity,Unit,CategoryId,ImageUrl,IsVat,IsWeighed,PluNumber FROM ProductCache ORDER BY Name");
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
@@ -129,7 +139,9 @@ public class OfflineStore : IDisposable
                 Unit       = r.GetString(6),
                 CategoryId = Guid.Parse(r.GetString(7)),
                 ImageUrl   = r.IsDBNull(8) ? null : r.GetString(8),
-                IsVat      = !r.IsDBNull(9) && r.GetInt64(9) != 0
+                IsVat      = !r.IsDBNull(9) && r.GetInt64(9) != 0,
+                IsWeighed  = !r.IsDBNull(10) && r.GetInt64(10) != 0,
+                PluNumber  = r.IsDBNull(11) ? null : (int)r.GetInt64(11)
             });
         }
         return list;

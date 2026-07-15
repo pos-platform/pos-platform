@@ -559,13 +559,14 @@ public partial class PosWindow : Window
     private void ProcessScannedCode(string code, bool fromScanner)
     {
         // 1) Tarozi vazn-kodi: "2" + 6 xonali mahsulot kodi + 5 xonali vazn (gramm) + nazorat raqami.
-        //    Vazn deb faqat topilgan mahsulot ROSTDAN tarozili (IsWeighed) bo'lsagina qabul qilamiz.
+        //    Vazn deb faqat topilgan mahsulot ROSTDAN tarozili bo'lsagina qabul qilamiz:
+        //    IsWeighed belgisi qo'yilgan YOKI birligi Kilogram (import IsWeighed'ni yozmasligi mumkin).
         //    Aks holda ichki generatsiya qilingan "2..." shtrix-kodli Dona tovarlar xato ravishda
         //    vaznga aylanib qolardi (masalan 2297438359950 → 35.995 kg).
         if (TryParseScaleBarcode(code, out var itemCode, out var weightKg))
         {
             var weighed = FindByScaleItemCode(itemCode);
-            if (weighed is not null && weighed.IsWeighed)
+            if (weighed is not null && (weighed.IsWeighed || weighed.Unit == "Kilogram"))
             {
                 AddWeightToCart(weighed, weightKg);
                 SearchBox.Clear();
@@ -578,6 +579,13 @@ public partial class PosWindow : Window
         var product = _allProducts.FirstOrDefault(p =>
             (p.Barcode != null && string.Equals(p.Barcode, code, StringComparison.OrdinalIgnoreCase)) ||
             string.Equals(p.MxikCode, code, StringComparison.OrdinalIgnoreCase));
+
+        // 2b) Markirovka (GS1 DataMatrix) kodi: "01" + 14 xonali GTIN + seriya, masalan
+        //     "01089352708230852174...". Butun satr mahsulotga mos kelmaydi — GTIN'ni ajratib,
+        //     shtrix-kod bo'yicha qidiramiz. Seriya qismi klaviatura layout'i (kirill) tufayli
+        //     buzilishi mumkin, shuning uchun faqat boshidagi GTIN raqamlariga tayanamiz.
+        if (product is null && TryParseGtinFromMarking(code, out var gtin))
+            product = FindByGtin(gtin);
 
         // Qidiruv maydonida Enter bosilganda (skaner emas) ko'rinib turgan
         // birinchi mahsulotni ham qabul qilamiz — nom bo'yicha tez qo'shish uchun.
@@ -665,6 +673,38 @@ public partial class PosWindow : Window
                 return true;
             if (trimmed.Length > 0 && bc.TrimStart('0') == trimmed) return true;           // boshidagi nollarsiz
             return false;
+        });
+    }
+
+    /// <summary>
+    /// GS1 DataMatrix markirovka kodidan GTIN-14 ni ajratadi: "01" bilan boshlanib, keyin
+    /// 14 ta raqam keladi. Masalan "01089352708230852174м1И..." → "08935270823085".
+    /// Seriya (undan keyingi) qism kirill/layout tufayli buzilgan bo'lsa ham GTIN raqamlari toza.
+    /// </summary>
+    private static bool TryParseGtinFromMarking(string code, out string gtin)
+    {
+        gtin = "";
+        if (string.IsNullOrEmpty(code) || code.Length < 16) return false;
+        if (code[0] != '0' || code[1] != '1') return false;
+        var candidate = code.Substring(2, 14);
+        foreach (var ch in candidate)
+            if (!char.IsDigit(ch)) return false;
+        gtin = candidate;
+        return true;
+    }
+
+    /// <summary>GTIN-14 bo'yicha mahsulotni topadi — shtrix-kod GTIN-14, EAN-13 (boshidagi 0 siz)
+    /// yoki boshidagi nollarsiz ko'rinishda saqlangan bo'lishi mumkin.</summary>
+    private ProductDto? FindByGtin(string gtin14)
+    {
+        var ean13 = gtin14.Length == 14 ? gtin14.Substring(1) : gtin14;   // 8935270823085
+        var trimmed = gtin14.TrimStart('0');
+        return _allProducts.FirstOrDefault(p =>
+        {
+            var bc = p.Barcode?.Trim();
+            if (string.IsNullOrEmpty(bc)) return false;
+            return bc == gtin14 || bc == ean13
+                   || (trimmed.Length > 0 && bc.TrimStart('0') == trimmed);
         });
     }
 
