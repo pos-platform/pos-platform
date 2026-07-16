@@ -87,20 +87,20 @@ public class FdsFiscalDevice : IFiscalDevice
                 return FiscalResult.Failure($"Fiskal modul TXID qaytarmadi: {getTxBody}");
 
             // ── 2-bosqich: TXID bo'yicha modulda ro'yxatga olish ───────────────
-            // TXID form-data (application/x-www-form-urlencoded) sifatida yuboriladi — JSON emas
-            // (Swagger: TXID integer, formData). POS-lock yo'q bo'lsa X-POS-Auth header shart emas.
-            var form = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string>("TXID", txid.Value.ToString(CultureInfo.InvariantCulture))
-            });
-            var registerResponse = await _http.PostAsync(
-                $"{baseUrl}/FiscalDrive/Receipt/RegisterTXID/{factoryId}", form, cancellationToken);
-            var registerBody = await registerResponse.Content.ReadAsStringAsync(cancellationToken);
+            var (registerOk, registerBody) = await RegisterTxidAsync(baseUrl, factoryId, txid.Value, cancellationToken);
 
-            if (!registerResponse.IsSuccessStatusCode)
+            // Modul to'lgan bo'lsa (SEND_ALL_RECEIPTS_FIRST / LOCKED_SYNC_WITH_SERVER) —
+            // ro'yxatga olingan cheklarni OFD serverga sinxronlab, bir marta qayta urinamiz.
+            if (!registerOk && NeedsSync(registerBody))
             {
-                _logger.LogWarning("FiscalDriveService RegisterTXID HTTP {Status}: {Body}", (int)registerResponse.StatusCode, registerBody);
-                return FiscalResult.Failure($"Fiskal modul (RegisterTXID) HTTP {(int)registerResponse.StatusCode}: {registerBody}");
+                await SyncModuleAsync(baseUrl, factoryId, cancellationToken);
+                (registerOk, registerBody) = await RegisterTxidAsync(baseUrl, factoryId, txid.Value, cancellationToken);
+            }
+
+            if (!registerOk)
+            {
+                _logger.LogWarning("FiscalDriveService RegisterTXID muvaffaqiyatsiz: {Body}", registerBody);
+                return FiscalResult.Failure($"Fiskal modul (RegisterTXID): {registerBody}");
             }
 
             var result = JsonSerializer.Deserialize<ReceiptResult>(registerBody, _json);
@@ -124,6 +124,58 @@ public class FdsFiscalDevice : IFiscalDevice
         {
             _logger.LogError(ex, "FiscalDriveService chaqiruvida xato");
             return FiscalResult.Failure(ex.Message);
+        }
+    }
+
+    /// <summary>RegisterTXID (form-data TXID) — natija (muvaffaqiyat, javob tanasi) qaytaradi.</summary>
+    private async Task<(bool ok, string body)> RegisterTxidAsync(
+        string baseUrl, string factoryId, long txid, CancellationToken cancellationToken)
+    {
+        var form = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("TXID", txid.ToString(CultureInfo.InvariantCulture))
+        });
+        using var response = await _http.PostAsync(
+            $"{baseUrl}/FiscalDrive/Receipt/RegisterTXID/{factoryId}", form, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        return (response.IsSuccessStatusCode, body);
+    }
+
+    /// <summary>Xato modul to'lgani (OFD ga sinxron kerak)ni bildiradimi.</summary>
+    private static bool NeedsSync(string body) =>
+        body.Contains("SEND_ALL_RECEIPTS_FIRST", StringComparison.OrdinalIgnoreCase)
+        || body.Contains("LOCKED_SYNC_WITH_SERVER", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Modulda to'planган cheklarni OFD serverга yuborishни majburlaydi (modul to'lиб qolганда).
+    /// Xatolar log'lanади, lekin fiskalizatsiyani to'xtatmайди — keyin qayta urinamiz.
+    /// </summary>
+    private async Task SyncModuleAsync(string baseUrl, string factoryId, CancellationToken cancellationToken)
+    {
+        _logger.LogWarning("Fiskal modul to'ldi — cheklarni OFD serverga sinxronlaymiz...");
+        await PostSyncAsync($"{baseUrl}/FiscalDrive/State/Sync/{factoryId}", withItemsCount: false, cancellationToken);
+        await PostSyncAsync($"{baseUrl}/DataBase/Files/Sync/FullReceipts/{factoryId}", withItemsCount: true, cancellationToken);
+        await PostSyncAsync($"{baseUrl}/DataBase/Files/Sync/Receipts/{factoryId}", withItemsCount: true, cancellationToken);
+        await PostSyncAsync($"{baseUrl}/DataBase/Files/Sync/ZReports/{factoryId}", withItemsCount: true, cancellationToken);
+    }
+
+    private async Task PostSyncAsync(string url, bool withItemsCount, CancellationToken cancellationToken)
+    {
+        try
+        {
+            HttpContent? content = withItemsCount
+                ? new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("ItemsCount", "100") })
+                : null;
+            using var response = await _http.PostAsync(url, content, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogWarning("Sinxron {Url} HTTP {Status}: {Body}", url, (int)response.StatusCode, body);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Sinxron xatosi: {Url}", url);
         }
     }
 
