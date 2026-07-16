@@ -23,9 +23,10 @@ public partial class ReceiptPreviewWindow : Window
     {
         InitializeComponent();
 
-        // Oyna ekran ish sohasidan baland bo'lmasin — aks holda pastdagi tugmalar ekran
-        // tashqarisiga chiqib ketadi. Uzun chek endi ichida scroll qilinadi.
-        MaxHeight = SystemParameters.WorkArea.Height - 24;
+        // Oyna balandligi qat'iy (XAML'da Height=640) — QR kod kelganda ham o'zgarmaydi,
+        // uzun chek ichkarida scroll qilinadi. Faqat juda past ekranlarda ish sohasiga sig'diramiz.
+        if (Height > SystemParameters.WorkArea.Height - 24)
+            Height = SystemParameters.WorkArea.Height - 24;
 
         _receipt = receipt;
         _immediatePrint = allowImmediatePrint;

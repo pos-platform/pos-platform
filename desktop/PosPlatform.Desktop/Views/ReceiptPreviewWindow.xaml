@@ -1,7 +1,7 @@
 <Window x:Class="PosPlatform.Desktop.Views.ReceiptPreviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Chek" Width="344" SizeToContent="Height" MaxHeight="920"
+        Title="Chek" Width="344" Height="640"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="#EEF1F5">
     <Grid Margin="16">
         <Grid.RowDefinitions>
