@@ -9,7 +9,7 @@ const router = useRouter()
 
 const cashboxId = route.params.id
 
-const store = ref(null)      // branch
+const store = ref(null)      
 const cashbox = ref(null)
 const shifts = ref([])
 const sales = ref([])
@@ -83,7 +83,6 @@ onMounted(load)
     <button class="btn btn-ghost btn-sm" style="margin-left:12px" @click="router.push({ name: 'stores' })">← Orqaga</button>
   </div>
   <template v-else>
-    <!-- Header -->
     <div class="page-head">
       <div>
         <button class="btn btn-ghost btn-sm" style="margin-bottom:6px" @click="router.push({ name: 'stores' })">← Do'konlar</button>
