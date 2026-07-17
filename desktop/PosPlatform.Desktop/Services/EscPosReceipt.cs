@@ -32,7 +32,9 @@ public static class EscPosReceipt
     private static readonly byte[] CUT       = [0x1D, 0x56, 0x01];
 
     /// <param name="printWidth">Ustun kengligi belgilarda: 42 = 80mm, 32 = 57mm.</param>
-    public static byte[] BuildReceipt(ReceiptData r, int printWidth = 42)
+    /// <param name="showCodes">false bo'lsa Shtrix/MXIK qatorlari bosilmaydi —
+    /// pastdagi "Chop etish" (oddiy nusxa) uchun qisqa ko'rinish.</param>
+    public static byte[] BuildReceipt(ReceiptData r, int printWidth = 42, bool showCodes = true)
     {
         var enc = Encoding.GetEncoding(866); // CP866 — kirill/lotin termal printerlar uchun
         using var ms = new MemoryStream();
@@ -40,11 +42,6 @@ public static class EscPosReceipt
         void Write(byte[] b) => ms.Write(b);
         void Line(string text = "") { ms.Write(enc.GetBytes(text)); Write(LF); }
         void Divider() => Line(new string('-', printWidth));
-        string Row(string left, string right)
-        {
-            var space = printWidth - left.Length - right.Length;
-            return left + (space > 0 ? new string(' ', space) : " ") + right;
-        }
 
         Write(INIT);
 
@@ -83,23 +80,19 @@ public static class EscPosReceipt
 
         foreach (var l in r.Lines)
         {
-            // 1-qator: nom (chap) ... soni x narx = summa (o'ng), bitta qatorda.
-            var amount = $"{l.Quantity:0.###} x {l.Price:N0} = {l.LineTotal:N0}";
-            var nameMax = Math.Max(1, printWidth - amount.Length - 1);
-            var name = l.Name.Length > nameMax ? l.Name[..nameMax] : l.Name;
-            Line(Row(name, amount));
+            // Bosh qator (qalin): nomi + soni x narx = summa; ostida Shtrix va MXIK + QQS.
+            // Har tovardan keyin ajratuvchi chiziq.
+            Write(BOLD_ON);
+            foreach (var ln in ReceiptLayout.ItemHeaderRows(l, printWidth))
+                Line(ln);
+            Write(BOLD_OFF);
 
-            // 2-qator: Shtrix (bo'lsa) + MXIK (har doim — fiskal chek uchun majburiy).
-            var codes = new List<string>();
-            if (!string.IsNullOrWhiteSpace(l.Barcode)) codes.Add($"Shtrix: {l.Barcode}");
-            codes.Add($"MXIK: {(string.IsNullOrWhiteSpace(l.MxikCode) ? "00000000" : l.MxikCode)}");
-            Line("  " + string.Join("   ", codes));
+            if (showCodes)
+                foreach (var ln in ReceiptLayout.ItemDetailRows(l, printWidth))
+                    Line(ln);
 
-            if (l.IsVat)
-                Line($"  QQS 12%: {Math.Round(l.LineTotal * 12m / 112m):N0}");
+            Divider();
         }
-
-        Divider();
 
         Write(BOLD_ON);
         Write(DOUBLE);

@@ -57,8 +57,10 @@ public partial class ReceiptPreviewWindow : Window
     private void Render()
     {
         // Ko'rsatish uchun hujjat (chop etishda yangisi quriladi — bitta hujjat ikki joyda bo'lolmaydi).
-        // Darhol-chop rejimida "Fiskalizatsiya kutilmoqda..." matni ko'rsatilmaydi.
-        DocViewer.Document = ReceiptPrinter.BuildDocument(_receipt, showFiscalPending: !_immediatePrint);
+        // Darhol-chop rejimida "Fiskalizatsiya kutilmoqda..." matni va Shtrix/MXIK kodlari
+        // ko'rsatilmaydi — bu oddiy (fiskal bo'lmagan) nusxa.
+        DocViewer.Document = ReceiptPrinter.BuildDocument(_receipt,
+            showFiscalPending: !_immediatePrint, showCodes: !_immediatePrint);
     }
 
     /// <summary>Backenddan chekning fiskal holatini so'rab turadi; QR kelganda chekni yangilaydi.</summary>
@@ -105,7 +107,8 @@ public partial class ReceiptPreviewWindow : Window
     {
         try
         {
-            _printer.Print(_receipt, AppState.PrinterName);
+            // Darhol-chop rejimida printerga ham kodlarsiz (qisqa) ko'rinish yuboriladi.
+            _printer.Print(_receipt, AppState.PrinterName, showCodes: !_immediatePrint);
             Close();
         }
         catch (System.Exception ex)

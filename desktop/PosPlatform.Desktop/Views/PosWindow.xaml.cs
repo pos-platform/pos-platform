@@ -1158,7 +1158,8 @@ public partial class PosWindow : Window
     {
         try
         {
-            _printer.Print(receipt, AppState.PrinterName);
+            // Pastdagi "Chop etish" (qayta bosish) — oddiy nusxa, Shtrix/MXIK kodlarsiz.
+            _printer.Print(receipt, AppState.PrinterName, showCodes: false);
             return true;
         }
         catch (Exception ex)

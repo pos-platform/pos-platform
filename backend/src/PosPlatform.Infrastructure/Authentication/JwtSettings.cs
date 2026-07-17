@@ -9,6 +9,6 @@ public class JwtSettings
     public string Issuer { get; set; } = string.Empty;
     public string Audience { get; set; } = string.Empty;
 
-    /// <summary>Token amal qilish muddati (daqiqalarda).</summary>
-    public int ExpiryMinutes { get; set; } = 480;
+    /// <summary>Token amal qilish muddati (daqiqalarda). 24 soat — kassa smenasi to'liq qamrab olinadi.</summary>
+    public int ExpiryMinutes { get; set; } = 1440;
 }

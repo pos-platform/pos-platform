@@ -182,6 +182,9 @@ public class BackendClient
                 msg = e.GetString() ?? body;
         }
         catch { /* ignore */ }
+        // Token eskirganda backend bo'sh tanali 401 qaytaradi — kassirga tushunarli xabar.
+        if (resp.StatusCode == HttpStatusCode.Unauthorized && string.IsNullOrWhiteSpace(msg))
+            throw new Exception("Sessiya muddati tugadi, qayta login qilib kiring.");
         throw new Exception(string.IsNullOrWhiteSpace(msg) ? $"Server xatosi: {(int)resp.StatusCode}" : msg);
     }
 }

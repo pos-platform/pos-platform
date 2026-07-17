@@ -41,10 +41,18 @@ public class AuthService : IAuthService
                 .ThenInclude(r => r!.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
             .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
-        if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
+        // Auditda aniq sabab yoziladi; foydalanuvchiga esa xavfsizlik uchun umumiy xabar qaytadi.
+        if (user is null)
         {
-            await _audit.LogAsync("login.fail", $"username={username}", success: false,
+            await _audit.LogAsync("login.fail", $"username={username}; sabab=bunday login topilmadi", success: false,
                 actorUsername: username, ct: cancellationToken);
+            throw new UnauthorizedException("Username yoki parol noto'g'ri.");
+        }
+
+        if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
+        {
+            await _audit.LogAsync("login.fail", $"username={username}; sabab=parol noto'g'ri", success: false,
+                organizationId: user.OrganizationId, actorUserId: user.Id, actorUsername: user.Username, ct: cancellationToken);
             throw new UnauthorizedException("Username yoki parol noto'g'ri.");
         }
 

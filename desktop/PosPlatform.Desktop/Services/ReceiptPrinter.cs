@@ -17,10 +17,12 @@ public class ReceiptPrinter
     /// "Generic / Text Only" drayveri bilan chekni oxirigacha chiqarmaydi va kesmaydi,
     /// shuning uchun bu yerda to'g'ridan-to'g'ri ESC/POS baytlari yuboriladi.
     /// </summary>
-    public void Print(ReceiptData r, string? printerName)
+    /// <param name="showCodes">false bo'lsa Shtrix/MXIK qatorlari bosilmaydi —
+    /// pastdagi "Chop etish" (oddiy nusxa) uchun qisqa ko'rinish.</param>
+    public void Print(ReceiptData r, string? printerName, bool showCodes = true)
     {
         var name = ResolvePrinterName(printerName);
-        var data = EscPosReceipt.BuildReceipt(r);
+        var data = EscPosReceipt.BuildReceipt(r, showCodes: showCodes);
         EscPosReceipt.SendRaw(name, data, "Chek " + r.ReceiptNumber);
     }
 
@@ -39,7 +41,9 @@ public class ReceiptPrinter
 
     /// <param name="showFiscalPending">false bo'lsa "Fiskalizatsiya kutilmoqda..." matni
     /// ko'rsatilmaydi (darhol-chop rejimi uchun).</param>
-    public static FlowDocument BuildDocument(ReceiptData r, bool showFiscalPending = true)
+    /// <param name="showCodes">false bo'lsa Shtrix/MXIK qatorlari ko'rsatilmaydi —
+    /// pastdagi "Chop etish" (oddiy nusxa) uchun qisqa ko'rinish.</param>
+    public static FlowDocument BuildDocument(ReceiptData r, bool showFiscalPending = true, bool showCodes = true)
     {
         // Ekrandagi ko'rinish uchun shrift kattaroq — 32 belgilik qator qog'ozning to'liq
         // enini egallaydi, o'ngda bo'sh joy qolmaydi. (Termal RAW chekka ta'sir qilmaydi.)
@@ -89,31 +93,22 @@ public class ReceiptPrinter
         // Tovarlar bo'limi sarlavhasi.
         Add("Savdo", bold: true, align: TextAlignment.Center);
         Add(sep);
-        string Row(string left, string right)
-        {
-            var space = width - left.Length - right.Length;
-            return left + (space > 0 ? new string(' ', space) : " ") + right;
-        }
 
         foreach (var line in r.Lines)
         {
-            // 1-qator: nom (chap) ... soni x narx = summa (o'ng), bitta qatorda.
-            var amount = $"{line.Quantity:0.###} x {line.Price:N0} = {line.LineTotal:N0}";
-            var nameMax = Math.Max(1, width - amount.Length - 1);
-            var name = line.Name.Length > nameMax ? line.Name[..nameMax] : line.Name;
-            Add(Row(name, amount));
+            // Bosh qator (qalin): nomi + soni x narx = summa; ostida Shtrix va MXIK + QQS.
+            // Tovar qatorlari kichikroq shriftda — nom + summa bitta qatorga sig'adi.
+            // Belgi soni shriftga teskari proporsional: N = 32 * 15 / size (sep eniga teng),
+            // shunda o'ngga tekislangan qism chek chetiga tekis tushadi.
+            foreach (var ln in ReceiptLayout.ItemHeaderRows(line, 37))
+                Add(ln, bold: true, size: 13);
 
-            // 2-qator: Shtrix (bo'lsa) + MXIK (har doim — fiskal chek uchun majburiy).
-            var codes = new List<string>();
-            if (!string.IsNullOrWhiteSpace(line.Barcode)) codes.Add($"Shtrix: {line.Barcode}");
-            codes.Add($"MXIK: {(string.IsNullOrWhiteSpace(line.MxikCode) ? "00000000" : line.MxikCode)}");
-            Add("  " + string.Join("   ", codes), size: 13);
+            if (showCodes)
+                foreach (var ln in ReceiptLayout.ItemDetailRows(line, 40))
+                    Add(ln, size: 12);
 
-            if (line.IsVat)
-                Add($"  QQS 12%: {Math.Round(line.LineTotal * 12m / 112m):N0}", size: 13);
+            Add(sep);
         }
-
-        Add(sep);
         Add($"JAMI: {r.Total:N0} so'm", bold: true, size: 17);
         if (r.VatTotal > 0)
             Add($"QQS jami (12%): {r.VatTotal:N0}");
