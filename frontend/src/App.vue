@@ -19,7 +19,7 @@ function setLang(lang) {
 
 const showNav = computed(() => auth.isAuthenticated && route.name !== 'login')
 
-// Mobil off-canvas menyu holati. Sahifa almashganda avtomatik yopiladi.
+// Mobil off-canvas menyu holati. Sahifa almashganda avtomatik yopiladi. hugoo =>HUsan
 const mobileNavOpen = ref(false)
 watch(() => route.name, () => { mobileNavOpen.value = false })
 
