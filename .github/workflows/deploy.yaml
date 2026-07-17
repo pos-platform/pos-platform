@@ -67,9 +67,6 @@ jobs:
           name: backend-publish
           path: backend/publish
           retention-days: 1
-  # Kassa kompyuteri uchun fiskal/printer agenti (Windows, self-contained).
-  # DIQQAT: agent kassa kompida ishlaydi — CI uni kompga o'rnata olmaydi (ular ulanmaydi).
-  # Bu job faqat tayyor ZIP build qiladi; uni Actions run'dan yuklab olib kassaga o'rnatasiz.
   build-agent:
     needs: changes
     if: needs.changes.outputs.agent == 'true'
@@ -125,11 +122,6 @@ jobs:
         with:
           name: backend-publish
           path: backend-publish
-      # MUHIM TUZATISH: faqat backend o'zgarganda frontend-dist bo'lmaydi,
-      # eski workflow'da rsync --delete serverdagi wwwroot ichini (index.html,
-      # assets/) o'chirib yuborardi — natijada keyingi frontend deploygacha
-      # sayt 404 qaytarardi. Endi frontend build bo'lmasa wwwroot umuman
-      # tegilmaydi (--exclude wwwroot).
       - name: Deploy backend (and merge frontend if changed)
         if: needs.changes.outputs.backend == 'true'
         run: |
