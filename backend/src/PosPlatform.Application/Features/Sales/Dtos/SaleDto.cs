@@ -14,6 +14,7 @@ public class SaleDto
     public Guid? OriginalSaleId { get; set; }
     public SaleStatus Status { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
+    public string? TransferSource { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal VatAmount { get; set; }
@@ -42,6 +43,7 @@ public class SaleDto
         OriginalSaleId = s.OriginalSaleId,
         Status = s.Status,
         PaymentMethod = s.PaymentMethod,
+        TransferSource = s.TransferSource,
         TotalAmount = s.TotalAmount,
         DiscountAmount = s.DiscountAmount,
         VatAmount = s.VatAmount,

@@ -278,7 +278,7 @@ public partial class OrderWindow : Window
         {
             var method = (combo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Cash";
             var paid = ParseDecimal(paidBox.Text);
-            if (method == "Cash" && paid < total)
+            if (method == "Cash" && paid < Math.Round(total, 0, MidpointRounding.AwayFromZero))
             {
                 MessageBox.Show("Berilgan summa yetarli emas", "Xatolik", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;

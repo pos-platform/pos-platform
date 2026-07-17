@@ -166,6 +166,8 @@ public class SaleItemRequest
 public class CreateSaleRequest
 {
     public string PaymentMethod { get; set; } = "Cash";
+    /// <summary>O'tkazma to'lovda qaysi usul: "Payme" yoki "Karta".</summary>
+    public string? TransferSource { get; set; }
     public decimal PaidAmount { get; set; }
     public Guid? DebtorId { get; set; }
     /// <summary>Kassa stantsiyasi ID (masalan "KASSA-1") — fiskal agent shu bo'yicha filtrlaydi.</summary>
@@ -220,6 +222,8 @@ public class SaleListDto
     public string Type { get; set; } = "Sale";
     public string Status { get; set; } = "";
     public string PaymentMethod { get; set; } = "";
+    /// <summary>O'tkazma to'lovda qaysi usul: "Payme" yoki "Karta".</summary>
+    public string? TransferSource { get; set; }
     public ReceiptInfo? Receipt { get; set; }
 
     /// <summary>Fiskal QR chiqarilgan chek (soliq QR kodi bilan sotilgan).</summary>
@@ -232,7 +236,7 @@ public class SaleListDto
     public string PaymentLabel => PaymentMethod switch
     {
         "Card" => "Karta",
-        "Transfer" => "O'tkazma",
+        "Transfer" => string.IsNullOrWhiteSpace(TransferSource) ? "O'tkazma" : $"O'tkazma ({TransferSource})",
         "Mixed" => "Aralash",
         "Debt" => "Nasiya",
         _ => "Naqd"

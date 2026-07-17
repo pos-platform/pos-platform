@@ -16,6 +16,10 @@ public class CreateSaleRequest
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
 
+    /// <summary>O'tkazma (Transfer) to'lovda qaysi usul: "Payme" yoki "Karta". Boshqa to'lovlarda e'tiborga olinmaydi.</summary>
+    [MaxLength(30)]
+    public string? TransferSource { get; set; }
+
     /// <summary>Nasiya (Debt) sotuvda majburiy — qaysi qarzdorga.</summary>
     public Guid? DebtorId { get; set; }
 

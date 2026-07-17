@@ -135,6 +135,9 @@ public class SaleService : ISaleService
             TerminalId = string.IsNullOrWhiteSpace(request.TerminalId) ? null : request.TerminalId.Trim(),
             Type = SaleType.Sale,
             PaymentMethod = request.PaymentMethod,
+            TransferSource = request.PaymentMethod == PaymentMethod.Transfer && !string.IsNullOrWhiteSpace(request.TransferSource)
+                ? request.TransferSource.Trim()
+                : null,
             DebtorId = debtor?.Id,
             CustomerId = customer?.Id,
             Status = SaleStatus.Completed
@@ -211,7 +214,9 @@ public class SaleService : ISaleService
         sale.DiscountAmount = sale.Items.Sum(i => i.DiscountAmount);
         sale.VatAmount = sale.Items.Sum(i => i.VatAmount);
 
-        if (request.PaymentMethod == PaymentMethod.Cash && request.PaidAmount < sale.TotalAmount)
+        // Kassada tiyin ishlatilmaydi — tarozili mahsulotlar tufayli jami kasrli bo'lsa
+        // (masalan 223 070,4), butun so'mga yaxlitlangan qiymat bilan solishtiramiz.
+        if (request.PaymentMethod == PaymentMethod.Cash && request.PaidAmount < Math.Round(sale.TotalAmount, 0, MidpointRounding.AwayFromZero))
         {
             throw new ValidationException("Berilgan summa savdo summasidan kam.");
         }
@@ -309,6 +314,7 @@ public class SaleService : ISaleService
             Type = SaleType.Refund,
             OriginalSaleId = original.Id,
             PaymentMethod = original.PaymentMethod,
+            TransferSource = original.TransferSource,
             Status = SaleStatus.Completed,
             TotalAmount = original.TotalAmount,
             DiscountAmount = original.DiscountAmount,
@@ -635,7 +641,7 @@ public class SaleService : ISaleService
         sale.DebtorId = debtor?.Id;
         sale.CustomerId = customer?.Id;
 
-        if (request.PaymentMethod == PaymentMethod.Cash && request.PaidAmount < sale.TotalAmount)
+        if (request.PaymentMethod == PaymentMethod.Cash && request.PaidAmount < Math.Round(sale.TotalAmount, 0, MidpointRounding.AwayFromZero))
             throw new ValidationException("Berilgan summa savdo summasidan kam.");
 
         if (request.PaymentMethod == PaymentMethod.Debt)

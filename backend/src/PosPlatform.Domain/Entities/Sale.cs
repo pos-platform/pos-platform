@@ -70,6 +70,9 @@ public class Sale : BaseEntity
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
 
+    /// <summary>O'tkazma (Transfer) to'lovda qaysi usul ishlatilgani: "Payme" yoki "Karta". Boshqa to'lovlarda null.</summary>
+    public string? TransferSource { get; set; }
+
     /// <summary>Qatorlar yig'indisi minus chegirma (mijoz to'lashi kerak bo'lgan summa).</summary>
     public decimal TotalAmount { get; set; }
 

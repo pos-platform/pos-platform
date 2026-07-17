@@ -27,6 +27,8 @@ public partial class SettingsWindow : Window
         PrinterCombo.Text = AppState.PrinterName ?? "";
         TerminalIdBox.Text = AppState.TerminalId ?? "";
         LegalAddressBox.Text = AppState.LegalAddress ?? "";
+        PaymeLinkBox.Text = AppState.PaymeLink ?? "";
+        TransferCardBox.Text = AppState.TransferCard ?? "";
 
         // COM port skaner
         foreach (var port in BarcodeScanner.GetAvailablePorts())
@@ -104,7 +106,9 @@ public partial class SettingsWindow : Window
             ExternalFiscalDevice = externalFiscal,
             ScannerComPort = string.IsNullOrWhiteSpace(ScannerPortCombo.Text) ? null : ScannerPortCombo.Text.Trim(),
             ScannerBaudRate = int.TryParse(BaudRateBox.Text, out var br) && br > 0 ? br : 9600,
-            LegalAddress = string.IsNullOrWhiteSpace(LegalAddressBox.Text) ? null : LegalAddressBox.Text.Trim()
+            LegalAddress = string.IsNullOrWhiteSpace(LegalAddressBox.Text) ? null : LegalAddressBox.Text.Trim(),
+            PaymeLink = string.IsNullOrWhiteSpace(PaymeLinkBox.Text) ? null : PaymeLinkBox.Text.Trim(),
+            TransferCard = string.IsNullOrWhiteSpace(TransferCardBox.Text) ? null : TransferCardBox.Text.Trim()
         };
 
         try
@@ -128,6 +132,8 @@ public partial class SettingsWindow : Window
         AppState.ScannerComPort = settings.ScannerComPort;
         AppState.ScannerBaudRate = settings.ScannerBaudRate;
         AppState.LegalAddress = settings.LegalAddress;
+        AppState.PaymeLink = settings.PaymeLink;
+        AppState.TransferCard = settings.TransferCard;
         if (urlChanged) AppState.RebuildBackend();
         if (scannerChanged) AppState.RestartScanner();
 

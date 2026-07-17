@@ -256,7 +256,7 @@ async function checkout() {
   lastSale.value = null
   if (!shift.value) { error.value = 'Avval smenani oching'; return }
   if (!cart.value.length) { error.value = 'Savatcha bo\'sh'; return }
-  if (paymentMethod.value === 'Cash' && Number(paidAmount.value) < total.value) {
+  if (paymentMethod.value === 'Cash' && Number(paidAmount.value) < Math.round(total.value)) {
     error.value = 'Berilgan summa yetarli emas'
     return
   }

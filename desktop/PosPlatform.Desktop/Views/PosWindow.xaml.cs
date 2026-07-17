@@ -915,7 +915,9 @@ public partial class PosWindow : Window
         var total = CartTotal();
         var paid = ParseDecimal(PaidBox.Text);
         var payment = _payment;
-        if (payment == "Cash" && paid < total)
+        // Tarozili mahsulotlarda jami kasrli bo'lishi mumkin (masalan 223 070,4);
+        // ekranda va "To'liq summani qo'yish"da butun so'm ko'rinadi — o'sha bilan solishtiramiz.
+        if (payment == "Cash" && paid < Math.Round(total, 0, MidpointRounding.AwayFromZero))
         {
             ShowMessage("Berilgan summa yetarli emas", error: true);
             return;
@@ -932,12 +934,26 @@ public partial class PosWindow : Window
             debtorId = d.Id;
         }
 
+        // O'tkazma: mijozga QR ko'rsatamiz, kassir pul tushganini tasdiqlagachgina savdo yaratiladi
+        string? transferSource = null;
+        if (payment == "Transfer")
+        {
+            var qrWindow = new TransferQrWindow(total) { Owner = this };
+            if (qrWindow.ShowDialog() != true)
+            {
+                FocusScanInput();
+                return;
+            }
+            transferSource = qrWindow.SelectedSource; // "Payme" yoki "Karta"
+        }
+
         CheckoutButton.IsEnabled = false;
         try
         {
             var req = new CreateSaleRequest
             {
                 PaymentMethod = payment,
+                TransferSource = transferSource,
                 PaidAmount = payment == "Debt" ? 0 : (paid > 0 ? paid : total),
                 DebtorId = debtorId,
                 TerminalId = AppState.TerminalId,

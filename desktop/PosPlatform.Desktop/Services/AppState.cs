@@ -24,6 +24,12 @@ public static class AppState
     /// <summary>Tashkilotning yuridik manzili (Yur.Manzil) — chek sarlavhasida chiqadi.
     /// Sozlamalar oynasidan kiritiladi (%APPDATA% da saqlanadi).</summary>
     public static string? LegalAddress { get; set; }
+
+    /// <summary>Payme shaxsiy o'tkazma havolasi (payme.uz/@username) — O'tkazma to'lovida QR sifatida ko'rsatiladi.</summary>
+    public static string? PaymeLink { get; set; }
+
+    /// <summary>O'tkazma qabul qilinadigan karta raqami — Payme'dan boshqa ilovalar uchun QR/matn sifatida ko'rsatiladi.</summary>
+    public static string? TransferCard { get; set; }
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
     public static string BusinessType { get; set; } = "Store";

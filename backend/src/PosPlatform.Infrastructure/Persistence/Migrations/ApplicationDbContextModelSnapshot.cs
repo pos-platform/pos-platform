@@ -1371,6 +1371,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<string>("TransferSource")
+                        .HasColumnType("text");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
