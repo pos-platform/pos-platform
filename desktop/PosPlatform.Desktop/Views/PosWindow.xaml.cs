@@ -51,6 +51,7 @@ public partial class PosWindow : Window
             AppState.Scanner.BarcodeReceived += OnBarcodeScanned;
             AppState.RestartScanner();
             SearchBox.Focus();
+            _ = CheckUpdateAsync();
         };
         Closed += (_, _) =>
         {
@@ -1026,7 +1027,26 @@ public partial class PosWindow : Window
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
-        => new SettingsWindow { Owner = this }.ShowDialog();
+    {
+        new SettingsWindow { Owner = this }.ShowDialog();
+        RefreshUpdateBadge();
+    }
+
+    /// <summary>Serverda yangi versiya bor-yo'qligini tekshirib, ⚙ tugmadagi belgini yangilaydi.</summary>
+    private async Task CheckUpdateAsync()
+    {
+        await UpdateService.CheckAsync();
+        RefreshUpdateBadge();
+    }
+
+    private void RefreshUpdateBadge()
+    {
+        var upd = UpdateService.Available;
+        UpdateBadge.Visibility = upd is null ? Visibility.Collapsed : Visibility.Visible;
+        SettingsButton.ToolTip = upd is null
+            ? "Sozlamalar"
+            : $"Sozlamalar — yangi versiya {upd.Version} mavjud";
+    }
 
     // ---------- Nasiya (qarz) ----------
 

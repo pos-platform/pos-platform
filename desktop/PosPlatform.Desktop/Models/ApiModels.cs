@@ -220,6 +220,10 @@ public class SaleListDto
     public string Type { get; set; } = "Sale";
     public string Status { get; set; } = "";
     public string PaymentMethod { get; set; } = "";
+    public ReceiptInfo? Receipt { get; set; }
+
+    /// <summary>Fiskal QR chiqarilgan chek (soliq QR kodi bilan sotilgan).</summary>
+    public bool HasQr => !string.IsNullOrEmpty(Receipt?.QrCodeUrl);
 
     public string DateLabel => CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
     public string TimeLabel => CreatedAt.ToLocalTime().ToString("HH:mm");

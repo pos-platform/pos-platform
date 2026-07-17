@@ -33,6 +33,53 @@ public partial class SettingsWindow : Window
             ScannerPortCombo.Items.Add(port);
         ScannerPortCombo.Text = AppState.ScannerComPort ?? "";
         BaudRateBox.Text = AppState.ScannerBaudRate > 0 ? AppState.ScannerBaudRate.ToString() : "9600";
+
+        VersionText.Text = $"Joriy versiya: {UpdateService.CurrentVersion}";
+        _ = LoadUpdateInfoAsync();
+    }
+
+    /// <summary>Serverdan yangi versiyani tekshirib, "Yangilash" tugmasini ko'rsatadi.</summary>
+    private async Task LoadUpdateInfoAsync()
+    {
+        var upd = await UpdateService.CheckAsync();
+        if (upd is null)
+        {
+            VersionText.Text = $"Joriy versiya: {UpdateService.CurrentVersion} — eng so'nggi versiya";
+            return;
+        }
+
+        VersionText.Text = $"Joriy versiya: {UpdateService.CurrentVersion}. " +
+                           $"Yangi versiya mavjud: {upd.Version} ({upd.SizeBytes / 1024.0 / 1024.0:0.#} MB)";
+        UpdateButtonText.Text = $"⬇ Yangilash — v{upd.Version}";
+        UpdateButton.Visibility = Visibility.Visible;
+    }
+
+    private async void Update_Click(object sender, RoutedEventArgs e)
+    {
+        var upd = UpdateService.Available;
+        if (upd is null) return;
+
+        var ok = MessageBox.Show(this,
+            $"Yangi {upd.Version} versiyasi o'rnatilsinmi?\nDastur yangilanib, avtomatik qayta ochiladi.",
+            "Yangilash", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (ok != MessageBoxResult.Yes) return;
+
+        UpdateButton.IsEnabled = false;
+        UpdateButtonText.Text = "Yuklab olinmoqda...";
+        UpdateProgress.Visibility = Visibility.Visible;
+        try
+        {
+            var progress = new Progress<double>(p => UpdateProgress.Value = p);
+            // Muvaffaqiyatli tugasa ilova o'zi yopilib, yangi versiya ochiladi.
+            await UpdateService.DownloadAndInstallAsync(progress);
+        }
+        catch (Exception ex)
+        {
+            UpdateButton.IsEnabled = true;
+            UpdateButtonText.Text = $"⬇ Yangilash — v{upd.Version}";
+            UpdateProgress.Visibility = Visibility.Collapsed;
+            ShowMessage("Yangilanmadi: " + ex.Message, error: true);
+        }
     }
 
     // Sozlamalarni saqlash — fiskal QR rejimi (ExternalFiscalDevice) o'zgarmaydi,

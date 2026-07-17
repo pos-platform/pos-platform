@@ -55,6 +55,19 @@
 
                 <Separator Margin="0,8,0,10" />
 
+                <TextBlock Text="Dastur yangilanishi" FontWeight="Bold" Margin="0,0,0,6" />
+                <TextBlock x:Name="VersionText" Foreground="#6B7480" FontSize="12"
+                           Margin="0,0,0,6" TextWrapping="Wrap" />
+                <Button x:Name="UpdateButton" Height="38" Visibility="Collapsed"
+                        Background="#2563EB" Foreground="White" FontWeight="Bold" BorderThickness="0"
+                        Click="Update_Click">
+                    <TextBlock x:Name="UpdateButtonText" Text="⬇ Yangilash" />
+                </Button>
+                <ProgressBar x:Name="UpdateProgress" Height="8" Margin="0,8,0,0"
+                             Maximum="100" Visibility="Collapsed" />
+
+                <Separator Margin="0,10,0,10" />
+
                 <TextBlock Text="Parolni o'zgartirish" FontWeight="Bold" Margin="0,0,0,6" />
                 <TextBlock Text="Joriy parol" Foreground="#6B7480" FontWeight="SemiBold" FontSize="12" />
                 <PasswordBox x:Name="CurrentPasswordBox" Height="32" Padding="8,5" Margin="0,4,0,8"
