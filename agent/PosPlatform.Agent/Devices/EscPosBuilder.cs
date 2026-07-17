@@ -69,7 +69,14 @@ internal static class EscPosBuilder
         WriteLine(PadRight("JAMI:", $"{receipt.TotalAmount:N2} so'm", printWidth));
         Write(ESC_BOLD_OFF);
         WriteLine(PadRight("QQS (12%):", $"{receipt.VatAmount:N2}", printWidth));
-        WriteLine(PadRight("To'lov:", receipt.PaymentMethod == "Cash" ? "Naqd" : "Karta", printWidth));
+        WriteLine(PadRight("To'lov:", receipt.PaymentMethod switch
+        {
+            "Card" => "Karta",
+            "Transfer" => "O'tkazma",
+            "Mixed" => "Aralash",
+            "Debt" => "Nasiya",
+            _ => "Naqd"
+        }, printWidth));
 
         Divider();
 

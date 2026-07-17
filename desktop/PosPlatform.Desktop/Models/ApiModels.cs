@@ -232,6 +232,7 @@ public class SaleListDto
     public string PaymentLabel => PaymentMethod switch
     {
         "Card" => "Karta",
+        "Transfer" => "O'tkazma",
         "Mixed" => "Aralash",
         "Debt" => "Nasiya",
         _ => "Naqd"

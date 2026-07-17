@@ -225,7 +225,9 @@ public class FdsFiscalDevice : IFiscalDevice
     /// </summary>
     private static object BuildReceipt(PendingReceipt r, DateTime receiptTime)
     {
-        var isCard = r.PaymentMethod.Equals("Card", StringComparison.OrdinalIgnoreCase);
+        // Transfer (Payme/Click/bank o'tkazmasi) fiskalda karta to'lovi sifatida ro'yxatdan o'tadi.
+        var isCard = r.PaymentMethod.Equals("Card", StringComparison.OrdinalIgnoreCase)
+                  || r.PaymentMethod.Equals("Transfer", StringComparison.OrdinalIgnoreCase);
 
         var items = r.Items.Select(i => new
         {

@@ -104,7 +104,9 @@ public class YtFiscalDevice : IFiscalDevice
     /// </summary>
     private static object BuildReceipt(PendingReceipt r)
     {
-        var isCard = r.PaymentMethod.Equals("Card", StringComparison.OrdinalIgnoreCase);
+        // Transfer (Payme/Click/bank o'tkazmasi) fiskalda karta to'lovi sifatida ro'yxatdan o'tadi.
+        var isCard = r.PaymentMethod.Equals("Card", StringComparison.OrdinalIgnoreCase)
+                  || r.PaymentMethod.Equals("Transfer", StringComparison.OrdinalIgnoreCase);
 
         var items = r.Items.Select(i => new
         {

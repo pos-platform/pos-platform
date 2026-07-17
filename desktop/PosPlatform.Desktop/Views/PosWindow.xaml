@@ -414,11 +414,14 @@
                             </Border>
 
                             <!-- To'lov turi -->
-                            <UniformGrid Columns="4" Margin="0,0,0,6">
+                            <UniformGrid Columns="5" Margin="0,0,0,6">
                                 <Button x:Name="PayCash" Content="💵 Naqd" Tag="Cash" Margin="0,0,6,0"
                                         Style="{StaticResource PayTabActive}" Click="PayTab_Click" />
                                 <Button x:Name="PayCard" Content="💳 Karta" Tag="Card" Margin="0,0,6,0"
                                         Style="{StaticResource PayTab}" Click="PayTab_Click" />
+                                <Button x:Name="PayTransfer" Content="📱 O'tkazma" Tag="Transfer" Margin="0,0,6,0"
+                                        Style="{StaticResource PayTab}" Click="PayTab_Click"
+                                        ToolTip="Payme/Click yoki bank o'tkazmasi orqali to'lov" />
                                 <Button x:Name="PayMixed" Content="🔀 Aralash" Tag="Mixed" Margin="0,0,6,0"
                                         Style="{StaticResource PayTab}" Click="PayTab_Click" />
                                 <Button x:Name="PayDebt" Content="📒 Nasiya" Tag="Debt"

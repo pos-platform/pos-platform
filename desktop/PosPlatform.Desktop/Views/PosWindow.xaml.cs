@@ -1072,6 +1072,7 @@ public partial class PosWindow : Window
         var active = (Style)FindResource("PayTabActive");
         PayCash.Style = _payment == "Cash" ? active : tab;
         PayCard.Style = _payment == "Card" ? active : tab;
+        PayTransfer.Style = _payment == "Transfer" ? active : tab;
         PayMixed.Style = _payment == "Mixed" ? active : tab;
         PayDebt.Style = _payment == "Debt" ? active : tab;
     }

@@ -175,7 +175,9 @@ public static class EscPosReceipt
     private static string PaymentLabel(string p) => p switch
     {
         "Card" => "Karta",
+        "Transfer" => "O'tkazma",
         "Mixed" => "Aralash",
+        "Debt" => "Nasiya",
         _ => "Naqd"
     };
 

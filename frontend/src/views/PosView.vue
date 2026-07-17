@@ -197,7 +197,7 @@ function printReceipt(sale) {
   <hr/>
   <div class="row bold"><span>Jami:</span><span>${Number(sale.totalAmount).toLocaleString()} so'm</span></div>
   ${Number(sale.discountAmount) > 0 ? `<div class="row"><span>Chegirma:</span><span>${Number(sale.discountAmount).toLocaleString()} so'm</span></div>` : ''}
-  <div class="row"><span>To'lov:</span><span>${sale.paymentMethod === 'Cash' ? 'Naqd' : sale.paymentMethod === 'Card' ? 'Karta' : 'Aralash'}</span></div>
+  <div class="row"><span>To'lov:</span><span>${sale.paymentMethod === 'Cash' ? 'Naqd' : sale.paymentMethod === 'Card' ? 'Karta' : sale.paymentMethod === 'Transfer' ? "O'tkazma" : 'Aralash'}</span></div>
   ${sale.paymentMethod === 'Cash' ? `<div class="row"><span>Qaytim:</span><span>${Number(sale.changeAmount).toLocaleString()} so'm</span></div>` : ''}
   <hr/>
   <div class="center muted">Xarid uchun rahmat!</div>
@@ -581,6 +581,7 @@ onUnmounted(() => {
         <select v-model="paymentMethod" class="select">
           <option value="Cash">💵 Naqd</option>
           <option value="Card">💳 Karta</option>
+          <option value="Transfer">📱 O'tkazma (Payme/Click)</option>
           <option value="Mixed">🔀 Aralash</option>
         </select>
       </div>
