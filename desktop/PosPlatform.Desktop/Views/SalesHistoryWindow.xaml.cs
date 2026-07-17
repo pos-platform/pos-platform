@@ -36,6 +36,8 @@ public partial class SalesHistoryWindow : Window
     {
         int count = 0;
         decimal cash = 0, card = 0, transfer = 0, debt = 0, refunds = 0;
+        // O'tkazma turlari bo'yicha (Payme / Karta)
+        decimal transferPayme = 0, transferCard = 0;
         // To'lov turi bo'yicha QR (fiskal) chek berilgan/berilmagan kesim
         decimal qrCash = 0, qrCard = 0, qrMixed = 0;
         decimal plainCash = 0, plainCard = 0, plainMixed = 0;
@@ -50,7 +52,13 @@ public partial class SalesHistoryWindow : Window
             switch (s.PaymentMethod)
             {
                 case "Card": card += s.TotalAmount; break;
-                case "Transfer": transfer += s.TotalAmount; break;
+                case "Transfer":
+                    transfer += s.TotalAmount;
+                    if (string.Equals(s.TransferSource, "Payme", StringComparison.OrdinalIgnoreCase))
+                        transferPayme += s.TotalAmount;
+                    else
+                        transferCard += s.TotalAmount; // "Karta" yoki belgilanmagan
+                    break;
                 case "Debt": debt += s.TotalAmount; break;
                 default: cash += s.TotalAmount; break; // Cash va Mixed
             }
@@ -76,6 +84,8 @@ public partial class SalesHistoryWindow : Window
         CashText.Text = cash.ToString("N0");
         CardText.Text = card.ToString("N0");
         TransferText.Text = transfer.ToString("N0");
+        TransferPaymeText.Text = transferPayme.ToString("N0");
+        TransferCardText.Text = transferCard.ToString("N0");
         DebtText.Text = debt.ToString("N0");
         RefundText.Text = "− " + refunds.ToString("N0");
         NetText.Text = (cash + card + transfer + debt - refunds).ToString("N0");
