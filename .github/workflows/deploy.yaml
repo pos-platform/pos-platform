@@ -133,7 +133,7 @@ jobs:
             rm -rf backend-publish/wwwroot/*
             cp -r frontend-dist/* backend-publish/wwwroot/
           fi
-          rsync -az --delete --exclude 'wwwroot/uploads' \
+          rsync -az --delete --exclude 'wwwroot/uploads' --exclude 'updates' \
             -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
             backend-publish/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/posplatform/
