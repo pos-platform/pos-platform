@@ -125,15 +125,24 @@ jobs:
         with:
           name: backend-publish
           path: backend-publish
+      # MUHIM TUZATISH: faqat backend o'zgarganda frontend-dist bo'lmaydi,
+      # eski workflow'da rsync --delete serverdagi wwwroot ichini (index.html,
+      # assets/) o'chirib yuborardi — natijada keyingi frontend deploygacha
+      # sayt 404 qaytarardi. Endi frontend build bo'lmasa wwwroot umuman
+      # tegilmaydi (--exclude wwwroot).
       - name: Deploy backend (and merge frontend if changed)
         if: needs.changes.outputs.backend == 'true'
         run: |
+          EXTRA_EXCLUDE=""
           if [ -d frontend-dist ]; then
             mkdir -p backend-publish/wwwroot
             rm -rf backend-publish/wwwroot/*
             cp -r frontend-dist/* backend-publish/wwwroot/
+          else
+            # Frontend o'zgarmagan — serverdagi wwwroot'ga tegmaymiz
+            EXTRA_EXCLUDE="--exclude wwwroot"
           fi
-          rsync -az --delete --exclude 'wwwroot/uploads' --exclude 'updates' \
+          rsync -az --delete --exclude 'wwwroot/uploads' --exclude 'updates' $EXTRA_EXCLUDE \
             -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
             backend-publish/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/posplatform/
@@ -150,3 +159,14 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "sudo mkdir -p /opt/posplatform/wwwroot/uploads && sudo chown -R posplatform:posplatform /opt/posplatform/wwwroot && sudo systemctl restart posplatform"
+      - name: Health check
+        run: |
+          sleep 3
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" https://poscloud.uz/ || true)
+            echo "Attempt $i: HTTP $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Sayt 200 qaytarmadi — deploy'dan keyin tekshiring"
+          exit 1
