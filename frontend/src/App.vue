@@ -109,11 +109,11 @@ const navItems = [
   { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage', group: 'finance' }
 ]
 
-// Bo'lim tartibi va sarlavhalari
+// Bo'lim tartibi, sarlavhalari va vizual belgilari (ikonka)
 const navGroups = [
-  { id: 'sales', label: 'nav.groupSales' },
-  { id: 'catalog', label: 'nav.groupCatalog' },
-  { id: 'finance', label: 'nav.groupFinance' }
+  { id: 'sales', label: 'nav.groupSales', icon: '🛒' },
+  { id: 'catalog', label: 'nav.groupCatalog', icon: '📦' },
+  { id: 'finance', label: 'nav.groupFinance', icon: '📊' }
 ]
 
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
@@ -201,7 +201,8 @@ function logout() {
             :class="{ collapsed: isCollapsed(g.id) }"
           >
             <button type="button" class="side-group-label" @click="toggleGroup(g.id)">
-              <span>{{ t(g.label) }}</span>
+              <span class="side-group-ico">{{ g.icon }}</span>
+              <span class="side-group-text">{{ t(g.label) }}</span>
               <span class="side-group-chevron">▾</span>
             </button>
             <div v-show="!isCollapsed(g.id)" class="side-group-items">
@@ -238,8 +239,11 @@ function logout() {
           <button :class="['lang-btn', { active: locale === 'ru' }]" @click="setLang('ru')">RU</button>
         </div>
         <div class="side-user">
-          <div class="side-username">{{ auth.username }}</div>
-          <span class="badge">{{ auth.role }}</span>
+          <div class="side-avatar">{{ (auth.username || '?').charAt(0).toUpperCase() }}</div>
+          <div class="side-user-meta">
+            <div class="side-username">{{ auth.username }}</div>
+            <span class="badge">{{ auth.role }}</span>
+          </div>
         </div>
         <button class="btn btn-ghost btn-sm" style="width:100%; margin-top:8px" @click="logout">{{ t('common.logout') }}</button>
       </div>
