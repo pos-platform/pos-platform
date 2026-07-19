@@ -934,8 +934,7 @@ public partial class PosWindow : Window
             debtorId = d.Id;
         }
 
-        // O'tkazma: mijozga QR ko'rsatamiz, kassir pul tushganini tasdiqlagachgina savdo yaratiladi
-        string? transferSource = null;
+        // O'tkazma: mijozga QR (karta raqami) ko'rsatamiz, kassir pul tushganini tasdiqlagachgina savdo yaratiladi
         if (payment == "Transfer")
         {
             var qrWindow = new TransferQrWindow(total) { Owner = this };
@@ -944,7 +943,6 @@ public partial class PosWindow : Window
                 FocusScanInput();
                 return;
             }
-            transferSource = qrWindow.SelectedSource; // "Payme" yoki "Karta"
         }
 
         CheckoutButton.IsEnabled = false;
@@ -953,7 +951,6 @@ public partial class PosWindow : Window
             var req = new CreateSaleRequest
             {
                 PaymentMethod = payment,
-                TransferSource = transferSource,
                 PaidAmount = payment == "Debt" ? 0 : (paid > 0 ? paid : total),
                 DebtorId = debtorId,
                 TerminalId = AppState.TerminalId,

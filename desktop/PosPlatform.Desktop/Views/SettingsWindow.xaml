@@ -38,18 +38,12 @@
 
                 <Separator Margin="0,8,0,8" />
 
-                <TextBlock Text="O'tkazma to'lovi (Payme/Click)" FontWeight="Bold" Margin="0,0,0,6" />
-                <TextBlock Text="Payme shaxsiy havola" Foreground="#6B7480" FontWeight="SemiBold" />
-                <TextBox x:Name="PaymeLinkBox" Height="32" Padding="8,5" Margin="0,4,0,4"
-                         VerticalContentAlignment="Center"
-                         ToolTip="Payme ilovasi → profil → o'tkazma qabul qilish havolasi (masalan payme.uz/@dokon). Mijoz QR'ni skan qilsa Payme'da sizning kartangiz avtomatik ochiladi." />
-                <TextBlock Text="Payme ilovasidagi profil bo'limidan shaxsiy havolani nusxalab qo'ying (masalan payme.uz/@dokon)."
-                           Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
-                <TextBlock Text="Karta raqami (boshqa ilovalar uchun)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBlock Text="O'tkazma to'lovi (karta)" FontWeight="Bold" Margin="0,0,0,6" />
+                <TextBlock Text="Karta raqami" Foreground="#6B7480" FontWeight="SemiBold" />
                 <TextBox x:Name="TransferCardBox" Height="32" Padding="8,5" Margin="0,4,0,4"
                          VerticalContentAlignment="Center"
-                         ToolTip="O'tkazma qabul qilinadigan karta raqami (8600... yoki 9860...). Click va boshqa ilovalar uchun katta qilib ko'rsatiladi." />
-                <TextBlock Text="Kassada O'tkazma to'lovi tanlanganda QR va karta raqami mijozga shu ma'lumotlardan ko'rsatiladi."
+                         ToolTip="O'tkazma qabul qilinadigan karta raqami (8600... yoki 9860...). Payme, Click va boshqa ilovalar uchun katta qilib ko'rsatiladi." />
+                <TextBlock Text="Kassada O'tkazma to'lovi tanlanganda mijozga shu karta raqami QR va matn ko'rinishida ko'rsatiladi."
                            Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
 
                 <Separator Margin="0,8,0,8" />

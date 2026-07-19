@@ -51,7 +51,6 @@ public partial class App : Application
             AppState.ScannerComPort = string.IsNullOrWhiteSpace(saved.ScannerComPort) ? null : saved.ScannerComPort;
             AppState.ScannerBaudRate = saved.ScannerBaudRate > 0 ? saved.ScannerBaudRate : 9600;
             AppState.LegalAddress = string.IsNullOrWhiteSpace(saved.LegalAddress) ? null : saved.LegalAddress;
-            AppState.PaymeLink = string.IsNullOrWhiteSpace(saved.PaymeLink) ? null : saved.PaymeLink;
             AppState.TransferCard = string.IsNullOrWhiteSpace(saved.TransferCard) ? null : saved.TransferCard;
         }
 

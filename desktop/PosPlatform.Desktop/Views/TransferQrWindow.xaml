@@ -1,41 +1,10 @@
 <Window x:Class="PosPlatform.Desktop.Views.TransferQrWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="O'tkazma to'lovi" Height="640" Width="440"
+        Title="O'tkazma to'lovi" Height="600" Width="440"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="#F4F5F7">
-    <Window.Resources>
-        <!-- Payme / Karta tab tugmalari -->
-        <Style x:Key="SrcTab" TargetType="Button">
-            <Setter Property="Foreground" Value="#475569" />
-            <Setter Property="Background" Value="White" />
-            <Setter Property="BorderBrush" Value="#E2E8F0" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Height" Value="40" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="9"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="SrcTabActive" TargetType="Button" BasedOn="{StaticResource SrcTab}">
-            <Setter Property="Background" Value="#2563EB" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderBrush" Value="#2563EB" />
-        </Style>
-    </Window.Resources>
-
     <Grid Margin="22,18,22,18">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
@@ -58,22 +27,16 @@
             </StackPanel>
         </Border>
 
-        <!-- Karta / Payme tanlovi (default: karta raqami) -->
-        <UniformGrid Grid.Row="1" Columns="2" Margin="0,0,0,10">
-            <Button x:Name="CardTab" Content="💳 Karta raqami" Margin="0,0,6,0"
-                    Style="{StaticResource SrcTabActive}" Click="CardTab_Click" />
-            <Button x:Name="PaymeTab" Content="Payme" Margin="6,0,0,0"
-                    Style="{StaticResource SrcTab}" Click="PaymeTab_Click" />
-        </UniformGrid>
-
-        <!-- QR + karta -->
-        <Border Grid.Row="2" Background="White" CornerRadius="10" BorderBrush="#E2E8F0"
+        <!-- Karta raqami QR -->
+        <Border Grid.Row="1" Background="White" CornerRadius="10" BorderBrush="#E2E8F0"
                 BorderThickness="1" Padding="14">
             <StackPanel VerticalAlignment="Center">
-                <Image x:Name="QrImageView" Width="270" Height="270"
+                <TextBlock Text="💳 Kartaga o'tkazma" FontSize="14" FontWeight="Bold"
+                           Foreground="#0F172A" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                <Image x:Name="QrImageView" Width="260" Height="260"
                        RenderOptions.BitmapScalingMode="NearestNeighbor" />
                 <TextBlock x:Name="CardNumberText" FontSize="26" FontWeight="Black"
-                           Foreground="#0F172A" HorizontalAlignment="Center" Margin="0,8,0,0"
+                           Foreground="#0F172A" HorizontalAlignment="Center" Margin="0,10,0,0"
                            Visibility="Collapsed" />
                 <TextBlock x:Name="HintText" FontSize="12" Foreground="#64748B"
                            HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
@@ -82,7 +45,7 @@
         </Border>
 
         <!-- Tugmalar -->
-        <StackPanel Grid.Row="3" Margin="0,12,0,0">
+        <StackPanel Grid.Row="2" Margin="0,12,0,0">
             <Button x:Name="ConfirmButton" Content="✓  Pul tushdi — chekni chiqarish" Height="46"
                     Background="#16A34A" Foreground="White" FontWeight="Bold" FontSize="15"
                     BorderThickness="0" Cursor="Hand" Click="Confirm_Click" />

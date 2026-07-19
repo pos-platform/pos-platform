@@ -14,8 +14,6 @@ public class Settings
     public int ScannerBaudRate { get; set; } = 9600;
     /// <summary>Tashkilotning yuridik manzili (Yur.Manzil) — chek sarlavhasida chiqadi.</summary>
     public string? LegalAddress { get; set; }
-    /// <summary>Payme shaxsiy o'tkazma havolasi (payme.uz/@username) — O'tkazma to'lovida QR sifatida ko'rsatiladi.</summary>
-    public string? PaymeLink { get; set; }
-    /// <summary>O'tkazma qabul qilinadigan karta raqami (8600/9860...) — Payme'dan boshqa ilovalar uchun.</summary>
+    /// <summary>O'tkazma qabul qilinadigan karta raqami (8600/9860...) — O'tkazma to'lovida QR sifatida ko'rsatiladi.</summary>
     public string? TransferCard { get; set; }
 }
