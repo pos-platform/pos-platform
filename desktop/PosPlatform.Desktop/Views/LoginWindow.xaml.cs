@@ -9,13 +9,27 @@ public partial class LoginWindow : Window
 {
     private bool _showPassword;
 
+    /// <summary>Parol saqlangan joydan to'ldirilgan — login xato bo'lsa eskirgan deb tozalaymiz.</summary>
+    private bool _prefilledFromStore;
+
     public LoginWindow()
     {
         InitializeComponent();
         var logo = App.CreateLogoIcon();
         Icon = logo;
         LogoImage.Source = logo;
-        Loaded += (_, _) => UsernameBox.Focus();
+
+        var saved = CredentialStore.TryLoad();
+        if (saved is not null)
+        {
+            UsernameBox.Text = saved.Value.Username;
+            PasswordBox.Password = saved.Value.Password;
+            RememberBox.IsChecked = true;
+            _prefilledFromStore = true;
+        }
+
+        // Maydonlar to'ldirilgan bo'lsa kassir faqat Enter/Kirish bosadi.
+        Loaded += (_, _) => { if (_prefilledFromStore) LoginButton.Focus(); else UsernameBox.Focus(); };
     }
 
     private string CurrentPassword => _showPassword ? PasswordVisible.Text : PasswordBox.Password;
@@ -56,9 +70,14 @@ public partial class LoginWindow : Window
         LoginButton.Content = "Kirilmoqda...";
         try
         {
-            var resp = await AppState.Backend.LoginAsync(UsernameBox.Text.Trim(), CurrentPassword);
+            var username = UsernameBox.Text.Trim();
+            var resp = await AppState.Backend.LoginAsync(username, CurrentPassword);
             if (resp.Role == "Admin")
                 throw new Exception("Admin foydalanuvchilar desktop appga kira olmaydi.");
+
+            // "Eslab qolish": muvaffaqiyatli kirishda saqlaymiz, belgi olib tashlangan bo'lsa tozalaymiz.
+            if (RememberBox.IsChecked == true) CredentialStore.Save(username, CurrentPassword);
+            else CredentialStore.Clear();
             AppState.Backend.SetToken(resp.Token);
             AppState.Token = resp.Token;
             AppState.Username = resp.Username;
@@ -86,6 +105,15 @@ public partial class LoginWindow : Window
         }
         catch (Exception ex)
         {
+            // Server "parol noto'g'ri" dedi va parol saqlangan joydan kelgan edi —
+            // demak parol o'zgargan, eskirganini tozalaymiz (tarmoq xatosida tegmaymiz).
+            var networkIssue = ex is System.Net.Http.HttpRequestException or TaskCanceledException;
+            if (_prefilledFromStore && !networkIssue)
+            {
+                CredentialStore.Clear();
+                _prefilledFromStore = false;
+            }
+
             try
             {
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "login-error.log"), ex.ToString());
