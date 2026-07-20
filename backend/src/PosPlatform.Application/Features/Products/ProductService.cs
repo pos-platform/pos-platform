@@ -266,21 +266,23 @@ public class ProductService : IProductService
             branchByName.TryAdd(NormalizeBranchKey(b.Name), b);
 
         // Mavjud mahsulotlar — importda yangilash (upsert) uchun tracking bilan yuklanadi.
-        // Moslik kaliti: barcode → PLU → nomi (kichik harf, katta-kichik farqsiz).
+        // Moslik kaliti: FAQAT barcode → PLU. Nom bo'yicha moslik ATAYIN yo'q —
+        // katalogda bir xil nomli, ammo har xil barcode'li tovarlar juda ko'p
+        // (masalan "Garnier" x34), va nom bilan moslashtirilsa ular bir-biriga
+        // qo'shilib ketardi (ba'zi tovarlar import'da "yo'qolardi"). Exceldagi
+        // har bir qator o'z barcode/PLU'si bilan alohida tovar bo'lib qolsin.
         var existingProducts = await _db.Products
             .Include(p => p.Stocks)
             .ToListAsync(cancellationToken);
 
         var byBarcode = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);
         var byPlu = new Dictionary<int, Product>();
-        var byProductName = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);
         foreach (var ep in existingProducts)
         {
             if (!string.IsNullOrWhiteSpace(ep.Barcode))
                 byBarcode.TryAdd(ep.Barcode!.Trim(), ep);
             if (ep.PluNumber is > 0)
                 byPlu.TryAdd(ep.PluNumber.Value, ep);
-            byProductName.TryAdd(ep.Name.Trim(), ep);
         }
 
         foreach (var row in rows)
@@ -324,11 +326,12 @@ public class ProductService : IProductService
 
                 var barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode!.Trim();
 
-                // Mavjud mahsulotni topish: barcode → PLU → nomi
+                // Mavjud mahsulotni topish: FAQAT barcode → PLU.
+                // Nom bo'yicha izlash yo'q — aks holda bir xil nomli tovarlar birlashib ketadi.
+                // Barcode ham, PLU ham topilmasa — bu yangi tovar (har doim qo'shiladi).
                 Product? existing = null;
                 if (barcode != null) byBarcode.TryGetValue(barcode, out existing);
                 if (existing is null && row.PluNumber is > 0) byPlu.TryGetValue(row.PluNumber.Value, out existing);
-                if (existing is null) byProductName.TryGetValue(row.Name!.Trim(), out existing);
 
                 // BranchId: 1) joriy foydalanuvchi filiali, 2) Excel J ustunidagi nomi, 3) birinchi filial
                 Guid? importBranchId = _currentUser.BranchId;
@@ -416,7 +419,6 @@ public class ProductService : IProductService
                     _db.Products.Add(importProduct);
                     if (newBarcode != null) byBarcode[newBarcode] = importProduct;
                     if (importProduct.PluNumber is > 0) byPlu.TryAdd(importProduct.PluNumber.Value, importProduct);
-                    byProductName.TryAdd(importProduct.Name, importProduct);
                     result.Created++;
                 }
             }
