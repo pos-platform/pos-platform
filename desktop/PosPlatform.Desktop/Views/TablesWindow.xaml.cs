@@ -104,11 +104,35 @@ public partial class TablesWindow : Window
         if (input is null) return;
         try
         {
-            await AppState.Backend.CloseShiftAsync(ParseDecimal(input));
+            var closed = await AppState.Backend.CloseShiftAsync(ParseDecimal(input), printedLocally: true);
             _shift = null;
             RenderShiftBar();
+
+            if (closed is not null) PrintShiftReportSafe(closed);
         }
         catch (Exception ex) { MessageBox.Show(ex.Message, "Xatolik", MessageBoxButton.OK, MessageBoxImage.Error); }
+    }
+
+    /// <summary>Smena yakuni (Z-hisobot) chekini chop etadi; xato smena yopilishini bekor qilmaydi.</summary>
+    private void PrintShiftReportSafe(ShiftDto shift)
+    {
+        try
+        {
+            new ReceiptPrinter().PrintShiftReport(new ShiftReportData
+            {
+                Shift = shift,
+                StoreName = AppState.StoreName,
+                Stir = AppState.OrgStir,
+                Address = AppState.BranchAddress,
+                Kassa = AppState.TerminalId,
+                Cashier = AppState.CashierDisplay
+            }, AppState.PrinterName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Smena hisoboti chop etilmadi: " + ex.Message,
+                "Xatolik", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await LoadTablesAsync();

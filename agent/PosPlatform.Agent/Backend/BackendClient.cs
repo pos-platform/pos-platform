@@ -56,6 +56,11 @@ public class BackendClient
             VatAmount = r.VatAmount,
             SaleCount = r.SaleCount,
             RefundCount = r.RefundCount,
+            Payments = r.Payments,
+            FiscalSaleCount = r.FiscalSaleCount,
+            FiscalSalesTotal = r.FiscalSalesTotal,
+            NonFiscalSaleCount = r.NonFiscalSaleCount,
+            NonFiscalSalesTotal = r.NonFiscalSalesTotal,
         }).ToList() ?? new List<ShiftReport>();
     }
 
@@ -89,6 +94,11 @@ public class BackendClient
             VatAmount = r.VatAmount,
             SaleCount = r.SaleCount,
             RefundCount = r.RefundCount,
+            Payments = r.Payments,
+            FiscalSaleCount = r.FiscalSaleCount,
+            FiscalSalesTotal = r.FiscalSalesTotal,
+            NonFiscalSaleCount = r.NonFiscalSaleCount,
+            NonFiscalSalesTotal = r.NonFiscalSalesTotal,
             IsXReport = true,
         }).ToList() ?? new List<ShiftReport>();
     }
@@ -147,5 +157,10 @@ public class BackendClient
         public decimal VatAmount { get; set; }
         public int SaleCount { get; set; }
         public int RefundCount { get; set; }
+        public List<ShiftPaymentLine> Payments { get; set; } = new();
+        public int FiscalSaleCount { get; set; }
+        public decimal FiscalSalesTotal { get; set; }
+        public int NonFiscalSaleCount { get; set; }
+        public decimal NonFiscalSalesTotal { get; set; }
     }
 }

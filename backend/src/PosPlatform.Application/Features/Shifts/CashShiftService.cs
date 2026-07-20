@@ -60,6 +60,7 @@ public class CashShiftService : ICashShiftService
 
         var sales = await _db.Sales
             .Include(s => s.Items)
+            .Include(s => s.Receipt)
             .Where(s => s.CashShiftId == shift.Id)
             .ToListAsync(cancellationToken);
 
@@ -104,6 +105,12 @@ public class CashShiftService : ICashShiftService
         shift.ClosedAt = DateTime.UtcNow;
         shift.Status = ShiftStatus.Closed;
 
+        // Kassa ilovasi Z-hisobotni o'z printerida chiqarsa — agent navbatiga tushmasin.
+        if (request.PrintedLocally)
+        {
+            shift.ShiftReportPrinted = true;
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
 
         var cashier = await _db.Users.AsNoTracking()
@@ -132,6 +139,7 @@ public class CashShiftService : ICashShiftService
         var sales = await _db.Sales
             .AsNoTracking()
             .Include(s => s.Items)
+            .Include(s => s.Receipt)
             .Where(s => s.CashShiftId == shift.Id)
             .ToListAsync(cancellationToken);
 
@@ -156,6 +164,7 @@ public class CashShiftService : ICashShiftService
             var sales = await _db.Sales
                 .AsNoTracking()
                 .Include(s => s.Items)
+                .Include(s => s.Receipt)
                 .Where(s => s.CashShiftId == shift.Id)
                 .ToListAsync(cancellationToken);
 
@@ -202,6 +211,7 @@ public class CashShiftService : ICashShiftService
             var sales = await _db.Sales
                 .AsNoTracking()
                 .Include(s => s.Items)
+                .Include(s => s.Receipt)
                 .Where(s => s.CashShiftId == shift.Id)
                 .ToListAsync(cancellationToken);
 

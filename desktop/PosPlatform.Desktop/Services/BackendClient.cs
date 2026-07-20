@@ -62,10 +62,14 @@ public class BackendClient
         return (await resp.Content.ReadFromJsonAsync<ShiftDto>(Json))!;
     }
 
-    public async Task CloseShiftAsync(decimal countedCash)
+    /// <summary>Smenani yopadi va Z-hisobot ma'lumotini qaytaradi.</summary>
+    /// <param name="printedLocally">true bo'lsa hisobot shu kassada chop etiladi —
+    /// backend uni agent navbatiga qo'ymaydi (ikkita hisobot chiqmasligi uchun).</param>
+    public async Task<ShiftDto?> CloseShiftAsync(decimal countedCash, bool printedLocally = false)
     {
-        var resp = await _http.PostAsJsonAsync("api/shifts/close", new { countedCash });
+        var resp = await _http.PostAsJsonAsync("api/shifts/close", new { countedCash, printedLocally });
         await EnsureOk(resp);
+        return await resp.Content.ReadFromJsonAsync<ShiftDto>(Json);
     }
 
     public async Task<SaleDto> CreateSaleAsync(CreateSaleRequest request)

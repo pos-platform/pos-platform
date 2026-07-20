@@ -17,6 +17,8 @@ artifacts/
 # Publish / build chiqishi (desktop/agent binarlari — git'ga tushmasin)
 publish/
 publish-*/
+# Serverga yuklash manzili (shaxsiy SSH host) — .example fayl git'da qoladi
+desktop/publish-target.json
 *.exe
 *.pdb
 *.dll

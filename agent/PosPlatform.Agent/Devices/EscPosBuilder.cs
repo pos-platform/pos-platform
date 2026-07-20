@@ -153,14 +153,38 @@ internal static class EscPosBuilder
         WriteLine(Row($"  Qaytarish ({report.RefundCount} ta):", $"-{report.TotalRefunds:N2}"));
         Divider();
 
-        // To'lov turlari (netto)
+        // To'lov turlari — har biri soliq QR kodi olingan/olinmagan qismga ajratilgan.
         Write(ESC_BOLD_ON);
-        WriteLine("TO'LOV TURLARI (netto):");
+        WriteLine("TO'LOV TURLARI:");
         Write(ESC_BOLD_OFF);
-        WriteLine(Row("  Naqd:", $"{report.CashSalesNet:N2}"));
-        WriteLine(Row("  Karta:", $"{report.CardSalesNet:N2}"));
-        WriteLine(Row("  O'tkazma:", $"{report.TransferSalesNet:N2}"));
-        WriteLine(Row("  Nasiya:", $"{report.DebtSalesNet:N2}"));
+
+        if (report.Payments.Count > 0)
+        {
+            foreach (var p in report.Payments)
+            {
+                Write(ESC_BOLD_ON);
+                WriteLine(Row($"{p.MethodLabel} ({p.SaleCount} ta)", $"{p.SaleAmount:N2}"));
+                Write(ESC_BOLD_OFF);
+                WriteLine(Row($"  QR kodli ({p.FiscalCount} ta):", $"{p.FiscalAmount:N2}"));
+                WriteLine(Row($"  QR kodsiz ({p.NonFiscalCount} ta):", $"{p.NonFiscalAmount:N2}"));
+                if (p.RefundCount > 0)
+                {
+                    WriteLine(Row($"  Qaytarish ({p.RefundCount} ta):", $"-{p.RefundAmount:N2}"));
+                    WriteLine(Row("  Sof (netto):", $"{p.NetAmount:N2}"));
+                }
+            }
+            Divider();
+            WriteLine(Row($"QR kodli jami ({report.FiscalSaleCount} ta):", $"{report.FiscalSalesTotal:N2}"));
+            WriteLine(Row($"QR kodsiz jami ({report.NonFiscalSaleCount} ta):", $"{report.NonFiscalSalesTotal:N2}"));
+        }
+        else
+        {
+            // Eski backend (kesim yubormaydi) — netto summalar bilan cheklanamiz.
+            WriteLine(Row("  Naqd:", $"{report.CashSalesNet:N2}"));
+            WriteLine(Row("  Karta:", $"{report.CardSalesNet:N2}"));
+            WriteLine(Row("  O'tkazma:", $"{report.TransferSalesNet:N2}"));
+            WriteLine(Row("  Nasiya:", $"{report.DebtSalesNet:N2}"));
+        }
         Divider();
 
         // Kassa holati

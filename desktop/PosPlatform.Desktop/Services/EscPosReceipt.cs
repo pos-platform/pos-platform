@@ -146,6 +146,125 @@ public static class EscPosReceipt
         return ms.ToArray();
     }
 
+    /// <summary>
+    /// Smena yakuni (Z-hisobot) cheki: to'lov turlari bo'yicha savdo, har biri
+    /// soliq QR kodi olingan (fiskal) va olinmagan (fiskalsiz) qismga ajratilgan.
+    /// </summary>
+    /// <param name="printWidth">Ustun kengligi belgilarda: 42 = 80mm, 32 = 57mm.</param>
+    public static byte[] BuildShiftReport(ShiftReportData r, int printWidth = 42)
+    {
+        var s = r.Shift;
+        var enc = Encoding.GetEncoding(866);
+        using var ms = new MemoryStream();
+
+        void Write(byte[] b) => ms.Write(b);
+        void Line(string text = "") { ms.Write(enc.GetBytes(text)); Write(LF); }
+        void Divider() => Line(new string('-', printWidth));
+
+        // "Chapdagi matn ......... o'ngdagi summa" — bir qatorga tekislab.
+        void Row(string left, string right)
+        {
+            var space = printWidth - left.Length - right.Length;
+            Line(left + (space > 0 ? new string(' ', space) : " ") + right);
+        }
+
+        Write(INIT);
+
+        Write(CENTER);
+        Write(DOUBLE);
+        Write(BOLD_ON);
+        Line(string.IsNullOrWhiteSpace(r.StoreName) ? "PosPlatform" : r.StoreName);
+        Write(NORMAL);
+        Line("SMENA YAKUNI (Z-HISOBOT)");
+        Write(BOLD_OFF);
+        Write(LEFT);
+        Divider();
+
+        void Labeled(string label, string? value)
+        {
+            foreach (var ln in ReceiptLayout.LabeledRows(label, value, printWidth))
+                Line(ln);
+        }
+        Labeled("Manzil", r.Address);
+        Labeled("STIR/JSHSHR", r.Stir);
+        Labeled("Kassa", r.Kassa);
+        Labeled("Kassir", string.IsNullOrWhiteSpace(s.CashierName) ? r.Cashier : s.CashierName);
+        Labeled("Ochildi", s.OpenedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm"));
+        Labeled("Yopildi", (s.ClosedAt ?? DateTime.UtcNow).ToLocalTime().ToString("dd-MM-yyyy HH:mm"));
+        Divider();
+
+        // To'lov turlari — har biri QR kodli / QR kodsiz qismga ajratilgan.
+        Write(CENTER);
+        Write(BOLD_ON);
+        Line("TO'LOV TURLARI");
+        Write(BOLD_OFF);
+        Write(LEFT);
+        Divider();
+
+        if (s.Payments.Count == 0)
+        {
+            Line("Bu smenada savdo bo'lmadi.");
+            Divider();
+        }
+
+        foreach (var p in s.Payments)
+        {
+            Write(BOLD_ON);
+            Row($"{p.MethodLabel} ({p.SaleCount} ta)", $"{p.SaleAmount:N0}");
+            Write(BOLD_OFF);
+            Row($"  QR kodli ({p.FiscalCount} ta)", $"{p.FiscalAmount:N0}");
+            Row($"  QR kodsiz ({p.NonFiscalCount} ta)", $"{p.NonFiscalAmount:N0}");
+            if (p.RefundCount > 0)
+            {
+                Row($"  Qaytarish ({p.RefundCount} ta)", $"-{p.RefundAmount:N0}");
+                Row("  Sof (netto)", $"{p.NetAmount:N0}");
+            }
+            Divider();
+        }
+
+        // Fiskal yakun
+        Write(BOLD_ON);
+        Line("FISKAL HOLAT");
+        Write(BOLD_OFF);
+        Row($"  QR kodli ({s.FiscalSaleCount} ta)", $"{s.FiscalSalesTotal:N0}");
+        Row($"  QR kodsiz ({s.NonFiscalSaleCount} ta)", $"{s.NonFiscalSalesTotal:N0}");
+        Divider();
+
+        // Umumiy yakun
+        Write(BOLD_ON);
+        Row($"SAVDO ({s.SaleCount} ta)", $"{s.TotalSales:N0}");
+        Write(BOLD_OFF);
+        if (s.RefundCount > 0)
+            Row($"QAYTARISH ({s.RefundCount} ta)", $"-{s.TotalRefunds:N0}");
+        Write(BOLD_ON);
+        Write(DOUBLE);
+        Line($"JAMI: {s.TotalSales - s.TotalRefunds:N0}");
+        Write(NORMAL);
+        Write(BOLD_OFF);
+        if (s.VatAmount > 0)
+            Row("QQS jami", $"{s.VatAmount:N0}");
+        Divider();
+
+        // Kassa (naqd) holati
+        Write(BOLD_ON);
+        Line("KASSA (NAQD)");
+        Write(BOLD_OFF);
+        Row("  Boshlang'ich", $"{s.OpeningCash:N0}");
+        Row("  Kutilgan", $"{s.ExpectedCash:N0}");
+        Row("  Sanab olingan", $"{s.CountedCash ?? 0:N0}");
+        Row("  Farq", (s.CashDifference >= 0 ? "+" : "") + $"{s.CashDifference:N0}");
+        Divider();
+
+        Line();
+        Line("Kassir imzosi: ______________");
+        Line();
+
+        Write(FEED_CUT);
+        Write(CUT);
+
+        return ms.ToArray();
+    }
+
     // ── QR kod (ESC/POS GS ( k — 2D barcode) ────────────────────────────────
     private static readonly byte[] QR_MODEL2 = [0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00];
     private static readonly byte[] QR_SIZE5  = [0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x05];

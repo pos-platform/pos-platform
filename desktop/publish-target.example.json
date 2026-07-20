@@ -1,0 +1,12 @@
+{
+  "_izoh": "Shu fayldan publish-target.json nusxa oling va o'z serveringizga moslang. publish-target.json git'ga tushmaydi.",
+
+  "_server": "SSH manzili — kalit bilan parolsiz kirish sozlangan bo'lsin (ssh-copy-id).",
+  "server": "user@poscloud.uz",
+
+  "_remotePath": "Backend ContentRoot ichidagi updates/desktop papkasi. systemd: /opt/posplatform/updates/desktop | Docker (compose bind mount): ~/pos-platform/deploy/updates/desktop",
+  "remotePath": "/opt/posplatform/updates/desktop",
+
+  "_verifyUrl": "Yuklangach avtomatik tekshiriladi — shu manzil yangi versiyani qaytarishi kerak.",
+  "verifyUrl": "https://poscloud.uz/api/desktop-update/version"
+}

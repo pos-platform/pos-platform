@@ -155,6 +155,57 @@ public class ShiftDto
     public decimal OpeningCash { get; set; }
     public DateTime OpenedAt { get; set; }
     public string Status { get; set; } = "";
+
+    // ── Z-hisobot maydonlari (faqat smena yopilganda to'ladi) ──
+    public DateTime? ClosedAt { get; set; }
+    public string? CashierName { get; set; }
+    public decimal? CountedCash { get; set; }
+    public decimal ExpectedCash { get; set; }
+    public decimal CashDifference { get; set; }
+    public decimal TotalSales { get; set; }
+    public decimal TotalRefunds { get; set; }
+    public int SaleCount { get; set; }
+    public int RefundCount { get; set; }
+    public decimal VatAmount { get; set; }
+
+    /// <summary>To'lov turlari kesimi (har biri QR kodli/kodsiz ajratilgan).</summary>
+    public List<ShiftPaymentLine> Payments { get; set; } = new();
+
+    public int FiscalSaleCount { get; set; }
+    public decimal FiscalSalesTotal { get; set; }
+    public int NonFiscalSaleCount { get; set; }
+    public decimal NonFiscalSalesTotal { get; set; }
+}
+
+/// <summary>Smena yakunidagi bitta to'lov turi (QR kodli/kodsiz ajratilgan).</summary>
+public class ShiftPaymentLine
+{
+    /// <summary>Cash, Card, Transfer, Debt, Mixed.</summary>
+    public string Method { get; set; } = "";
+
+    public int SaleCount { get; set; }
+    public decimal SaleAmount { get; set; }
+    public int RefundCount { get; set; }
+    public decimal RefundAmount { get; set; }
+
+    /// <summary>Soliq QR kodi olingan (fiskalizatsiya qilingan) savdolar.</summary>
+    public int FiscalCount { get; set; }
+    public decimal FiscalAmount { get; set; }
+
+    /// <summary>QR kodsiz (fiskalizatsiya qilinmagan) savdolar.</summary>
+    public int NonFiscalCount { get; set; }
+    public decimal NonFiscalAmount { get; set; }
+
+    public decimal NetAmount => SaleAmount - RefundAmount;
+
+    public string MethodLabel => Method switch
+    {
+        "Card" => "Karta",
+        "Transfer" => "O'tkazma",
+        "Mixed" => "Aralash",
+        "Debt" => "Nasiya",
+        _ => "Naqd"
+    };
 }
 
 public class SaleItemRequest
@@ -238,6 +289,21 @@ public class SaleListDto
         _ => "Naqd"
     };
     public bool CanRefund => Type == "Sale" && Status != "Refunded";
+}
+
+/// <summary>Smena Z-hisoboti chekini chop etish uchun ma'lumot (smena + kassa sarlavhasi).</summary>
+public class ShiftReportData
+{
+    public ShiftDto Shift { get; set; } = new();
+
+    public string StoreName { get; set; } = "";
+    public string? Stir { get; set; }
+    public string? Address { get; set; }
+
+    /// <summary>Kassa raqami (TerminalId).</summary>
+    public string? Kassa { get; set; }
+
+    public string Cashier { get; set; } = "";
 }
 
 /// <summary>Chek chop etish uchun lokal ma'lumot (sotuv paytida yig'iladi).</summary>

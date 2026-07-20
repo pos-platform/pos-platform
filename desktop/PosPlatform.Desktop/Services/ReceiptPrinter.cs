@@ -26,6 +26,14 @@ public class ReceiptPrinter
         EscPosReceipt.SendRaw(name, data, "Chek " + r.ReceiptNumber);
     }
 
+    /// <summary>Smena yakuni (Z-hisobot) chekini termal printerga RAW ESC/POS sifatida yuboradi.</summary>
+    public void PrintShiftReport(ShiftReportData r, string? printerName)
+    {
+        var name = ResolvePrinterName(printerName);
+        var data = EscPosReceipt.BuildShiftReport(r);
+        EscPosReceipt.SendRaw(name, data, "Z-hisobot " + r.Shift.Id);
+    }
+
     /// <summary>Tanlangan printer nomini qaytaradi; bo'sh bo'lsa Windows standart printeri.</summary>
     private static string ResolvePrinterName(string? printerName)
     {

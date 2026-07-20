@@ -110,7 +110,43 @@ Tasodifiy kalit (Linux): `openssl rand -base64 48`
 
 ---
 
-## 6. Backup
+## 6. Kassa (desktop) yangilanishini chiqarish
+
+Kassalar `api/desktop-update/version` dan tekshiradi. Server papkasida zip **bo'lmasa
+endpoint 204 qaytaradi va kassalarda yangilanish umuman chiqmaydi**.
+
+- [ ] Dev mashinada zip yasang:
+  ```powershell
+  cd desktop
+  .\publish-desktop-update.ps1 -Version 1.0.4
+  # natija: desktop\publish\PosPlatform.Desktop-1.0.4.zip (~68 MB)
+  ```
+- [ ] Zipni serverga yuklang — **ContentRoot/updates/desktop/** ichiga:
+  - **YO'L A (systemd):** `/opt/posplatform/updates/desktop/`
+    ```bash
+    scp desktop/publish/PosPlatform.Desktop-1.0.4.zip \
+        user@poscloud.uz:/opt/posplatform/updates/desktop/
+    ```
+  - **YO'L B (Docker):** hostdagi `deploy/updates/desktop/` (compose bind mount qiladi)
+    ```bash
+    mkdir -p deploy/updates/desktop
+    scp desktop/publish/PosPlatform.Desktop-1.0.4.zip \
+        user@poscloud.uz:~/pos-platform/deploy/updates/desktop/
+    ```
+- [ ] Tekshiring (eng yuqori versiya qaytishi kerak):
+  ```bash
+  curl https://poscloud.uz/api/desktop-update/version
+  # {"version":"1.0.4","fileName":"...","sizeBytes":...}
+  ```
+- [ ] Kassada: ⚙ Sozlamalar → "Yangi versiya mavjud" → **⬇ Yangilash**.
+
+> Eski versiya zipini o'chirish shart emas — endpoint eng yuqorisini tanlaydi.
+> Docker'da `/app/updates` bind mount qilingan, shuning uchun `docker compose up -d --build`
+> dan keyin ham ziplar saqlanadi.
+
+---
+
+## 7. Backup
 
 - [ ] Kunlik `pg_dump` cron (Linux) yoki Task Scheduler (Windows: `register-backup-task.ps1`).
 - [ ] Linux misol (cron `02:30`):

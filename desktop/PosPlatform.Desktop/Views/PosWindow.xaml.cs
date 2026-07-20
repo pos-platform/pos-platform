@@ -179,9 +179,14 @@ public partial class PosWindow : Window
         if (countedCash is null) return;
         try
         {
-            await AppState.Backend.CloseShiftAsync(countedCash.Value);
+            var closed = await AppState.Backend.CloseShiftAsync(countedCash.Value, printedLocally: true);
             AppState.Offline.ClearPendingShiftClose();
-            Dispatcher.Invoke(() => ShowMessage("✓ Oflayn smena yopish serverga yuborildi", error: false));
+            Dispatcher.Invoke(() =>
+            {
+                ShowMessage("✓ Oflayn smena yopish serverga yuborildi", error: false);
+                // Oflaynda hisobot chiqmagan edi — server yakunini endi chop etamiz.
+                if (closed is not null) PrintShiftReportSafe(closed);
+            });
         }
         catch { /* keyingi urinishda qayta sinab ko'riladi */ }
     }
@@ -873,15 +878,38 @@ public partial class PosWindow : Window
 
         try
         {
-            await AppState.Backend.CloseShiftAsync(countedCash);
+            var closed = await AppState.Backend.CloseShiftAsync(countedCash, printedLocally: true);
             AppState.Offline.SaveShift(null);
             AppState.Offline.ClearPendingShift();
             AppState.Offline.ClearPendingShiftClose();
             _shift = null;
             RenderShiftBar();
             ShowMessage("Smena yopildi", error: false);
+
+            if (closed is not null) PrintShiftReportSafe(closed);
         }
         catch (Exception ex) { ShowMessage(ex.Message, error: true); }
+    }
+
+    /// <summary>Smena yakuni (Z-hisobot) chekini chop etadi; xato bo'lsa smena yopilishiga to'sqinlik qilmaydi.</summary>
+    private void PrintShiftReportSafe(ShiftDto shift)
+    {
+        try
+        {
+            _printer.PrintShiftReport(new ShiftReportData
+            {
+                Shift = shift,
+                StoreName = AppState.StoreName,
+                Stir = AppState.OrgStir,
+                Address = AppState.BranchAddress,
+                Kassa = AppState.TerminalId,
+                Cashier = AppState.CashierDisplay
+            }, AppState.PrinterName);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Smena hisoboti chop etilmadi: " + ex.Message, error: true);
+        }
     }
 
     /// <summary>Oflayn ochilgan smenani serverda ro'yxatdan o'tkazadi.</summary>

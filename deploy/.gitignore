@@ -2,3 +2,6 @@
 .env
 *.env
 !.env.example
+
+# Desktop yangilanish ziplari (~68MB) git'ga tushmasin — serverga qo'lda yuklanadi
+updates/
