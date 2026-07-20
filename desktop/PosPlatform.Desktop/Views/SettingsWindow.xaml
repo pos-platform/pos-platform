@@ -38,12 +38,32 @@
 
                 <Separator Margin="0,8,0,8" />
 
-                <TextBlock Text="O'tkazma to'lovi (karta)" FontWeight="Bold" Margin="0,0,0,6" />
+                <TextBlock Text="O'tkazma to'lovi" FontWeight="Bold" Margin="0,0,0,6" />
                 <TextBlock Text="Karta raqami" Foreground="#6B7480" FontWeight="SemiBold" />
                 <TextBox x:Name="TransferCardBox" Height="32" Padding="8,5" Margin="0,4,0,4"
                          VerticalContentAlignment="Center"
-                         ToolTip="O'tkazma qabul qilinadigan karta raqami (8600... yoki 9860...). Payme, Click va boshqa ilovalar uchun katta qilib ko'rsatiladi." />
-                <TextBlock Text="Kassada O'tkazma to'lovi tanlanganda mijozga shu karta raqami QR va matn ko'rinishida ko'rsatiladi."
+                         ToolTip="O'tkazma qabul qilinadigan karta raqami (8600... yoki 9860...). To'lovda mijozga katta qilib ko'rsatiladi." />
+                <TextBlock Text="Amal qilish muddati (MM/YY)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBox x:Name="TransferCardExpiryBox" Height="32" Padding="8,5" Margin="0,4,0,4"
+                         VerticalContentAlignment="Center" MaxLength="7"
+                         ToolTip="Karta amal qilish muddati, masalan 04/31. Bo'sh qoldirsangiz kartada ko'rsatilmaydi." />
+                <TextBlock Text="Karta egasi (F.I.O)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBox x:Name="TransferCardHolderBox" Height="32" Padding="8,5" Margin="0,4,0,4"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Karta egasining ismi, masalan AHROROV TOYIR. Bo'sh qoldirsangiz kartada ko'rsatilmaydi." />
+                <TextBlock Text="Bank nomi" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBox x:Name="TransferCardBankBox" Height="32" Padding="8,5" Margin="0,4,0,4"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Bank nomi, masalan O'ZBEKISTON MILLIY BANKI. Bo'sh qoldirsangiz kartada ko'rsatilmaydi." />
+                <TextBlock Text="Bank belgisi (qisqa, masalan NBU)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBox x:Name="TransferCardBankShortBox" Height="32" Padding="8,5" Margin="0,4,0,4"
+                         VerticalContentAlignment="Center" MaxLength="6"
+                         ToolTip="Bank qisqa belgisi (to'q-sariq logo), masalan NBU. Bo'sh qoldirsangiz belgi chiqmaydi." />
+                <TextBlock Text="Karta turi (masalan PLATINUM)" Foreground="#6B7480" FontWeight="SemiBold" />
+                <TextBox x:Name="TransferCardTypeBox" Height="32" Padding="8,5" Margin="0,4,0,4"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Karta turi, masalan PLATINUM yoki GOLD. Bo'sh qoldirsangiz kartada ko'rsatilmaydi." />
+                <TextBlock Text="Kassada O'tkazma to'lovi tanlanganda mijozga shu karta raqami plastik karta ko'rinishida ko'rsatiladi."
                            Foreground="#9AA3AF" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
 
                 <Separator Margin="0,8,0,8" />

@@ -28,6 +28,11 @@ public partial class SettingsWindow : Window
         TerminalIdBox.Text = AppState.TerminalId ?? "";
         LegalAddressBox.Text = AppState.LegalAddress ?? "";
         TransferCardBox.Text = AppState.TransferCard ?? "";
+        TransferCardExpiryBox.Text = AppState.TransferCardExpiry ?? "";
+        TransferCardHolderBox.Text = AppState.TransferCardHolder ?? "";
+        TransferCardBankBox.Text = AppState.TransferCardBank ?? "";
+        TransferCardBankShortBox.Text = AppState.TransferCardBankShort ?? "";
+        TransferCardTypeBox.Text = AppState.TransferCardType ?? "";
 
         // COM port skaner
         foreach (var port in BarcodeScanner.GetAvailablePorts())
@@ -106,7 +111,12 @@ public partial class SettingsWindow : Window
             ScannerComPort = string.IsNullOrWhiteSpace(ScannerPortCombo.Text) ? null : ScannerPortCombo.Text.Trim(),
             ScannerBaudRate = int.TryParse(BaudRateBox.Text, out var br) && br > 0 ? br : 9600,
             LegalAddress = string.IsNullOrWhiteSpace(LegalAddressBox.Text) ? null : LegalAddressBox.Text.Trim(),
-            TransferCard = string.IsNullOrWhiteSpace(TransferCardBox.Text) ? null : TransferCardBox.Text.Trim()
+            TransferCard = string.IsNullOrWhiteSpace(TransferCardBox.Text) ? null : TransferCardBox.Text.Trim(),
+            TransferCardExpiry = string.IsNullOrWhiteSpace(TransferCardExpiryBox.Text) ? null : TransferCardExpiryBox.Text.Trim(),
+            TransferCardHolder = string.IsNullOrWhiteSpace(TransferCardHolderBox.Text) ? null : TransferCardHolderBox.Text.Trim(),
+            TransferCardBank = string.IsNullOrWhiteSpace(TransferCardBankBox.Text) ? null : TransferCardBankBox.Text.Trim(),
+            TransferCardBankShort = string.IsNullOrWhiteSpace(TransferCardBankShortBox.Text) ? null : TransferCardBankShortBox.Text.Trim(),
+            TransferCardType = string.IsNullOrWhiteSpace(TransferCardTypeBox.Text) ? null : TransferCardTypeBox.Text.Trim()
         };
 
         try
@@ -131,6 +141,11 @@ public partial class SettingsWindow : Window
         AppState.ScannerBaudRate = settings.ScannerBaudRate;
         AppState.LegalAddress = settings.LegalAddress;
         AppState.TransferCard = settings.TransferCard;
+        AppState.TransferCardExpiry = settings.TransferCardExpiry;
+        AppState.TransferCardHolder = settings.TransferCardHolder;
+        AppState.TransferCardBank = settings.TransferCardBank;
+        AppState.TransferCardBankShort = settings.TransferCardBankShort;
+        AppState.TransferCardType = settings.TransferCardType;
         if (urlChanged) AppState.RebuildBackend();
         if (scannerChanged) AppState.RestartScanner();
 

@@ -25,8 +25,23 @@ public static class AppState
     /// Sozlamalar oynasidan kiritiladi (%APPDATA% da saqlanadi).</summary>
     public static string? LegalAddress { get; set; }
 
-    /// <summary>O'tkazma qabul qilinadigan karta raqami — O'tkazma to'lovida QR/matn sifatida ko'rsatiladi.</summary>
+    /// <summary>O'tkazma qabul qilinadigan karta raqami — O'tkazma to'lovida karta ko'rinishida ko'rsatiladi.</summary>
     public static string? TransferCard { get; set; }
+
+    /// <summary>Karta amal qilish muddati (MM/YY) — O'tkazma to'lovida karta rasmida ko'rsatiladi.</summary>
+    public static string? TransferCardExpiry { get; set; }
+
+    /// <summary>Karta egasining ismi (F.I.O) — O'tkazma to'lovida karta rasmida ko'rsatiladi.</summary>
+    public static string? TransferCardHolder { get; set; }
+
+    /// <summary>Bank nomi — karta rasmida ko'rsatiladi.</summary>
+    public static string? TransferCardBank { get; set; }
+
+    /// <summary>Bank logotipi/qisqa belgisi (masalan "NBU") — karta rasmidagi to'q-sariq belgida.</summary>
+    public static string? TransferCardBankShort { get; set; }
+
+    /// <summary>Karta turi (masalan "PLATINUM") — karta rasmining yuqori-o'ng burchagida.</summary>
+    public static string? TransferCardType { get; set; }
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
     public static string BusinessType { get; set; } = "Store";

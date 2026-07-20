@@ -30,6 +30,8 @@
 
   <ItemGroup>
     <Resource Include="Resources\logo.png" Condition="Exists('Resources\logo.png')" />
+    <!-- Farrington 7B — haqiqiy bank-karta (embossed) raqam shrifti; Payme/OCR skaneri uchun -->
+    <Resource Include="Fonts\Farrington7B.ttf" />
   </ItemGroup>
 
 </Project>

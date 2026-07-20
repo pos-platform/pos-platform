@@ -4,10 +4,10 @@ using PosPlatform.Desktop.Services;
 namespace PosPlatform.Desktop.Views;
 
 /// <summary>
-/// O'tkazma to'lovi oynasi: mijozga kartaga o'tkazish uchun QR va karta raqamini ko'rsatadi.
-/// Karta raqami sozlamalardagi TransferCard'dan olinadi. Mijoz Payme/Click/bank ilovasida
-/// shu kartaga o'tkazadi. Pul tushgani avtomatik aniqlanmaydi — kassir o'z ilovasida ko'rib
-/// "Pul tushdi" tugmasini bosadi.
+/// O'tkazma to'lovi oynasi: mijozga kartaga o'tkazish uchun plastik karta ko'rinishida
+/// karta raqamini ko'rsatadi. Karta raqami sozlamalardagi TransferCard'dan olinadi.
+/// Mijoz shu kartaga o'tkazadi. Pul tushgani avtomatik aniqlanmaydi — kassir o'z
+/// ilovasida ko'rib "Pul tushdi" tugmasini bosadi.
 /// </summary>
 public partial class TransferQrWindow : Window
 {
@@ -21,21 +21,56 @@ public partial class TransferQrWindow : Window
     private void ShowCard()
     {
         var card = AppState.TransferCard;
+        ShowExpiry();
+        ShowBranding();
+        HolderText.Text = (AppState.TransferCardHolder ?? "").ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(card))
         {
-            QrImageView.Source = null;
-            CardNumberText.Visibility = Visibility.Collapsed;
+            CardNumberText.Text = "0000 0000 0000 0000";
             HintText.Text = "Karta raqami kiritilmagan.\n" +
                             "Sozlamalar → \"O'tkazma to'lovi\" bo'limida karta raqamingizni kiriting.";
             return;
         }
 
         var digits = new string(card.Where(char.IsDigit).ToArray());
-        QrImageView.Source = QrImage.Generate(digits, pixelsPerModule: 10);
         CardNumberText.Text = FormatCard(digits);
-        CardNumberText.Visibility = Visibility.Visible;
-        HintText.Text = "Mijoz Payme, Click yoki istalgan bank ilovasida shu kartaga o'tkazadi " +
-                        "(QR skan qilsa raqam chiqadi, yoki raqamni qo'lda teradi).";
+        HintText.Text = "Mijoz yuqoridagi kartaga to'lov summasini o'tkazadi.";
+    }
+
+    private void ShowBranding()
+    {
+        var shortCode = (AppState.TransferCardBankShort ?? "").Trim();
+        var bankName = (AppState.TransferCardBank ?? "").Trim();
+        var cardType = (AppState.TransferCardType ?? "").Trim();
+
+        if (string.IsNullOrEmpty(shortCode))
+        {
+            BankShortBox.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            BankShortText.Text = shortCode.ToUpperInvariant();
+            BankShortBox.Visibility = Visibility.Visible;
+        }
+
+        // Bank nomi bo'sh bo'lsa va belgi ham yo'q bo'lsa — umumiy sarlavha
+        BankNameText.Text = !string.IsNullOrEmpty(bankName)
+            ? bankName.ToUpperInvariant()
+            : (string.IsNullOrEmpty(shortCode) ? "BANK KARTASI" : "");
+
+        CardTypeText.Text = cardType.ToUpperInvariant();
+    }
+
+    private void ShowExpiry()
+    {
+        var expiry = AppState.TransferCardExpiry;
+        if (string.IsNullOrWhiteSpace(expiry))
+        {
+            ExpiryPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+        ExpiryText.Text = expiry.Trim();
+        ExpiryPanel.Visibility = Visibility.Visible;
     }
 
     /// <summary>8600123412341234 → 8600 1234 1234 1234</summary>

@@ -52,6 +52,11 @@ public partial class App : Application
             AppState.ScannerBaudRate = saved.ScannerBaudRate > 0 ? saved.ScannerBaudRate : 9600;
             AppState.LegalAddress = string.IsNullOrWhiteSpace(saved.LegalAddress) ? null : saved.LegalAddress;
             AppState.TransferCard = string.IsNullOrWhiteSpace(saved.TransferCard) ? null : saved.TransferCard;
+            AppState.TransferCardExpiry = string.IsNullOrWhiteSpace(saved.TransferCardExpiry) ? null : saved.TransferCardExpiry;
+            AppState.TransferCardHolder = string.IsNullOrWhiteSpace(saved.TransferCardHolder) ? null : saved.TransferCardHolder;
+            AppState.TransferCardBank = string.IsNullOrWhiteSpace(saved.TransferCardBank) ? null : saved.TransferCardBank;
+            AppState.TransferCardBankShort = string.IsNullOrWhiteSpace(saved.TransferCardBankShort) ? null : saved.TransferCardBankShort;
+            AppState.TransferCardType = string.IsNullOrWhiteSpace(saved.TransferCardType) ? null : saved.TransferCardType;
         }
 
         AppState.Backend = new BackendClient(AppState.BaseUrl);
