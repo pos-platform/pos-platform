@@ -59,6 +59,8 @@
                     <TextBlock x:Name="QrCashText" Text="0" FontSize="13" FontWeight="Bold" Margin="6,0,24,0" VerticalAlignment="Center" />
                     <TextBlock Text="Terminal" FontSize="12" Foreground="#6B7280" VerticalAlignment="Center" />
                     <TextBlock x:Name="QrCardText" Text="0" FontSize="13" FontWeight="Bold" Margin="6,0,24,0" VerticalAlignment="Center" />
+                    <TextBlock Text="O'tkazma" FontSize="12" Foreground="#6B7280" VerticalAlignment="Center" />
+                    <TextBlock x:Name="QrTransferText" Text="0" FontSize="13" FontWeight="Bold" Margin="6,0,24,0" VerticalAlignment="Center" />
                     <TextBlock Text="Aralash" FontSize="12" Foreground="#6B7280" VerticalAlignment="Center" />
                     <TextBlock x:Name="QrMixedText" Text="0" FontSize="13" FontWeight="Bold" Margin="6,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
@@ -70,6 +72,8 @@
                     <TextBlock x:Name="PlainCashText" Text="0" FontSize="13" FontWeight="Bold" Margin="6,0,24,0" VerticalAlignment="Center" />
                     <TextBlock Text="Terminal" FontSize="12" Foreground="#6B7280" VerticalAlignment="Center" />
                     <TextBlock x:Name="PlainCardText" Text="0" FontSize="13" FontWeight="Bold" Margin="6,0,24,0" VerticalAlignment="Center" />
+                    <TextBlock Text="O'tkazma" FontSize="12" Foreground="#6B7280" VerticalAlignment="Center" />
+                    <TextBlock x:Name="PlainTransferText" Text="0" FontSize="13" FontWeight="Bold" Margin="6,0,24,0" VerticalAlignment="Center" />
                     <TextBlock Text="Aralash" FontSize="12" Foreground="#6B7280" VerticalAlignment="Center" />
                     <TextBlock x:Name="PlainMixedText" Text="0" FontSize="13" FontWeight="Bold" Margin="6,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>

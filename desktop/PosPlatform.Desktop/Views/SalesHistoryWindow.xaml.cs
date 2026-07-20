@@ -37,8 +37,8 @@ public partial class SalesHistoryWindow : Window
         int count = 0;
         decimal cash = 0, card = 0, transfer = 0, debt = 0, refunds = 0;
         // To'lov turi bo'yicha QR (fiskal) chek berilgan/berilmagan kesim
-        decimal qrCash = 0, qrCard = 0, qrMixed = 0;
-        decimal plainCash = 0, plainCard = 0, plainMixed = 0;
+        decimal qrCash = 0, qrCard = 0, qrTransfer = 0, qrMixed = 0;
+        decimal plainCash = 0, plainCard = 0, plainTransfer = 0, plainMixed = 0;
         foreach (var s in sales)
         {
             if (s.Type == "Refund")
@@ -58,8 +58,10 @@ public partial class SalesHistoryWindow : Window
             switch (s.PaymentMethod)
             {
                 case "Card":
-                case "Transfer": // fiskalda karta sifatida ro'yxatdan o'tadi
                     if (s.HasQr) qrCard += s.TotalAmount; else plainCard += s.TotalAmount;
+                    break;
+                case "Transfer": // fiskalda karta sifatida ro'yxatdan o'tadi
+                    if (s.HasQr) qrTransfer += s.TotalAmount; else plainTransfer += s.TotalAmount;
                     break;
                 case "Mixed":
                     if (s.HasQr) qrMixed += s.TotalAmount; else plainMixed += s.TotalAmount;
@@ -82,9 +84,11 @@ public partial class SalesHistoryWindow : Window
 
         QrCashText.Text = qrCash.ToString("N0");
         QrCardText.Text = qrCard.ToString("N0");
+        QrTransferText.Text = qrTransfer.ToString("N0");
         QrMixedText.Text = qrMixed.ToString("N0");
         PlainCashText.Text = plainCash.ToString("N0");
         PlainCardText.Text = plainCard.ToString("N0");
+        PlainTransferText.Text = plainTransfer.ToString("N0");
         PlainMixedText.Text = plainMixed.ToString("N0");
     }
 
