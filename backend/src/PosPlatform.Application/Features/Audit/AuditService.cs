@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.Audit.Dtos;
 using PosPlatform.Domain.Entities;
+using PosPlatform.Domain.Enums;
 
 namespace PosPlatform.Application.Features.Audit;
 
@@ -48,5 +49,48 @@ public class AuditService : IAuditService
             .Take(take)
             .ToListAsync(ct);
         return logs.Select(AuditLogDto.FromEntity).ToList();
+    }
+
+    public async Task<IReadOnlyList<FiscalFailureDto>> GetFiscalFailuresAsync(int take = 100, CancellationToken ct = default)
+    {
+        if (take is < 1 or > 500) take = 100;
+
+        // SuperAdmin (OrganizationId == null) — tenant filtri o'chadi, barcha tashkilotlar ko'rinadi.
+        // Tashkilot nomi Receipt.OrganizationId bo'yicha alohida so'rov bilan biriktiriladi.
+        var failures = await _db.Receipts
+            .AsNoTracking()
+            .Where(r => r.FiscalStatus == FiscalStatus.Failed && r.Sale != null)
+            .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
+            .Take(take)
+            .Select(r => new
+            {
+                r.SaleId,
+                r.Sale!.ReceiptNumber,
+                r.Sale.TerminalId,
+                r.Sale.TotalAmount,
+                r.OrganizationId,
+                r.ErrorMessage,
+                SoldAt = r.Sale.CreatedAt,
+                FailedAt = r.UpdatedAt ?? r.CreatedAt
+            })
+            .ToListAsync(ct);
+
+        var orgIds = failures.Where(f => f.OrganizationId != null).Select(f => f.OrganizationId!.Value).Distinct().ToList();
+        var orgNames = await _db.Organizations
+            .AsNoTracking()
+            .Where(o => orgIds.Contains(o.Id))
+            .ToDictionaryAsync(o => o.Id, o => o.Name, ct);
+
+        return failures.Select(f => new FiscalFailureDto
+        {
+            SaleId = f.SaleId,
+            ReceiptNumber = f.ReceiptNumber,
+            TerminalId = f.TerminalId,
+            TotalAmount = f.TotalAmount,
+            OrganizationName = f.OrganizationId != null && orgNames.TryGetValue(f.OrganizationId.Value, out var name) ? name : null,
+            ErrorMessage = f.ErrorMessage,
+            SoldAt = f.SoldAt,
+            FailedAt = f.FailedAt
+        }).ToList();
     }
 }

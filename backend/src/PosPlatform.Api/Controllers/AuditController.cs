@@ -21,4 +21,9 @@ public class AuditController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<AuditLogDto>>> GetRecent([FromQuery] int take = 200, CancellationToken ct = default)
         => Ok(await _audit.GetRecentAsync(take, ct));
+
+    /// <summary>Fiskalizatsiya muvaffaqiyatsiz tugagan cheklar (barcha tashkilotlar bo'yicha).</summary>
+    [HttpGet("fiscal-failures")]
+    public async Task<ActionResult<IReadOnlyList<FiscalFailureDto>>> GetFiscalFailures([FromQuery] int take = 100, CancellationToken ct = default)
+        => Ok(await _audit.GetFiscalFailuresAsync(take, ct));
 }

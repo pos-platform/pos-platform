@@ -57,34 +57,26 @@ public static class ReceiptLayout
     /// <summary>
     /// Tovar blokining kod qatorlari (bosh qatordan keyingi qism):
     ///   Shtrix: 4780047222509
-    ///   MXIK: 00403002001000000          QQS 12%: 1 275
-    /// Shtrix/MXIK bo'lmasa o'sha qator chiqmaydi.
+    ///   МК: 010893527082308521...
+    ///   MXIK: 00403002001000000
+    /// Shtrix/MXIK/МК bo'lmasa o'sha qator chiqmaydi.
     /// </summary>
     public static IEnumerable<string> ItemDetailRows(ReceiptLine l, int width)
     {
         if (!string.IsNullOrWhiteSpace(l.Barcode))
             yield return $"Shtrix: {l.Barcode}";
 
-        var mxik = string.IsNullOrWhiteSpace(l.MxikCode) ? "" : $"MXIK: {l.MxikCode}";
-        var vat = l.IsVat ? $"QQS 12%: {Math.Round(l.LineTotal * 12m / 112m):N0}" : "";
-        foreach (var ln in TwoColumn(mxik, vat, width))
-            yield return ln;
-    }
-
-    /// <summary>Chap va o'ng ustunni bitta qatorga joylaydi; sig'masa alohida qatorlarga bo'ladi.</summary>
-    private static IEnumerable<string> TwoColumn(string left, string right, int width)
-    {
-        if (left.Length == 0 && right.Length == 0) yield break;
-        if (right.Length == 0) { yield return left; yield break; }
-        if (left.Length == 0) { yield return right.PadLeft(width); yield break; }
-
-        if (left.Length + 1 + right.Length <= width)
-            yield return left + new string(' ', width - left.Length - right.Length) + right;
-        else
+        // Markirovka (Asl Belgisi) kodi — DataMatrix ichida ko'rinmas GS1 ajratkichlari (0x1D/FNC1)
+        // bo'ladi; termal printerda axlat chiqmasligi uchun boshqaruv belgilarini olib tashlaymiz.
+        if (!string.IsNullOrWhiteSpace(l.MarkingCode))
         {
-            yield return left;
-            yield return right.PadLeft(width);
+            var clean = new string(l.MarkingCode.Where(ch => !char.IsControl(ch)).ToArray());
+            if (clean.Length > 0)
+                yield return $"МК: {clean}";
         }
+
+        if (!string.IsNullOrWhiteSpace(l.MxikCode))
+            yield return $"MXIK: {l.MxikCode}";
     }
 
     /// <summary>Matnni berilgan kenglikka so'zma-so'z o'raydi; juda uzun so'zlar kesib bo'linadi.</summary>

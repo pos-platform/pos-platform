@@ -16,4 +16,7 @@ public interface IAuditService
         CancellationToken ct = default);
 
     Task<IReadOnlyList<AuditLogDto>> GetRecentAsync(int take = 200, CancellationToken ct = default);
+
+    /// <summary>Fiskalizatsiya muvaffaqiyatsiz tugagan cheklar (FiscalStatus = Failed), eng yangisi birinchi.</summary>
+    Task<IReadOnlyList<FiscalFailureDto>> GetFiscalFailuresAsync(int take = 100, CancellationToken ct = default);
 }

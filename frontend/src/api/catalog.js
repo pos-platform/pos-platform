@@ -84,7 +84,9 @@ export const roleTemplatesApi = {
 }
 
 export const auditApi = {
-  recent: (take = 200) => http.get('/api/audit', { params: { take } }).then((r) => r.data)
+  recent: (take = 200) => http.get('/api/audit', { params: { take } }).then((r) => r.data),
+  fiscalFailures: (take = 100) =>
+    http.get('/api/audit/fiscal-failures', { params: { take } }).then((r) => r.data)
 }
 
 export const usersApi = {

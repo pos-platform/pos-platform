@@ -18,6 +18,9 @@ public class PosProductDto
 
     /// <summary>QQS (НДС) bilanmi — fiskal chekda satr QQSi hisoblanadi.</summary>
     public bool IsVat { get; set; }
+
+    /// <summary>Markirovka (Asl Belgisi) qilinadimi — kassada DataMatrix skanerlash majburiy bo'ladi.</summary>
+    public bool IsMarked { get; set; }
     public decimal Price { get; set; }
     public decimal Quantity { get; set; }
     public Unit Unit { get; set; }

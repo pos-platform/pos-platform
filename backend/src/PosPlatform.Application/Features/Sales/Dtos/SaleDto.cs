@@ -109,6 +109,7 @@ public class ReceiptDto
     public string? FiscalReceiptNumber { get; set; }
     public string? QrCodeUrl { get; set; }
     public DateTime? FiscalizedAt { get; set; }
+    public string? ErrorMessage { get; set; }
 
     public static ReceiptDto FromEntity(Receipt r) => new()
     {
@@ -119,6 +120,7 @@ public class ReceiptDto
         FiscalRegistrationNumber = r.FiscalRegistrationNumber,
         FiscalReceiptNumber = r.FiscalReceiptNumber,
         QrCodeUrl = r.QrCodeUrl,
-        FiscalizedAt = r.FiscalizedAt
+        FiscalizedAt = r.FiscalizedAt,
+        ErrorMessage = r.ErrorMessage
     };
 }

@@ -11,6 +11,7 @@ public class SaleItemConfiguration : IEntityTypeConfiguration<SaleItem>
         builder.Property(i => i.ProductName).IsRequired().HasMaxLength(256);
         builder.Property(i => i.MxikCode).IsRequired().HasMaxLength(64);
         builder.Property(i => i.Barcode).HasMaxLength(64);
+        builder.Property(i => i.MarkingCode).HasMaxLength(256);
 
         builder.Property(i => i.Quantity).HasColumnType("numeric(18,3)");
         builder.Property(i => i.UnitPrice).HasColumnType("numeric(18,2)");

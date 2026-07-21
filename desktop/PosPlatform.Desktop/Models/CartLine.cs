@@ -6,11 +6,21 @@ public class CartLine : INotifyPropertyChanged
 {
     public ProductDto Product { get; }
 
-    public CartLine(ProductDto product, decimal quantity)
+    /// <summary>
+    /// Markirovka (Asl Belgisi) kodi — GS1 DataMatrix ning to'liq satri, faqat markirovkali
+    /// tovarda to'ldiriladi. Har bir dona uchun noyob, shu sabab bunday qatorda miqdor doim 1.
+    /// </summary>
+    public string? MarkingCode { get; }
+
+    public CartLine(ProductDto product, decimal quantity, string? markingCode = null)
     {
         Product = product;
         _quantity = quantity;
+        MarkingCode = markingCode;
     }
+
+    /// <summary>Qatorда markirovka kodi bormi — mavjud bo'lsa miqdor va o'zgartirish qulflanadi.</summary>
+    public bool IsMarked => Product.IsMarked;
 
     private decimal _quantity;
     public decimal Quantity

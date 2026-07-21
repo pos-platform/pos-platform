@@ -1440,6 +1440,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("LineTotal")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<string>("MarkingCode")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.Property<string>("MxikCode")
                         .IsRequired()
                         .HasMaxLength(64)

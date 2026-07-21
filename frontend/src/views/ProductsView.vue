@@ -482,11 +482,11 @@ function printBarcode(product) {
   try {
     JsBarcode(svg, product.barcode, {
       format: 'CODE128',
-      width: 2,
-      height: 60,
+      width: 1.5,
+      height: 45,
       displayValue: true,
-      fontSize: 14,
-      margin: 10,
+      fontSize: 12,
+      margin: 4,
       background: '#ffffff',
       lineColor: '#000000'
     })
@@ -512,16 +512,22 @@ function printBarcode(product) {
   <title>${product.name}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: flex-start; padding: 24px; background: #fff; }
-    .label { text-align: center; padding: 14px 20px; border: 1px solid #bbb; display: inline-block; }
-    .name { font-weight: bold; font-size: 15px; margin-bottom: 10px; }
-    .price { font-weight: bold; font-size: 20px; margin-top: 8px; }
-    svg { display: block; margin: 0 auto; }
-    @page { size: auto; margin: 5mm; }
-    @media print {
-      body { padding: 0; }
-      .label { border: none; }
+    @page { size: 58mm 40mm; margin: 0; }
+    html, body { width: 58mm; height: 40mm; background: #fff; }
+    body { font-family: Arial, sans-serif; }
+    .label {
+      width: 58mm; height: 40mm;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 2mm; overflow: hidden;
     }
+    .name {
+      font-weight: bold; font-size: 12px; text-align: center; line-height: 1.1;
+      margin-bottom: 1mm; max-width: 100%;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    svg { display: block; max-width: 54mm; height: auto; }
+    .price { font-weight: bold; font-size: 17px; margin-top: 1mm; }
   </style>
 </head>
 <body>

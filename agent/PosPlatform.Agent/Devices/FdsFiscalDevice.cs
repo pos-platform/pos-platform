@@ -234,6 +234,10 @@ public class FdsFiscalDevice : IFiscalDevice
             Name = i.ProductName,
             SPIC = string.IsNullOrWhiteSpace(i.MxikCode) ? null : i.MxikCode,
             Barcode = string.IsNullOrWhiteSpace(i.Barcode) ? null : i.Barcode,
+            // Markirovka (Asl Belgisi) kodi — GS1 DataMatrix ning to'liq satri. OFD standarti bo'yicha
+            // chek qatorining "Labels" massiviga yoziladi (VM 833-son qarori); shu orqali tovar
+            // Asl Belgisi tizimida oborotdan chiqadi. Kodsiz (oddiy) tovarlarda null (yuborilmaydi).
+            Labels = string.IsNullOrWhiteSpace(i.MarkingCode) ? null : new[] { i.MarkingCode! },
             Units = 1L,
             Price = ToTiyin(i.LineTotal),                                           // qator jami summasi
             Amount = (long)Math.Round(i.Quantity * 1000m, MidpointRounding.AwayFromZero),

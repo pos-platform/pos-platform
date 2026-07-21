@@ -155,6 +155,18 @@ public class SaleService : ISaleService
                 throw new ValidationException($"'{product.Name}' uchun miqdor 0 dan katta bo'lishi kerak.");
             }
 
+            // Markirovkali tovar — har bir jismoniy dona uchun DataMatrix kodi majburiy
+            // (fiskal chekning Labels maydoniga uzatilib, Asl Belgisi'da oborotdan chiqadi).
+            // Bunday qator faqat bitta donani bildiradi (kod noyob), miqdori 1 bo'lishi shart.
+            var markingCode = string.IsNullOrWhiteSpace(line.MarkingCode) ? null : line.MarkingCode.Trim();
+            if (product.IsMarked)
+            {
+                if (markingCode is null)
+                    throw new ValidationException($"'{product.Name}' markirovkali tovar — DataMatrix kodi skanerlanishi shart.");
+                if (line.Quantity != 1)
+                    throw new ValidationException($"'{product.Name}' markirovkali tovar — har bir dona alohida skanerlanadi (miqdor 1 bo'lishi kerak).");
+            }
+
             var unitPrice = line.UnitPriceOverride ?? product.Price;
             var vatPercent = line.VatPercent ?? DefaultVatPercent;
 
@@ -199,6 +211,7 @@ public class SaleService : ISaleService
                 ProductName = product.Name,
                 MxikCode = product.MxikCode,
                 Barcode = product.Barcode,
+                MarkingCode = markingCode,
                 Unit = product.Unit,
                 Quantity = line.Quantity,
                 UnitPrice = unitPrice,
@@ -332,6 +345,7 @@ public class SaleService : ISaleService
                 ProductName = item.ProductName,
                 MxikCode = item.MxikCode,
                 Barcode = item.Barcode,
+                MarkingCode = item.MarkingCode,
                 Unit = item.Unit,
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,

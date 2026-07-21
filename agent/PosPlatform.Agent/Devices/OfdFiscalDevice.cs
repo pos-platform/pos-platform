@@ -93,6 +93,7 @@ public class OfdFiscalDevice : IFiscalDevice
             name = i.ProductName,
             mxikCode = i.MxikCode,
             barcode = i.Barcode,
+            markingCode = i.MarkingCode,
             unit = i.Unit,
             quantity = i.Quantity,
             price = i.UnitPrice,

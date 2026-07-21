@@ -115,6 +115,9 @@ public class ProductDto
 
     /// <summary>QQS (НДС) bilanmi — fiskal chekda satr QQSi hisoblanadi.</summary>
     public bool IsVat { get; set; }
+
+    /// <summary>Markirovka (Asl Belgisi) qilinadimi — kassada DataMatrix skanerlash majburiy.</summary>
+    public bool IsMarked { get; set; }
     public decimal Price { get; set; }
     public decimal Quantity { get; set; }
     public string Unit { get; set; } = "Piece";
@@ -212,6 +215,9 @@ public class SaleItemRequest
 {
     public Guid ProductId { get; set; }
     public decimal Quantity { get; set; }
+
+    /// <summary>Markirovka (Asl Belgisi) kodi — GS1 DataMatrix ning to'liq satri (markirovkali tovar uchun).</summary>
+    public string? MarkingCode { get; set; }
 }
 
 public class CreateSaleRequest
@@ -372,6 +378,9 @@ public class ReceiptLine
 
     /// <summary>Shtrix-kod (ШК) — fiskal chekda mahsulot ostida chiqadi (ixtiyoriy).</summary>
     public string? Barcode { get; set; }
+
+    /// <summary>Markirovka (Asl Belgisi) kodi — chekda "МК:" qatorida chiqadi (ixtiyoriy).</summary>
+    public string? MarkingCode { get; set; }
 
     /// <summary>QQS (НДС) bilanmi — narxga kiritilgan 12%.</summary>
     public bool IsVat { get; set; }

@@ -31,6 +31,7 @@ public class PendingReceiptDto
             ProductName = i.ProductName,
             MxikCode = i.MxikCode,
             Barcode = i.Barcode,
+            MarkingCode = i.MarkingCode,
             Unit = i.Unit,
             Quantity = i.Quantity,
             UnitPrice = i.UnitPrice,
@@ -46,6 +47,9 @@ public class PendingReceiptItemDto
     public string ProductName { get; set; } = string.Empty;
     public string MxikCode { get; set; } = string.Empty;
     public string? Barcode { get; set; }
+
+    /// <summary>Markirovka (Asl Belgisi) kodi — fiskal chekning Labels maydoniga ketadi (ixtiyoriy).</summary>
+    public string? MarkingCode { get; set; }
     public Unit Unit { get; set; }
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }

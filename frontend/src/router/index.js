@@ -21,6 +21,12 @@ const routes = [
     component: () => import('../views/AuditView.vue'),
     meta: { superAdmin: true }
   },
+  {
+    path: '/admin/fiscal-audit',
+    name: 'fiscal-audit',
+    component: () => import('../views/FiscalAuditView.vue'),
+    meta: { superAdmin: true }
+  },
   { path: '/', redirect: { name: 'dashboard' } },
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { adminOnly: true } },
   { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue') },

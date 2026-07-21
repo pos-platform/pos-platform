@@ -22,6 +22,14 @@ public class SaleItem : BaseEntity
     public string? Barcode { get; set; }
     public Unit Unit { get; set; }
 
+    /// <summary>
+    /// Markirovka (Asl Belgisi) kodi — GS1 DataMatrix ning to'liq satri. Faqat markirovkali
+    /// tovarda to'ldiriladi; fiskal chekning <c>Labels</c> maydoniga uzatiladi va OFD orqali
+    /// tovar oborotdan chiqariladi. Har bir jismoniy dona uchun noyob (shuning uchun bunday
+    /// qatorda Quantity doim 1).
+    /// </summary>
+    public string? MarkingCode { get; set; }
+
     /// <summary>Miqdor (donada butun, kg'da kasrli).</summary>
     public decimal Quantity { get; set; }
 

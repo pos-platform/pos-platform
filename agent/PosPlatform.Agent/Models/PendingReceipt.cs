@@ -18,6 +18,9 @@ public class PendingReceiptItem
     public string ProductName { get; set; } = string.Empty;
     public string MxikCode { get; set; } = string.Empty;
     public string? Barcode { get; set; }
+
+    /// <summary>Markirovka (Asl Belgisi) kodi — fiskal chekning Labels maydoniga uzatiladi (ixtiyoriy).</summary>
+    public string? MarkingCode { get; set; }
     public string Unit { get; set; } = "Piece";
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }

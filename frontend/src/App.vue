@@ -120,7 +120,8 @@ const navGroups = [
 const superNavItems = [
   { name: 'organizations', key: 'nav.organizations', icon: '🏢' },
   { name: 'admin-roles', key: 'nav.roles', icon: '🔑' },
-  { name: 'audit', key: 'nav.audit', icon: '🛡️' }
+  { name: 'audit', key: 'nav.audit', icon: '🛡️' },
+  { name: 'fiscal-audit', key: 'nav.fiscalAudit', icon: '🧾' }
 ]
 
 function canSee(i) {

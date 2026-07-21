@@ -51,4 +51,11 @@ public class CreateSaleItemRequest
 
     /// <summary>QQS stavkasi (%). Bo'sh bo'lsa standart stavka qo'llanadi.</summary>
     public decimal? VatPercent { get; set; }
+
+    /// <summary>
+    /// Markirovka (Asl Belgisi) kodi — GS1 DataMatrix ning to'liq satri, kassada skanerlanadi.
+    /// Markirovkali (IsMarked) tovar uchun majburiy; fiskal chekning Labels maydoniga uzatiladi.
+    /// </summary>
+    [MaxLength(256)]
+    public string? MarkingCode { get; set; }
 }

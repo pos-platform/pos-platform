@@ -590,8 +590,14 @@ public partial class PosWindow : Window
         //     "01089352708230852174...". Butun satr mahsulotga mos kelmaydi — GTIN'ni ajratib,
         //     shtrix-kod bo'yicha qidiramiz. Seriya qismi klaviatura layout'i (kirill) tufayli
         //     buzilishi mumkin, shuning uchun faqat boshidagi GTIN raqamlariga tayanamiz.
+        //     Topilsa — butun DataMatrix satrini fiskal chek uchun (Labels) saqlab qolamiz.
+        string? markingCode = null;
         if (product is null && TryParseGtinFromMarking(code, out var gtin))
+        {
             product = FindByGtin(gtin);
+            if (product is not null)
+                markingCode = code;
+        }
 
         // Qidiruv maydonida Enter bosilganda (skaner emas) ko'rinib turgan
         // birinchi mahsulotni ham qabul qilamiz — nom bo'yicha tez qo'shish uchun.
@@ -601,7 +607,7 @@ public partial class PosWindow : Window
 
         if (product is not null)
         {
-            AddToCart(product);
+            AddToCart(product, markingCode);
             SearchBox.Clear();
             return;
         }
@@ -733,9 +739,33 @@ public partial class PosWindow : Window
 
     // ---------- Savatcha ----------
 
-    private void AddToCart(ProductDto product)
+    private void AddToCart(ProductDto product, string? markingCode = null)
     {
-        var line = _cart.FirstOrDefault(l => l.Product.Id == product.Id);
+        // Markirovkali (Asl Belgisi) tovar: har bir jismoniy dona uchun DataMatrix kodi noyob,
+        // shuning uchun kod majburiy va har skan alohida qator bo'ladi (miqdor 1, ustiga qo'shilmaydi).
+        // Fiskal chekda shu kod Labels maydoniga ketib, tovar oborotdan chiqadi.
+        if (product.IsMarked)
+        {
+            if (string.IsNullOrWhiteSpace(markingCode))
+            {
+                // Tugmadan bosildi yoki oddiy shtrix-kod skanerlandi — DataMatrix talab qilamiz.
+                ShowNotFound($"{product.Name}: markirovka kodini (DataMatrix) skanerlang");
+                return;
+            }
+            // Ayni kod savatda bo'lsa — bitta donani ikki marta skanerlash (xato).
+            if (_cart.Any(l => string.Equals(l.MarkingCode, markingCode, StringComparison.OrdinalIgnoreCase)))
+            {
+                ShowNotFound($"{product.Name}: bu kod allaqachon savatda");
+                return;
+            }
+            _cart.Insert(0, new CartLine(product, 1, markingCode.Trim()));
+            RecalcTotals();
+            SearchBox.Focus();
+            return;
+        }
+
+        // Oddiy tovar — mavjud qatorga qo'shiladi (markirovkasiz qatorlar birlashadi).
+        var line = _cart.FirstOrDefault(l => l.Product.Id == product.Id && l.MarkingCode is null);
         if (line is null)
         {
             // Oxirgi qo'shilgan tovar ro'yxatning boshida (tepada) tursin.
@@ -752,7 +782,18 @@ public partial class PosWindow : Window
 
     private void Inc_Click(object sender, RoutedEventArgs e)
     {
-        if (((FrameworkElement)sender).Tag is CartLine l) { l.Quantity += 1; RecalcTotals(); }
+        if (((FrameworkElement)sender).Tag is CartLine l)
+        {
+            // Markirovkali tovarda har dona alohida kod bilan skanerlanadi — qo'lda ko'paytirilmaydi.
+            if (l.IsMarked)
+            {
+                ShowMessage("Markirovkali tovar — har bir donani alohida skanerlang", error: true);
+                FocusScanInput();
+                return;
+            }
+            l.Quantity += 1;
+            RecalcTotals();
+        }
         FocusScanInput();
     }
 
@@ -982,7 +1023,7 @@ public partial class PosWindow : Window
                 PaidAmount = payment == "Debt" ? 0 : (paid > 0 ? paid : total),
                 DebtorId = debtorId,
                 TerminalId = AppState.TerminalId,
-                Items = _cart.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity }).ToList()
+                Items = _cart.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity, MarkingCode = l.MarkingCode }).ToList()
             };
             var receipt = new ReceiptData
             {
@@ -999,7 +1040,7 @@ public partial class PosWindow : Window
                 Lines = _cart.Select(l => new ReceiptLine
                 {
                     Name = l.Product.Name, Quantity = l.Quantity, Price = l.Product.Price, LineTotal = l.LineTotal,
-                    MxikCode = l.Product.MxikCode, Barcode = l.Product.Barcode, IsVat = l.Product.IsVat
+                    MxikCode = l.Product.MxikCode, Barcode = l.Product.Barcode, MarkingCode = l.MarkingCode, IsVat = l.Product.IsVat
                 }).ToList()
             };
 
