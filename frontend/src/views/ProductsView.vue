@@ -500,6 +500,11 @@ function printBarcode(product) {
   const priceFmt = Number(product.price).toLocaleString()
 
   const w = window.open('', '_blank', 'width=460,height=340')
+  if (!w) {
+    error.value = 'Chop etish oynasi ochilmadi. Brauzerda popup (pop-up) ruxsatini yoqing.'
+    setTimeout(() => { error.value = '' }, 5000)
+    return
+  }
   w.document.write(`<!DOCTYPE html>
 <html>
 <head>
