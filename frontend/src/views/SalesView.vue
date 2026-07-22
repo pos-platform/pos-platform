@@ -70,10 +70,27 @@ async function load() {
   }
 }
 
-/** Chek soliqqa o'tganmi (QR kodli fiskal chek) — aks holda oddiy (fiskalsiz) chek. */
+/**
+ * Chek haqiqatan soliqqa o'tganmi. "QR kodli chek" deb faqat QR kod shakllangan
+ * (ofd havolasi bor) yoki soliq fiskal belgisi + chek raqami qaytgan cheklar hisoblanadi.
+ * Faqat "Registered" statusi yetarli emas — QR shakllanmagan bo'lsa chek oddiy hisoblanadi.
+ */
 function isFiscal(s) {
-  return s.receipt?.fiscalStatus === 'Registered'
+  const r = s.receipt
+  if (!r || r.fiscalStatus !== 'Registered') return false
+  if (r.qrCodeUrl) return true
+  return Boolean(r.fiscalSign && r.fiscalReceiptNumber)
 }
+
+/** Status "Registered", lekin QR/fiskal belgi yo'q — tasdiqlanmagan fiskalizatsiya. */
+function isUnconfirmedFiscal(s) {
+  return s.receipt?.fiscalStatus === 'Registered' && !isFiscal(s)
+}
+
+/** Shu kunda tasdiqlanmagan (QR shakllanmagan) cheklar soni. */
+const unconfirmedCount = computed(() =>
+  terminalSales.value.filter((s) => s.type !== 'Refund' && isUnconfirmedFiscal(s)).length
+)
 
 // To'lov turlari — hisobotlarning barcha kesimlarida shu tartibda ko'rsatiladi.
 const PAY_KEYS = ['cash', 'card', 'transfer', 'debt', 'mixed']
@@ -280,6 +297,17 @@ const moduleGroups = computed(() => {
   return [...groups.values()]
 })
 
+/**
+ * Bitta fiskal modul bir nechta kassaning cheklarini fiskalizatsiya qilganmi.
+ * Ya'ni o'sha kassada modul bo'lmasa ham cheki boshqa PC dagi fleshkadan o'tgan —
+ * agentda "FiscalTerminalId" to'ldirilmagani belgisi.
+ */
+const crossTerminalModules = computed(() =>
+  perFiscalModule.value
+    .filter((m) => m.terminals.length > 1)
+    .map((m) => ({ title: moduleTitle(m.module), terminals: m.terminals }))
+)
+
 /** Bir kassir bir nechta fiskal modulda ishlaganmi — aralashib ketgan loginlar. */
 const mixedCashiers = computed(() => {
   const byCashier = new Map()
@@ -446,19 +474,22 @@ function openReceiptWindow(sale) {
       <div class="stat-label">Sof tushum</div>
       <div class="stat-value">{{ fmtNum(summary.net) }}</div>
     </div>
-  </div>
 
-  <!-- Fiskal (QR kodli) va oddiy cheklar alohida -->
-  <div class="summary-grid two">
-    <div class="card stat stat-fiscal">
+    <!-- Fiskal (QR kodli) va oddiy cheklar — Sof tushum yonidagi bo'sh joyda -->
+    <div class="card stat stat-wide stat-fiscal">
       <div class="stat-label">Fiskal chek (QR kodli)</div>
       <div class="stat-value">{{ fmtNum(summary.fiscalSum) }}</div>
-      <div class="stat-sub">{{ summary.fiscalCount }} ta chek — soliqqa o'tgan</div>
+      <div class="stat-sub">{{ summary.fiscalCount }} ta chek — QR shakllangan, soliqqa o'tgan</div>
     </div>
-    <div class="card stat stat-plain">
+    <div class="card stat stat-wide stat-plain">
       <div class="stat-label">Oddiy chek (QR yo'q)</div>
       <div class="stat-value">{{ fmtNum(summary.plainSum) }}</div>
-      <div class="stat-sub">{{ summary.plainCount }} ta chek — fiskalizatsiya qilinmagan</div>
+      <div class="stat-sub">
+        {{ summary.plainCount }} ta chek — QR chiqmagan
+        <template v-if="unconfirmedCount">
+          (shundan {{ unconfirmedCount }} tasi "Fiskal" deb belgilangan, lekin QR/fiskal belgi yo'q)
+        </template>
+      </div>
     </div>
   </div>
 
@@ -553,91 +584,6 @@ function openReceiptWindow(sale) {
     </div>
   </div>
 
-  <div class="filters">
-    <button v-for="ff in [['all','Hammasi'],['fiscal','Faqat fiskal (QR)'],['plain','Faqat oddiy chek']]"
-            :key="ff[0]" class="chip" :class="{ 'chip-on': fiscalFilter === ff[0] }"
-            @click="fiscalFilter = ff[0]">
-      {{ ff[1] }}
-    </button>
-    <select v-if="terminals.length > 1" class="input sel" v-model="terminalFilter">
-      <option value="all">Kassa: hammasi</option>
-      <option v-for="t in terminals" :key="t || 'none'" :value="t">{{ terminalLabel(t) }}</option>
-    </select>
-    <span class="muted count">{{ shownSales.length }} ta ko'rsatilmoqda</span>
-  </div>
-
-  <div class="card">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Chek</th>
-          <th>Tur</th>
-          <th>Kassa</th>
-          <th>Kassir</th>
-          <th>Vaqt</th>
-          <th>To'lov</th>
-          <th class="text-right">Jami</th>
-          <th>Fiskal</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="s in shownSales" :key="s.id">
-          <td><strong>{{ s.receiptNumber }}</strong></td>
-          <td>
-            <span v-if="s.type === 'Refund'" class="pill pill-red">Qaytarish</span>
-            <span v-else-if="s.status === 'Refunded'" class="pill pill-amber">Qaytarilgan</span>
-            <span v-else class="pill pill-gray">Sotuv</span>
-          </td>
-          <td class="muted">{{ s.terminalId || '—' }}</td>
-          <td class="muted">{{ s.cashierFullName || s.cashierUsername || '—' }}</td>
-          <td class="muted">{{ fmtTime(s.createdAt) }}</td>
-          <td>
-            {{ paymentLabel[s.paymentMethod] || s.paymentMethod }}
-            <span v-if="s.transferSource" class="muted src">({{ s.transferSource }})</span>
-          </td>
-          <td class="text-right" :style="{ color: s.type === 'Refund' ? 'var(--danger)' : 'inherit' }">
-            {{ s.type === 'Refund' ? '− ' : '' }}{{ fmtNum(s.totalAmount) }}
-          </td>
-          <td>
-            <span class="pill" :class="fiscalPill[s.receipt?.fiscalStatus] || 'pill-gray'">
-              {{ fiscalLabel[s.receipt?.fiscalStatus] || '—' }}
-            </span>
-            <div class="qr-note" :class="isFiscal(s) ? 'qr-yes' : 'qr-no'">
-              {{ isFiscal(s) ? 'QR kodli chek' : "QR yo'q — oddiy chek" }}
-            </div>
-            <div v-if="isFiscal(s) && s.receipt?.fiscalModuleId" class="mod-note">
-              Modul: {{ s.receipt.fiscalModuleId }}
-            </div>
-          </td>
-          <td class="text-right" style="white-space: nowrap">
-            <button
-              class="btn btn-ghost btn-sm"
-              :disabled="printingId === s.id"
-              @click="printReceipt(s)"
-              title="Chekni chop etish"
-            >
-              {{ printingId === s.id ? '...' : '🖨 Chek' }}
-            </button>
-            <button
-              v-if="s.type === 'Sale' && s.status !== 'Refunded'"
-              class="btn btn-ghost btn-sm"
-              :disabled="refundingId === s.id"
-              @click="refund(s)"
-            >
-              {{ refundingId === s.id ? '...' : 'Qaytarish' }}
-            </button>
-          </td>
-        </tr>
-        <tr v-if="!shownSales.length && !loading">
-          <td colspan="9" class="muted" style="text-align: center; padding: 24px">
-            {{ sales.length ? "Tanlangan filtr bo'yicha chek yo'q" : "Bu kunda savdo yo'q" }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
   <!-- Fiskal modul (kassa apparati) × kassir kesimi — faqat QR kodli cheklar -->
   <div class="card term-card mod-card">
     <div class="term-head">
@@ -645,6 +591,15 @@ function openReceiptWindow(sale) {
       <span class="term-legend">
         qaysi fleshkadan qaysi kassir nomidan qancha chek o'tgani
       </span>
+    </div>
+
+    <div v-if="crossTerminalModules.length" class="alert alert-warn mix-warn">
+      <strong>Diqqat:</strong> quyidagi fiskal modul bir nechta kassaning cheklarini fiskalizatsiya qilgan —
+      <span v-for="(m, i) in crossTerminalModules" :key="m.title">
+        <b>{{ m.title }}</b> ({{ m.terminals.join(', ') }}){{ i < crossTerminalModules.length - 1 ? '; ' : '' }}
+      </span>.
+      Ya'ni modulsiz kassaning cheklari boshqa kompyuterdagi fleshkadan o'tib ketgan —
+      har bir agentda <code>Agent:FiscalTerminalId</code> ni o'sha kassa ID siga to'ldiring.
     </div>
 
     <div v-if="mixedCashiers.length" class="alert alert-warn mix-warn">
@@ -699,14 +654,107 @@ function openReceiptWindow(sale) {
       </table>
     </div>
   </div>
+
+  <div class="filters">
+    <button v-for="ff in [['all','Hammasi'],['fiscal','Faqat fiskal (QR)'],['plain','Faqat oddiy chek']]"
+            :key="ff[0]" class="chip" :class="{ 'chip-on': fiscalFilter === ff[0] }"
+            @click="fiscalFilter = ff[0]">
+      {{ ff[1] }}
+    </button>
+    <select v-if="terminals.length > 1" class="input sel" v-model="terminalFilter">
+      <option value="all">Kassa: hammasi</option>
+      <option v-for="t in terminals" :key="t || 'none'" :value="t">{{ terminalLabel(t) }}</option>
+    </select>
+    <span class="muted count">{{ shownSales.length }} ta ko'rsatilmoqda</span>
+  </div>
+
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Chek</th>
+          <th>Tur</th>
+          <th>Kassa</th>
+          <th>Kassir</th>
+          <th>Vaqt</th>
+          <th>To'lov</th>
+          <th class="text-right">Jami</th>
+          <th>Fiskal</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="s in shownSales" :key="s.id">
+          <td><strong>{{ s.receiptNumber }}</strong></td>
+          <td>
+            <span v-if="s.type === 'Refund'" class="pill pill-red">Qaytarish</span>
+            <span v-else-if="s.status === 'Refunded'" class="pill pill-amber">Qaytarilgan</span>
+            <span v-else class="pill pill-gray">Sotuv</span>
+          </td>
+          <td class="muted">{{ s.terminalId || '—' }}</td>
+          <td class="muted">{{ s.cashierFullName || s.cashierUsername || '—' }}</td>
+          <td class="muted">{{ fmtTime(s.createdAt) }}</td>
+          <td>
+            {{ paymentLabel[s.paymentMethod] || s.paymentMethod }}
+            <span v-if="s.transferSource" class="muted src">({{ s.transferSource }})</span>
+          </td>
+          <td class="text-right" :style="{ color: s.type === 'Refund' ? 'var(--danger)' : 'inherit' }">
+            {{ s.type === 'Refund' ? '− ' : '' }}{{ fmtNum(s.totalAmount) }}
+          </td>
+          <td>
+            <span class="pill" :class="fiscalPill[s.receipt?.fiscalStatus] || 'pill-gray'">
+              {{ fiscalLabel[s.receipt?.fiscalStatus] || '—' }}
+            </span>
+            <div class="qr-note" :class="isFiscal(s) ? 'qr-yes' : 'qr-no'">
+              <template v-if="isFiscal(s)">QR kodli chek</template>
+              <template v-else-if="isUnconfirmedFiscal(s)">QR shakllanmagan — soliqqa o'tgani tasdiqlanmagan</template>
+              <template v-else>QR yo'q — oddiy chek</template>
+            </div>
+            <div v-if="isFiscal(s) && s.receipt?.fiscalModuleId" class="mod-note">
+              Modul: {{ s.receipt.fiscalModuleId }}
+            </div>
+          </td>
+          <td class="text-right" style="white-space: nowrap">
+            <button
+              class="btn btn-ghost btn-sm"
+              :disabled="printingId === s.id"
+              @click="printReceipt(s)"
+              title="Chekni chop etish"
+            >
+              {{ printingId === s.id ? '...' : '🖨 Chek' }}
+            </button>
+            <button
+              v-if="s.type === 'Sale' && s.status !== 'Refunded'"
+              class="btn btn-ghost btn-sm"
+              :disabled="refundingId === s.id"
+              @click="refund(s)"
+            >
+              {{ refundingId === s.id ? '...' : 'Qaytarish' }}
+            </button>
+          </td>
+        </tr>
+        <tr v-if="!shownSales.length && !loading">
+          <td colspan="9" class="muted" style="text-align: center; padding: 24px">
+            {{ sales.length ? "Tanlangan filtr bo'yicha chek yo'q" : "Bu kunda savdo yo'q" }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
 </template>
 
 <style scoped>
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  /* 1-qator: Savdolar + 5 to'lov turi + Qaytarish = 7 ta */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+}
+/* Sof tushum yonidagi bo'sh joyni to'ldiruvchi keng kartalar */
+.stat-wide {
+  grid-column: span 3;
 }
 .stat {
   padding: 14px 16px;
@@ -722,9 +770,6 @@ function openReceiptWindow(sale) {
 }
 .stat-net {
   background: #ecfdf5;
-}
-.summary-grid.two {
-  grid-template-columns: repeat(2, 1fr);
 }
 .stat-sub {
   font-size: 12px;
@@ -854,9 +899,28 @@ function openReceiptWindow(sale) {
 .qr-no {
   color: #c2410c;
 }
+@media (max-width: 1280px) {
+  .summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .stat-wide {
+    grid-column: span 2;
+  }
+}
 @media (max-width: 980px) {
   .summary-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .stat-wide {
+    grid-column: span 3;
+  }
+}
+@media (max-width: 640px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stat-wide {
+    grid-column: span 2;
   }
 }
 </style>
