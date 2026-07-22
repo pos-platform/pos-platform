@@ -3,6 +3,7 @@ using PosPlatform.Agent.Backend;
 using PosPlatform.Agent.Configuration;
 using PosPlatform.Agent.Devices;
 using PosPlatform.Agent.Models;
+using PosPlatform.Agent.Services;
 
 namespace PosPlatform.Agent.Workers;
 
@@ -15,6 +16,7 @@ public class FiscalWorker : BackgroundService
     private readonly IServiceProvider _services;
     private readonly IFiscalDevice _fiscalDevice;
     private readonly IReceiptPrinter _printer;
+    private readonly FiscalLedger _ledger;
     private readonly AgentOptions _options;
     private readonly ILogger<FiscalWorker> _logger;
 
@@ -22,12 +24,14 @@ public class FiscalWorker : BackgroundService
         IServiceProvider services,
         IFiscalDevice fiscalDevice,
         IReceiptPrinter printer,
+        FiscalLedger ledger,
         IOptions<AgentOptions> options,
         ILogger<FiscalWorker> logger)
     {
         _services = services;
         _fiscalDevice = fiscalDevice;
         _printer = printer;
+        _ledger = ledger;
         _options = options.Value;
         _logger = logger;
     }
@@ -76,6 +80,21 @@ public class FiscalWorker : BackgroundService
 
         foreach (var receipt in pending)
         {
+            // ── Idempotentlik qalqoni ────────────────────────────────────────
+            // Chek modulda allaqachon ro'yxatdan o'tgan bo'lsa (oldingi tsiklda muvaffaqiyatli
+            // bo'lib, natija backendga yetib bormagan) — modulga QAYTA YUBORMAYMIZ, aks holda
+            // soliqqa dublikat haqiqiy chek ketadi. Saqlangan natijani qayta yuboramiz.
+            if (_ledger.TryGet(receipt.SaleId, out var known))
+            {
+                _logger.LogWarning(
+                    "Chek {Receipt} allaqachon fiskalizatsiya qilingan (FP={Sign}) — "
+                    + "modulga qayta yuborilmaydi, natija backendga qayta yuborilmoqda.",
+                    receipt.ReceiptNumber, known.FiscalSign);
+
+                await backend.PostResultAsync(receipt.SaleId, known, cancellationToken);
+                continue;
+            }
+
             FiscalResult result;
             try
             {
@@ -89,6 +108,9 @@ public class FiscalWorker : BackgroundService
 
             if (result.Success)
             {
+                // Backendga yuborishdan OLDIN diskka yozamiz — yuborish yiqilsa ham
+                // keyingi tsiklda takroriy fiskalizatsiya bo'lmasligi uchun.
+                await _ledger.RecordAsync(receipt.SaleId, result, cancellationToken);
                 await _printer.PrintAsync(receipt, result, cancellationToken);
             }
 

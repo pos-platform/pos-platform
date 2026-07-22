@@ -279,6 +279,15 @@ public class SaleListDto
     public string PaymentMethod { get; set; } = "";
     public ReceiptInfo? Receipt { get; set; }
 
+    /// <summary>Savdo qaysi kassa stantsiyasida qilingan (bo'sh bo'lsa — kassa ID sozlanmagan).</summary>
+    public string? TerminalId { get; set; }
+
+    /// <summary>Kassa nomi ko'rinishi; TerminalId bo'sh bo'lsa "Kassasiz".</summary>
+    public string TerminalLabel => string.IsNullOrWhiteSpace(TerminalId) ? NoTerminal : TerminalId!;
+
+    /// <summary>TerminalId sozlanmagan savdolar uchun guruh nomi.</summary>
+    public const string NoTerminal = "Kassasiz";
+
     /// <summary>Fiskal QR chiqarilgan chek (soliq QR kodi bilan sotilgan).</summary>
     public bool HasQr => !string.IsNullOrEmpty(Receipt?.QrCodeUrl);
 

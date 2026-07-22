@@ -55,6 +55,16 @@ public class FdsFiscalDevice : IFiscalDevice
     // bo'lib, keyingi cheklar modul soatiga moslanadi va DATETIME_IS_IN_THE_PAST (9030) yo'qoladi.
     private static TimeSpan _moduleOffset = TimeSpan.Zero;
 
+    /// <summary>
+    /// OFD ga bir martada yuboriladigan fayl soni. Katta bo'lak (100) drayverda
+    /// "request files count N is not equal response files count 0" xatosini beradi —
+    /// 10 tadan yuborilganda server har birini Acknowledged qiladi.
+    /// </summary>
+    private const int SyncBatchSize = 10;
+
+    /// <summary>Bitta sinxronda ko'pi bilan necha bo'lak yuboriladi (10 × 15 = 150 fayl).</summary>
+    private const int SyncMaxRounds = 15;
+
     public FdsFiscalDevice(IOptions<AgentOptions> options, IHttpClientFactory factory, ILogger<FdsFiscalDevice> logger)
     {
         _options = options.Value;
@@ -75,21 +85,9 @@ public class FdsFiscalDevice : IFiscalDevice
             // ── 1-bosqich: chekni bazaga yozib TXID olish ──────────────────────
             // Chek body sifatida to'g'ridan-to'g'ri (o'rovsiz), PascalCase maydonlar bilan
             // yuboriladi — Swagger namunasi: { "Time":..., "Type":0, "Items":[...] }.
-            var receiptTime = await NextReceiptTimeAsync(cancellationToken);
-            var getTxResponse = await _http.PostAsJsonAsync(
-                $"{baseUrl}/FiscalDrive/Receipt/GetTXID/{factoryId}",
-                BuildReceipt(receipt, receiptTime), _json, cancellationToken);
-            var getTxBody = await getTxResponse.Content.ReadAsStringAsync(cancellationToken);
-
-            if (!getTxResponse.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("FiscalDriveService GetTXID HTTP {Status}: {Body}", (int)getTxResponse.StatusCode, getTxBody);
-                return FiscalResult.Failure($"Fiskal modul (GetTXID) HTTP {(int)getTxResponse.StatusCode}: {getTxBody}");
-            }
-
-            var txid = ParseTxId(getTxBody);
+            var (txid, txidError) = await GetTxIdAsync(baseUrl, factoryId, receipt, cancellationToken);
             if (txid is null)
-                return FiscalResult.Failure($"Fiskal modul TXID qaytarmadi: {getTxBody}");
+                return FiscalResult.Failure(txidError!);
 
             // ── 2-bosqich: TXID bo'yicha modulda ro'yxatga olish ───────────────
             var (registerOk, registerBody) = await RegisterTxidAsync(baseUrl, factoryId, txid.Value, cancellationToken);
@@ -99,7 +97,20 @@ public class FdsFiscalDevice : IFiscalDevice
             if (!registerOk && NeedsSync(registerBody))
             {
                 await SyncModuleAsync(baseUrl, factoryId, cancellationToken);
-                (registerOk, registerBody) = await RegisterTxidAsync(baseUrl, factoryId, txid.Value, cancellationToken);
+
+                // Sinxron sekundlar/daqiqalar olishi mumkin — shu vaqtda eski TXID ning vaqti
+                // eskirib, modul uni "9030 DATETIME_IS_IN_THE_PAST" bilan rad etadi. Shuning
+                // uchun YANGI vaqt bilan yangi TXID olib, o'shani ro'yxatdan o'tkazamiz.
+                var (retryTxid, retryError) = await GetTxIdAsync(baseUrl, factoryId, receipt, cancellationToken);
+                if (retryTxid is null)
+                {
+                    _logger.LogWarning("Sinxrondan keyin TXID olinmadi: {Error}", retryError);
+                }
+                else
+                {
+                    (registerOk, registerBody) = await RegisterTxidAsync(
+                        baseUrl, factoryId, retryTxid.Value, cancellationToken);
+                }
             }
 
             if (!registerOk)
@@ -137,6 +148,32 @@ public class FdsFiscalDevice : IFiscalDevice
         }
     }
 
+    /// <summary>
+    /// GetTXID — chekni drayver bazasiga <b>joriy</b> (qat'iy o'suvchi) vaqt bilan yozib TXID oladi.
+    /// Har chaqiruvda yangi vaqt olinadi, shuning uchun sinxrondan keyin ham qayta ishlatish xavfsiz.
+    /// </summary>
+    private async Task<(long? txid, string? error)> GetTxIdAsync(
+        string baseUrl, string factoryId, PendingReceipt receipt, CancellationToken cancellationToken)
+    {
+        var receiptTime = await NextReceiptTimeAsync(cancellationToken);
+
+        var response = await _http.PostAsJsonAsync(
+            $"{baseUrl}/FiscalDrive/Receipt/GetTXID/{factoryId}",
+            BuildReceipt(receipt, receiptTime), _json, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("FiscalDriveService GetTXID HTTP {Status}: {Body}", (int)response.StatusCode, body);
+            return (null, $"Fiskal modul (GetTXID) HTTP {(int)response.StatusCode}: {body}");
+        }
+
+        var txid = ParseTxId(body);
+        return txid is null
+            ? (null, $"Fiskal modul TXID qaytarmadi: {body}")
+            : (txid, null);
+    }
+
     /// <summary>RegisterTXID (form-data TXID) — natija (muvaffaqiyat, javob tanasi) qaytaradi.</summary>
     private async Task<(bool ok, string body)> RegisterTxidAsync(
         string baseUrl, string factoryId, long txid, CancellationToken cancellationToken)
@@ -164,9 +201,79 @@ public class FdsFiscalDevice : IFiscalDevice
     {
         _logger.LogWarning("Fiskal modul to'ldi — cheklarni OFD serverga sinxronlaymiz...");
         await PostSyncAsync($"{baseUrl}/FiscalDrive/State/Sync/{factoryId}", withItemsCount: false, cancellationToken);
-        await PostSyncAsync($"{baseUrl}/DataBase/Files/Sync/FullReceipts/{factoryId}", withItemsCount: true, cancellationToken);
-        await PostSyncAsync($"{baseUrl}/DataBase/Files/Sync/Receipts/{factoryId}", withItemsCount: true, cancellationToken);
-        await PostSyncAsync($"{baseUrl}/DataBase/Files/Sync/ZReports/{factoryId}", withItemsCount: true, cancellationToken);
+        await DrainAsync($"{baseUrl}/DataBase/Files/Sync/FullReceipts/{factoryId}", cancellationToken);
+        await DrainAsync($"{baseUrl}/DataBase/Files/Sync/Receipts/{factoryId}", cancellationToken);
+        await DrainAsync($"{baseUrl}/DataBase/Files/Sync/ZReports/{factoryId}", cancellationToken);
+    }
+
+    /// <summary>
+    /// Yig'ilib qolgan fayllarni <b>kichik bo'laklarda</b> OFD serverga uzatadi.
+    /// <para>
+    /// Bir martada ko'p fayl so'ralsa drayver
+    /// <c>"request files count 81 is not equal response files count 0"</c> bilan yiqiladi
+    /// (ayniqsa Wi-Fi ustidan) va modul hech qachon bo'shamaydi. 10 tadan yuborilganda esa
+    /// server har birini <c>Acknowledged</c> qiladi — shuning uchun bo'lib-bo'lib uzatamiz.
+    /// </para>
+    /// Bo'sh javob (yuboriladigan fayl qolmadi) yoki xato bo'lganda to'xtaydi.
+    /// </summary>
+    private async Task DrainAsync(string url, CancellationToken cancellationToken)
+    {
+        for (var round = 1; round <= SyncMaxRounds; round++)
+        {
+            var (ok, sent) = await PostSyncBatchAsync(url, cancellationToken);
+            if (!ok || sent == 0)
+                return;
+
+            _logger.LogInformation(
+                "Sinxron {Url}: {Count} ta fayl yuborildi ({Round}-bosqich)", url, sent, round);
+        }
+    }
+
+    /// <summary>Bitta bo'lakni yuboradi — (muvaffaqiyat, yuborilgan fayl soni).</summary>
+    private async Task<(bool ok, int sent)> PostSyncBatchAsync(string url, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("ItemsCount", SyncBatchSize.ToString(CultureInfo.InvariantCulture))
+            });
+
+            using var response = await _http.PostAsync(url, content, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Sinxron {Url} HTTP {Status}: {Body}", url, (int)response.StatusCode, body);
+                return (false, 0);
+            }
+
+            return (true, CountSyncedItems(body));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Sinxron xatosi: {Url}", url);
+            return (false, 0);
+        }
+    }
+
+    /// <summary>Sinxron javobidagi <c>Items</c> massivi uzunligi (yuborilgan fayl soni).</summary>
+    private static int CountSyncedItems(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object &&
+                doc.RootElement.TryGetProperty("Items", out var items) &&
+                items.ValueKind == JsonValueKind.Array)
+                return items.GetArrayLength();
+        }
+        catch (JsonException)
+        {
+            // JSON emas (masalan "OK") — sanab bo'lmadi, davom etmaymiz.
+        }
+
+        return 0;
     }
 
     private async Task PostSyncAsync(string url, bool withItemsCount, CancellationToken cancellationToken)
@@ -174,7 +281,8 @@ public class FdsFiscalDevice : IFiscalDevice
         try
         {
             HttpContent? content = withItemsCount
-                ? new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("ItemsCount", "100") })
+                ? new FormUrlEncodedContent(new[]
+                    { new KeyValuePair<string, string>("ItemsCount", SyncBatchSize.ToString(CultureInfo.InvariantCulture)) })
                 : null;
             using var response = await _http.PostAsync(url, content, cancellationToken);
             if (!response.IsSuccessStatusCode)

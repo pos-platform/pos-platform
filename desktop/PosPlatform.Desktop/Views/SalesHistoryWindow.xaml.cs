@@ -8,7 +8,11 @@ namespace PosPlatform.Desktop.Views;
 /// <summary>Tanlangan kun savdolari ro'yxati: kunlik jami va chekni qayta chop etish.</summary>
 public partial class SalesHistoryWindow : Window
 {
+    private const string AllTerminals = "Barcha kassalar";
+
     private DateTime _day = DateTime.Today;
+    private List<SaleListDto> _allSales = new();
+    private bool _suppressFilterEvent;
 
     public SalesHistoryWindow()
     {
@@ -21,14 +25,116 @@ public partial class SalesHistoryWindow : Window
     {
         try
         {
-            var sales = await AppState.Backend.GetSalesByDayAsync(_day);
-            SalesList.ItemsSource = sales;
-            UpdateSummary(sales);
+            _allSales = await AppState.Backend.GetSalesByDayAsync(_day);
+            RebuildTerminalFilter();
+            ApplyFilter();
             HideMessage();
         }
         catch (Exception ex)
         {
             ShowMessage(ex.Message, error: true);
+        }
+    }
+
+    /// <summary>Kun savdolarida uchragan kassalar ro'yxatini tanlagichga yozadi (tanlovni saqlagan holda).</summary>
+    private void RebuildTerminalFilter()
+    {
+        var previous = TerminalFilter.SelectedItem as string;
+        var terminals = _allSales
+            .Select(s => s.TerminalLabel)
+            .Distinct()
+            .OrderBy(t => t == SaleListDto.NoTerminal) // "Kassasiz" oxirida
+            .ThenBy(t => t, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        _suppressFilterEvent = true;
+        TerminalFilter.ItemsSource = new[] { AllTerminals }.Concat(terminals).ToList();
+        TerminalFilter.SelectedItem = previous is not null && terminals.Contains(previous)
+            ? previous
+            : AllTerminals;
+        _suppressFilterEvent = false;
+    }
+
+    /// <summary>Tanlangan kassa bo'yicha ro'yxat va jamilarni qayta hisoblaydi.</summary>
+    private void ApplyFilter()
+    {
+        var selected = TerminalFilter.SelectedItem as string ?? AllTerminals;
+        var visible = selected == AllTerminals
+            ? _allSales
+            : _allSales.Where(s => s.TerminalLabel == selected).ToList();
+
+        SalesList.ItemsSource = visible;
+        UpdateSummary(visible);
+        UpdateTerminalBreakdown(selected == AllTerminals);
+    }
+
+    /// <summary>Kassalar kesimi jadvali — faqat "Barcha kassalar" tanlanganda va 2+ kassa bo'lsa ko'rinadi.</summary>
+    private void UpdateTerminalBreakdown(bool showAll)
+    {
+        var groups = _allSales
+            .GroupBy(s => s.TerminalLabel)
+            .OrderBy(g => g.Key == SaleListDto.NoTerminal)
+            .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (!showAll || groups.Count < 2)
+        {
+            TerminalBreakdownPanel.Visibility = Visibility.Collapsed;
+            TerminalBreakdown.ItemsSource = null;
+            return;
+        }
+
+        TerminalBreakdown.ItemsSource = groups.Select(g => TerminalTotals.From(g.Key, g)).ToList();
+        TerminalBreakdownPanel.Visibility = Visibility.Visible;
+    }
+
+    private void TerminalFilter_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_suppressFilterEvent) return;
+        ApplyFilter();
+    }
+
+    /// <summary>Bitta kassa bo'yicha kunlik jamilar (kesim jadvali qatori).</summary>
+    private sealed class TerminalTotals
+    {
+        public string Terminal { get; init; } = "";
+        public int Count { get; init; }
+        public decimal Cash { get; init; }
+        public decimal Card { get; init; }
+        public decimal Transfer { get; init; }
+        public decimal Net { get; init; }
+
+        public string CountLabel => Count.ToString();
+        public string CashLabel => Cash.ToString("N0");
+        public string CardLabel => Card.ToString("N0");
+        public string TransferLabel => Transfer.ToString("N0");
+        public string NetLabel => Net.ToString("N0");
+
+        public static TerminalTotals From(string terminal, IEnumerable<SaleListDto> sales)
+        {
+            int count = 0;
+            decimal cash = 0, card = 0, transfer = 0, debt = 0, refunds = 0;
+            foreach (var s in sales)
+            {
+                if (s.Type == "Refund") { refunds += s.TotalAmount; continue; }
+                count++;
+                switch (s.PaymentMethod)
+                {
+                    case "Card": card += s.TotalAmount; break;
+                    case "Transfer": transfer += s.TotalAmount; break;
+                    case "Debt": debt += s.TotalAmount; break;
+                    default: cash += s.TotalAmount; break; // Cash va Mixed
+                }
+            }
+            return new TerminalTotals
+            {
+                Terminal = terminal,
+                Count = count,
+                Cash = cash,
+                Card = card,
+                Transfer = transfer,
+                Net = cash + card + transfer + debt - refunds
+            };
         }
     }
 

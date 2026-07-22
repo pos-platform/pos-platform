@@ -2,6 +2,7 @@ using PosPlatform.Agent.Authentication;
 using PosPlatform.Agent.Backend;
 using PosPlatform.Agent.Configuration;
 using PosPlatform.Agent.Devices;
+using PosPlatform.Agent.Services;
 using PosPlatform.Agent.Workers;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -90,6 +91,9 @@ switch (printerMode)
         builder.Services.AddSingleton<IReceiptPrinter, ConsoleReceiptPrinter>();
         break;
 }
+
+// Lokal fiskalizatsiya daftari — takroriy (dublikat) fiskal chekni to'sadi.
+builder.Services.AddSingleton<FiscalLedger>();
 
 builder.Services.AddHostedService<FiscalWorker>();
 builder.Services.AddHostedService<ShiftReportWorker>();

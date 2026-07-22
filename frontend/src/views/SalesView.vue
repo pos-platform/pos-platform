@@ -64,14 +64,44 @@ async function load() {
   }
 }
 
-// Kunlik jami: faqat sotuvlar soni, naqd/karta/nasiya, qaytarishlar va sof tushum
+/** Chek soliqqa o'tganmi (QR kodli fiskal chek) — aks holda oddiy (fiskalsiz) chek. */
+function isFiscal(s) {
+  return s.receipt?.fiscalStatus === 'Registered'
+}
+
+// Jadval filtrlari: fiskal holati va kassa (terminal)
+const fiscalFilter = ref('all') // all | fiscal | plain
+const terminalFilter = ref('all')
+
+function terminalOf(s) { return s.terminalId || '' }
+function terminalLabel(t) { return t || "Kassa ko'rsatilmagan" }
+
+/** Kun davomida savdo bo'lgan kassalar ro'yxati (dropdown uchun). */
+const terminals = computed(() => {
+  const set = new Set(sales.value.map(terminalOf))
+  return [...set].sort((a, b) => a.localeCompare(b))
+})
+
+/** Kassa filtri qo'llangan cheklar — jami kartalar ham shu asosda hisoblanadi. */
+const terminalSales = computed(() =>
+  terminalFilter.value === 'all'
+    ? sales.value
+    : sales.value.filter((s) => terminalOf(s) === terminalFilter.value)
+)
+
+// Kunlik jami: sotuvlar soni, naqd/karta/nasiya, qaytarishlar, sof tushum
+// va alohida — fiskal (QR kodli) va fiskalsiz (oddiy) cheklar summasi.
 const summary = computed(() => {
   let count = 0
   let cash = 0
   let card = 0
   let debt = 0
   let refunds = 0
-  for (const s of sales.value) {
+  let fiscalCount = 0
+  let fiscalSum = 0
+  let plainCount = 0
+  let plainSum = 0
+  for (const s of terminalSales.value) {
     const amt = Number(s.totalAmount || 0)
     if (s.type === 'Refund') {
       refunds += amt
@@ -82,9 +112,40 @@ const summary = computed(() => {
     else if (s.paymentMethod === 'Card') card += amt
     else if (s.paymentMethod === 'Debt') debt += amt
     else if (s.paymentMethod === 'Mixed') cash += amt
+
+    if (isFiscal(s)) { fiscalCount += 1; fiscalSum += amt }
+    else { plainCount += 1; plainSum += amt }
   }
   const gross = cash + card + debt
-  return { count, cash, card, debt, refunds, net: gross - refunds }
+  return {
+    count, cash, card, debt, refunds, net: gross - refunds,
+    fiscalCount, fiscalSum, plainCount, plainSum
+  }
+})
+
+const shownSales = computed(() =>
+  terminalSales.value.filter((s) => {
+    if (fiscalFilter.value === 'fiscal') return s.type !== 'Refund' && isFiscal(s)
+    if (fiscalFilter.value === 'plain') return s.type !== 'Refund' && !isFiscal(s)
+    return true
+  })
+)
+
+/** Kassalar kesimi: har bir kassa bo'yicha chek soni, jami, fiskal/oddiy taqsimoti. */
+const perTerminal = computed(() => {
+  const map = new Map()
+  for (const s of sales.value) {
+    if (s.type === 'Refund') continue
+    const key = terminalOf(s)
+    if (!map.has(key)) map.set(key, { terminal: key, count: 0, total: 0, fiscalCount: 0, fiscalSum: 0, plainCount: 0, plainSum: 0 })
+    const row = map.get(key)
+    const amt = Number(s.totalAmount || 0)
+    row.count += 1
+    row.total += amt
+    if (isFiscal(s)) { row.fiscalCount += 1; row.fiscalSum += amt }
+    else { row.plainCount += 1; row.plainSum += amt }
+  }
+  return [...map.values()].sort((a, b) => a.terminal.localeCompare(b.terminal))
 })
 
 watch(() => storeFilter.selectedBranchId, () => load())
@@ -247,12 +308,71 @@ function openReceiptWindow(sale) {
     </div>
   </div>
 
+  <!-- Fiskal (QR kodli) va oddiy cheklar alohida -->
+  <div class="summary-grid two">
+    <div class="card stat stat-fiscal">
+      <div class="stat-label">Fiskal chek (QR kodli)</div>
+      <div class="stat-value">{{ fmtNum(summary.fiscalSum) }}</div>
+      <div class="stat-sub">{{ summary.fiscalCount }} ta chek — soliqqa o'tgan</div>
+    </div>
+    <div class="card stat stat-plain">
+      <div class="stat-label">Oddiy chek (QR yo'q)</div>
+      <div class="stat-value">{{ fmtNum(summary.plainSum) }}</div>
+      <div class="stat-sub">{{ summary.plainCount }} ta chek — fiskalizatsiya qilinmagan</div>
+    </div>
+  </div>
+
+  <!-- Kassalar kesimi -->
+  <div v-if="perTerminal.length > 1" class="card term-card">
+    <div class="term-head">Kassalar bo'yicha</div>
+    <table class="table term-table">
+      <thead>
+        <tr>
+          <th>Kassa</th>
+          <th class="text-right">Cheklar</th>
+          <th class="text-right">Jami</th>
+          <th class="text-right">Fiskal (QR)</th>
+          <th class="text-right">Oddiy chek</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="t in perTerminal" :key="t.terminal || 'none'"
+            class="term-row" :class="{ 'term-on': terminalFilter === t.terminal }"
+            @click="terminalFilter = terminalFilter === t.terminal ? 'all' : t.terminal">
+          <td><strong>{{ terminalLabel(t.terminal) }}</strong></td>
+          <td class="text-right">{{ t.count }}</td>
+          <td class="text-right">{{ fmtNum(t.total) }}</td>
+          <td class="text-right" style="color: #15803d">
+            {{ fmtNum(t.fiscalSum) }} <span class="muted">({{ t.fiscalCount }})</span>
+          </td>
+          <td class="text-right" style="color: #c2410c">
+            {{ fmtNum(t.plainSum) }} <span class="muted">({{ t.plainCount }})</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="filters">
+    <button v-for="ff in [['all','Hammasi'],['fiscal','Faqat fiskal (QR)'],['plain','Faqat oddiy chek']]"
+            :key="ff[0]" class="chip" :class="{ 'chip-on': fiscalFilter === ff[0] }"
+            @click="fiscalFilter = ff[0]">
+      {{ ff[1] }}
+    </button>
+    <select v-if="terminals.length > 1" class="input sel" v-model="terminalFilter">
+      <option value="all">Kassa: hammasi</option>
+      <option v-for="t in terminals" :key="t || 'none'" :value="t">{{ terminalLabel(t) }}</option>
+    </select>
+    <span class="muted count">{{ shownSales.length }} ta ko'rsatilmoqda</span>
+  </div>
+
   <div class="card">
     <table class="table">
       <thead>
         <tr>
           <th>Chek</th>
           <th>Tur</th>
+          <th>Kassa</th>
           <th>Vaqt</th>
           <th>To'lov</th>
           <th class="text-right">Jami</th>
@@ -261,13 +381,14 @@ function openReceiptWindow(sale) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="s in sales" :key="s.id">
+        <tr v-for="s in shownSales" :key="s.id">
           <td><strong>{{ s.receiptNumber }}</strong></td>
           <td>
             <span v-if="s.type === 'Refund'" class="pill pill-red">Qaytarish</span>
             <span v-else-if="s.status === 'Refunded'" class="pill pill-amber">Qaytarilgan</span>
             <span v-else class="pill pill-gray">Sotuv</span>
           </td>
+          <td class="muted">{{ s.terminalId || '—' }}</td>
           <td class="muted">{{ fmtTime(s.createdAt) }}</td>
           <td>{{ paymentLabel[s.paymentMethod] || s.paymentMethod }}</td>
           <td class="text-right" :style="{ color: s.type === 'Refund' ? 'var(--danger)' : 'inherit' }">
@@ -277,6 +398,9 @@ function openReceiptWindow(sale) {
             <span class="pill" :class="fiscalPill[s.receipt?.fiscalStatus] || 'pill-gray'">
               {{ fiscalLabel[s.receipt?.fiscalStatus] || '—' }}
             </span>
+            <div class="qr-note" :class="isFiscal(s) ? 'qr-yes' : 'qr-no'">
+              {{ isFiscal(s) ? 'QR kodli chek' : "QR yo'q — oddiy chek" }}
+            </div>
           </td>
           <td class="text-right" style="white-space: nowrap">
             <button
@@ -297,9 +421,9 @@ function openReceiptWindow(sale) {
             </button>
           </td>
         </tr>
-        <tr v-if="!sales.length && !loading">
-          <td colspan="7" class="muted" style="text-align: center; padding: 24px">
-            Bu kunda savdo yo'q
+        <tr v-if="!shownSales.length && !loading">
+          <td colspan="8" class="muted" style="text-align: center; padding: 24px">
+            {{ sales.length ? "Tanlangan filtr bo'yicha chek yo'q" : "Bu kunda savdo yo'q" }}
           </td>
         </tr>
       </tbody>
@@ -328,6 +452,83 @@ function openReceiptWindow(sale) {
 }
 .stat-net {
   background: #ecfdf5;
+}
+.summary-grid.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+.stat-sub {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  margin-top: 4px;
+}
+.stat-fiscal {
+  background: #eff6ff;
+  border-left: 3px solid #2563eb;
+}
+.stat-plain {
+  background: #fff7ed;
+  border-left: 3px solid #f97316;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.chip-on {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+.count {
+  font-size: 12.5px;
+  margin-left: auto;
+}
+.sel {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.term-card {
+  margin-bottom: 14px;
+  padding: 4px 0 0;
+}
+.term-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted, #6b7280);
+  padding: 10px 16px 2px;
+}
+.term-row {
+  cursor: pointer;
+}
+.term-row:hover {
+  background: #f8fafc;
+}
+.term-on {
+  background: #eff6ff;
+}
+.qr-note {
+  font-size: 11.5px;
+  margin-top: 3px;
+}
+.qr-yes {
+  color: #15803d;
+}
+.qr-no {
+  color: #c2410c;
 }
 @media (max-width: 980px) {
   .summary-grid {

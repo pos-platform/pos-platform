@@ -16,6 +16,13 @@ public class AgentOptions
     /// <summary>Bir tsiklda olinadigan cheklar soni.</summary>
     public int BatchSize { get; set; } = 20;
 
+    /// <summary>
+    /// Lokal fiskalizatsiya daftari (idempotentlik) saqlanadigan papka. Bo'sh qoldirilsa —
+    /// agent .exe papkasi. Daftar bir marta ro'yxatdan o'tgan chek modulga ikkinchi marta
+    /// yuborilishini (dublikat fiskal chek) to'sadi.
+    /// </summary>
+    public string LedgerDirectory { get; set; } = string.Empty;
+
     /// <summary>Fiskal modul (terminal) identifikatori.</summary>
     public string FiscalModuleId { get; set; } = "SIM-FISCAL-0001";
 
