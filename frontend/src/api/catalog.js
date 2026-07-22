@@ -84,9 +84,14 @@ export const roleTemplatesApi = {
 }
 
 export const auditApi = {
-  recent: (take = 200) => http.get('/api/audit', { params: { take } }).then((r) => r.data),
-  fiscalFailures: (take = 100) =>
-    http.get('/api/audit/fiscal-failures', { params: { take } }).then((r) => r.data)
+  // params: { take, from, to, action, success, username, ip, search, organizationId }
+  recent: (params = {}) =>
+    http.get('/api/audit', { params: { take: 300, ...params } }).then((r) => r.data),
+  // params: { take, from, to, status, organizationId, terminalId, search, minAmount, maxAmount }
+  fiscalFailures: (params = {}) =>
+    http.get('/api/audit/fiscal-failures', { params: { take: 200, ...params } }).then((r) => r.data),
+  fiscalFilterOptions: () =>
+    http.get('/api/audit/fiscal-failures/filters').then((r) => r.data)
 }
 
 export const usersApi = {

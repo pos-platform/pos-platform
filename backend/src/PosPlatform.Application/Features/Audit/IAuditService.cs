@@ -15,8 +15,12 @@ public interface IAuditService
         string? actorUsername = null,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<AuditLogDto>> GetRecentAsync(int take = 200, CancellationToken ct = default);
+    /// <summary>Audit yozuvlari — vaqt oraligi, hodisa turi, foydalanuvchi va matn bo'yicha filtrlanadi.</summary>
+    Task<IReadOnlyList<AuditLogDto>> GetRecentAsync(AuditLogQuery query, CancellationToken ct = default);
 
     /// <summary>Fiskalizatsiya muvaffaqiyatsiz tugagan cheklar (FiscalStatus = Failed), eng yangisi birinchi.</summary>
-    Task<IReadOnlyList<FiscalFailureDto>> GetFiscalFailuresAsync(int take = 100, CancellationToken ct = default);
+    Task<IReadOnlyList<FiscalFailureDto>> GetFiscalFailuresAsync(FiscalFailureQuery query, CancellationToken ct = default);
+
+    /// <summary>Fiskal audit filtri uchun tashkilot/kassa ro'yxatlari.</summary>
+    Task<FiscalFilterOptionsDto> GetFiscalFilterOptionsAsync(CancellationToken ct = default);
 }
