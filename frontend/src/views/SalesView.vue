@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { salesApi } from '../api/catalog'
+import { salesApi, fiscalModulesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useStoreFilterStore } from '../stores/storeFilter'
 
@@ -184,6 +184,48 @@ function moduleOf(s) { return s.receipt?.fiscalModuleId || '' }
 function cashierOf(s) { return s.cashierFullName || s.cashierUsername || '—' }
 function moduleLabel(m) { return m || "Modul ID yo'q" }
 
+// Modul kartochkalari: modul ID → { ownerName, inn, registrationNumber, ... }
+const moduleCards = ref({})
+
+/** Modulning ism-sharifi (kartochkada saqlangan nomi) — bo'lmasa bo'sh. */
+function moduleOwner(m) { return moduleCards.value[m]?.ownerName || '' }
+
+/** Hisobotda ko'rsatiladigan nom: ism-sharif bo'lsa u, aks holda modul ID. */
+function moduleTitle(m) { return moduleOwner(m) || moduleLabel(m) }
+
+async function loadModuleCards() {
+  try {
+    const list = await fiscalModulesApi.list()
+    moduleCards.value = Object.fromEntries(list.map((m) => [m.moduleId, m]))
+  } catch {
+    // kartochkalar yuklanmasa ham hisobot modul ID bilan ishlaydi
+  }
+}
+
+/** Modulga ism-sharif (va ixtiyoriy INN) biriktiradi. */
+async function renameModule(moduleId) {
+  const card = moduleCards.value[moduleId] || {}
+  const name = window.prompt(
+    `Fiskal modul ${moduleLabel(moduleId)} — kimga tegishli (ism-sharif yoki tashkilot nomi)?`,
+    card.ownerName || ''
+  )
+  if (name === null) return
+  try {
+    const saved = await fiscalModulesApi.save({
+      moduleId,
+      ownerName: name,
+      inn: card.inn ?? null,
+      registrationNumber: card.registrationNumber ?? null,
+      terminalId: card.terminalId ?? null,
+      note: card.note ?? null
+    })
+    moduleCards.value = { ...moduleCards.value, [moduleId]: saved }
+    success.value = 'Fiskal modul nomi saqlandi'
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
+
 /** Faqat QR kodli (fiskalizatsiya bo'lgan) savdolar — modul kesimlari uchun asos. */
 const fiscalSales = computed(() => sales.value.filter((s) => s.type !== 'Refund' && isFiscal(s)))
 
@@ -222,12 +264,28 @@ const perModule = computed(() => {
   )
 })
 
+/**
+ * Pastki jadval uchun: har bir fiskal modul alohida blok, ichida kassirlar qatorlari.
+ * Shu tarzda ikkita fleshka bir-biriga aralashmay, aniq ajratilib ko'rinadi.
+ */
+const moduleGroups = computed(() => {
+  const groups = new Map()
+  for (const r of perModule.value) {
+    if (!groups.has(r.module)) {
+      const totals = perFiscalModule.value.find((m) => m.module === r.module)
+      groups.set(r.module, { module: r.module, rs: r.rs, totals, rows: [] })
+    }
+    groups.get(r.module).rows.push(r)
+  }
+  return [...groups.values()]
+})
+
 /** Bir kassir bir nechta fiskal modulda ishlaganmi — aralashib ketgan loginlar. */
 const mixedCashiers = computed(() => {
   const byCashier = new Map()
   for (const r of perModule.value) {
     if (!byCashier.has(r.cashier)) byCashier.set(r.cashier, new Set())
-    byCashier.get(r.cashier).add(moduleLabel(r.module))
+    byCashier.get(r.cashier).add(moduleTitle(r.module))
   }
   return [...byCashier.entries()]
     .filter(([, mods]) => mods.size > 1)
@@ -237,7 +295,7 @@ const mixedCashiers = computed(() => {
 watch(() => storeFilter.selectedBranchId, () => load())
 watch(date, () => load())
 
-onMounted(load)
+onMounted(() => { load(); loadModuleCards() })
 
 function shiftDay(days) {
   const d = new Date(`${date.value}T00:00:00`)
@@ -470,7 +528,12 @@ function openReceiptWindow(sale) {
         </thead>
         <tbody>
           <tr v-for="m in perFiscalModule" :key="m.module || 'none'">
-            <td><strong>{{ moduleLabel(m.module) }}</strong></td>
+            <td>
+              <strong>{{ moduleOwner(m.module) || moduleLabel(m.module) }}</strong>
+              <button class="name-btn" title="Ism-sharifni kiritish/o'zgartirish"
+                      @click="renameModule(m.module)">✎</button>
+              <div v-if="moduleOwner(m.module)" class="mod-note">{{ moduleLabel(m.module) }}</div>
+            </td>
             <td class="muted">{{ m.rs || '—' }}</td>
             <td class="muted">{{ m.terminals.join(', ') }}</td>
             <td class="text-right">{{ m.fiscalCount }}</td>
@@ -595,8 +658,6 @@ function openReceiptWindow(sale) {
       <table class="table term-table">
         <thead>
           <tr>
-            <th>Fiskal modul</th>
-            <th>RS raqami</th>
             <th>Kassa</th>
             <th>Kassir</th>
             <th class="text-right">QR cheklar</th>
@@ -604,18 +665,33 @@ function openReceiptWindow(sale) {
             <th class="text-right" v-for="k in PAY_KEYS" :key="k">{{ PAY_LABELS[k] }}</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="r in perModule" :key="`${r.module}|${r.cashier}|${r.terminal}`">
-            <td><strong>{{ moduleLabel(r.module) }}</strong></td>
-            <td class="muted">{{ r.rs || '—' }}</td>
+        <tbody v-for="g in moduleGroups" :key="g.module || 'none'" class="mod-group">
+          <tr class="mod-group-head">
+            <td colspan="4">
+              <strong>{{ moduleOwner(g.module) || moduleLabel(g.module) }}</strong>
+              <button class="name-btn" title="Ism-sharifni kiritish/o'zgartirish"
+                      @click="renameModule(g.module)">✎</button>
+              <span class="muted mod-meta">
+                modul: {{ moduleLabel(g.module) }}<template v-if="g.rs"> · RS: {{ g.rs }}</template>
+              </span>
+            </td>
+            <td class="text-right"><strong>{{ g.totals?.fiscalCount || 0 }}</strong></td>
+            <td class="text-right"><strong>{{ fmtNum(g.totals?.total || 0) }}</strong></td>
+            <td class="text-right" v-for="k in PAY_KEYS" :key="k">
+              <strong>{{ fmtNum(g.totals?.pay[k].total || 0) }}</strong>
+            </td>
+          </tr>
+          <tr v-for="r in g.rows" :key="`${r.module}|${r.cashier}|${r.terminal}`">
             <td class="muted">{{ terminalLabel(r.terminal) }}</td>
             <td>{{ r.cashier }}</td>
             <td class="text-right">{{ r.fiscalCount }}</td>
-            <td class="text-right"><strong>{{ fmtNum(r.total) }}</strong></td>
+            <td class="text-right">{{ fmtNum(r.total) }}</td>
             <td class="text-right" v-for="k in PAY_KEYS" :key="k">{{ fmtNum(r.pay[k].total) }}</td>
           </tr>
-          <tr v-if="!perModule.length && !loading">
-            <td colspan="11" class="muted" style="text-align: center; padding: 24px">
+        </tbody>
+        <tbody v-if="!moduleGroups.length && !loading">
+          <tr>
+            <td colspan="9" class="muted" style="text-align: center; padding: 24px">
               Bu kunda QR kodli (fiskal) chek yo'q
             </td>
           </tr>
@@ -736,6 +812,24 @@ function openReceiptWindow(sale) {
   font-size: 11px;
   color: var(--muted, #6b7280);
   margin-top: 2px;
+}
+.name-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: #2563eb;
+  padding: 0 4px;
+}
+.mod-group + .mod-group .mod-group-head td {
+  border-top: 2px solid var(--border);
+}
+.mod-group-head td {
+  background: #f1f5f9;
+}
+.mod-meta {
+  font-size: 11.5px;
+  margin-left: 10px;
 }
 .mix-warn {
   margin: 8px 16px 4px;

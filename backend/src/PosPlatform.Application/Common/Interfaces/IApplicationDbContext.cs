@@ -23,6 +23,9 @@ public interface IApplicationDbContext
     DbSet<Sale> Sales { get; }
     DbSet<SaleItem> SaleItems { get; }
     DbSet<Receipt> Receipts { get; }
+
+    /// <summary>Fiskal modul (fleshka) kartochkalari — modul ID ga nom biriktiradi.</summary>
+    DbSet<FiscalModule> FiscalModules { get; }
     DbSet<CashShift> CashShifts { get; }
     DbSet<Promotion> Promotions { get; }
     DbSet<Supplier> Suppliers { get; }

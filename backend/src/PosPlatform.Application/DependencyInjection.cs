@@ -60,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<IWriteOffService, WriteOffService>();
         services.AddScoped<ISupplierPaymentService, SupplierPaymentService>();
         services.AddScoped<IFiscalQueueService, FiscalQueueService>();
+        services.AddScoped<IFiscalModuleService, FiscalModuleService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IStockTransferService, StockTransferService>();

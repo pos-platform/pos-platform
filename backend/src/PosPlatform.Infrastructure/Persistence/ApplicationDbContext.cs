@@ -30,6 +30,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
     public DbSet<Receipt> Receipts => Set<Receipt>();
+    public DbSet<FiscalModule> FiscalModules => Set<FiscalModule>();
     public DbSet<CashShift> CashShifts => Set<CashShift>();
     public DbSet<Promotion> Promotions => Set<Promotion>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();

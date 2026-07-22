@@ -96,6 +96,13 @@ export const auditApi = {
     http.get('/api/audit/fiscal-failures/filters').then((r) => r.data)
 }
 
+export const fiscalModulesApi = {
+  list: () => http.get('/api/fiscal-modules').then((r) => r.data),
+  // ModuleId bo'yicha upsert: { moduleId, ownerName, inn, registrationNumber, terminalId, note }
+  save: (payload) => http.post('/api/fiscal-modules', payload).then((r) => r.data),
+  remove: (id) => http.delete(`/api/fiscal-modules/${id}`).then((r) => r.data)
+}
+
 export const usersApi = {
   list: () => http.get('/api/users').then((r) => r.data),
   create: (payload) => http.post('/api/users', payload).then((r) => r.data),
