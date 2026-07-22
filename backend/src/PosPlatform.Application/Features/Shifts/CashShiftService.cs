@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosPlatform.Application.Common;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.Shifts.Dtos;
@@ -31,6 +32,24 @@ public class CashShiftService : ICashShiftService
     {
         var cashierId = CurrentCashierId;
 
+        // Kassa nazorati: login biror kassaga biriktirilgan bo'lsa, smena faqat o'sha kassada
+        // ochilsin — aks holda bitta login bir vaqtda bir nechta kassada ishlab, fiskal
+        // navbat va QR summalari aralashib ketadi.
+        var assignedTerminal = TerminalIdentity.Normalize(_currentUser.TerminalId);
+        var requestedTerminal = TerminalIdentity.Normalize(request.TerminalId);
+        if (assignedTerminal is not null)
+        {
+            if (requestedTerminal is null)
+                throw new ValidationException(
+                    $"Bu login '{assignedTerminal}' kassasiga biriktirilgan. Kassa ilovasi Sozlamalarida " +
+                    $"\"Kassa stantsiyasi ID\" ni '{assignedTerminal}' deb kiriting.");
+
+            if (!TerminalIdentity.Matches(requestedTerminal, assignedTerminal))
+                throw new ValidationException(
+                    $"Smena ochilmadi: bu login '{assignedTerminal}' kassasiga biriktirilgan, " +
+                    $"kassa ilovasida esa '{requestedTerminal}' turibdi.");
+        }
+
         var existing = await FindOpenShiftAsync(cashierId, cancellationToken);
         if (existing is not null)
         {
@@ -40,6 +59,7 @@ public class CashShiftService : ICashShiftService
         var shift = new CashShift
         {
             CashierId = cashierId,
+            TerminalId = assignedTerminal ?? requestedTerminal,
             BranchId = request.BranchId ?? _currentUser.BranchId,
             OpeningCash = request.OpeningCash,
             Status = ShiftStatus.Open,

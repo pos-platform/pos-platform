@@ -33,15 +33,15 @@ const STORE_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const showAdminForm = ref(false)
 const createDesktop = ref(true)
 const adminForm = reactive({ username: '', password: '' })
-const desktopForm = reactive({ username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
+const desktopForm = reactive({ username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '', terminalId: '' })
 
 // Faqat desktop login qo'shish modali
 const showDesktopForm = ref(false)
-const desktopOnlyForm = reactive({ username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
+const desktopOnlyForm = reactive({ username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '', terminalId: '' })
 
 // Desktop foydalanuvchini tahrirlash modali
 const showEditForm = ref(false)
-const editForm = reactive({ id: '', username: '', fullName: '', phone: '', role: 'Cashier', branchId: '', newPassword: '' })
+const editForm = reactive({ id: '', username: '', fullName: '', phone: '', role: 'Cashier', branchId: '', terminalId: '', newPassword: '' })
 
 const roleLabel = { Admin: 'Admin', Manager: 'Menejer', Cashier: 'Kassir', SuperAdmin: 'SuperAdmin' }
 
@@ -183,14 +183,15 @@ async function createAdminWithDesktop() {
         fullName: desktopForm.fullName.trim(),
         phone: desktopForm.phone.trim(),
         role: desktopForm.role,
-        licenseMonths: Number(desktopForm.licenseMonths) || 0
+        licenseMonths: Number(desktopForm.licenseMonths) || 0,
+        terminalId: desktopForm.terminalId.trim() || null
       }
       if (desktopForm.branchId) dp.branchId = desktopForm.branchId
       await organizationsApi.createUser(selected.value.id, dp)
     }
     notify('Login(lar) qo\'shildi')
     Object.assign(adminForm, { username: '', password: '' })
-    Object.assign(desktopForm, { username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
+    Object.assign(desktopForm, { username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '', terminalId: '' })
     createDesktop.value = true
     showAdminForm.value = false
     await refreshSelected()
@@ -211,12 +212,13 @@ async function createDesktopOnly() {
       fullName: desktopOnlyForm.fullName.trim(),
       phone: desktopOnlyForm.phone.trim(),
       role: desktopOnlyForm.role,
-      licenseMonths: Number(desktopOnlyForm.licenseMonths) || 0
+      licenseMonths: Number(desktopOnlyForm.licenseMonths) || 0,
+      terminalId: desktopOnlyForm.terminalId.trim() || null
     }
     if (desktopOnlyForm.branchId) payload.branchId = desktopOnlyForm.branchId
     await organizationsApi.createUser(selected.value.id, payload)
     notify('Desktop login qo\'shildi')
-    Object.assign(desktopOnlyForm, { username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '' })
+    Object.assign(desktopOnlyForm, { username: '', password: '', fullName: '', phone: '', role: 'Cashier', licenseMonths: 0, branchId: '', terminalId: '' })
     showDesktopForm.value = false
     await refreshSelected()
   } catch (e) {
@@ -235,6 +237,7 @@ function openEdit(u) {
     phone: u.phone || '',
     role: u.role,
     branchId: u.branchId || '',
+    terminalId: u.terminalId || '',
     newPassword: ''
   })
   showEditForm.value = true
@@ -249,7 +252,8 @@ async function saveEdit() {
       fullName: editForm.fullName.trim(),
       phone: editForm.phone.trim(),
       role: editForm.role,
-      branchId: editForm.branchId || null
+      branchId: editForm.branchId || null,
+      terminalId: editForm.terminalId.trim() || null
     }
     if (editForm.newPassword.trim()) payload.newPassword = editForm.newPassword.trim()
     await organizationsApi.updateUser(editForm.id, payload)
@@ -660,6 +664,7 @@ onMounted(load)
             </div>
             <div class="field" style="max-width:160px"><label>Obuna (oy)</label><input v-model="desktopForm.licenseMonths" type="number" min="0" class="input" /></div>
           </div>
+          <div class="field"><label>Kassa ID</label><input v-model="desktopForm.terminalId" class="input" placeholder="Masalan: KASSA-1" /><p class="muted" style="font-size:12px;margin:4px 0 0">Kassa ID kassa ilovasi Sozlamalaridagi "Kassa stantsiyasi ID" bilan bir xil bo'lishi shart. Bo'sh = istalgan kassadan kiradi.</p></div>
           <div v-if="orgStores.length" class="field">
             <label>Do'kon</label>
             <select v-model="desktopForm.branchId" class="select">
@@ -737,6 +742,7 @@ onMounted(load)
           </div>
           <div class="field" style="max-width:160px"><label>Obuna (oy)</label><input v-model="desktopOnlyForm.licenseMonths" type="number" min="0" class="input" /></div>
         </div>
+        <div class="field" style="margin-top:8px"><label>Kassa ID</label><input v-model="desktopOnlyForm.terminalId" class="input" placeholder="Masalan: KASSA-1" /><p class="muted" style="font-size:12px;margin:4px 0 0">Kassa ID kassa ilovasi Sozlamalaridagi "Kassa stantsiyasi ID" bilan bir xil bo'lishi shart. Bo'sh = istalgan kassadan kiradi.</p></div>
         <div v-if="orgStores.length" class="field" style="margin-top:8px">
           <label>Do'kon</label>
           <select v-model="desktopOnlyForm.branchId" class="select">
@@ -777,6 +783,7 @@ onMounted(load)
             <option v-for="s in orgStores" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
         </div>
+        <div class="field" style="margin-top:8px"><label>Kassa ID</label><input v-model="editForm.terminalId" class="input" placeholder="Masalan: KASSA-1" /><p class="muted" style="font-size:12px;margin:4px 0 0">Kassa ID kassa ilovasi Sozlamalaridagi "Kassa stantsiyasi ID" bilan bir xil bo'lishi shart. Bo'sh = istalgan kassadan kiradi.</p></div>
         <div class="field" style="margin-top:8px">
           <label>Yangi parol</label>
           <input v-model="editForm.newPassword" type="text" class="input" placeholder="Bo'sh qoldirsangiz — o'zgarmaydi (kamida 6 belgi)" />

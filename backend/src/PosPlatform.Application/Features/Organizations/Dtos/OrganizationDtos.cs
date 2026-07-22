@@ -56,6 +56,18 @@ public class OrgUserDto
     public Guid? BranchId { get; set; }
     public string? BranchName { get; set; }
 
+    /// <summary>Biriktirilgan kassa stantsiyasi ID ("KASSA-1") — bo'sh bo'lsa cheklov yo'q.</summary>
+    public string? TerminalId { get; set; }
+
+    /// <summary>Login bog'langan kompyuter nomi (bo'sh = hali bog'lanmagan).</summary>
+    public string? DeviceName { get; set; }
+
+    /// <summary>Qurilma bog'langanmi — "Qurilmani ajratish" tugmasini ko'rsatish uchun.</summary>
+    public bool IsDeviceBound { get; set; }
+
+    /// <summary>Qurilma bog'langan vaqt (UTC).</summary>
+    public DateTime? DeviceBoundAt { get; set; }
+
     public static OrgUserDto FromEntity(User u, DateTime today)
     {
         var licensed = u.IsLifetime || (u.LicensedUntil is not null && u.LicensedUntil.Value.Date >= today);
@@ -75,7 +87,11 @@ public class OrgUserDto
             AppRoleId = u.AppRoleId,
             AppRoleName = u.AppRole?.Name,
             BranchId = u.BranchId,
-            BranchName = u.Branch?.Name
+            BranchName = u.Branch?.Name,
+            TerminalId = u.TerminalId,
+            DeviceName = u.DeviceName,
+            IsDeviceBound = !string.IsNullOrWhiteSpace(u.DeviceId),
+            DeviceBoundAt = u.DeviceBoundAt
         };
     }
 }
@@ -166,6 +182,13 @@ public class CreateOrgUserRequest
 
     /// <summary>Kassir/menejer qaysi do'konga tegishli (ixtiyoriy).</summary>
     public Guid? BranchId { get; set; }
+
+    /// <summary>
+    /// Biriktirilgan kassa stantsiyasi ID (masalan "KASSA-1") — kassa ilovasi Sozlamalaridagi
+    /// qiymat bilan bir xil bo'lishi shart. Bo'sh = istalgan kassadan kirishi mumkin.
+    /// </summary>
+    [MaxLength(64)]
+    public string? TerminalId { get; set; }
 }
 
 /// <summary>Mavjud desktop foydalanuvchini (kassir/menejer) tahrirlash.</summary>
@@ -185,6 +208,13 @@ public class UpdateOrgUserRequest
 
     /// <summary>Kassir/menejer qaysi do'konga tegishli (ixtiyoriy).</summary>
     public Guid? BranchId { get; set; }
+
+    /// <summary>
+    /// Biriktirilgan kassa stantsiyasi ID (masalan "KASSA-1") — kassa ilovasi Sozlamalaridagi
+    /// qiymat bilan bir xil bo'lishi shart. Bo'sh = istalgan kassadan kirishi mumkin.
+    /// </summary>
+    [MaxLength(64)]
+    public string? TerminalId { get; set; }
 
     /// <summary>Yangi parol (ixtiyoriy). Bo'sh bo'lsa parol o'zgarmaydi; berilsa kamida 6 belgi.</summary>
     public string? NewPassword { get; set; }

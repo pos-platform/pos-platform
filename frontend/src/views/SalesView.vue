@@ -75,21 +75,59 @@ function isFiscal(s) {
   return s.receipt?.fiscalStatus === 'Registered'
 }
 
-/**
- * To'lov turlari bo'yicha summalar (qaytarishlar hisobga olinmaydi).
- * Aralash to'lov (Mixed) naqd tarkibida qoladi — bazada naqd/karta ulushi alohida saqlanmaydi.
- */
-function payTotals(list) {
-  const t = { cash: 0, card: 0, transfer: 0, debt: 0 }
+// To'lov turlari — hisobotlarning barcha kesimlarida shu tartibda ko'rsatiladi.
+const PAY_KEYS = ['cash', 'card', 'transfer', 'debt', 'mixed']
+const PAY_LABELS = {
+  cash: 'Naqd',
+  card: 'Karta',
+  transfer: "O'tkazma",
+  debt: 'Nasiya',
+  mixed: 'Aralash'
+}
+const PAY_BY_METHOD = { Cash: 'cash', Card: 'card', Transfer: 'transfer', Debt: 'debt', Mixed: 'mixed' }
+function payKey(s) { return PAY_BY_METHOD[s.paymentMethod] || 'cash' }
+
+/** Bo'sh hisob birligi: umumiy + har bir to'lov turi bo'yicha QR/QR-siz taqsimot. */
+function emptyBucket(extra = {}) {
+  const b = {
+    count: 0, total: 0,
+    fiscalCount: 0, fiscalSum: 0,
+    plainCount: 0, plainSum: 0,
+    pay: {},
+    ...extra
+  }
+  for (const k of PAY_KEYS) b.pay[k] = { total: 0, count: 0, fiscal: 0, fiscalCount: 0, plain: 0, plainCount: 0 }
+  return b
+}
+
+/** Bitta savdoni hisob birligiga qo'shadi (qaytarishlar chaqiruvchida ajratiladi). */
+function addSale(b, s) {
+  const amt = Number(s.totalAmount || 0)
+  const p = b.pay[payKey(s)]
+  b.count += 1
+  b.total += amt
+  p.count += 1
+  p.total += amt
+  if (isFiscal(s)) {
+    b.fiscalCount += 1; b.fiscalSum += amt
+    p.fiscalCount += 1; p.fiscal += amt
+  } else {
+    b.plainCount += 1; b.plainSum += amt
+    p.plainCount += 1; p.plain += amt
+  }
+}
+
+/** Savdolarni keyFn bo'yicha guruhlab, har guruh uchun hisob birligini qaytaradi. */
+function groupSales(list, keyFn, metaFn) {
+  const map = new Map()
   for (const s of list) {
     if (s.type === 'Refund') continue
-    const amt = Number(s.totalAmount || 0)
-    if (s.paymentMethod === 'Cash' || s.paymentMethod === 'Mixed') t.cash += amt
-    else if (s.paymentMethod === 'Card') t.card += amt
-    else if (s.paymentMethod === 'Transfer') t.transfer += amt
-    else if (s.paymentMethod === 'Debt') t.debt += amt
+    const key = keyFn(s)
+    if (key === null) continue
+    if (!map.has(key)) map.set(key, emptyBucket(metaFn ? metaFn(s) : {}))
+    addSale(map.get(key), s)
   }
-  return t
+  return map
 }
 
 // Jadval filtrlari: fiskal holati va kassa (terminal)
@@ -115,29 +153,13 @@ const terminalSales = computed(() =>
 // Kunlik jami: sotuvlar soni, naqd/karta/nasiya, qaytarishlar, sof tushum
 // va alohida — fiskal (QR kodli) va fiskalsiz (oddiy) cheklar summasi.
 const summary = computed(() => {
-  const t = payTotals(terminalSales.value)
-  let count = 0
+  const b = emptyBucket()
   let refunds = 0
-  let fiscalCount = 0
-  let fiscalSum = 0
-  let plainCount = 0
-  let plainSum = 0
   for (const s of terminalSales.value) {
-    const amt = Number(s.totalAmount || 0)
-    if (s.type === 'Refund') {
-      refunds += amt
-      continue
-    }
-    count += 1
-    if (isFiscal(s)) { fiscalCount += 1; fiscalSum += amt }
-    else { plainCount += 1; plainSum += amt }
+    if (s.type === 'Refund') { refunds += Number(s.totalAmount || 0); continue }
+    addSale(b, s)
   }
-  const gross = t.cash + t.card + t.transfer + t.debt
-  return {
-    count, cash: t.cash, card: t.card, transfer: t.transfer, debt: t.debt,
-    refunds, net: gross - refunds,
-    fiscalCount, fiscalSum, plainCount, plainSum
-  }
+  return { ...b, refunds, net: b.total - refunds }
 })
 
 const shownSales = computed(() =>
@@ -148,31 +170,49 @@ const shownSales = computed(() =>
   })
 )
 
-/** Kassalar kesimi: har bir kassa bo'yicha chek soni, jami, fiskal/oddiy taqsimoti. */
-const perTerminal = computed(() => {
-  const map = new Map()
-  for (const s of sales.value) {
-    if (s.type === 'Refund') continue
-    const key = terminalOf(s)
-    if (!map.has(key)) {
-      map.set(key, {
-        terminal: key, count: 0, total: 0,
-        cash: 0, card: 0, transfer: 0, debt: 0,
-        fiscalCount: 0, fiscalSum: 0, plainCount: 0, plainSum: 0
-      })
-    }
-    const row = map.get(key)
-    const amt = Number(s.totalAmount || 0)
-    row.count += 1
-    row.total += amt
-    if (s.paymentMethod === 'Cash' || s.paymentMethod === 'Mixed') row.cash += amt
-    else if (s.paymentMethod === 'Card') row.card += amt
-    else if (s.paymentMethod === 'Transfer') row.transfer += amt
-    else if (s.paymentMethod === 'Debt') row.debt += amt
-    if (isFiscal(s)) { row.fiscalCount += 1; row.fiscalSum += amt }
-    else { row.plainCount += 1; row.plainSum += amt }
+/** Kassalar kesimi: har bir kassa bo'yicha to'lov turlari va QR/QR-siz taqsimot. */
+const perTerminal = computed(() =>
+  [...groupSales(sales.value, terminalOf, (s) => ({ terminal: terminalOf(s) })).values()]
+    .sort((a, b) => a.terminal.localeCompare(b.terminal))
+)
+
+// ── Fiskal modul (kassa apparati) × kassir kesimi ───────────────────────────
+// Bir nechta kompyuterda alohida fleshka turib, foydalanuvchilar loginlarni
+// aralashtirib ishlatganda — qaysi QR kodli chek qaysi modulga va kimga
+// tegishli ekanini aniq ko'rsatadi.
+function moduleOf(s) { return s.receipt?.fiscalModuleId || '' }
+function cashierOf(s) { return s.cashierFullName || s.cashierUsername || '—' }
+function moduleLabel(m) { return m || "Modul ID yo'q" }
+
+const perModule = computed(() => {
+  const fiscalSales = sales.value.filter((s) => s.type !== 'Refund' && isFiscal(s))
+  const rows = [...groupSales(
+    fiscalSales,
+    (s) => `${moduleOf(s)}||${cashierOf(s)}||${terminalOf(s)}`,
+    (s) => ({
+      module: moduleOf(s),
+      rs: s.receipt?.fiscalRegistrationNumber || '',
+      cashier: cashierOf(s),
+      terminal: terminalOf(s)
+    })
+  ).values()]
+  return rows.sort((a, b) =>
+    a.module.localeCompare(b.module) ||
+    a.cashier.localeCompare(b.cashier) ||
+    a.terminal.localeCompare(b.terminal)
+  )
+})
+
+/** Bir kassir bir nechta fiskal modulda ishlaganmi — aralashib ketgan loginlar. */
+const mixedCashiers = computed(() => {
+  const byCashier = new Map()
+  for (const r of perModule.value) {
+    if (!byCashier.has(r.cashier)) byCashier.set(r.cashier, new Set())
+    byCashier.get(r.cashier).add(moduleLabel(r.module))
   }
-  return [...map.values()].sort((a, b) => a.terminal.localeCompare(b.terminal))
+  return [...byCashier.entries()]
+    .filter(([, mods]) => mods.size > 1)
+    .map(([cashier, mods]) => ({ cashier, modules: [...mods] }))
 })
 
 watch(() => storeFilter.selectedBranchId, () => load())
@@ -313,21 +353,13 @@ function openReceiptWindow(sale) {
       <div class="stat-label">Savdolar</div>
       <div class="stat-value">{{ summary.count }}</div>
     </div>
-    <div class="card stat">
-      <div class="stat-label">Naqd</div>
-      <div class="stat-value">{{ fmtNum(summary.cash) }}</div>
-    </div>
-    <div class="card stat">
-      <div class="stat-label">Karta</div>
-      <div class="stat-value">{{ fmtNum(summary.card) }}</div>
-    </div>
-    <div class="card stat">
-      <div class="stat-label">O'tkazma</div>
-      <div class="stat-value">{{ fmtNum(summary.transfer) }}</div>
-    </div>
-    <div class="card stat">
-      <div class="stat-label">Nasiya</div>
-      <div class="stat-value">{{ fmtNum(summary.debt) }}</div>
+    <div class="card stat" v-for="k in PAY_KEYS" :key="k">
+      <div class="stat-label">{{ PAY_LABELS[k] }}</div>
+      <div class="stat-value">{{ fmtNum(summary.pay[k].total) }}</div>
+      <div class="stat-sub">
+        <span class="qr-yes">QR {{ fmtNum(summary.pay[k].fiscal) }}</span> ·
+        <span class="qr-no">QR yo'q {{ fmtNum(summary.pay[k].plain) }}</span>
+      </div>
     </div>
     <div class="card stat">
       <div class="stat-label">Qaytarish</div>
@@ -353,43 +385,50 @@ function openReceiptWindow(sale) {
     </div>
   </div>
 
-  <!-- Kassalar kesimi -->
-  <div v-if="perTerminal.length > 1" class="card term-card">
-    <div class="term-head">Kassalar bo'yicha</div>
-    <table class="table term-table">
-      <thead>
-        <tr>
-          <th>Kassa</th>
-          <th class="text-right">Cheklar</th>
-          <th class="text-right">Jami</th>
-          <th class="text-right">Naqd</th>
-          <th class="text-right">Karta</th>
-          <th class="text-right">O'tkazma</th>
-          <th class="text-right">Nasiya</th>
-          <th class="text-right">Fiskal (QR)</th>
-          <th class="text-right">Oddiy chek</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="t in perTerminal" :key="t.terminal || 'none'"
-            class="term-row" :class="{ 'term-on': terminalFilter === t.terminal }"
-            @click="terminalFilter = terminalFilter === t.terminal ? 'all' : t.terminal">
-          <td><strong>{{ terminalLabel(t.terminal) }}</strong></td>
-          <td class="text-right">{{ t.count }}</td>
-          <td class="text-right"><strong>{{ fmtNum(t.total) }}</strong></td>
-          <td class="text-right">{{ fmtNum(t.cash) }}</td>
-          <td class="text-right">{{ fmtNum(t.card) }}</td>
-          <td class="text-right">{{ fmtNum(t.transfer) }}</td>
-          <td class="text-right">{{ fmtNum(t.debt) }}</td>
-          <td class="text-right" style="color: #15803d">
-            {{ fmtNum(t.fiscalSum) }} <span class="muted">({{ t.fiscalCount }})</span>
-          </td>
-          <td class="text-right" style="color: #c2410c">
-            {{ fmtNum(t.plainSum) }} <span class="muted">({{ t.plainCount }})</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- Kassalar kesimi: har bir to'lov turi QR kodli / QR yo'q bo'lib ajratilgan -->
+  <div v-if="perTerminal.length" class="card term-card">
+    <div class="term-head">
+      Kassalar bo'yicha
+      <span class="term-legend">
+        har katakda: jami · <span class="qr-yes">QR kodli</span> / <span class="qr-no">QR yo'q</span>
+      </span>
+    </div>
+    <div class="scroll-x">
+      <table class="table term-table">
+        <thead>
+          <tr>
+            <th>Kassa</th>
+            <th class="text-right">Cheklar</th>
+            <th class="text-right">Jami</th>
+            <th class="text-right" v-for="k in PAY_KEYS" :key="k">{{ PAY_LABELS[k] }}</th>
+            <th class="text-right">Fiskal (QR)</th>
+            <th class="text-right">Oddiy chek</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="t in perTerminal" :key="t.terminal || 'none'"
+              class="term-row" :class="{ 'term-on': terminalFilter === t.terminal }"
+              @click="terminalFilter = terminalFilter === t.terminal ? 'all' : t.terminal">
+            <td><strong>{{ terminalLabel(t.terminal) }}</strong></td>
+            <td class="text-right">{{ t.count }}</td>
+            <td class="text-right"><strong>{{ fmtNum(t.total) }}</strong></td>
+            <td class="text-right" v-for="k in PAY_KEYS" :key="k">
+              <div>{{ fmtNum(t.pay[k].total) }}</div>
+              <div class="split">
+                <span class="qr-yes">{{ fmtNum(t.pay[k].fiscal) }}</span> /
+                <span class="qr-no">{{ fmtNum(t.pay[k].plain) }}</span>
+              </div>
+            </td>
+            <td class="text-right" style="color: #15803d">
+              {{ fmtNum(t.fiscalSum) }} <span class="muted">({{ t.fiscalCount }})</span>
+            </td>
+            <td class="text-right" style="color: #c2410c">
+              {{ fmtNum(t.plainSum) }} <span class="muted">({{ t.plainCount }})</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="filters">
@@ -412,6 +451,7 @@ function openReceiptWindow(sale) {
           <th>Chek</th>
           <th>Tur</th>
           <th>Kassa</th>
+          <th>Kassir</th>
           <th>Vaqt</th>
           <th>To'lov</th>
           <th class="text-right">Jami</th>
@@ -428,6 +468,7 @@ function openReceiptWindow(sale) {
             <span v-else class="pill pill-gray">Sotuv</span>
           </td>
           <td class="muted">{{ s.terminalId || '—' }}</td>
+          <td class="muted">{{ s.cashierFullName || s.cashierUsername || '—' }}</td>
           <td class="muted">{{ fmtTime(s.createdAt) }}</td>
           <td>
             {{ paymentLabel[s.paymentMethod] || s.paymentMethod }}
@@ -442,6 +483,9 @@ function openReceiptWindow(sale) {
             </span>
             <div class="qr-note" :class="isFiscal(s) ? 'qr-yes' : 'qr-no'">
               {{ isFiscal(s) ? 'QR kodli chek' : "QR yo'q — oddiy chek" }}
+            </div>
+            <div v-if="isFiscal(s) && s.receipt?.fiscalModuleId" class="mod-note">
+              Modul: {{ s.receipt.fiscalModuleId }}
             </div>
           </td>
           <td class="text-right" style="white-space: nowrap">
@@ -464,19 +508,68 @@ function openReceiptWindow(sale) {
           </td>
         </tr>
         <tr v-if="!shownSales.length && !loading">
-          <td colspan="8" class="muted" style="text-align: center; padding: 24px">
+          <td colspan="9" class="muted" style="text-align: center; padding: 24px">
             {{ sales.length ? "Tanlangan filtr bo'yicha chek yo'q" : "Bu kunda savdo yo'q" }}
           </td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <!-- Fiskal modul (kassa apparati) × kassir kesimi — faqat QR kodli cheklar -->
+  <div class="card term-card mod-card">
+    <div class="term-head">
+      Fiskal modul (kassa apparati) va kassirlar bo'yicha — QR kodli cheklar
+      <span class="term-legend">
+        qaysi fleshkadan qaysi kassir nomidan qancha chek o'tgani
+      </span>
+    </div>
+
+    <div v-if="mixedCashiers.length" class="alert alert-warn mix-warn">
+      <strong>Diqqat:</strong> quyidagi kassirlar bir kunda bir nechta fiskal modulda ishlagan —
+      <span v-for="(m, i) in mixedCashiers" :key="m.cashier">
+        <b>{{ m.cashier }}</b> ({{ m.modules.join(', ') }}){{ i < mixedCashiers.length - 1 ? '; ' : '' }}
+      </span>
+    </div>
+
+    <div class="scroll-x">
+      <table class="table term-table">
+        <thead>
+          <tr>
+            <th>Fiskal modul</th>
+            <th>RS raqami</th>
+            <th>Kassa</th>
+            <th>Kassir</th>
+            <th class="text-right">QR cheklar</th>
+            <th class="text-right">Jami</th>
+            <th class="text-right" v-for="k in PAY_KEYS" :key="k">{{ PAY_LABELS[k] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in perModule" :key="`${r.module}|${r.cashier}|${r.terminal}`">
+            <td><strong>{{ moduleLabel(r.module) }}</strong></td>
+            <td class="muted">{{ r.rs || '—' }}</td>
+            <td class="muted">{{ terminalLabel(r.terminal) }}</td>
+            <td>{{ r.cashier }}</td>
+            <td class="text-right">{{ r.fiscalCount }}</td>
+            <td class="text-right"><strong>{{ fmtNum(r.total) }}</strong></td>
+            <td class="text-right" v-for="k in PAY_KEYS" :key="k">{{ fmtNum(r.pay[k].total) }}</td>
+          </tr>
+          <tr v-if="!perModule.length && !loading">
+            <td colspan="11" class="muted" style="text-align: center; padding: 24px">
+              Bu kunda QR kodli (fiskal) chek yo'q
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -564,6 +657,35 @@ function openReceiptWindow(sale) {
 }
 .src {
   font-size: 11.5px;
+}
+.term-legend {
+  font-weight: 400;
+  font-size: 11.5px;
+  margin-left: 8px;
+}
+.split {
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+.scroll-x {
+  overflow-x: auto;
+}
+.mod-card {
+  margin-top: 16px;
+}
+.mod-note {
+  font-size: 11px;
+  color: var(--muted, #6b7280);
+  margin-top: 2px;
+}
+.mix-warn {
+  margin: 8px 16px 4px;
+  font-size: 13px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  border-radius: 8px;
+  padding: 8px 12px;
 }
 .term-table th,
 .term-table td {

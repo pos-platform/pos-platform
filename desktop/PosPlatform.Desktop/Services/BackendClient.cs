@@ -27,9 +27,22 @@ public class BackendClient
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
     }
 
-    public async Task<AuthResponse> LoginAsync(string username, string password)
+    /// <summary>
+    /// Tizimga kiradi. <paramref name="terminalId"/> — Sozlamalardagi kassa ID; loginga kassa
+    /// biriktirilgan bo'lsa server mos kelmasa kirishni rad etadi (bitta login = bitta kassa).
+    /// </summary>
+    public async Task<AuthResponse> LoginAsync(string username, string password, string? terminalId = null)
     {
-        var resp = await _http.PostAsJsonAsync("api/auth/login", new { username, password });
+        // Qurilma ID ham ketadi: login birinchi kirgan kompyuterga bog'lanadi va keyin
+        // boshqa kompyuterdan shu login/parol bilan kirib bo'lmaydi.
+        var resp = await _http.PostAsJsonAsync("api/auth/login", new
+        {
+            username,
+            password,
+            terminalId,
+            deviceId = DeviceIdentity.Get(),
+            deviceName = DeviceIdentity.MachineName
+        });
         await EnsureOk(resp);
         return (await resp.Content.ReadFromJsonAsync<AuthResponse>(Json))!;
     }
@@ -57,7 +70,8 @@ public class BackendClient
 
     public async Task<ShiftDto> OpenShiftAsync(decimal openingCash)
     {
-        var resp = await _http.PostAsJsonAsync("api/shifts/open", new { openingCash });
+        var resp = await _http.PostAsJsonAsync("api/shifts/open",
+            new { openingCash, terminalId = AppState.TerminalId });
         await EnsureOk(resp);
         return (await resp.Content.ReadFromJsonAsync<ShiftDto>(Json))!;
     }

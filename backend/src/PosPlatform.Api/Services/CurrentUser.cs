@@ -26,6 +26,15 @@ public class CurrentUser : ICurrentUser
     public Guid? OrganizationId =>
         Guid.TryParse(Principal?.FindFirstValue("organizationId"), out var id) ? id : null;
 
+    public string? TerminalId
+    {
+        get
+        {
+            var value = Principal?.FindFirstValue("terminalId");
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+    }
+
     public string? IpAddress =>
         _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 

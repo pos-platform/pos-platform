@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosPlatform.Application.Common;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Common.Models;
@@ -216,6 +217,7 @@ public class OrganizationService : IOrganizationService
             AppRoleId = appRole?.Id,
             OrganizationId = orgId,
             BranchId = request.BranchId,
+            TerminalId = TerminalIdentity.Normalize(request.TerminalId),
             IsActive = true,
             LicensedUntil = request.LicenseMonths > 0 ? Today.AddMonths(request.LicenseMonths) : null
         };
@@ -258,6 +260,7 @@ public class OrganizationService : IOrganizationService
         user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
         user.Role = request.Role;
         user.BranchId = request.BranchId;
+        user.TerminalId = TerminalIdentity.Normalize(request.TerminalId);
 
         if (!string.IsNullOrWhiteSpace(request.NewPassword))
         {
@@ -311,6 +314,21 @@ public class OrganizationService : IOrganizationService
         await _db.SaveChangesAsync(ct);
         await _audit.LogAsync(isLifetime ? "license.lifetime.set" : "license.lifetime.unset",
             $"username={user.Username}", organizationId: user.OrganizationId, ct: ct);
+        return OrgUserDto.FromEntity(user, Today);
+    }
+
+    public async Task<OrgUserDto> ResetDeviceAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await GetManagedUserAsync(userId, ct);
+        var previous = user.DeviceName ?? user.DeviceId ?? "(bog'lanmagan)";
+
+        user.DeviceId = null;
+        user.DeviceName = null;
+        user.DeviceBoundAt = null;
+        await _db.SaveChangesAsync(ct);
+
+        await _audit.LogAsync("login.device.reset", $"username={user.Username}, eski qurilma={previous}",
+            organizationId: user.OrganizationId, ct: ct);
         return OrgUserDto.FromEntity(user, Today);
     }
 

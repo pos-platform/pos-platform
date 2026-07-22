@@ -20,6 +20,27 @@ public class User : BaseEntity
     /// <summary>Hisob faolmi. Faolsiz foydalanuvchi tizimga kira olmaydi (o'chirilmaydi, faqat bloklanadi).</summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Foydalanuvchi biriktirilgan kassa stantsiyasi (masalan "KASSA-1"). Belgilangan bo'lsa —
+    /// bu login faqat Sozlamalarida aynan shu Kassa ID turgan kassa kompyuteridan kira oladi
+    /// (bitta login = bitta qurilma). Bo'sh bo'lsa cheklov yo'q (eski xatti-harakat).
+    /// </summary>
+    public string? TerminalId { get; set; }
+
+    /// <summary>
+    /// Loginni jismoniy kompyuterga bog'lash: birinchi muvaffaqiyatli kirishda kassa ilovasi
+    /// yuborgan qurilma barmoq izi (Windows MachineGuid) shu yerga yoziladi. Keyin boshqa
+    /// kompyuterdan shu login/parol bilan kirib bo'lmaydi. Kompyuter almashsa SuperAdmin
+    /// "Qurilmani ajratish" bilan tozalaydi. Faqat Kassir/Menejer uchun amal qiladi.
+    /// </summary>
+    public string? DeviceId { get; set; }
+
+    /// <summary>Bog'langan kompyuterning nomi (admin panelda ko'rinish uchun).</summary>
+    public string? DeviceName { get; set; }
+
+    /// <summary>Qurilma qachon bog'langani (UTC).</summary>
+    public DateTime? DeviceBoundAt { get; set; }
+
     /// <summary>Foydalanuvchi biriktirilgan filial (ixtiyoriy).</summary>
     public Guid? BranchId { get; set; }
 

@@ -9,6 +9,13 @@ public class SaleDto
     public string ReceiptNumber { get; set; } = string.Empty;
     public Guid? BranchId { get; set; }
     public Guid CashierId { get; set; }
+
+    /// <summary>Kassir logini (savdo kim tomonidan yozilgani — hisobotlarda ko'rsatiladi).</summary>
+    public string? CashierUsername { get; set; }
+
+    /// <summary>Kassirning to'liq ismi (bo'lsa).</summary>
+    public string? CashierFullName { get; set; }
+
     public Guid? CashShiftId { get; set; }
     public SaleType Type { get; set; }
     public Guid? OriginalSaleId { get; set; }
@@ -42,6 +49,8 @@ public class SaleDto
         ReceiptNumber = s.ReceiptNumber,
         BranchId = s.BranchId,
         CashierId = s.CashierId,
+        CashierUsername = s.Cashier?.Username,
+        CashierFullName = s.Cashier?.FullName,
         CashShiftId = s.CashShiftId,
         Type = s.Type,
         OriginalSaleId = s.OriginalSaleId,

@@ -16,6 +16,9 @@ public class CashShift : BaseEntity
     public Guid CashierId { get; set; }
     public User? Cashier { get; set; }
 
+    /// <summary>Smena ochilgan kassa stantsiyasi ("KASSA-1") — kassalar kesimi va nazorat uchun.</summary>
+    public string? TerminalId { get; set; }
+
     public ShiftStatus Status { get; set; } = ShiftStatus.Open;
 
     public DateTime OpenedAt { get; set; } = DateTime.UtcNow;

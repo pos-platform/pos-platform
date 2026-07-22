@@ -71,7 +71,9 @@ public partial class LoginWindow : Window
         try
         {
             var username = UsernameBox.Text.Trim();
-            var resp = await AppState.Backend.LoginAsync(username, CurrentPassword);
+            // Kassa ID ni ham yuboramiz — loginga kassa biriktirilgan bo'lsa server
+            // faqat o'sha kassadan kirishga ruxsat beradi (bitta login = bitta kassa).
+            var resp = await AppState.Backend.LoginAsync(username, CurrentPassword, AppState.TerminalId);
             if (resp.Role == "Admin")
                 throw new Exception("Admin foydalanuvchilar desktop appga kira olmaydi.");
 
@@ -92,6 +94,9 @@ public partial class LoginWindow : Window
             AppState.BusinessType = string.IsNullOrWhiteSpace(resp.BusinessType) ? "Store" : resp.BusinessType;
             AppState.LicensedUntil = resp.LicensedUntil;
             AppState.IsLifetime = resp.IsLifetime;
+            // Server tasdiqlagan kassa ID — yozilishi bir xil bo'lishi uchun (KASSA-1 / kassa-1)
+            // sozlamadagi qiymatni serverdagisi bilan almashtiramiz.
+            if (!string.IsNullOrWhiteSpace(resp.TerminalId)) AppState.TerminalId = resp.TerminalId;
 
             if (AppState.IsRestaurant)
             {

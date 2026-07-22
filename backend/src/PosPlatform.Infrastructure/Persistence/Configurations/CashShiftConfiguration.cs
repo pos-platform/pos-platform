@@ -17,6 +17,8 @@ public class CashShiftConfiguration : IEntityTypeConfiguration<CashShift>
         builder.Property(s => s.ExpectedCash).HasColumnType("numeric(18,2)");
         builder.Property(s => s.CashDifference).HasColumnType("numeric(18,2)");
 
+        builder.Property(s => s.TerminalId).HasMaxLength(64);
+
         builder.HasIndex(s => new { s.CashierId, s.Status });
 
         builder.HasOne(s => s.Cashier)

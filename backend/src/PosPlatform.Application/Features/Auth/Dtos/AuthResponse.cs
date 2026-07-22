@@ -43,5 +43,11 @@ public class AuthResponse
     /// <summary>Doimiy (bir martalik to'liq sotib olingan) litsenziya — obuna hech qachon tugamaydi.</summary>
     public bool IsLifetime { get; set; }
 
+    /// <summary>
+    /// Foydalanuvchiga biriktirilgan kassa stantsiyasi ID ("KASSA-1"). null = cheklov yo'q.
+    /// Desktop uni ko'rsatish va o'z sozlamasini tekshirish uchun ishlatadi.
+    /// </summary>
+    public string? TerminalId { get; set; }
+
     public List<string> Permissions { get; set; } = [];
 }

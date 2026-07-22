@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosPlatform.Application.Common;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.Promotions;
@@ -24,12 +25,33 @@ public class SaleService : ISaleService
         _fiscal = fiscal;
     }
 
+    /// <summary>
+    /// Savdo yoziladigan kassa ID sini aniqlaydi. Login biror kassaga biriktirilgan bo'lsa —
+    /// savdo faqat o'sha kassa nomi bilan yoziladi; kassa ilovasida boshqa ID turgan bo'lsa
+    /// savdo rad etiladi (aks holda bitta login ostidan bir nechta kassaning fiskal
+    /// navbati va QR summalari aralashib ketadi).
+    /// </summary>
+    private string? ResolveTerminalId(string? requestedTerminalId)
+    {
+        var requested = TerminalIdentity.Normalize(requestedTerminalId);
+        var assigned = TerminalIdentity.Normalize(_currentUser.TerminalId);
+        if (assigned is null) return requested;
+
+        if (requested is not null && !TerminalIdentity.Matches(requested, assigned))
+            throw new ValidationException(
+                $"Bu login '{assigned}' kassasiga biriktirilgan, savdo esa '{requested}' kassasidan kelyapti. " +
+                "Kassa ilovasi Sozlamalaridagi \"Kassa stantsiyasi ID\" ni to'g'rilang.");
+
+        return assigned;
+    }
+
     public async Task<IReadOnlyList<SaleDto>> GetAllAsync(Guid? branchId = null, DateTime? from = null, DateTime? to = null, CancellationToken cancellationToken = default)
     {
         var query = _db.Sales
             .AsNoTracking()
             .Include(s => s.Items)
             .Include(s => s.Receipt)
+            .Include(s => s.Cashier) // kassir bo'yicha hisobot uchun (kim sotgani)
             .AsQueryable();
 
         if (branchId.HasValue)
@@ -132,7 +154,7 @@ public class SaleService : ISaleService
             BranchId = request.BranchId ?? _currentUser.BranchId,
             CashierId = cashierId,
             CashShiftId = shift.Id,
-            TerminalId = string.IsNullOrWhiteSpace(request.TerminalId) ? null : request.TerminalId.Trim(),
+            TerminalId = ResolveTerminalId(request.TerminalId),
             Type = SaleType.Sale,
             PaymentMethod = request.PaymentMethod,
             TransferSource = request.PaymentMethod == PaymentMethod.Transfer && !string.IsNullOrWhiteSpace(request.TransferSource)
@@ -602,8 +624,9 @@ public class SaleService : ISaleService
             ?? throw new ValidationException("To'lov uchun avval smenani oching (kassa sessiyasi).");
 
         // Buyurtma ochilganda kassa noma'lum (stol oqimi) — to'lovni qabul qilgan kassa yoziladi.
-        if (!string.IsNullOrWhiteSpace(request.TerminalId))
-            sale.TerminalId = request.TerminalId.Trim();
+        var payTerminal = ResolveTerminalId(request.TerminalId);
+        if (payTerminal is not null)
+            sale.TerminalId = payTerminal;
 
         Debtor? debtor = null;
         if (request.PaymentMethod == PaymentMethod.Debt)

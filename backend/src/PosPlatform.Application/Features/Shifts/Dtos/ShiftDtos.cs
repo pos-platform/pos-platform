@@ -10,6 +10,12 @@ public class OpenShiftRequest
 
     [Range(0, double.MaxValue)]
     public decimal OpeningCash { get; set; }
+
+    /// <summary>
+    /// Smena ochilayotgan kassa stantsiyasi ID (desktop Sozlamalaridan). Foydalanuvchiga kassa
+    /// biriktirilgan bo'lsa — mos kelmasa smena ochilmaydi.
+    /// </summary>
+    public string? TerminalId { get; set; }
 }
 
 public class CloseShiftRequest
@@ -55,6 +61,9 @@ public class CashShiftDto
     public Guid? BranchId { get; set; }
     public Guid CashierId { get; set; }
     public string? CashierName { get; set; }
+
+    /// <summary>Smena ochilgan kassa stantsiyasi ("KASSA-1").</summary>
+    public string? TerminalId { get; set; }
     public ShiftStatus Status { get; set; }
     public DateTime OpenedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
@@ -94,6 +103,7 @@ public class CashShiftDto
             BranchId = s.BranchId,
             CashierId = s.CashierId,
             CashierName = cashierName,
+            TerminalId = s.TerminalId,
             Status = s.Status,
             OpenedAt = s.OpenedAt,
             ClosedAt = s.ClosedAt,

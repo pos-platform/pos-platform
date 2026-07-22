@@ -42,6 +42,11 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         if (user.OrganizationId is not null)
             claims.Add(new Claim("organizationId", user.OrganizationId.Value.ToString()));
 
+        // Kassa biriktirilgan bo'lsa tokenga yozamiz — savdo/smena so'rovlarida boshqa
+        // kassadan kelgan yozuvlarni rad etish uchun (bitta login = bitta kassa).
+        if (!string.IsNullOrWhiteSpace(user.TerminalId))
+            claims.Add(new Claim("terminalId", user.TerminalId.Trim()));
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

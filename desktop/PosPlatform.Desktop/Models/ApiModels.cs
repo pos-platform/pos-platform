@@ -29,6 +29,12 @@ public class AuthResponse
 
     /// <summary>Doimiy (bir martalik to'liq sotib olingan) litsenziya — obuna hech qachon tugamaydi.</summary>
     public bool IsLifetime { get; set; }
+
+    /// <summary>
+    /// Bu loginga biriktirilgan kassa stantsiyasi ID ("KASSA-1"). Bo'sh = cheklov yo'q.
+    /// Server login paytida Sozlamalardagi ID bilan solishtiradi.
+    /// </summary>
+    public string? TerminalId { get; set; }
 }
 
 // ===================== Restoran modeli =====================

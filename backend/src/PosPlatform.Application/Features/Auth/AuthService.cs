@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosPlatform.Application.Common;
 using PosPlatform.Application.Common.Exceptions;
 using PosPlatform.Application.Common.Interfaces;
 using PosPlatform.Application.Features.Audit;
@@ -71,6 +72,53 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("Tashkilot bloklangan. Platforma administratoriga murojaat qiling.");
         }
 
+        // Kassa (terminal) bog'lanishi — bitta login faqat o'ziga biriktirilgan kassadan kirsin.
+        // Foydalanuvchida kassa belgilanmagan bo'lsa cheklov yo'q (admin/menejer, eski hisoblar).
+        if (!string.IsNullOrWhiteSpace(user.TerminalId))
+        {
+            var requested = TerminalIdentity.Normalize(request.TerminalId);
+            if (requested is null)
+            {
+                await _audit.LogAsync("login.fail", $"kassa ID yuborilmadi; kutilgan={user.TerminalId}", success: false,
+                    organizationId: user.OrganizationId, actorUserId: user.Id, actorUsername: user.Username, ct: cancellationToken);
+                throw new UnauthorizedException(
+                    $"Bu login '{user.TerminalId}' kassasiga biriktirilgan. Kassa ilovasi Sozlamalarida " +
+                    $"\"Kassa stantsiyasi ID\" ni '{user.TerminalId}' deb kiriting.");
+            }
+
+            if (!TerminalIdentity.Matches(requested, user.TerminalId))
+            {
+                await _audit.LogAsync("login.fail", $"kassa mos emas: yuborilgan={requested}, kutilgan={user.TerminalId}",
+                    success: false, organizationId: user.OrganizationId, actorUserId: user.Id,
+                    actorUsername: user.Username, ct: cancellationToken);
+                throw new UnauthorizedException(
+                    $"Bu login '{user.TerminalId}' kassasiga biriktirilgan, siz '{requested}' kassasidan kiryapsiz. " +
+                    "Boshqa kassadan kirish mumkin emas.");
+            }
+        }
+
+        // Qurilmaga bog'lanish — bitta login faqat bitta kompyuterda ishlasin.
+        // Faqat kassa ilovasi foydalanuvchilari (Kassir/Menejer) uchun: admin panel brauzerdan
+        // kiradi va barqaror qurilma ID yubormaydi.
+        if (user.Role is UserRole.Cashier or UserRole.Manager)
+        {
+            var deviceId = TerminalIdentity.Normalize(request.DeviceId);
+
+            if (user.DeviceId is not null)
+            {
+                if (deviceId is null || !string.Equals(deviceId, user.DeviceId, StringComparison.OrdinalIgnoreCase))
+                {
+                    await _audit.LogAsync("login.fail",
+                        $"qurilma mos emas: yuborilgan={deviceId ?? "(yo'q)"}, bog'langan={user.DeviceName ?? user.DeviceId}",
+                        success: false, organizationId: user.OrganizationId, actorUserId: user.Id,
+                        actorUsername: user.Username, ct: cancellationToken);
+                    throw new UnauthorizedException(
+                        $"Bu login boshqa kompyuterga bog'langan ({user.DeviceName ?? "qurilma"}). " +
+                        "Yangi kompyuterda ishlatish uchun administrator \"Qurilmani ajratish\" tugmasini bosishi kerak.");
+                }
+            }
+        }
+
         // Obuna (litsenziya) tekshiruvi — faqat Kassir va Menejer uchun. Admin panel bepul.
         // Doimiy (IsLifetime) litsenziyali foydalanuvchilar tekshiruvdan o'tkazilmaydi.
         if ((user.Role == UserRole.Cashier || user.Role == UserRole.Manager) && !user.IsLifetime)
@@ -83,6 +131,20 @@ public class AuthService : IAuthService
                 throw new UnauthorizedException(
                     "Obuna faollashtirilmagan yoki muddati tugagan. To'lovni amalga oshirib, administrator bilan bog'laning.");
             }
+        }
+
+        // Barcha tekshiruvlardan o'tdi — birinchi kirish bo'lsa kompyuterni loginga biriktiramiz.
+        if (user.Role is UserRole.Cashier or UserRole.Manager
+            && user.DeviceId is null
+            && TerminalIdentity.Normalize(request.DeviceId) is { } newDeviceId)
+        {
+            user.DeviceId = newDeviceId;
+            user.DeviceName = TerminalIdentity.Normalize(request.DeviceName);
+            user.DeviceBoundAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(cancellationToken);
+            await _audit.LogAsync("login.device.bind", $"qurilma={user.DeviceName ?? newDeviceId}", success: true,
+                organizationId: user.OrganizationId, actorUserId: user.Id, actorUsername: user.Username,
+                ct: cancellationToken);
         }
 
         await _audit.LogAsync("login.success", $"role={user.Role}", success: true,
@@ -153,6 +215,7 @@ public class AuthService : IAuthService
             BusinessType = businessType,
             LicensedUntil = user.LicensedUntil,
             IsLifetime = user.IsLifetime,
+            TerminalId = TerminalIdentity.Normalize(user.TerminalId),
             Permissions = permissions
         };
     }

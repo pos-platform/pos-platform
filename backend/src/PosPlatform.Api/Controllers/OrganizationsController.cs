@@ -89,6 +89,11 @@ public class OrganizationsController : ControllerBase
     public async Task<ActionResult<OrgUserDto>> UnsetLifetime(Guid userId, CancellationToken ct)
         => Ok(await _service.SetLifetimeAsync(userId, false, ct));
 
+    /// <summary>Loginning kompyuterga bog'lanishini bekor qilish (kassa kompyuteri almashganda).</summary>
+    [HttpPost("users/{userId:guid}/reset-device")]
+    public async Task<ActionResult<OrgUserDto>> ResetDevice(Guid userId, CancellationToken ct)
+        => Ok(await _service.ResetDeviceAsync(userId, ct));
+
     [HttpPost("users/{userId:guid}/activate")]
     public async Task<ActionResult<OrgUserDto>> ActivateUser(Guid userId, CancellationToken ct)
         => Ok(await _service.SetUserActiveAsync(userId, true, ct));

@@ -22,6 +22,12 @@ public interface IOrganizationService
 
     /// <summary>Foydalanuvchini doimiy (bir martalik to'liq sotib olingan) litsenziyaga o'tkazadi yoki qaytaradi.</summary>
     Task<OrgUserDto> SetLifetimeAsync(Guid userId, bool isLifetime, CancellationToken ct = default);
+    /// <summary>
+    /// Loginning kompyuterga bog'lanishini bekor qiladi — keyingi kirishda yangi kompyuter
+    /// biriktiriladi (kassa kompyuteri almashganda/qayta o'rnatilganda ishlatiladi).
+    /// </summary>
+    Task<OrgUserDto> ResetDeviceAsync(Guid userId, CancellationToken ct = default);
+
     Task<OrgUserDto> SetUserActiveAsync(Guid userId, bool isActive, CancellationToken ct = default);
     Task<IReadOnlyList<OrgRoleDto>> GetRolesAsync(Guid orgId, CancellationToken ct = default);
     Task<OrgUserDto> AssignAppRoleAsync(Guid userId, Guid? roleId, CancellationToken ct = default);

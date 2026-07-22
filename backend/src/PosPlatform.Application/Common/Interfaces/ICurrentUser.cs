@@ -11,6 +11,12 @@ public interface ICurrentUser
     Guid? BranchId { get; }
     Guid? OrganizationId { get; }
 
+    /// <summary>
+    /// Foydalanuvchiga biriktirilgan kassa stantsiyasi ID (JWT "terminalId" claim).
+    /// null = kassa biriktirilmagan, cheklov yo'q.
+    /// </summary>
+    string? TerminalId { get; }
+
     /// <summary>So'rov kelgan IP manzil (reverse proxy ortida X-Forwarded-For hisobga olinadi).</summary>
     string? IpAddress { get; }
 
