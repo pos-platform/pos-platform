@@ -33,7 +33,13 @@ const fiscalLabel = {
   Registered: 'Fiskal',
   Failed: 'Xato'
 }
-const paymentLabel = { Cash: 'Naqd', Card: 'Karta', Mixed: 'Aralash', Debt: 'Nasiya' }
+const paymentLabel = {
+  Cash: 'Naqd',
+  Card: 'Karta',
+  Mixed: 'Aralash',
+  Debt: 'Nasiya',
+  Transfer: "O'tkazma"
+}
 
 function fmtTime(d) {
   return new Date(d).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })
@@ -69,6 +75,23 @@ function isFiscal(s) {
   return s.receipt?.fiscalStatus === 'Registered'
 }
 
+/**
+ * To'lov turlari bo'yicha summalar (qaytarishlar hisobga olinmaydi).
+ * Aralash to'lov (Mixed) naqd tarkibida qoladi — bazada naqd/karta ulushi alohida saqlanmaydi.
+ */
+function payTotals(list) {
+  const t = { cash: 0, card: 0, transfer: 0, debt: 0 }
+  for (const s of list) {
+    if (s.type === 'Refund') continue
+    const amt = Number(s.totalAmount || 0)
+    if (s.paymentMethod === 'Cash' || s.paymentMethod === 'Mixed') t.cash += amt
+    else if (s.paymentMethod === 'Card') t.card += amt
+    else if (s.paymentMethod === 'Transfer') t.transfer += amt
+    else if (s.paymentMethod === 'Debt') t.debt += amt
+  }
+  return t
+}
+
 // Jadval filtrlari: fiskal holati va kassa (terminal)
 const fiscalFilter = ref('all') // all | fiscal | plain
 const terminalFilter = ref('all')
@@ -92,10 +115,8 @@ const terminalSales = computed(() =>
 // Kunlik jami: sotuvlar soni, naqd/karta/nasiya, qaytarishlar, sof tushum
 // va alohida — fiskal (QR kodli) va fiskalsiz (oddiy) cheklar summasi.
 const summary = computed(() => {
+  const t = payTotals(terminalSales.value)
   let count = 0
-  let cash = 0
-  let card = 0
-  let debt = 0
   let refunds = 0
   let fiscalCount = 0
   let fiscalSum = 0
@@ -108,17 +129,13 @@ const summary = computed(() => {
       continue
     }
     count += 1
-    if (s.paymentMethod === 'Cash') cash += amt
-    else if (s.paymentMethod === 'Card') card += amt
-    else if (s.paymentMethod === 'Debt') debt += amt
-    else if (s.paymentMethod === 'Mixed') cash += amt
-
     if (isFiscal(s)) { fiscalCount += 1; fiscalSum += amt }
     else { plainCount += 1; plainSum += amt }
   }
-  const gross = cash + card + debt
+  const gross = t.cash + t.card + t.transfer + t.debt
   return {
-    count, cash, card, debt, refunds, net: gross - refunds,
+    count, cash: t.cash, card: t.card, transfer: t.transfer, debt: t.debt,
+    refunds, net: gross - refunds,
     fiscalCount, fiscalSum, plainCount, plainSum
   }
 })
@@ -137,11 +154,21 @@ const perTerminal = computed(() => {
   for (const s of sales.value) {
     if (s.type === 'Refund') continue
     const key = terminalOf(s)
-    if (!map.has(key)) map.set(key, { terminal: key, count: 0, total: 0, fiscalCount: 0, fiscalSum: 0, plainCount: 0, plainSum: 0 })
+    if (!map.has(key)) {
+      map.set(key, {
+        terminal: key, count: 0, total: 0,
+        cash: 0, card: 0, transfer: 0, debt: 0,
+        fiscalCount: 0, fiscalSum: 0, plainCount: 0, plainSum: 0
+      })
+    }
     const row = map.get(key)
     const amt = Number(s.totalAmount || 0)
     row.count += 1
     row.total += amt
+    if (s.paymentMethod === 'Cash' || s.paymentMethod === 'Mixed') row.cash += amt
+    else if (s.paymentMethod === 'Card') row.card += amt
+    else if (s.paymentMethod === 'Transfer') row.transfer += amt
+    else if (s.paymentMethod === 'Debt') row.debt += amt
     if (isFiscal(s)) { row.fiscalCount += 1; row.fiscalSum += amt }
     else { row.plainCount += 1; row.plainSum += amt }
   }
@@ -295,6 +322,10 @@ function openReceiptWindow(sale) {
       <div class="stat-value">{{ fmtNum(summary.card) }}</div>
     </div>
     <div class="card stat">
+      <div class="stat-label">O'tkazma</div>
+      <div class="stat-value">{{ fmtNum(summary.transfer) }}</div>
+    </div>
+    <div class="card stat">
       <div class="stat-label">Nasiya</div>
       <div class="stat-value">{{ fmtNum(summary.debt) }}</div>
     </div>
@@ -331,6 +362,10 @@ function openReceiptWindow(sale) {
           <th>Kassa</th>
           <th class="text-right">Cheklar</th>
           <th class="text-right">Jami</th>
+          <th class="text-right">Naqd</th>
+          <th class="text-right">Karta</th>
+          <th class="text-right">O'tkazma</th>
+          <th class="text-right">Nasiya</th>
           <th class="text-right">Fiskal (QR)</th>
           <th class="text-right">Oddiy chek</th>
         </tr>
@@ -341,7 +376,11 @@ function openReceiptWindow(sale) {
             @click="terminalFilter = terminalFilter === t.terminal ? 'all' : t.terminal">
           <td><strong>{{ terminalLabel(t.terminal) }}</strong></td>
           <td class="text-right">{{ t.count }}</td>
-          <td class="text-right">{{ fmtNum(t.total) }}</td>
+          <td class="text-right"><strong>{{ fmtNum(t.total) }}</strong></td>
+          <td class="text-right">{{ fmtNum(t.cash) }}</td>
+          <td class="text-right">{{ fmtNum(t.card) }}</td>
+          <td class="text-right">{{ fmtNum(t.transfer) }}</td>
+          <td class="text-right">{{ fmtNum(t.debt) }}</td>
           <td class="text-right" style="color: #15803d">
             {{ fmtNum(t.fiscalSum) }} <span class="muted">({{ t.fiscalCount }})</span>
           </td>
@@ -390,7 +429,10 @@ function openReceiptWindow(sale) {
           </td>
           <td class="muted">{{ s.terminalId || '—' }}</td>
           <td class="muted">{{ fmtTime(s.createdAt) }}</td>
-          <td>{{ paymentLabel[s.paymentMethod] || s.paymentMethod }}</td>
+          <td>
+            {{ paymentLabel[s.paymentMethod] || s.paymentMethod }}
+            <span v-if="s.transferSource" class="muted src">({{ s.transferSource }})</span>
+          </td>
           <td class="text-right" :style="{ color: s.type === 'Refund' ? 'var(--danger)' : 'inherit' }">
             {{ s.type === 'Refund' ? '− ' : '' }}{{ fmtNum(s.totalAmount) }}
           </td>
@@ -434,7 +476,7 @@ function openReceiptWindow(sale) {
 <style scoped>
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -519,6 +561,13 @@ function openReceiptWindow(sale) {
 }
 .term-on {
   background: #eff6ff;
+}
+.src {
+  font-size: 11.5px;
+}
+.term-table th,
+.term-table td {
+  white-space: nowrap;
 }
 .qr-note {
   font-size: 11.5px;

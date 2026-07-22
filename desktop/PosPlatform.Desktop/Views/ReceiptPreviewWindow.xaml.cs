@@ -5,23 +5,35 @@ using PosPlatform.Desktop.Services;
 
 namespace PosPlatform.Desktop.Views;
 
+/// <summary>Chek oynasi qaysi oqimdan ochilgani — kutish va ko'rinish shu bo'yicha farq qiladi.</summary>
+public enum ReceiptViewMode
+{
+    /// <summary>To'lovdan keyin: fiskalizatsiya kelguncha kutiladi, kodlar ko'rsatiladi.</summary>
+    Fiscal,
+
+    /// <summary>Pastdagi "Chop etish": kutilmaydi, Shtrix/MXIK kodlarsiz qisqa nusxa.</summary>
+    ImmediateCopy,
+
+    /// <summary>Kunlik savdolar tarixi: kutilmaydi, savdo qanday saqlangan bo'lsa shundayligicha.</summary>
+    History
+}
+
 /// <summary>Chekni chop etishdan oldin ko'rsatadigan oyna.</summary>
 public partial class ReceiptPreviewWindow : Window
 {
     private readonly ReceiptData _receipt;
     private readonly ReceiptPrinter _printer = new();
     private CancellationTokenSource? _pollCts;
+    private readonly ReceiptViewMode _mode;
 
-    /// <summary>Pastdagi "Chop etish" tugmasidan ochilgan — fiskalizatsiya kutilmaydi
-    /// (na poll so'rovi, na "Fiskalizatsiya kutilmoqda..." matni).</summary>
-    private readonly bool _immediatePrint;
+    /// <summary>Qisqa nusxa rejimi — Shtrix/MXIK kodlari va "kutilmoqda" matni chiqmaydi.</summary>
+    private bool _immediatePrint => _mode == ReceiptViewMode.ImmediateCopy;
 
-    /// <param name="allowImmediatePrint">true bo'lsa "Chop etish" tugmasi fiskalizatsiya
-    /// kelishini kutmasdan darhol ko'rsatiladi (pastdagi "Chop etish" tugmasi uchun).
-    /// false bo'lsa (tepadagi "To'lash" tugmasi) fiskalizatsiya kelguncha tugmalar yashiriladi.</param>
-    public ReceiptPreviewWindow(ReceiptData receipt, bool allowImmediatePrint = false)
+    /// <param name="mode">Oqim turi: to'lovdan keyin (fiskal kutiladi), darhol nusxa yoki tarix.</param>
+    public ReceiptPreviewWindow(ReceiptData receipt, ReceiptViewMode mode = ReceiptViewMode.Fiscal)
     {
         InitializeComponent();
+        _mode = mode;
 
         // Oyna balandligi qat'iy (XAML'da Height=640) — QR kod kelganda ham o'zgarmaydi,
         // uzun chek ichkarida scroll qilinadi. Faqat juda past ekranlarda ish sohasiga sig'diramiz.
@@ -29,12 +41,12 @@ public partial class ReceiptPreviewWindow : Window
             Height = SystemParameters.WorkArea.Height - 24;
 
         _receipt = receipt;
-        _immediatePrint = allowImmediatePrint;
         Render();
 
-        // Pastdagi "Chop etish" tugmasidan ochilgan bo'lsa — fiskalizatsiya kutilmaydi:
-        // poll so'rovi yuborilmaydi, tugmalar darhol ko'rinadi, "kutilmoqda" matni chiqmaydi.
-        if (_immediatePrint)
+        // Darhol-nusxa va tarix rejimlarida fiskalizatsiya kutilmaydi: poll so'rovi yuborilmaydi,
+        // tugmalar darhol ko'rinadi, "kutilmoqda" matni chiqmaydi. Tarix — o'zgarmas ko'rinish:
+        // savdo qanday saqlangan bo'lsa shundayligicha qayta chop etiladi, yangi so'rov qilinmaydi.
+        if (_mode != ReceiptViewMode.Fiscal)
         {
             ActionButtons.Visibility = Visibility.Visible;
             return;
@@ -57,10 +69,10 @@ public partial class ReceiptPreviewWindow : Window
     private void Render()
     {
         // Ko'rsatish uchun hujjat (chop etishda yangisi quriladi — bitta hujjat ikki joyda bo'lolmaydi).
-        // Darhol-chop rejimida "Fiskalizatsiya kutilmoqda..." matni va Shtrix/MXIK kodlari
-        // ko'rsatilmaydi — bu oddiy (fiskal bo'lmagan) nusxa.
+        // "Fiskalizatsiya kutilmoqda..." matni faqat fiskal oqimda ma'noli: darhol-nusxada ham,
+        // tarixda ham hech narsa kutilmaydi. Shtrix/MXIK kodlari esa tarixda asl chekdagidek qoladi.
         DocViewer.Document = ReceiptPrinter.BuildDocument(_receipt,
-            showFiscalPending: !_immediatePrint, showCodes: !_immediatePrint);
+            showFiscalPending: _mode == ReceiptViewMode.Fiscal, showCodes: !_immediatePrint);
     }
 
     /// <summary>Backenddan chekning fiskal holatini so'rab turadi; QR kelganda chekni yangilaydi.</summary>

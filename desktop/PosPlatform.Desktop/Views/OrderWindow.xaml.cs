@@ -191,7 +191,8 @@ public partial class OrderWindow : Window
             {
                 PaymentMethod = pay.Value.method,
                 PaidAmount = pay.Value.method == "Cash" ? pay.Value.paid : total,
-                ServiceChargePercent = 0
+                ServiceChargePercent = 0,
+                TerminalId = AppState.TerminalId
             });
 
             var receipt = new ReceiptData

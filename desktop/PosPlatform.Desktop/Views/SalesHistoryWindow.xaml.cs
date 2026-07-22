@@ -36,7 +36,11 @@ public partial class SalesHistoryWindow : Window
         }
     }
 
-    /// <summary>Kun savdolarida uchragan kassalar ro'yxatini tanlagichga yozadi (tanlovni saqlagan holda).</summary>
+    /// <summary>
+    /// Kun savdolarida uchragan kassalar ro'yxatini tanlagichga yozadi.
+    /// Standart tanlov — shu PC'ning o'z kassasi (har kassa avval o'z savdolarini ko'radi);
+    /// kassa ID sozlanmagan bo'lsa yoki foydalanuvchi boshqa kassani tanlagan bo'lsa, o'sha saqlanadi.
+    /// </summary>
     private void RebuildTerminalFilter()
     {
         var previous = TerminalFilter.SelectedItem as string;
@@ -47,11 +51,16 @@ public partial class SalesHistoryWindow : Window
             .ThenBy(t => t, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        // Shu PC'ning kassasi — ro'yxatda savdosi bo'lmasa ham tanlanishi uchun qo'shiladi.
+        var own = string.IsNullOrWhiteSpace(AppState.TerminalId) ? null : AppState.TerminalId!.Trim();
+        if (own is not null && !terminals.Contains(own))
+            terminals.Insert(0, own);
+
         _suppressFilterEvent = true;
         TerminalFilter.ItemsSource = new[] { AllTerminals }.Concat(terminals).ToList();
-        TerminalFilter.SelectedItem = previous is not null && terminals.Contains(previous)
-            ? previous
-            : AllTerminals;
+        TerminalFilter.SelectedItem =
+            previous is not null && (previous == AllTerminals || terminals.Contains(previous)) ? previous
+            : own ?? AllTerminals;
         _suppressFilterEvent = false;
     }
 
@@ -230,7 +239,7 @@ public partial class SalesHistoryWindow : Window
             }
 
             var receipt = ToReceiptData(sale);
-            new ReceiptPreviewWindow(receipt) { Owner = this }.ShowDialog();
+            new ReceiptPreviewWindow(receipt, ReceiptViewMode.History) { Owner = this }.ShowDialog();
         }
         catch (Exception ex)
         {
@@ -242,6 +251,12 @@ public partial class SalesHistoryWindow : Window
         }
     }
 
+    /// <summary>
+    /// Tarixdan qayta chop etish uchun chek — sof NUSXA: fiskal maydonlar (QR, FB, RS, chek raqami)
+    /// ataylab olinmaydi. Sabab: savdo chop etilgandan keyin fiskalizatsiya bo'lgan bo'lishi mumkin,
+    /// u holda nusxada asl qog'ozda bo'lmagan QR paydo bo'lardi. Tarix o'tmishni ko'rsatadi, hujjat
+    /// yaratmaydi. Fiskal chek kerak bo'lsa — asl chek yoki /admin/fiscal-audit orqali.
+    /// </summary>
     private static ReceiptData ToReceiptData(SaleDto s) => new()
     {
         ReceiptNumber = s.ReceiptNumber,
@@ -259,12 +274,7 @@ public partial class SalesHistoryWindow : Window
             Quantity = i.Quantity,
             Price = i.UnitPrice,
             LineTotal = i.LineTotal
-        }).ToList(),
-        QrCodeUrl = s.Receipt?.QrCodeUrl,
-        FiscalSign = s.Receipt?.FiscalSign,
-        FiscalModuleId = s.Receipt?.FiscalModuleId,
-        FiscalRegistrationNumber = s.Receipt?.FiscalRegistrationNumber,
-        FiscalReceiptNumber = s.Receipt?.FiscalReceiptNumber
+        }).ToList()
     };
 
     private async void DoRefund_Click(object sender, RoutedEventArgs e)

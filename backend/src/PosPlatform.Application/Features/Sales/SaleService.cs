@@ -601,6 +601,10 @@ public class SaleService : ISaleService
             .FirstOrDefaultAsync(s => s.CashierId == cashierId && s.Status == ShiftStatus.Open, cancellationToken)
             ?? throw new ValidationException("To'lov uchun avval smenani oching (kassa sessiyasi).");
 
+        // Buyurtma ochilganda kassa noma'lum (stol oqimi) — to'lovni qabul qilgan kassa yoziladi.
+        if (!string.IsNullOrWhiteSpace(request.TerminalId))
+            sale.TerminalId = request.TerminalId.Trim();
+
         Debtor? debtor = null;
         if (request.PaymentMethod == PaymentMethod.Debt)
         {

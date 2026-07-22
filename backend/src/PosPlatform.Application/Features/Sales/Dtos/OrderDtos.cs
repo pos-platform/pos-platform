@@ -45,4 +45,11 @@ public class PayOrderRequest
     /// <summary>Servis haqi foizi (%).</summary>
     [Range(0, 100)]
     public decimal ServiceChargePercent { get; set; }
+
+    /// <summary>
+    /// Buyurtmani yopgan kassa stantsiyasi ID. Fiskal navbat shu bo'yicha filtrlanadi va
+    /// kunlik savdolar kassalar kesimida to'g'ri guruhlanadi.
+    /// </summary>
+    [MaxLength(64)]
+    public string? TerminalId { get; set; }
 }

@@ -104,6 +104,9 @@ public class PayOrderRequest
     public decimal PaidAmount { get; set; }
     public Guid? DebtorId { get; set; }
     public decimal ServiceChargePercent { get; set; }
+
+    /// <summary>To'lovni qabul qilgan kassa stantsiyasi (kassalar kesimi va fiskal navbat uchun).</summary>
+    public string? TerminalId { get; set; }
 }
 
 public class ProductDto

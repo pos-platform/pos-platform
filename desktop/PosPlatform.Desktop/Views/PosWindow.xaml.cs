@@ -1090,7 +1090,9 @@ public partial class PosWindow : Window
                 ApplyFilter();
             }
 
-            new ReceiptPreviewWindow(receipt, allowImmediatePrint) { Owner = this }.ShowDialog();
+            new ReceiptPreviewWindow(receipt,
+                allowImmediatePrint ? ReceiptViewMode.ImmediateCopy : ReceiptViewMode.Fiscal)
+            { Owner = this }.ShowDialog();
         }
         catch (Exception ex)
         {
