@@ -15,6 +15,12 @@ public class FiscalFailureDto
     /// <summary>Fiskal moduldan qaytgan aniq xato matni (receipt time / SEND_ALL / applet / MXIK ...).</summary>
     public string? ErrorMessage { get; set; }
 
+    /// <summary>"Retrying" — hali navbatda avto-qayta urinilmoqda; "Failed" — butunlay to'xtagan.</summary>
+    public string Status { get; set; } = "Failed";
+
+    /// <summary>Nechanchi marta qayta urinilgani.</summary>
+    public int RetryCount { get; set; }
+
     /// <summary>Savdo yaratilgan vaqt.</summary>
     public DateTime SoldAt { get; set; }
 

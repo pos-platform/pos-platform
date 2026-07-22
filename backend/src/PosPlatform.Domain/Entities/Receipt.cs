@@ -34,4 +34,10 @@ public class Receipt : BaseEntity
 
     /// <summary>So'nggi fiskal xatolik matni (agar bo'lsa).</summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Vaqtinchalik (o'z-o'zidan tuzaladigan) fiskal xato tufayli chek necha marta navbatga
+    /// qaytarilib qayta urinilgani. Belgilangan chegaraga yetgach chek Failed bo'ladi.
+    /// </summary>
+    public int FiscalRetryCount { get; set; }
 }

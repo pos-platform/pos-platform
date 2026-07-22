@@ -1152,6 +1152,9 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<int>("FiscalRetryCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("FiscalSign")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");

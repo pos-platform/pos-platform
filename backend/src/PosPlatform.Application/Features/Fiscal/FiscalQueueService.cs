@@ -10,6 +10,12 @@ public class FiscalQueueService : IFiscalQueueService
 {
     private readonly IApplicationDbContext _db;
 
+    /// <summary>
+    /// Vaqtinchalik xato bo'lganda chek necha marta avto-qayta urinilishi. Chegaraga yetgach
+    /// Failed bo'ladi (5s poll oralig'ida ~30 urinish ≈ 2.5 daqiqa vaqtinchalik uzilishni qoplaydi).
+    /// </summary>
+    private const int MaxFiscalRetries = 30;
+
     public FiscalQueueService(IApplicationDbContext db)
     {
         _db = db;
@@ -59,13 +65,57 @@ public class FiscalQueueService : IFiscalQueueService
             receipt.QrCodeUrl = result.QrCodeUrl;
             receipt.FiscalizedAt = result.FiscalizedAt ?? DateTime.UtcNow;
             receipt.ErrorMessage = null;
+            receipt.FiscalRetryCount = 0;
         }
         else
         {
-            receipt.FiscalStatus = FiscalStatus.Failed;
+            // Xato matnini har doim saqlaymiz (audit ko'rinishi uchun).
             receipt.ErrorMessage = result.ErrorMessage;
+
+            // Vaqtinchalik (aniq ro'yxatga OLINMAGAN, o'z-o'zidan tuzaladigan) xato — chekni
+            // navbatga qaytarib avtomatik qayta urinamiz (modul qaytib ulanadi, soat tuzaladi).
+            // Doimiy yoki noaniq (double-reg xavfi bor) xato — Failed qoldirib qo'lda ko'riladi.
+            if (IsTransient(result.ErrorMessage) && receipt.FiscalRetryCount < MaxFiscalRetries)
+            {
+                receipt.FiscalRetryCount++;
+                receipt.FiscalStatus = FiscalStatus.Queued;
+            }
+            else
+            {
+                receipt.FiscalStatus = FiscalStatus.Failed;
+            }
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Xato o'z-o'zidan tuzaladigan va chek modulda ANIQ ro'yxatga olinmagan (qayta urinish
+    /// xavfsiz — double-registratsiya xavfi yo'q) turdami. Faqat aniq belgilangan xatolar
+    /// vaqtinchalik hisoblanadi; notanish yoki noaniq (timeout — modul ro'yxatga olgan bo'lishi
+    /// mumkin) xatolar Failed bo'ladi.
+    /// </summary>
+    private static bool IsTransient(string? error)
+    {
+        if (string.IsNullOrWhiteSpace(error))
+            return false;
+
+        // Barchasi: (a) modulga umuman yetib bormagan yoki (b) applet chekни QABUL QILMAGAN
+        // (SWError) — ya'ni fiskal belgi berilmagan, shuning uchun qayta urinish xavfsiz.
+        string[] transientMarkers =
+        {
+            "FiscalDrive/List",           // modul topilmadi (ulanmagan/drayver ko'rmayapti)
+            "modul topilmadi",
+            "DATETIME_IS_IN_THE_PAST",    // kompyuter soati orqada — soat tuzalgach o'tadi
+            "SEND_ALL_RECEIPTS_FIRST",    // modul to'lgan — OFD sinxronidan keyin o'tadi
+            "LOCKED_SYNC_WITH_SERVER",
+            "(GetTXID)",                  // ro'yxatga olishdan OLDINGI bosqich — qayta urinish xavfsiz
+            "TXID qaytarmadi",
+            "actively refused",           // drayver ishlamayapti (WinSock 10061)
+            "Connection refused",
+            "No connection could be made"
+        };
+
+        return transientMarkers.Any(m => error.Contains(m, StringComparison.OrdinalIgnoreCase));
     }
 }

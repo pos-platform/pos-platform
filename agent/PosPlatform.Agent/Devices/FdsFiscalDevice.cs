@@ -46,9 +46,14 @@ public class FdsFiscalDevice : IFiscalDevice
 
     // Modul har chek vaqti oldingisidan QAT'IY katta bo'lishini talab qiladi (sekund aniqligida):
     // Receipt.Time <= LastOperationTime => "receipt time is in the past". Bir sekundда bir nechta
-    // chek ketsa, ularga qat'iy o'suvchi vaqt beramiz (real soatdan oldinga o'tmasdan).
+    // chek ketsa, ularga qat'iy o'suvchi vaqt beramiz (modul soatidan oldinga o'tmasdan).
     private static readonly SemaphoreSlim _timeGate = new(1, 1);
     private static DateTime _lastReceiptTime = DateTime.MinValue;
+
+    // Modul ichki (ishonchli RTC) soati bilan kompyuter soati orasidagi farq — muvaffaqiyatli
+    // chek javobidan (result.DateTime) o'rganiladi. Kompyuter soati orqada bo'lsa bu musbat
+    // bo'lib, keyingi cheklar modul soatiga moslanadi va DATETIME_IS_IN_THE_PAST (9030) yo'qoladi.
+    private static TimeSpan _moduleOffset = TimeSpan.Zero;
 
     public FdsFiscalDevice(IOptions<AgentOptions> options, IHttpClientFactory factory, ILogger<FdsFiscalDevice> logger)
     {
@@ -106,6 +111,11 @@ public class FdsFiscalDevice : IFiscalDevice
             var result = JsonSerializer.Deserialize<ReceiptResult>(registerBody, _json);
             if (result is null || string.IsNullOrEmpty(result.FiscalSign))
                 return FiscalResult.Failure($"Fiskal modul natija qaytarmadi (FiscalSign yo'q): {registerBody}");
+
+            // Muvaffaqiyatli chekda modul o'zining (ishonchli RTC) vaqtini qaytaradi. Vaqt-gate'ni
+            // shu vaqtga moslaymiz — keyingi cheklar modul soatidan doim oldinda bo'lib,
+            // kompyuter soati orqada bo'lsa ham DATETIME_IS_IN_THE_PAST (9030) ni oldini oladi.
+            await SeedTimeGateFromModuleAsync(result.DateTime, cancellationToken);
 
             return new FiscalResult
             {
@@ -262,7 +272,8 @@ public class FdsFiscalDevice : IFiscalDevice
 
     /// <summary>
     /// Chek uchun qat'iy o'suvchi vaqt (sekund aniqligida) — modul Receipt.Time > LastOperationTime
-    /// bo'lishini talab qiladi. Ketma-ket cheklar kamida 1 soniya oraliq bilan, real soatdan
+    /// bo'lishini talab qiladi. Vaqt <b>modul soatiga</b> (kompyuter soati + o'rganilgan offset)
+    /// moslanadi; ketma-ket cheklar kamida 1 soniya oraliq bilan, modul soatidan sezilarli
     /// oldinga o'tmasdan (kelajak vaqtni modul rad etishi mumkin) yuboriladi.
     /// </summary>
     private static async Task<DateTime> NextReceiptTimeAsync(CancellationToken cancellationToken)
@@ -270,16 +281,55 @@ public class FdsFiscalDevice : IFiscalDevice
         await _timeGate.WaitAsync(cancellationToken);
         try
         {
-            var now = TruncateToSecond(DateTime.Now);
-            var next = now <= _lastReceiptTime ? _lastReceiptTime.AddSeconds(1) : now;
+            var moduleNow = DateTime.Now + _moduleOffset;
+            var nowSec = TruncateToSecond(moduleNow);
+            var next = nowSec <= _lastReceiptTime ? _lastReceiptTime.AddSeconds(1) : nowSec;
 
-            // Real soat "next" ga yetmagan bo'lsa kutamiz — kelajak vaqt yubormaymiz.
-            var wait = next - DateTime.Now;
-            if (wait > TimeSpan.Zero)
+            // Modul soati "next" ga yetmagan bo'lsa (bir sekundda ko'p chek) qisqa kutamiz —
+            // modul soatidan oldinga o'tmaslik uchun. Offset kattaligicha kutib qolmaslik uchun
+            // kutish 5 soniyadan oshmaydi (offset o'rganilgach kutish deyarli 0 bo'ladi).
+            var wait = next - (DateTime.Now + _moduleOffset);
+            if (wait > TimeSpan.Zero && wait < TimeSpan.FromSeconds(5))
                 await Task.Delay(wait, cancellationToken);
 
             _lastReceiptTime = next;
             return next;
+        }
+        finally
+        {
+            _timeGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Muvaffaqiyatli chekda modul o'zining (ishonchli RTC) vaqtini qaytaradi. Shu vaqtdan
+    /// modul bilan kompyuter soati orasidagi offsetni o'rganamiz va vaqt-gate'ni modul soatiga
+    /// moslaymiz — kompyuter soati orqada bo'lsa ham keyingi cheklar 9030 bermaydi.
+    /// </summary>
+    private static async Task SeedTimeGateFromModuleAsync(string? moduleDateTime, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(moduleDateTime))
+            return;
+
+        string[] formats = { "yyyy-MM-dd HH:mm:ss", "yyyyMMddHHmmss" };
+        if (!DateTime.TryParseExact(moduleDateTime, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var modTime))
+            return;
+
+        modTime = DateTime.SpecifyKind(modTime, DateTimeKind.Local);
+
+        await _timeGate.WaitAsync(cancellationToken);
+        try
+        {
+            var offset = modTime - TruncateToSecond(DateTime.Now);
+            // Faqat modul PC dan sezilarli OLDINDA bo'lsa offsetni qo'llaymiz (shovqindan saqlanish
+            // uchun ±2s ni e'tiborsiz qoldiramiz). Modul PC dan orqada bo'lsa offset shart emas.
+            if (offset > TimeSpan.FromSeconds(2))
+                _moduleOffset = offset;
+            else if (offset < TimeSpan.FromSeconds(-2))
+                _moduleOffset = TimeSpan.Zero;
+
+            if (modTime > _lastReceiptTime)
+                _lastReceiptTime = modTime;
         }
         finally
         {

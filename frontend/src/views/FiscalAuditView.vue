@@ -6,7 +6,6 @@ import { errorMessage } from '../api/http'
 const fails = ref([])
 const loading = ref(false)
 const err = ref('')
-const onlyUnresolved = ref(false) // hozircha barcha xatolar; kelajakda holat bo'yicha filtr
 
 /** Fiskal moduldan qaytgan xom xato matnini kassir tushunadigan sababga o'giradi. */
 function fiscalHint(msg) {
@@ -62,13 +61,19 @@ onMounted(load)
     <table class="table">
       <thead>
         <tr>
-          <th>Vaqt</th><th>Chek</th><th>Tashkilot</th><th>Kassa</th>
+          <th>Vaqt</th><th>Holat</th><th>Chek</th><th>Tashkilot</th><th>Kassa</th>
           <th style="text-align:right">Summa</th><th>Xato sababi</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="f in shown" :key="f.saleId">
           <td class="muted nowrap">{{ fmt(f.failedAt) }}</td>
+          <td class="nowrap">
+            <span class="st" :class="f.status === 'Retrying' ? 'st-retry' : 'st-fail'">
+              {{ f.status === 'Retrying' ? 'Qayta urinilmoqda' : "To'xtagan" }}
+            </span>
+            <span v-if="f.retryCount" class="muted rc">×{{ f.retryCount }}</span>
+          </td>
           <td class="nowrap"><b>{{ f.receiptNumber }}</b></td>
           <td class="muted">{{ f.organizationName || '—' }}</td>
           <td class="muted">{{ f.terminalId || '—' }}</td>
@@ -79,12 +84,12 @@ onMounted(load)
           </td>
         </tr>
         <tr v-if="!shown.length && !loading">
-          <td colspan="6" class="muted" style="text-align:center;padding:28px">
+          <td colspan="7" class="muted" style="text-align:center;padding:28px">
             Fiskalizatsiya xatosi yo'q 🎉
           </td>
         </tr>
         <tr v-if="loading">
-          <td colspan="6" class="muted" style="text-align:center;padding:28px">Yuklanmoqda…</td>
+          <td colspan="7" class="muted" style="text-align:center;padding:28px">Yuklanmoqda…</td>
         </tr>
       </tbody>
     </table>
@@ -96,4 +101,8 @@ onMounted(load)
 .nowrap { white-space: nowrap; }
 .fiscal-raw { font-family: ui-monospace, 'Cascadia Code', monospace; font-size: 12.5px; color: #b91c1c; word-break: break-word; }
 .fiscal-hint { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.st { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.st-retry { background: #fef3c7; color: #92400e; }
+.st-fail { background: #fee2e2; color: #b91c1c; }
+.rc { font-size: 12px; margin-left: 6px; }
 </style>

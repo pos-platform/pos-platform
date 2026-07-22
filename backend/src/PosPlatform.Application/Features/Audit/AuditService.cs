@@ -56,10 +56,13 @@ public class AuditService : IAuditService
         if (take is < 1 or > 500) take = 100;
 
         // SuperAdmin (OrganizationId == null) — tenant filtri o'chadi, barcha tashkilotlar ko'rinadi.
+        // Butunlay to'xtaganlar (Failed) va hali avto-qayta urinilayotganlar (Queued + xato matni bor).
         // Tashkilot nomi Receipt.OrganizationId bo'yicha alohida so'rov bilan biriktiriladi.
         var failures = await _db.Receipts
             .AsNoTracking()
-            .Where(r => r.FiscalStatus == FiscalStatus.Failed && r.Sale != null)
+            .Where(r => r.Sale != null &&
+                (r.FiscalStatus == FiscalStatus.Failed ||
+                 (r.FiscalStatus == FiscalStatus.Queued && r.ErrorMessage != null)))
             .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
             .Take(take)
             .Select(r => new
@@ -70,6 +73,8 @@ public class AuditService : IAuditService
                 r.Sale.TotalAmount,
                 r.OrganizationId,
                 r.ErrorMessage,
+                r.FiscalStatus,
+                r.FiscalRetryCount,
                 SoldAt = r.Sale.CreatedAt,
                 FailedAt = r.UpdatedAt ?? r.CreatedAt
             })
@@ -89,6 +94,8 @@ public class AuditService : IAuditService
             TotalAmount = f.TotalAmount,
             OrganizationName = f.OrganizationId != null && orgNames.TryGetValue(f.OrganizationId.Value, out var name) ? name : null,
             ErrorMessage = f.ErrorMessage,
+            Status = f.FiscalStatus == FiscalStatus.Queued ? "Retrying" : "Failed",
+            RetryCount = f.FiscalRetryCount,
             SoldAt = f.SoldAt,
             FailedAt = f.FailedAt
         }).ToList();
