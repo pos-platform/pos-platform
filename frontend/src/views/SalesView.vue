@@ -184,10 +184,29 @@ function moduleOf(s) { return s.receipt?.fiscalModuleId || '' }
 function cashierOf(s) { return s.cashierFullName || s.cashierUsername || '—' }
 function moduleLabel(m) { return m || "Modul ID yo'q" }
 
+/** Faqat QR kodli (fiskalizatsiya bo'lgan) savdolar — modul kesimlari uchun asos. */
+const fiscalSales = computed(() => sales.value.filter((s) => s.type !== 'Refund' && isFiscal(s)))
+
+/** Fiskal modullar (fleshkalar) kesimi: har bir fleshkadan qancha QR chek chiqqani. */
+const perFiscalModule = computed(() => {
+  const map = groupSales(
+    fiscalSales.value,
+    moduleOf,
+    (s) => ({ module: moduleOf(s), rs: s.receipt?.fiscalRegistrationNumber || '', terminals: new Set(), cashiers: new Set() })
+  )
+  for (const s of fiscalSales.value) {
+    const row = map.get(moduleOf(s))
+    row.terminals.add(terminalLabel(terminalOf(s)))
+    row.cashiers.add(cashierOf(s))
+  }
+  return [...map.values()]
+    .map((r) => ({ ...r, terminals: [...r.terminals].sort(), cashiers: [...r.cashiers].sort() }))
+    .sort((a, b) => a.module.localeCompare(b.module))
+})
+
 const perModule = computed(() => {
-  const fiscalSales = sales.value.filter((s) => s.type !== 'Refund' && isFiscal(s))
   const rows = [...groupSales(
-    fiscalSales,
+    fiscalSales.value,
     (s) => `${moduleOf(s)}||${cashierOf(s)}||${terminalOf(s)}`,
     (s) => ({
       module: moduleOf(s),
@@ -424,6 +443,46 @@ function openReceiptWindow(sale) {
             </td>
             <td class="text-right" style="color: #c2410c">
               {{ fmtNum(t.plainSum) }} <span class="muted">({{ t.plainCount }})</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Fiskal modullar (fleshkalar) kesimi -->
+  <div class="card term-card">
+    <div class="term-head">
+      Fiskal modullar (fleshkalar) bo'yicha — QR kodli cheklar
+      <span class="term-legend">har bir fleshkadan qancha QR chek chiqqani, to'lov turlari bilan</span>
+    </div>
+    <div class="scroll-x">
+      <table class="table term-table">
+        <thead>
+          <tr>
+            <th>Fiskal modul</th>
+            <th>RS raqami</th>
+            <th>Kassalar</th>
+            <th class="text-right">QR cheklar</th>
+            <th class="text-right">Jami</th>
+            <th class="text-right" v-for="k in PAY_KEYS" :key="k">{{ PAY_LABELS[k] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="m in perFiscalModule" :key="m.module || 'none'">
+            <td><strong>{{ moduleLabel(m.module) }}</strong></td>
+            <td class="muted">{{ m.rs || '—' }}</td>
+            <td class="muted">{{ m.terminals.join(', ') }}</td>
+            <td class="text-right">{{ m.fiscalCount }}</td>
+            <td class="text-right"><strong>{{ fmtNum(m.total) }}</strong></td>
+            <td class="text-right" v-for="k in PAY_KEYS" :key="k">
+              {{ fmtNum(m.pay[k].total) }}
+              <div v-if="m.pay[k].count" class="split muted">{{ m.pay[k].count }} ta</div>
+            </td>
+          </tr>
+          <tr v-if="!perFiscalModule.length && !loading">
+            <td colspan="10" class="muted" style="text-align: center; padding: 24px">
+              Bu kunda QR kodli (fiskal) chek yo'q
             </td>
           </tr>
         </tbody>

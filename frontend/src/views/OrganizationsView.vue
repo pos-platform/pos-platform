@@ -325,6 +325,22 @@ async function unsetLifetime(u) {
   }
 }
 
+async function resetDevice(u) {
+  const device = u.deviceName || 'bog\'langan kompyuter'
+  if (!confirm(`"${u.username}" logini ${device}dan ajratilsinmi? Keyingi kirishda qaysi kompyuterdan kirsa — o'sha biriktiriladi.`)) return
+  busy.value = true
+  err.value = ''
+  try {
+    await organizationsApi.resetDevice(u.id)
+    notify(`${u.username}: qurilma bog'lanishi bekor qilindi`)
+    await refreshSelected()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
+}
+
 async function toggleUser(u) {
   busy.value = true
   try {
@@ -546,6 +562,8 @@ onMounted(load)
               <span v-if="u.fullName" class="muted" style="font-weight:500">· {{ u.fullName }}</span>
               <span class="pill pill-gray">{{ roleLabel[u.role] || u.role }}</span>
               <span v-if="u.branchName" class="store-tag">🏪 {{ u.branchName }}</span>
+              <span v-if="u.terminalId" class="store-tag" title="Faqat shu kassadan kira oladi">🖥 {{ u.terminalId }}</span>
+              <span v-if="u.isDeviceBound" class="store-tag" title="Login shu kompyuterga bog'langan — boshqa kompyuterdan kira olmaydi">🔒 {{ u.deviceName || 'Qurilma' }}</span>
               <span class="status-pill" :class="u.isActive ? 'sp-on' : 'sp-off'">
                 {{ u.isActive ? 'Faol' : 'Passiv' }}
               </span>
@@ -568,6 +586,7 @@ onMounted(load)
               <button class="btn btn-ghost btn-xs" :disabled="busy" title="Doimiy (bir martalik to'liq sotib olish)" @click="setLifetime(u)">♾ Doimiy</button>
               <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)">⨯</button>
             </template>
+            <button v-if="u.isDeviceBound" class="btn btn-ghost btn-xs" :disabled="busy" title="Login bog'langan kompyuterni bekor qilish — keyingi kirishda yangi kompyuter biriktiriladi" @click="resetDevice(u)">🔓 Qurilmani ajratish</button>
             <button class="btn btn-ghost btn-xs" :disabled="busy" title="Tahrirlash" @click="openEdit(u)">✎ Tahrirlash</button>
             <button
               class="btn btn-xs"

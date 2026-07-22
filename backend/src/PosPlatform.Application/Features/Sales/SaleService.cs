@@ -347,6 +347,10 @@ public class SaleService : ISaleService
             CashierId = cashierId,
             CashShiftId = shift.Id,
             Type = SaleType.Refund,
+            // Qaytarish qaysi kassada qabul qilingan bo'lsa — fiskal navbatda ham o'sha kassaga
+            // tushsin (agent terminal bo'yicha filtrlaydi). Kassa biriktirilmagan bo'lsa —
+            // asl savdoning kassasiga qaytamiz.
+            TerminalId = ResolveTerminalId(null) ?? original.TerminalId,
             OriginalSaleId = original.Id,
             PaymentMethod = original.PaymentMethod,
             TransferSource = original.TransferSource,
