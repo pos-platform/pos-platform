@@ -306,11 +306,25 @@ public class SaleService : ISaleService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Fiskalizatsiya seam'i — hozir placeholder, keyin lokal agent ulanadi.
-        await _fiscal.EnqueueAsync(sale, cancellationToken);
+        // Fiskalizatsiya (nasiyadan tashqari — pastdagi izohga qarang).
+        await EnqueueFiscalIfNeededAsync(sale, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
         return SaleDto.FromEntity(sale);
+    }
+
+    /// <summary>
+    /// Chekni fiskal navbatga qo'yadi. <b>Nasiya (Debt)</b> savdolari fiskalizatsiya
+    /// QILINMAYDI: tovar berilgan, lekin pul olinmagan — chekni hozir ro'yxatga olsak,
+    /// modulga naqd tushum sifatida tushadi va kassadagi haqiqiy naqd bilan mos kelmaydi.
+    /// Qarz to'langanda fiskal chek chiqarilishi kerak (hozircha qo'lda).
+    /// </summary>
+    private async Task EnqueueFiscalIfNeededAsync(Sale sale, CancellationToken cancellationToken)
+    {
+        if (sale.PaymentMethod == PaymentMethod.Debt)
+            return;
+
+        await _fiscal.EnqueueAsync(sale, cancellationToken);
     }
 
     public async Task<SaleDto> RefundAsync(Guid saleId, CancellationToken cancellationToken = default)
@@ -423,8 +437,9 @@ public class SaleService : ISaleService
         _db.Sales.Add(refund);
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Return cheki ham fiskalizatsiya navbatiga.
-        await _fiscal.EnqueueAsync(refund, cancellationToken);
+        // Return cheki ham fiskalizatsiya navbatiga (nasiya savdosi fiskalizatsiya
+        // qilinmagani uchun uning qaytarishi ham navbatga tushmaydi).
+        await EnqueueFiscalIfNeededAsync(refund, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
         return SaleDto.FromEntity(refund);
@@ -740,7 +755,7 @@ public class SaleService : ISaleService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        await _fiscal.EnqueueAsync(sale, cancellationToken);
+        await EnqueueFiscalIfNeededAsync(sale, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
         return SaleDto.FromEntity(sale);

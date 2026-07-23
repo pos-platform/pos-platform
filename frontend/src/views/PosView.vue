@@ -23,7 +23,7 @@ const shiftBusy = ref(false)
 
 // --- Multi-session (bir vaqtda bir nechta savdo) ---
 let nextSessionId = 2
-const sessions = ref([{ id: 1, cart: [], paidAmount: 0, paymentMethod: 'Cash' }])
+const sessions = ref([{ id: 1, cart: [], paidAmount: 0, paymentMethod: 'Card' }])
 const activeSessionId = ref(1)
 
 const currentSession = computed(
@@ -32,7 +32,7 @@ const currentSession = computed(
 
 function addSession() {
   const id = nextSessionId++
-  sessions.value.push({ id, cart: [], paidAmount: 0, paymentMethod: 'Cash' })
+  sessions.value.push({ id, cart: [], paidAmount: 0, paymentMethod: 'Card' })
   activeSessionId.value = id
 }
 
@@ -579,8 +579,8 @@ onUnmounted(() => {
       <div class="field" style="margin-top: 14px">
         <label>To'lov turi</label>
         <select v-model="paymentMethod" class="select">
-          <option value="Cash">💵 Naqd</option>
           <option value="Card">💳 Karta</option>
+          <option value="Cash">💵 Naqd</option>
           <option value="Transfer">📱 O'tkazma (Payme/Click)</option>
           <option value="Mixed">🔀 Aralash</option>
         </select>

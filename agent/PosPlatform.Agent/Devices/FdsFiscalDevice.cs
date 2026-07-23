@@ -343,9 +343,15 @@ public class FdsFiscalDevice : IFiscalDevice
     /// </summary>
     private static object BuildReceipt(PendingReceipt r, DateTime receiptTime)
     {
-        // Transfer (Payme/Click/bank o'tkazmasi) fiskalda karta to'lovi sifatida ro'yxatdan o'tadi.
+        // Fiskalda karta to'lovi sifatida ro'yxatdan o'tadigan turlar:
+        //   Transfer — Payme/Click/bank o'tkazmasi (pul bank hisobiga tushadi, naqd emas);
+        //   Mixed    — aralash to'lov; naqd qismini alohida ajratmagunimizcha butunlay
+        //              kartaga yozamiz, chunki naqd deb yozish kassa naqd qoldig'ini
+        //              haqiqiydan ko'p ko'rsatadi (akvayring bilan solishtirishda farq).
+        // Nasiya (Debt) bu yerga umuman tushmaydi — backend uni navbatga qo'ymaydi.
         var isCard = r.PaymentMethod.Equals("Card", StringComparison.OrdinalIgnoreCase)
-                  || r.PaymentMethod.Equals("Transfer", StringComparison.OrdinalIgnoreCase);
+                  || r.PaymentMethod.Equals("Transfer", StringComparison.OrdinalIgnoreCase)
+                  || r.PaymentMethod.Equals("Mixed", StringComparison.OrdinalIgnoreCase);
 
         var items = r.Items.Select(i => new
         {

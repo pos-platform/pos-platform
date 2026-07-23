@@ -172,8 +172,13 @@ public class CashShiftDto
             if (salesOfMethod.Count == 0 && refundsOfMethod.Count == 0)
                 continue;
 
-            var fiscal = salesOfMethod.Where(IsFiscal).ToList();
-            var nonFiscal = salesOfMethod.Where(s => !IsFiscal(s)).ToList();
+            // Nasiya ataylab fiskalizatsiya qilinmaydi (pul olinmagan) — uni "QR kodsiz"
+            // buzilish sifatida sanamaymiz, aks holda hisobotdagi ogohlantirish ma'nosini
+            // yo'qotadi. Qarz to'langanda fiskal chek alohida chiqariladi.
+            var fiscalTracked = method != PaymentMethod.Debt;
+
+            var fiscal = fiscalTracked ? salesOfMethod.Where(IsFiscal).ToList() : new List<Sale>();
+            var nonFiscal = fiscalTracked ? salesOfMethod.Where(s => !IsFiscal(s)).ToList() : new List<Sale>();
 
             lines.Add(new ShiftPaymentLineDto
             {

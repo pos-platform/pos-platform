@@ -28,7 +28,8 @@ public partial class PosWindow : Window
     private List<CategoryDto> _categories = new();
     private Guid? _selectedCategoryId;
     private System.Windows.Threading.DispatcherTimer? _syncTimer;
-    private string _payment = "Cash";
+    // Standart to'lov turi — karta (kassada eng ko'p ishlatiladigan tur).
+    private string _payment = "Card";
 
     public PosWindow()
     {
@@ -378,7 +379,7 @@ public partial class PosWindow : Window
         {
             _cart.Clear();
             PaidBox.Text = "0";
-            SetPayment("Cash", refocus: false);
+            SetPayment("Card", refocus: false);
             DebtorCombo.SelectedIndex = -1;
             RecalcTotals();
         }

@@ -104,9 +104,12 @@ public class YtFiscalDevice : IFiscalDevice
     /// </summary>
     private static object BuildReceipt(PendingReceipt r)
     {
-        // Transfer (Payme/Click/bank o'tkazmasi) fiskalda karta to'lovi sifatida ro'yxatdan o'tadi.
+        // Transfer (Payme/Click/bank o'tkazmasi) va Mixed (aralash) fiskalda karta to'lovi
+        // sifatida ro'yxatdan o'tadi — naqd deb yozish kassa naqd qoldig'ini buzadi.
+        // Nasiya (Debt) bu yerga tushmaydi: backend uni fiskal navbatga qo'ymaydi.
         var isCard = r.PaymentMethod.Equals("Card", StringComparison.OrdinalIgnoreCase)
-                  || r.PaymentMethod.Equals("Transfer", StringComparison.OrdinalIgnoreCase);
+                  || r.PaymentMethod.Equals("Transfer", StringComparison.OrdinalIgnoreCase)
+                  || r.PaymentMethod.Equals("Mixed", StringComparison.OrdinalIgnoreCase);
 
         var items = r.Items.Select(i => new
         {

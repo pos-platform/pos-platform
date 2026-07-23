@@ -11,8 +11,18 @@ public class FiscalQueueService : IFiscalQueueService
     private readonly IApplicationDbContext _db;
 
     /// <summary>
-    /// Vaqtinchalik xato bo'lganda chek necha marta avto-qayta urinilishi. Chegaraga yetgach
-    /// Failed bo'ladi (5s poll oralig'ida ~30 urinish ≈ 2.5 daqiqa vaqtinchalik uzilishni qoplaydi).
+    /// Chekni qayta urinish oynasi: savdodan keyingi 20 soniya ichida vaqtinchalik xato
+    /// qaytsa chek navbatga qaytariladi (agent 5s'da bir tortadi — ~3-4 urinish), oynadan
+    /// keyin ham chiqmasa Failed bo'ladi va boshqa jo'natilmaydi.
+    /// 20 soniya kassa ekranining kutish vaqti bilan bir xil: mijoz ketguncha QR chiqmasa,
+    /// keyin fiskalizatsiya qilishning ma'nosi yo'q — agent chekni JORIY vaqt bilan yuboradi
+    /// (Receipt.Time hozirgi soatdan olinadi), ya'ni soliqqa sana siljib tushadi.
+    /// </summary>
+    private static readonly TimeSpan RetryWindow = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    /// Qo'shimcha qalqon: oyna ichida ham urinishlar soni cheksiz bo'lmasin (agent poll
+    /// oralig'i juda kichik sozlangan holat uchun).
     /// </summary>
     private const int MaxFiscalRetries = 30;
 
@@ -72,10 +82,14 @@ public class FiscalQueueService : IFiscalQueueService
             // Xato matnini har doim saqlaymiz (audit ko'rinishi uchun).
             receipt.ErrorMessage = result.ErrorMessage;
 
-            // Vaqtinchalik (aniq ro'yxatga OLINMAGAN, o'z-o'zidan tuzaladigan) xato — chekni
-            // navbatga qaytarib avtomatik qayta urinamiz (modul qaytib ulanadi, soat tuzaladi).
+            // Qayta urinish oynasi tugagan bo'lsa — xato turidan qat'i nazar boshqa urinmaymiz:
+            // kechikkan chekni endi fiskalizatsiya qilish sanani buzadi.
+            var retryWindowOver = DateTime.UtcNow - receipt.CreatedAt > RetryWindow;
+
+            // Oyna ichidagi vaqtinchalik (aniq ro'yxatga OLINMAGAN, o'z-o'zidan tuzaladigan) xato —
+            // chekni navbatga qaytarib qayta urinamiz (modul qaytib ulanadi, soat tuzaladi).
             // Doimiy yoki noaniq (double-reg xavfi bor) xato — Failed qoldirib qo'lda ko'riladi.
-            if (IsTransient(result.ErrorMessage) && receipt.FiscalRetryCount < MaxFiscalRetries)
+            if (!retryWindowOver && IsTransient(result.ErrorMessage) && receipt.FiscalRetryCount < MaxFiscalRetries)
             {
                 receipt.FiscalRetryCount++;
                 receipt.FiscalStatus = FiscalStatus.Queued;

@@ -7,6 +7,7 @@ public class SaleSession
 {
     public ObservableCollection<CartLine> Cart { get; } = new();
     public string Paid { get; set; } = "0";
-    public string PaymentMethod { get; set; } = "Cash";
+    /// <summary>Standart to'lov turi — karta.</summary>
+    public string PaymentMethod { get; set; } = "Card";
     public Guid? DebtorId { get; set; }
 }
