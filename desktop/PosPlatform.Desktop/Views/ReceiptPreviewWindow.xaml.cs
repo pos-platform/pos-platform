@@ -11,9 +11,6 @@ public enum ReceiptViewMode
     /// <summary>To'lovdan keyin: fiskalizatsiya kelguncha kutiladi, kodlar ko'rsatiladi.</summary>
     Fiscal,
 
-    /// <summary>Pastdagi "Chop etish": kutilmaydi, Shtrix/MXIK kodlarsiz qisqa nusxa.</summary>
-    ImmediateCopy,
-
     /// <summary>Kunlik savdolar tarixi: kutilmaydi, savdo qanday saqlangan bo'lsa shundayligicha.</summary>
     History
 }
@@ -26,10 +23,7 @@ public partial class ReceiptPreviewWindow : Window
     private CancellationTokenSource? _pollCts;
     private readonly ReceiptViewMode _mode;
 
-    /// <summary>Qisqa nusxa rejimi — Shtrix/MXIK kodlari va "kutilmoqda" matni chiqmaydi.</summary>
-    private bool _immediatePrint => _mode == ReceiptViewMode.ImmediateCopy;
-
-    /// <param name="mode">Oqim turi: to'lovdan keyin (fiskal kutiladi), darhol nusxa yoki tarix.</param>
+    /// <param name="mode">Oqim turi: to'lovdan keyin (fiskal kutiladi) yoki tarix.</param>
     public ReceiptPreviewWindow(ReceiptData receipt, ReceiptViewMode mode = ReceiptViewMode.Fiscal)
     {
         InitializeComponent();
@@ -69,10 +63,10 @@ public partial class ReceiptPreviewWindow : Window
     private void Render()
     {
         // Ko'rsatish uchun hujjat (chop etishda yangisi quriladi — bitta hujjat ikki joyda bo'lolmaydi).
-        // "Fiskalizatsiya kutilmoqda..." matni faqat fiskal oqimda ma'noli: darhol-nusxada ham,
-        // tarixda ham hech narsa kutilmaydi. Shtrix/MXIK kodlari esa tarixda asl chekdagidek qoladi.
+        // "Fiskalizatsiya kutilmoqda..." matni faqat fiskal oqimda ma'noli: tarixda hech narsa
+        // kutilmaydi, Shtrix/MXIK kodlari esa asl chekdagidek qoladi.
         DocViewer.Document = ReceiptPrinter.BuildDocument(_receipt,
-            showFiscalPending: _mode == ReceiptViewMode.Fiscal, showCodes: !_immediatePrint);
+            showFiscalPending: _mode == ReceiptViewMode.Fiscal, showCodes: true);
     }
 
     /// <summary>Backenddan chekning fiskal holatini so'rab turadi; QR kelganda chekni yangilaydi.</summary>
@@ -119,8 +113,7 @@ public partial class ReceiptPreviewWindow : Window
     {
         try
         {
-            // Darhol-chop rejimida printerga ham kodlarsiz (qisqa) ko'rinish yuboriladi.
-            _printer.Print(_receipt, AppState.PrinterName, showCodes: !_immediatePrint);
+            _printer.Print(_receipt, AppState.PrinterName, showCodes: true);
             Close();
         }
         catch (System.Exception ex)

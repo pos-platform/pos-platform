@@ -115,34 +115,48 @@ Tasodifiy kalit (Linux): `openssl rand -base64 48`
 Kassalar `api/desktop-update/version` dan tekshiradi. Server papkasida zip **bo'lmasa
 endpoint 204 qaytaradi va kassalarda yangilanish umuman chiqmaydi**.
 
-- [ ] Dev mashinada zip yasang:
+Serverda **doim bir xil ikkita fayl** turadi (versiya fayl nomida emas):
+
+```
+<ContentRoot>/updates/desktop/PosPlatform.Desktop.zip   <- har chiqarishda ustidan yoziladi
+<ContentRoot>/updates/desktop/version.json              <- {"version":"1.0.6", ...}
+```
+
+- [ ] Dev mashinada zip yasang (skript eski ziplarni o'zi o'chiradi):
   ```powershell
   cd desktop
-  .\publish-desktop-update.ps1 -Version 1.0.4
-  # natija: desktop\publish\PosPlatform.Desktop-1.0.4.zip (~68 MB)
+  .\publish-desktop-update.ps1 -Version 1.0.6
+  # natija: desktop\publish\PosPlatform.Desktop.zip (~70 MB) + desktop\publish\version.json
   ```
-- [ ] Zipni serverga yuklang — **ContentRoot/updates/desktop/** ichiga:
+- [ ] Serverga yuklang — eng qulayi `-Upload` (publish-target.json dagi manzilga o'zi tashlaydi,
+      avval zipni `.tmp` bilan, to'liq tushgach version.json — kassa yarim faylni olmaydi):
+  ```powershell
+  .\publish-desktop-update.ps1 -Version 1.0.6 -Upload
+  ```
+  Qo'lda qilinsa — **ContentRoot/updates/desktop/** ichiga ikkala fayl:
   - **YO'L A (systemd):** `/opt/posplatform/updates/desktop/`
     ```bash
-    scp desktop/publish/PosPlatform.Desktop-1.0.4.zip \
+    scp desktop/publish/PosPlatform.Desktop.zip desktop/publish/version.json \
         user@poscloud.uz:/opt/posplatform/updates/desktop/
     ```
   - **YO'L B (Docker):** hostdagi `deploy/updates/desktop/` (compose bind mount qiladi)
     ```bash
     mkdir -p deploy/updates/desktop
-    scp desktop/publish/PosPlatform.Desktop-1.0.4.zip \
+    scp desktop/publish/PosPlatform.Desktop.zip desktop/publish/version.json \
         user@poscloud.uz:~/pos-platform/deploy/updates/desktop/
     ```
-- [ ] Tekshiring (eng yuqori versiya qaytishi kerak):
+- [ ] Tekshiring (version.json dagi versiya qaytishi kerak):
   ```bash
   curl https://poscloud.uz/api/desktop-update/version
-  # {"version":"1.0.4","fileName":"...","sizeBytes":...}
+  # {"version":"1.0.6","fileName":"PosPlatform.Desktop.zip","sizeBytes":...}
   ```
 - [ ] Kassada: ⚙ Sozlamalar → "Yangi versiya mavjud" → **⬇ Yangilash**.
 
-> Eski versiya zipini o'chirish shart emas — endpoint eng yuqorisini tanlaydi.
+> Serverda faqat bitta zip yig'iladi — joy to'lmaydi. Eski `PosPlatform.Desktop-x.y.z.zip`
+> fayllari qolib ketgan bo'lsa `-Upload` ularni o'chiradi; backend ham ularni faqat
+> zaxira sifatida (version.json yo'q bo'lsa) o'qiydi.
 > Docker'da `/app/updates` bind mount qilingan, shuning uchun `docker compose up -d --build`
-> dan keyin ham ziplar saqlanadi.
+> dan keyin ham fayllar saqlanadi.
 
 ---
 

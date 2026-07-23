@@ -1,8 +1,14 @@
 ﻿# Desktop POS yangi versiyasini tayyorlaydi: build + zip (+ ixtiyoriy: to'g'ridan-to'g'ri serverga yuklash).
 #
+# Chiqish DOIM bir xil ikkita fayl (versiya fayl nomida emas, version.json ichida):
+#   desktop\publish\PosPlatform.Desktop.zip
+#   desktop\publish\version.json      -> {"version":"1.0.6","sizeBytes":...,"builtAt":"..."}
+# Har ishga tushganda desktop\publish ichidagi ESKI zip va build papkalari o'chiriladi —
+# proyektda hech qachon bittadan ortiq zip yotmaydi.
+#
 # Ishlatish:
-#   .\publish-desktop-update.ps1 -Version 1.0.5            # faqat zip yasaydi
-#   .\publish-desktop-update.ps1 -Version 1.0.5 -Upload    # zip yasab, serverga ham yuklaydi
+#   .\publish-desktop-update.ps1 -Version 1.0.6            # faqat zip yasaydi
+#   .\publish-desktop-update.ps1 -Version 1.0.6 -Upload    # zip yasab, serverga ham yuklaydi
 #
 # Server manzilini har safar yozmaslik uchun shu papkada publish-target.json yarating
 # (git'ga tushmaydi — publish-target.example.json dan nusxa oling):
@@ -31,24 +37,52 @@ if ($Version -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') {
     exit 1
 }
 
-$proj = Join-Path $PSScriptRoot "PosPlatform.Desktop\PosPlatform.Desktop.csproj"
-$outDir = Join-Path $PSScriptRoot "publish\PosPlatform.Desktop-$Version"
-$zip = Join-Path $PSScriptRoot "publish\PosPlatform.Desktop-$Version.zip"
+$proj      = Join-Path $PSScriptRoot "PosPlatform.Desktop\PosPlatform.Desktop.csproj"
+$publishRoot = Join-Path $PSScriptRoot "publish"
+$outDir    = Join-Path $publishRoot "app"                       # vaqtinchalik build chiqishi
+$zip       = Join-Path $publishRoot "PosPlatform.Desktop.zip"   # DOIMIY nom
+$metaPath  = Join-Path $publishRoot "version.json"
 
-if (Test-Path $outDir) { Remove-Item $outDir -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $publishRoot | Out-Null
 
+# ── Eski chiqishlarni tozalash ──────────────────────────────────────────────
+# Versiya nomli eski ziplar va build papkalari (PosPlatform.Desktop-1.0.5 ...) qolmasin.
+Get-ChildItem $publishRoot -Filter "*.zip" -File -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        Write-Host "Eski zip o'chirildi: $($_.Name)" -ForegroundColor DarkGray
+        Remove-Item $_.FullName -Force
+    }
+Get-ChildItem $publishRoot -Directory -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        Write-Host "Eski build papkasi o'chirildi: $($_.Name)" -ForegroundColor DarkGray
+        Remove-Item $_.FullName -Recurse -Force
+    }
+
+# ── Build ───────────────────────────────────────────────────────────────────
 dotnet publish $proj -c Release -r win-x64 --self-contained $SelfContained /p:Version=$Version -o $outDir
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
-if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path "$outDir\*" -DestinationPath $zip
+if (-not (Test-Path $zip)) { Write-Error "Zip yaratilmadi."; exit 1 }
+
+# Build papkasi endi kerak emas — zipdan boshqa hech narsa qolmaydi.
+Remove-Item $outDir -Recurse -Force
+
+$meta = [ordered]@{
+    version   = $Version
+    fileName  = "PosPlatform.Desktop.zip"
+    sizeBytes = (Get-Item $zip).Length
+    builtAt   = (Get-Date).ToString("o")
+}
+$meta | ConvertTo-Json | Set-Content -Path $metaPath -Encoding utf8
 
 Write-Host ""
-Write-Host "Tayyor: $zip"
+Write-Host "Tayyor: $zip  (versiya $Version)"
+Write-Host "        $metaPath"
 
 if (-not $Upload) {
     Write-Host "Serverga yuklash: shu buyruqni -Upload bilan qayta ishga tushiring,"
-    Write-Host "yoki qo'lda: <backend ContentRoot>/updates/desktop/PosPlatform.Desktop-$Version.zip"
+    Write-Host "yoki qo'lda ikkala faylni: <backend ContentRoot>/updates/desktop/ ga ko'chiring"
     return
 }
 
@@ -77,10 +111,20 @@ Write-Host "Serverga yuklanmoqda -> ${Server}:${RemotePath}"
 ssh $Server "mkdir -p '$RemotePath'"
 if ($LASTEXITCODE -ne 0) { Write-Error "ssh ulanmadi yoki papka yaratilmadi."; exit 1 }
 
-scp $zip "${Server}:${RemotePath}/"
+# Avval zip (yarim yuklangan holatda eski version.json ko'rsatib turishi uchun),
+# to'liq tushgach version.json — shunda klient hech qachon buzuq zipni olmaydi.
+scp $zip "${Server}:${RemotePath}/PosPlatform.Desktop.zip.tmp"
 if ($LASTEXITCODE -ne 0) { Write-Error "scp muvaffaqiyatsiz — zip yuklanmadi."; exit 1 }
+ssh $Server "mv '$RemotePath/PosPlatform.Desktop.zip.tmp' '$RemotePath/PosPlatform.Desktop.zip'"
+if ($LASTEXITCODE -ne 0) { Write-Error "Serverda zip nomini almashtirib bo'lmadi."; exit 1 }
 
-Write-Host "Yuklandi: ${RemotePath}/PosPlatform.Desktop-$Version.zip"
+scp $metaPath "${Server}:${RemotePath}/version.json"
+if ($LASTEXITCODE -ne 0) { Write-Error "version.json yuklanmadi — server eski versiyani ko'rsatadi."; exit 1 }
+
+# Serverda qolgan eski versiya nomli ziplar (o'tish davridan) — tozalaymiz.
+ssh $Server "rm -f '$RemotePath'/PosPlatform.Desktop-*.zip"
+
+Write-Host "Yuklandi: ${RemotePath}/PosPlatform.Desktop.zip (versiya $Version)"
 
 # ── Tekshirish: server endi shu versiyani qaytaryaptimi? ────────────────────
 if (-not [string]::IsNullOrWhiteSpace($VerifyUrl)) {
@@ -96,7 +140,7 @@ if (-not [string]::IsNullOrWhiteSpace($VerifyUrl)) {
                 Write-Host "OK — kassalar endi $Version ni ko'radi." -ForegroundColor Green
             }
             else {
-                Write-Warning "Server boshqa versiyani qaytardi — yuqoriroq versiya zipi turgan bo'lishi mumkin."
+                Write-Warning "Server boshqa versiyani qaytardi — version.json yangilanmagan bo'lishi mumkin."
             }
         }
     }

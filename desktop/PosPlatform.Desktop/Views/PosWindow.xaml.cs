@@ -1091,9 +1091,13 @@ public partial class PosWindow : Window
                 ApplyFilter();
             }
 
-            new ReceiptPreviewWindow(receipt,
-                allowImmediatePrint ? ReceiptViewMode.ImmediateCopy : ReceiptViewMode.Fiscal)
-            { Owner = this }.ShowDialog();
+            // Pastdagi "Chop etish": kassir allaqachon chop etishni tanlagan — ko'rish oynasida
+            // yana bir marta tugma bosdirmaymiz, chekni to'g'ridan-to'g'ri printerga yuboramiz.
+            // O'tkazmada bu "Pul tushdi" tasdig'idan keyin darhol chek chiqishini bildiradi.
+            if (allowImmediatePrint)
+                PrintReceiptSafe(receipt);
+            else
+                new ReceiptPreviewWindow(receipt, ReceiptViewMode.Fiscal) { Owner = this }.ShowDialog();
         }
         catch (Exception ex)
         {

@@ -53,9 +53,9 @@ services:
     volumes:
       # Yuklangan rasmlar/uploads konteyner qayta yaratilsa ham saqlanadi.
       - uploads:/app/wwwroot/uploads
-      # Desktop (kassa) yangilanish ziplari. Hostdagi deploy/updates/desktop/ ichiga
-      # PosPlatform.Desktop-x.y.z.zip qo'ysangiz — kassalar api/desktop-update orqali ko'radi.
-      # Bind mount: konteyner qayta qurilsa ham zipllar yo'qolmaydi.
+      # Desktop (kassa) yangilanishi. Hostdagi deploy/updates/desktop/ ichida doim
+      # PosPlatform.Desktop.zip + version.json turadi — kassalar api/desktop-update orqali ko'radi.
+      # Bind mount: konteyner qayta qurilsa ham fayllar yo'qolmaydi.
       - ./updates:/app/updates
 
 volumes:
