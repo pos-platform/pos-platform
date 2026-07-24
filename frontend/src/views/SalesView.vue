@@ -622,7 +622,7 @@ function openReceiptWindow(sale) {
         </thead>
         <tbody v-for="g in moduleGroups" :key="g.module || 'none'" class="mod-group">
           <tr class="mod-group-head">
-            <td colspan="4">
+            <td colspan="2">
               <strong>{{ moduleOwner(g.module) || moduleLabel(g.module) }}</strong>
               <button class="name-btn" title="Ism-sharifni kiritish/o'zgartirish"
                       @click="renameModule(g.module)">✎</button>
