@@ -1024,6 +1024,9 @@ public partial class PosWindow : Window
                 PaidAmount = payment == "Debt" ? 0 : (paid > 0 ? paid : total),
                 DebtorId = debtorId,
                 TerminalId = AppState.TerminalId,
+                // Yashil "To'lash va Chek chiqarish" → fiskal (QR-li). Pastdagi "Chop etish"
+                // (allowImmediatePrint) → nofiskal (QR-siz): soliqqa yuborilmaydi.
+                Fiscalize = !allowImmediatePrint,
                 Items = _cart.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity, MarkingCode = l.MarkingCode }).ToList()
             };
             var receipt = new ReceiptData

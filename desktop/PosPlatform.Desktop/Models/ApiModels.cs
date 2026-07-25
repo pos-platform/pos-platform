@@ -236,6 +236,11 @@ public class CreateSaleRequest
     public Guid? DebtorId { get; set; }
     /// <summary>Kassa stantsiyasi ID (masalan "KASSA-1") — fiskal agent shu bo'yicha filtrlaydi.</summary>
     public string? TerminalId { get; set; }
+
+    /// <summary>Chek fiskalizatsiya qilinsinmi. true — yashil "To'lash va Chek chiqarish" (QR-li);
+    /// false — "Chop etish" (nofiskal, QR-siz). Nasiya baribir fiskalizatsiya qilinmaydi.</summary>
+    public bool Fiscalize { get; set; } = true;
+
     public List<SaleItemRequest> Items { get; set; } = new();
 }
 

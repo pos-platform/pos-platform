@@ -306,21 +306,30 @@ public class SaleService : ISaleService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Fiskalizatsiya (nasiyadan tashqari — pastdagi izohga qarang).
-        await EnqueueFiscalIfNeededAsync(sale, cancellationToken);
+        // Fiskalizatsiya (nasiyadan tashqari — pastdagi izohga qarang). Kassir "Chop etish"
+        // (nofiskal, QR-siz) tugmasini bosgan bo'lsa request.Fiscalize=false keladi — chek
+        // soliqqa umuman yuborilmaydi (QrCodeUrl bo'sh qoladi → hisobotda "QR kodsiz").
+        await EnqueueFiscalIfNeededAsync(sale, request.Fiscalize, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
         return SaleDto.FromEntity(sale);
     }
 
     /// <summary>
-    /// Chekni fiskal navbatga qo'yadi. <b>Nasiya (Debt)</b> savdolari fiskalizatsiya
-    /// QILINMAYDI: tovar berilgan, lekin pul olinmagan — chekni hozir ro'yxatga olsak,
-    /// modulga naqd tushum sifatida tushadi va kassadagi haqiqiy naqd bilan mos kelmaydi.
-    /// Qarz to'langanda fiskal chek chiqarilishi kerak (hozircha qo'lda).
+    /// Chekni fiskal navbatga qo'yadi. Fiskalizatsiya QILINMAYDI, agar:
+    /// <list type="bullet">
+    /// <item><b>Nasiya (Debt)</b> — tovar berilgan, lekin pul olinmagan; chekni hozir ro'yxatga
+    /// olsak modulga naqd tushum sifatida tushadi va kassadagi haqiqiy naqd bilan mos kelmaydi.
+    /// Qarz to'langanda fiskal chek chiqarilishi kerak (hozircha qo'lda).</item>
+    /// <item><paramref name="fiscalize"/> = false — kassir "Chop etish" (nofiskal, QR-siz)
+    /// tugmasini bosgan; chek ataylab soliqqa yuborilmaydi.</item>
+    /// </list>
     /// </summary>
-    private async Task EnqueueFiscalIfNeededAsync(Sale sale, CancellationToken cancellationToken)
+    private async Task EnqueueFiscalIfNeededAsync(Sale sale, bool fiscalize, CancellationToken cancellationToken)
     {
+        if (!fiscalize)
+            return;
+
         if (sale.PaymentMethod == PaymentMethod.Debt)
             return;
 
@@ -340,6 +349,7 @@ public class SaleService : ISaleService
 
         var original = await _db.Sales
             .Include(s => s.Items)
+            .Include(s => s.Receipt) // qaytarish asl chekning fiskal holatiga mos bo'lishi uchun
             .FirstOrDefaultAsync(s => s.Id == saleId, cancellationToken);
 
         if (original is null)
@@ -437,9 +447,11 @@ public class SaleService : ISaleService
         _db.Sales.Add(refund);
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Return cheki ham fiskalizatsiya navbatiga (nasiya savdosi fiskalizatsiya
-        // qilinmagani uchun uning qaytarishi ham navbatga tushmaydi).
-        await EnqueueFiscalIfNeededAsync(refund, cancellationToken);
+        // Return cheki ham fiskalizatsiya navbatiga — LEKIN faqat asl savdo fiskal (QR olgan)
+        // bo'lsa. Nofiskal (QR-siz) yoki nasiya savdosining qaytarishi ham nofiskal bo'ladi,
+        // aks holda soliqda mos kelmaydigan minus chek paydo bo'lardi.
+        var originalWasFiscal = !string.IsNullOrWhiteSpace(original.Receipt?.QrCodeUrl);
+        await EnqueueFiscalIfNeededAsync(refund, originalWasFiscal, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
         return SaleDto.FromEntity(refund);
@@ -755,7 +767,8 @@ public class SaleService : ISaleService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        await EnqueueFiscalIfNeededAsync(sale, cancellationToken);
+        // Restoran buyurtmasi to'lovi doim fiskal (yashil oqim) — nofiskal tanlov yo'q.
+        await EnqueueFiscalIfNeededAsync(sale, fiscalize: true, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
         return SaleDto.FromEntity(sale);

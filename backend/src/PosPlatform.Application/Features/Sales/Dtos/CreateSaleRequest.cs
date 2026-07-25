@@ -16,6 +16,14 @@ public class CreateSaleRequest
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
 
+    /// <summary>
+    /// Chek fiskalizatsiya qilinsinmi (soliq tizimiga yuborilib QR kod olsinmi).
+    /// <c>true</c> — yashil "To'lash va Chek chiqarish" (fiskal, QR-li chek).
+    /// <c>false</c> — "Chop etish" (nofiskal, QR-siz chek): soliqqa umuman yuborilmaydi.
+    /// Nasiya (Debt) esa bu qiymatdan qat'i nazar hech qachon fiskalizatsiya qilinmaydi.
+    /// </summary>
+    public bool Fiscalize { get; set; } = true;
+
     /// <summary>O'tkazma (Transfer) to'lovda qaysi usul: "Payme" yoki "Karta". Boshqa to'lovlarda e'tiborga olinmaydi.</summary>
     [MaxLength(30)]
     public string? TransferSource { get; set; }
