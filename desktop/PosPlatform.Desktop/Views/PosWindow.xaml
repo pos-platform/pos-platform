@@ -197,8 +197,8 @@
             </Setter>
         </Style>
 
-        <!-- Katta asosiy tugma (ko'k gradient) -->
-        <Style x:Key="PayBtn" TargetType="Button">
+        <!-- Katta "Chop etish" tugmasi (indigo gradient — ko'k tab/aksentlardan farqlanadi) -->
+        <Style x:Key="PrintBtn" TargetType="Button">
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="FontSize" Value="16" />
@@ -210,8 +210,8 @@
                         <Border x:Name="b" CornerRadius="11">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#3B82F6" Offset="0" />
-                                    <GradientStop Color="#2563EB" Offset="1" />
+                                    <GradientStop Color="#6366F1" Offset="0" />
+                                    <GradientStop Color="#4338CA" Offset="1" />
                                 </LinearGradientBrush>
                             </Border.Background>
                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
@@ -502,7 +502,7 @@
                             </Grid>
 
                             <Button x:Name="ReprintButton" Content="🖨  Chop etish"
-                                    Style="{StaticResource PayBtn}" Height="44" Margin="0,8,0,0"
+                                    Style="{StaticResource PrintBtn}" Height="44" Margin="0,8,0,0"
                                     Click="Reprint_Click"
                                     ToolTip="Oxirgi to'lov qilingan chekni chop etish" />
 
