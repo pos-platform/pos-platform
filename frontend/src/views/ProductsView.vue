@@ -482,11 +482,12 @@ function printBarcode(product) {
   try {
     JsBarcode(svg, product.barcode, {
       format: 'CODE128',
-      width: 1.5,
-      height: 45,
+      width: 1.4,
+      height: 38,
       displayValue: true,
-      fontSize: 12,
-      margin: 4,
+      fontSize: 10,
+      textMargin: 0,
+      margin: 2,
       background: '#ffffff',
       lineColor: '#000000'
     })
@@ -499,7 +500,7 @@ function printBarcode(product) {
   const svgHtml = new XMLSerializer().serializeToString(svg)
   const priceFmt = Number(product.price).toLocaleString()
 
-  const w = window.open('', '_blank', 'width=460,height=340')
+  const w = window.open('', '_blank', 'width=400,height=280')
   if (!w) {
     error.value = 'Chop etish oynasi ochilmadi. Brauzerda popup (pop-up) ruxsatini yoqing.'
     setTimeout(() => { error.value = '' }, 5000)
@@ -512,22 +513,27 @@ function printBarcode(product) {
   <title>${product.name}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    @page { size: 58mm 40mm; margin: 0; }
-    html, body { width: 58mm; height: 40mm; background: #fff; }
-    body { font-family: Arial, sans-serif; }
+    /* Etiketka qog'ozi: 58mm x 30mm */
+    @page { size: 58mm 30mm; margin: 0; }
+    html, body { width: 58mm; height: 30mm; background: #fff; }
+    body { font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .label {
-      width: 58mm; height: 40mm;
+      width: 58mm; height: 30mm;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      padding: 2mm; overflow: hidden;
+      padding: 1mm 2mm; overflow: hidden;
     }
     .name {
-      font-weight: bold; font-size: 12px; text-align: center; line-height: 1.1;
-      margin-bottom: 1mm; max-width: 100%;
+      font-weight: bold; font-size: 11px; text-align: center; line-height: 1.1;
+      max-width: 100%;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    svg { display: block; max-width: 54mm; height: auto; }
-    .price { font-weight: bold; font-size: 17px; margin-top: 1mm; }
+    svg {
+      display: block;
+      max-width: 54mm; max-height: 14mm;
+      width: auto; height: auto;
+    }
+    .price { font-weight: bold; font-size: 15px; line-height: 1.1; }
   </style>
 </head>
 <body>
