@@ -15,11 +15,53 @@ const printingId = ref(null)
 
 // Standart — bugungi kun (lokal sana, YYYY-MM-DD)
 function todayStr() {
-  const d = new Date()
+  return toDateStr(new Date())
+}
+/** Date → lokal YYYY-MM-DD (UTC ga siljib ketmasligi uchun offset ayiriladi). */
+function toDateStr(d) {
   const off = d.getTimezoneOffset()
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10)
 }
-const date = ref(todayStr())
+/** Sanani kun bo'yicha siljitadi (YYYY-MM-DD → YYYY-MM-DD). */
+function addDays(dateStr, days) {
+  const d = new Date(`${dateStr}T00:00:00`)
+  d.setDate(d.getDate() + days)
+  return toDateStr(d)
+}
+
+// Davr: boshlanish va tugash sanasi (ikkalasi ham qamrab olinadi).
+const dateFrom = ref(todayStr())
+const dateTo = ref(todayStr())
+
+/** Davrdagi kunlar soni — 1 bo'lsa bir kunlik hisobot. */
+const dayCount = computed(() => {
+  const a = new Date(`${dateFrom.value}T00:00:00`)
+  const b = new Date(`${dateTo.value}T00:00:00`)
+  return Math.max(1, Math.round((b - a) / 86400000) + 1)
+})
+const isRange = computed(() => dayCount.value > 1)
+
+/** Davr sarlavhasi: bir kun bo'lsa bitta sana, aks holda oraliq. */
+const periodLabel = computed(() =>
+  isRange.value ? `${dateFrom.value} — ${dateTo.value} (${dayCount.value} kun)` : dateFrom.value
+)
+
+/** Tayyor davrlar — bir bosishda tanlash uchun. */
+function setPreset(preset) {
+  const today = todayStr()
+  if (preset === 'today') { dateFrom.value = today; dateTo.value = today }
+  else if (preset === 'yesterday') { const y = addDays(today, -1); dateFrom.value = y; dateTo.value = y }
+  else if (preset === 'week') { dateFrom.value = addDays(today, -6); dateTo.value = today }
+  else if (preset === 'month') { dateFrom.value = `${today.slice(0, 7)}-01`; dateTo.value = today }
+}
+function isPreset(preset) {
+  const today = todayStr()
+  if (preset === 'today') return dateFrom.value === today && dateTo.value === today
+  if (preset === 'yesterday') return dateFrom.value === addDays(today, -1) && dateTo.value === dateFrom.value
+  if (preset === 'week') return dateFrom.value === addDays(today, -6) && dateTo.value === today
+  if (preset === 'month') return dateFrom.value === `${today.slice(0, 7)}-01` && dateTo.value === today
+  return false
+}
 
 const fiscalPill = {
   NotSent: 'pill-gray',
@@ -44,23 +86,24 @@ const paymentLabel = {
 function fmtTime(d) {
   return new Date(d).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })
 }
+/** Ro'yxatda: bir kunlik hisobotda faqat vaqt, davr bo'yicha esa sana ham. */
+function fmtWhen(d) {
+  if (!isRange.value) return fmtTime(d)
+  const dt = new Date(d)
+  return `${dt.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' })} ${fmtTime(d)}`
+}
 function fmtNum(n) {
   return Number(n || 0).toLocaleString()
 }
 
-// Keyingi kun (sana-only, YYYY-MM-DD) — backend [from, to) UTC kalendar kuni sifatida oladi
-function nextDayStr(dateStr) {
-  const d = new Date(`${dateStr}T00:00:00`)
-  d.setDate(d.getDate() + 1)
-  const off = d.getTimezoneOffset()
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10)
-}
-
 async function load() {
+  // Sana maydoni yarim kiritilgan/tozalangan bo'lsa — so'rov yubormaymiz
+  if (!dateFrom.value || !dateTo.value) return
   loading.value = true
   error.value = ''
   try {
-    const params = { from: date.value, to: nextDayStr(date.value) }
+    // backend [from, to) oladi — tugash kuni ham qamrab olinishi uchun +1 kun
+    const params = { from: dateFrom.value, to: addDays(dateTo.value, 1) }
     if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
     sales.value = await salesApi.list(params)
   } catch (e) {
@@ -87,7 +130,7 @@ function isUnconfirmedFiscal(s) {
   return s.receipt?.fiscalStatus === 'Registered' && !isFiscal(s)
 }
 
-/** Shu kunda tasdiqlanmagan (QR shakllanmagan) cheklar soni. */
+/** Tanlangan davrda tasdiqlanmagan (QR shakllanmagan) cheklar soni. */
 const unconfirmedCount = computed(() =>
   terminalSales.value.filter((s) => s.type !== 'Refund' && isUnconfirmedFiscal(s)).length
 )
@@ -154,7 +197,7 @@ const terminalFilter = ref('all')
 function terminalOf(s) { return s.terminalId || '' }
 function terminalLabel(t) { return t || "Kassa ko'rsatilmagan" }
 
-/** Kun davomida savdo bo'lgan kassalar ro'yxati (dropdown uchun). */
+/** Tanlangan davrda savdo bo'lgan kassalar ro'yxati (dropdown uchun). */
 const terminals = computed(() => {
   const set = new Set(sales.value.map(terminalOf))
   return [...set].sort((a, b) => a.localeCompare(b))
@@ -167,7 +210,7 @@ const terminalSales = computed(() =>
     : sales.value.filter((s) => terminalOf(s) === terminalFilter.value)
 )
 
-// Kunlik jami: sotuvlar soni, naqd/karta/nasiya, qaytarishlar, sof tushum
+// Davr bo'yicha jami: sotuvlar soni, naqd/karta/nasiya, qaytarishlar, sof tushum
 // va alohida — fiskal (QR kodli) va fiskalsiz (oddiy) cheklar summasi.
 const summary = computed(() => {
   const b = emptyBucket()
@@ -308,7 +351,7 @@ const crossTerminalModules = computed(() =>
     .map((m) => ({ title: moduleTitle(m.module), terminals: m.terminals }))
 )
 
-/** Bir kassir bir nechta fiskal modulda ishlaganmi — aralashib ketgan loginlar. */
+/** Bir kassir tanlangan davrda bir nechta fiskal modulda ishlaganmi — aralashib ketgan loginlar. */
 const mixedCashiers = computed(() => {
   const byCashier = new Map()
   for (const r of perModule.value) {
@@ -321,15 +364,31 @@ const mixedCashiers = computed(() => {
 })
 
 watch(() => storeFilter.selectedBranchId, () => load())
-watch(date, () => load())
+
+// Boshlanish tugashdan keyin qo'yilsa — ikkinchisi ergashadi (bo'sh oraliq bo'lmasin).
+// Sana maydoni tozalab qo'yilganda (bo'sh qiymat) hech narsa o'zgartirilmaydi.
+watch(dateFrom, (v) => { if (v && dateTo.value && v > dateTo.value) dateTo.value = v })
+watch(dateTo, (v) => { if (v && dateFrom.value && v < dateFrom.value) dateFrom.value = v })
+
+// Ikkala sana bir vaqtda o'zgarganda (preset, siljitish) bitta so'rov ketishi uchun
+// yuklash keyingi tikka qoldiriladi.
+let reloadTimer = null
+watch([dateFrom, dateTo], () => {
+  clearTimeout(reloadTimer)
+  reloadTimer = setTimeout(load, 0)
+})
 
 onMounted(() => { load(); loadModuleCards() })
 
-function shiftDay(days) {
-  const d = new Date(`${date.value}T00:00:00`)
-  d.setDate(d.getDate() + days)
-  const off = d.getTimezoneOffset()
-  date.value = new Date(d.getTime() - off * 60000).toISOString().slice(0, 10)
+/** Davrni butunligicha oldinga/orqaga siljitadi (uzunligi saqlanadi). */
+function shiftPeriod(step) {
+  if (!dateFrom.value || !dateTo.value) return
+  const days = step * dayCount.value
+  const from = addDays(dateFrom.value, days)
+  const to = addDays(dateTo.value, days)
+  // oraliq vaqtincha teskari bo'lib qolmasligi uchun tartib bilan yoziladi
+  if (days < 0) { dateFrom.value = from; dateTo.value = to }
+  else { dateTo.value = to; dateFrom.value = from }
 }
 
 async function refund(sale) {
@@ -440,11 +499,22 @@ function openReceiptWindow(sale) {
 
 <template>
   <div class="page-head">
-    <h1>Kunlik savdolar</h1>
-    <div style="display: flex; gap: 8px; align-items: center">
-      <button class="btn btn-ghost btn-sm" @click="shiftDay(-1)" title="Oldingi kun">‹</button>
-      <input type="date" class="input" style="width: 160px" v-model="date" />
-      <button class="btn btn-ghost btn-sm" @click="shiftDay(1)" title="Keyingi kun">›</button>
+    <div>
+      <h1>{{ isRange ? 'Savdolar hisoboti' : 'Kunlik savdolar' }}</h1>
+      <div class="period-note muted">{{ periodLabel }}</div>
+    </div>
+    <div class="range-bar">
+      <button v-for="p in [['today','Bugun'],['yesterday','Kecha'],['week','7 kun'],['month','Bu oy']]"
+              :key="p[0]" class="chip chip-sm" :class="{ 'chip-on': isPreset(p[0]) }"
+              @click="setPreset(p[0])">
+        {{ p[1] }}
+      </button>
+      <span class="range-sep"></span>
+      <button class="btn btn-ghost btn-sm" @click="shiftPeriod(-1)" title="Oldingi davr">‹</button>
+      <input type="date" class="input date-in" v-model="dateFrom" :max="dateTo" title="Boshlanish sanasi" />
+      <span class="muted">—</span>
+      <input type="date" class="input date-in" v-model="dateTo" :min="dateFrom" title="Tugash sanasi" />
+      <button class="btn btn-ghost btn-sm" @click="shiftPeriod(1)" title="Keyingi davr">›</button>
       <button class="btn btn-ghost btn-sm" @click="load">Yangilash</button>
     </div>
   </div>
@@ -576,7 +646,7 @@ function openReceiptWindow(sale) {
           </tr>
           <tr v-if="!perFiscalModule.length && !loading">
             <td colspan="10" class="muted" style="text-align: center; padding: 24px">
-              Bu kunda QR kodli (fiskal) chek yo'q
+              {{ isRange ? "Tanlangan davrda QR kodli (fiskal) chek yo'q" : "Bu kunda QR kodli (fiskal) chek yo'q" }}
             </td>
           </tr>
         </tbody>
@@ -603,7 +673,7 @@ function openReceiptWindow(sale) {
     </div>
 
     <div v-if="mixedCashiers.length" class="alert alert-warn mix-warn">
-      <strong>Diqqat:</strong> quyidagi kassirlar bir kunda bir nechta fiskal modulda ishlagan —
+      <strong>Diqqat:</strong> quyidagi kassirlar {{ isRange ? 'tanlangan davrda' : 'bir kunda' }} bir nechta fiskal modulda ishlagan —
       <span v-for="(m, i) in mixedCashiers" :key="m.cashier">
         <b>{{ m.cashier }}</b> ({{ m.modules.join(', ') }}){{ i < mixedCashiers.length - 1 ? '; ' : '' }}
       </span>
@@ -647,7 +717,7 @@ function openReceiptWindow(sale) {
         <tbody v-if="!moduleGroups.length && !loading">
           <tr>
             <td colspan="9" class="muted" style="text-align: center; padding: 24px">
-              Bu kunda QR kodli (fiskal) chek yo'q
+              {{ isRange ? "Tanlangan davrda QR kodli (fiskal) chek yo'q" : "Bu kunda QR kodli (fiskal) chek yo'q" }}
             </td>
           </tr>
         </tbody>
@@ -693,7 +763,7 @@ function openReceiptWindow(sale) {
           </td>
           <td class="muted">{{ s.terminalId || '—' }}</td>
           <td class="muted">{{ s.cashierFullName || s.cashierUsername || '—' }}</td>
-          <td class="muted">{{ fmtTime(s.createdAt) }}</td>
+          <td class="muted">{{ fmtWhen(s.createdAt) }}</td>
           <td>
             {{ paymentLabel[s.paymentMethod] || s.paymentMethod }}
             <span v-if="s.transferSource" class="muted src">({{ s.transferSource }})</span>
@@ -735,7 +805,9 @@ function openReceiptWindow(sale) {
         </tr>
         <tr v-if="!shownSales.length && !loading">
           <td colspan="9" class="muted" style="text-align: center; padding: 24px">
-            {{ sales.length ? "Tanlangan filtr bo'yicha chek yo'q" : "Bu kunda savdo yo'q" }}
+            {{ sales.length
+              ? "Tanlangan filtr bo'yicha chek yo'q"
+              : (isRange ? "Tanlangan davrda savdo yo'q" : "Bu kunda savdo yo'q") }}
           </td>
         </tr>
       </tbody>
@@ -745,6 +817,29 @@ function openReceiptWindow(sale) {
 </template>
 
 <style scoped>
+.period-note {
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+.range-bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.range-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 4px;
+}
+.date-in {
+  width: 150px;
+}
+.chip-sm {
+  padding: 5px 12px;
+  font-size: 12.5px;
+}
 .summary-grid {
   display: grid;
   /* 1-qator: Savdolar + 5 to'lov turi + Qaytarish = 7 ta */

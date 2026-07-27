@@ -197,7 +197,7 @@
             </Setter>
         </Style>
 
-        <!-- To'lash tugmasi (yashil-teal gradient) -->
+        <!-- Katta asosiy tugma (ko'k gradient) -->
         <Style x:Key="PayBtn" TargetType="Button">
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontWeight" Value="Bold" />
@@ -208,6 +208,38 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="b" CornerRadius="11">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#3B82F6" Offset="0" />
+                                    <GradientStop Color="#2563EB" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Opacity" Value="0.93" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="b" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Kichik yashil tugma (yashil-teal gradient) -->
+        <Style x:Key="PaySmallBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" CornerRadius="9">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                     <GradientStop Color="#059669" Offset="0" />
@@ -469,13 +501,13 @@
                                 </StackPanel>
                             </Grid>
 
-                            <Button x:Name="CheckoutButton" Content="✓  To'lash va Chek chiqarish (F12)"
-                                    Style="{StaticResource PayBtn}" Height="44" Margin="0,8,0,0" Click="Checkout_Click" />
-
                             <Button x:Name="ReprintButton" Content="🖨  Chop etish"
-                                    Style="{StaticResource GhostBtn}" Margin="0,5,0,0" Height="28" FontSize="12"
+                                    Style="{StaticResource PayBtn}" Height="44" Margin="0,8,0,0"
                                     Click="Reprint_Click"
                                     ToolTip="Oxirgi to'lov qilingan chekni chop etish" />
+
+                            <Button x:Name="CheckoutButton" Content="✓  To'lash va Chek chiqarish (F12)"
+                                    Style="{StaticResource PaySmallBtn}" Margin="0,5,0,0" Click="Checkout_Click" />
 
                             <TextBlock x:Name="MessageText" TextWrapping="Wrap" Margin="0,5,0,0" FontSize="13"
                                        FontWeight="SemiBold" Visibility="Collapsed" />
