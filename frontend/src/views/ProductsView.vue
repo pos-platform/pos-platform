@@ -129,25 +129,58 @@ async function exportExcel() {
   }
 }
 
-// Joriy filtrlangan ro'yxatni FENIX/tarozi formatida (;-ajratilgan) .txt qilib yuklaydi.
+// Filtrga mos BARCHA mahsulotlarni (sahifalashdan qat'i nazar — filterUnit=Kilogram
+// bo'lsa hamma kg tovar) FENIX/tarozi formatida (;-ajratilgan) .txt qilib yuklaydi.
 // Qator: kod;nomi;;narx;0;0;0;kod;0;0;;01.01.01;0;0;0;0;01.01.01
 function exportFenixTxt() {
+  // Diqqat: paginatedProducts emas — joriy sahifa emas, butun filtrlangan ro'yxat.
   const list = filteredProducts.value
   if (!list.length) {
     error.value = 'Eksport uchun mahsulot yo\'q'
     setTimeout(() => { error.value = '' }, 3000)
     return
   }
+
+  // Kodlar takrorlanmasligi kerak: aks holda tarozi bir qatorni ikkinchisi bilan
+  // almashtiradi va tovarlar "yo'qoladi". Avval mavjud PLU'larni band qilamiz,
+  // qolganlariga esa bo'sh kodlarni ketma-ket beramiz.
+  const used = new Set()
+  let dupPlu = 0
+  for (const p of list) {
+    const plu = Number(p.pluNumber)
+    if (p.pluNumber != null && plu > 0) {
+      if (used.has(plu)) dupPlu++
+      used.add(plu)
+    }
+  }
   let seq = 0
+  const nextFreeCode = () => {
+    do { seq++ } while (used.has(seq))
+    used.add(seq)
+    return seq
+  }
+
   const lines = list.map((p) => {
-    const code = p.pluNumber != null && Number(p.pluNumber) > 0 ? Number(p.pluNumber) : ++seq
+    const plu = Number(p.pluNumber)
+    const code = p.pluNumber != null && plu > 0 ? plu : nextFreeCode()
     const name = (p.name || '').replace(/;/g, ' ').replace(/[\r\n]+/g, ' ').trim()
     const price = Math.round(Number(p.price) || 0)
     return `${code};${name};;${price};0;0;0;${code};0;0;;01.01.01;0;0;0;0;01.01.01`
   })
+
   // UTF-8 BOM (﻿) — kirill harflari Notepad/eski dasturlarda buzilmasligi uchun
   const blob = new Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/plain;charset=utf-8' })
-  downloadBlob(blob, 'mahsulotlar.txt')
+  const suffix = filterUnit.value === 'Kilogram' ? '-kg' : filterUnit.value === 'Piece' ? '-dona' : ''
+  downloadBlob(blob, `mahsulotlar${suffix}.txt`)
+
+  success.value = `${lines.length} ta mahsulot .txt ga eksport qilindi (barcha sahifalar)`
+  setTimeout(() => { success.value = '' }, 4000)
+
+  // Bir xil PLU'li mahsulotlar tarozida bir-birini almashtiradi — ogohlantiramiz.
+  if (dupPlu > 0) {
+    error.value = `Diqqat: ${dupPlu} ta mahsulotning PLU raqami takrorlangan — tarozida ular bir-birini almashtiradi. PLU'larni tuzating.`
+    setTimeout(() => { error.value = '' }, 8000)
+  }
 }
 
 const blankForm = () => ({
