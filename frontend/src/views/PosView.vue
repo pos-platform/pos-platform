@@ -127,6 +127,7 @@ function onScan() {
   if (!q) return
   const exact =
     products.value.find((p) => p.barcode && p.barcode.toLowerCase() === q) ||
+    products.value.find((p) => p.pluNumber != null && String(p.pluNumber) === q) ||
     products.value.find((p) => p.name.toLowerCase() === q) ||
     filtered.value[0]
   if (exact) {

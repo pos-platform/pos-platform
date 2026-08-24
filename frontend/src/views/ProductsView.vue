@@ -505,32 +505,32 @@ onUnmounted(() => {
 })
 
 function printBarcode(product) {
-  if (!product.barcode) {
-    error.value = 'Bu mahsulotda barcode yo\'q'
-    setTimeout(() => { error.value = '' }, 3000)
-    return
+  // Barcode bo'lmasa PLU dan foydalaniladi, u ham bo'lmasa faqat nom+narx chop etiladi
+  const code = String(product.barcode || '').trim()
+    || (product.pluNumber != null && Number(product.pluNumber) > 0 ? String(product.pluNumber) : '')
+
+  let codeHtml = ''
+  if (code) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    try {
+      JsBarcode(svg, code, {
+        format: 'CODE128',
+        width: 1.4,
+        height: 38,
+        displayValue: true,
+        fontSize: 10,
+        textMargin: 0,
+        margin: 2,
+        background: '#ffffff',
+        lineColor: '#000000'
+      })
+      codeHtml = new XMLSerializer().serializeToString(svg)
+    } catch {
+      // Barcode formati chizilmasa — kodni matn ko'rinishida chiqaramiz
+      codeHtml = `<div class="code">${code}</div>`
+    }
   }
 
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  try {
-    JsBarcode(svg, product.barcode, {
-      format: 'CODE128',
-      width: 1.4,
-      height: 38,
-      displayValue: true,
-      fontSize: 10,
-      textMargin: 0,
-      margin: 2,
-      background: '#ffffff',
-      lineColor: '#000000'
-    })
-  } catch {
-    error.value = 'Barcode formati noto\'g\'ri'
-    setTimeout(() => { error.value = '' }, 3000)
-    return
-  }
-
-  const svgHtml = new XMLSerializer().serializeToString(svg)
   const priceFmt = Number(product.price).toLocaleString()
 
   const w = window.open('', '_blank', 'width=400,height=280')
@@ -566,13 +566,16 @@ function printBarcode(product) {
       max-width: 54mm; max-height: 14mm;
       width: auto; height: auto;
     }
+    .code { font-size: 11px; letter-spacing: 1px; line-height: 1.4; }
     .price { font-weight: bold; font-size: 15px; line-height: 1.1; }
+    .label.no-code .name { font-size: 13px; white-space: normal; }
+    .label.no-code .price { font-size: 20px; margin-top: 1mm; }
   </style>
 </head>
 <body>
-  <div class="label">
+  <div class="label${codeHtml ? '' : ' no-code'}">
     <div class="name">${product.name}</div>
-    ${svgHtml}
+    ${codeHtml}
     <div class="price">${priceFmt}</div>
   </div>
   <script>
