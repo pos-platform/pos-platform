@@ -6,6 +6,27 @@ using PosPlatform.Desktop.Models;
 
 namespace PosPlatform.Desktop.Services;
 
+/// <summary>
+/// Backend qaytargan HTTP xatosi. <see cref="StatusCode"/> bo'yicha xatoni ajratamiz:
+/// 400/404/409 — so'rovning o'zida muammo, qayta yuborish natija bermaydi;
+/// 5xx, 408, 429, 401/403 — vaqtinchalik, keyinroq qayta urinib ko'rish mumkin.
+/// </summary>
+public class ApiException : Exception
+{
+    public HttpStatusCode StatusCode { get; }
+
+    public ApiException(HttpStatusCode statusCode, string message) : base(message)
+        => StatusCode = statusCode;
+
+    /// <summary>Xato vaqtinchalikmi (qayta yuborish ma'noga egami).</summary>
+    public bool IsTransient =>
+        (int)StatusCode >= 500
+        || StatusCode == HttpStatusCode.RequestTimeout
+        || (int)StatusCode == 429
+        || StatusCode == HttpStatusCode.Unauthorized
+        || StatusCode == HttpStatusCode.Forbidden;
+}
+
 /// <summary>Backend REST API bilan ishlaydigan klient (online-first).</summary>
 public class BackendClient
 {
@@ -86,11 +107,13 @@ public class BackendClient
         return await resp.Content.ReadFromJsonAsync<ShiftDto>(Json);
     }
 
-    public async Task<SaleDto> CreateSaleAsync(CreateSaleRequest request)
+    /// <summary>Savdo yaratadi. <paramref name="cancellationToken"/> bilan kassa o'z
+    /// muddatini qo'ya oladi — javob kechiksa kutib qolmasdan oflayn navbatga o'tadi.</summary>
+    public async Task<SaleDto> CreateSaleAsync(CreateSaleRequest request, CancellationToken cancellationToken = default)
     {
-        var resp = await _http.PostAsJsonAsync("api/sales", request);
+        var resp = await _http.PostAsJsonAsync("api/sales", request, cancellationToken);
         await EnsureOk(resp);
-        return (await resp.Content.ReadFromJsonAsync<SaleDto>(Json))!;
+        return (await resp.Content.ReadFromJsonAsync<SaleDto>(Json, cancellationToken))!;
     }
 
     public async Task<List<SaleListDto>> GetSalesAsync()
@@ -202,7 +225,8 @@ public class BackendClient
         catch { /* ignore */ }
         // Token eskirganda backend bo'sh tanali 401 qaytaradi — kassirga tushunarli xabar.
         if (resp.StatusCode == HttpStatusCode.Unauthorized && string.IsNullOrWhiteSpace(msg))
-            throw new Exception("Sessiya muddati tugadi, qayta login qilib kiring.");
-        throw new Exception(string.IsNullOrWhiteSpace(msg) ? $"Server xatosi: {(int)resp.StatusCode}" : msg);
+            throw new ApiException(resp.StatusCode, "Sessiya muddati tugadi, qayta login qilib kiring.");
+        throw new ApiException(resp.StatusCode,
+            string.IsNullOrWhiteSpace(msg) ? $"Server xatosi: {(int)resp.StatusCode}" : msg);
     }
 }

@@ -231,6 +231,10 @@ public class SaleItemRequest
 
 public class CreateSaleRequest
 {
+    /// <summary>Idempotentlik kaliti — har bir savat uchun bir marta generatsiya qilinadi.
+    /// Javob kelmay qayta yuborilsa server yangi savdo yaratmaydi, avvalgisini qaytaradi.</summary>
+    public string? ClientSaleId { get; set; }
+
     public string PaymentMethod { get; set; } = "Cash";
     public decimal PaidAmount { get; set; }
     public Guid? DebtorId { get; set; }

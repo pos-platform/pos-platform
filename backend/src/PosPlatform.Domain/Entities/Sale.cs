@@ -9,6 +9,15 @@ public class Sale : BaseEntity
     /// <summary>Ichki chek raqami (inson o'qiy oladigan, masalan R-20260601-0007).</summary>
     public string ReceiptNumber { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Kassa (mijoz) tomonidan berilgan takrorlanmas kalit — idempotentlik uchun.
+    /// Kassa so'rov yubordi-yu javobni ololmasa (tarmoq uzildi, vaqt tugadi), u xuddi shu
+    /// kalit bilan qayta yuboradi; server yangi savdo yaratmay, o'sha savdoning o'zini
+    /// qaytaradi. Shu tufayli bitta savdo ikki marta o'tib ketmaydi (qoldiq ham ikki
+    /// marta kamaymaydi). Eski mijozlar bu maydonni yubormaydi — null bo'lishi mumkin.
+    /// </summary>
+    public string? ClientSaleId { get; set; }
+
     public Guid? BranchId { get; set; }
     public Branch? Branch { get; set; }
 

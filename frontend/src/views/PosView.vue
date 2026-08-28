@@ -16,6 +16,14 @@ const submitting = ref(false)
 const error = ref('')
 const lastSale = ref(null)
 
+// Idempotentlik kaliti: javob kelmay qolganda (tarmoq/timeout) kassir qayta bosadi —
+// o'sha kalit bilan ketgan so'rovga server yangi savdo yaratmay, avvalgisini qaytaradi.
+// Savat yoki summa o'zgarsa kalit bekor qilinadi (bu — boshqa savdo).
+const clientSaleId = ref('')
+function newClientSaleId() {
+  return crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : String(Date.now()) + Math.random().toString(16).slice(2)
+}
+
 // --- Smena ---
 const shift = ref(null)
 const openingCash = ref(0)
@@ -252,6 +260,10 @@ async function loadData() {
   }
 }
 
+// Savat tarkibi yoki summa o'zgardi — avvalgi urinish kaliti endi yaramaydi
+// (aks holda server eski savdoning chekini qaytarib yuborardi).
+watch([cart, paidAmount], () => { clientSaleId.value = '' }, { deep: true })
+
 async function checkout() {
   error.value = ''
   lastSale.value = null
@@ -270,12 +282,15 @@ async function checkout() {
       submitting.value = false
       return
     }
+    if (!clientSaleId.value) clientSaleId.value = newClientSaleId()
     const sale = await salesApi.create({
+      clientSaleId: clientSaleId.value,
       paymentMethod: paymentMethod.value,
       paidAmount: Number(paidAmount.value) || total.value,
       branchId: branchId || undefined,
       items: cart.value.map((l) => ({ productId: l.product.id, quantity: Number(l.quantity) }))
     })
+    clientSaleId.value = ''
     sale._items = cartSnapshot.map((l) => ({
       name: l.product.name,
       quantity: l.quantity,

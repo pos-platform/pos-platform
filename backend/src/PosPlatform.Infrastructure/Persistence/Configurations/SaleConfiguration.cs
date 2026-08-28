@@ -12,6 +12,13 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.HasIndex(s => s.ReceiptNumber).IsUnique();
         builder.HasIndex(s => s.CreatedAt);
 
+        // Idempotentlik kaliti: bir xil kalit bilan ikkinchi savdo yaratilmasligi uchun
+        // unique indeks. Kalit yuborilmagan (null) savdolarga cheklov qo'llanmaydi.
+        builder.Property(s => s.ClientSaleId).HasMaxLength(64);
+        builder.HasIndex(s => s.ClientSaleId)
+            .IsUnique()
+            .HasFilter("\"ClientSaleId\" IS NOT NULL");
+
         builder.Property(s => s.TerminalId).HasMaxLength(64);
         // Fiskal agent navbatni terminal bo'yicha filtrlaydi (per-terminal fiskal modul).
         builder.HasIndex(s => s.TerminalId);

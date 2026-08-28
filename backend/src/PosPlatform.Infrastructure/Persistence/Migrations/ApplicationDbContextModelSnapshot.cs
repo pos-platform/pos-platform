@@ -1369,6 +1369,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("ChangeAmount")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<string>("ClientSaleId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1448,6 +1452,10 @@ namespace PosPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("CashShiftId");
 
                     b.HasIndex("CashierId");
+
+                    b.HasIndex("ClientSaleId")
+                        .IsUnique()
+                        .HasFilter("\"ClientSaleId\" IS NOT NULL");
 
                     b.HasIndex("CreatedAt");
 

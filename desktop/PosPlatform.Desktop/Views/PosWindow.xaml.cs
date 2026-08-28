@@ -30,6 +30,15 @@ public partial class PosWindow : Window
     private System.Windows.Threading.DispatcherTimer? _syncTimer;
     // Standart to'lov turi — karta (kassada eng ko'p ishlatiladigan tur).
     private string _payment = "Card";
+    // To'lov so'rovi ketayotganda savat va savdo tablari o'zgarmasligi kerak:
+    // aks holda skanerlangan tovar yoki tab almashtirish tozalanishi kerak bo'lgan
+    // savatni chalkashtirib yuboradi (savdodan keyin tovarlar qolib ketardi).
+    private bool _checkoutBusy;
+    // Idempotentlik kaliti: joriy savat uchun bir marta generatsiya qilinadi. Server javobi
+    // kelmay qolsa (vaqt tugadi/tarmoq uzildi) savat tozalanmaydi va kassir qayta bosadi —
+    // o'sha kalit bilan ketgan so'rovga server yangi savdo yaratmay, avvalgisini qaytaradi.
+    // Savat yoki berilgan summa o'zgarsa kalit bekor qilinadi (bu — boshqa savdo).
+    private string? _clientSaleId;
 
     public PosWindow()
     {
@@ -109,15 +118,23 @@ public partial class PosWindow : Window
     private void RefreshSyncButton()
     {
         var count = AppState.Offline.PendingCount();
-        if (count > 0 && AppState.IsOnline)
-        {
-            SyncText.Text = $"↑ Sync ({count})";
-            SyncButton.Visibility = Visibility.Visible;
-        }
-        else
+        var blocked = AppState.Offline.BlockedCount();
+        if (count == 0 && blocked == 0)
         {
             SyncButton.Visibility = Visibility.Collapsed;
+            return;
         }
+
+        // Server rad etgan savdolar alohida ko'rsatiladi — ular avtomatik yuborilmaydi,
+        // shuning uchun asosiy hisob ular tufayli qotib qolmaydi.
+        SyncText.Text = blocked > 0 ? $"↑ Sync ({count}) ⚠ {blocked}" : $"↑ Sync ({count})";
+        var lastError = AppState.Offline.LastPendingError();
+        SyncButton.ToolTip = blocked > 0
+            ? $"{count} ta savdo navbatda · {blocked} tasini server qabul qilmadi — sababini ko'rish uchun bosing"
+            : string.IsNullOrEmpty(lastError)
+                ? "Oflayn savdolarni serverga yuborish"
+                : $"{count} ta savdo navbatda. Oxirgi xato: {lastError}";
+        SyncButton.Visibility = Visibility.Visible;
     }
 
     // ─── Background sync: network event + fallback timer ────────────────────
@@ -195,9 +212,11 @@ public partial class PosWindow : Window
     private async Task SyncPendingSalesAsync(bool silent = false)
     {
         var pending = AppState.Offline.GetPendingSales();
-        if (pending.Count == 0) return;
+        if (pending.Count == 0) { RefreshSyncButton(); return; }
 
         var synced = 0;
+        var rejected = 0;
+        string? lastRejectError = null;
         foreach (var (id, req) in pending)
         {
             try
@@ -206,9 +225,22 @@ public partial class PosWindow : Window
                 AppState.Offline.RemovePendingSale(id);
                 synced++;
             }
-            catch
+            catch (ApiException api) when (!api.IsTransient && !IsShiftNotOpenError(api.Message))
             {
-                break; // birinchi xatoda to'xtaymiz
+                // Server so'rovni butunlay rad etdi (qoldiq yetmaydi, mahsulot o'chirilgan,
+                // markirovka kodi takrorlangan va h.k.). Qayta yuborish foyda bermaydi, shuning
+                // uchun uni navbatdan chetlatamiz — aks holda bitta savdo butun navbatni to'sib
+                // qo'yadi va "Sync (N)" hech qachon kamaymaydi.
+                AppState.Offline.MarkSaleFailed(id, api.Message);
+                lastRejectError = api.Message;
+                rejected++;
+            }
+            catch (Exception ex)
+            {
+                // Vaqtinchalik xato (tarmoq uzildi, server qayta ishga tushdi, smena hali
+                // ochilmagan) — savdo navbatda qoladi, keyingi urinishda davom etamiz.
+                AppState.Offline.MarkSaleRetry(id, ex.Message);
+                break;
             }
         }
 
@@ -218,14 +250,65 @@ public partial class PosWindow : Window
                 ShowMessage($"✓ {synced} ta oflayn savdo serverga yuborildi", error: false);
             await LoadProductsAsync(); // qoldiqlar yangilandi
         }
+        if (rejected > 0)
+            ShowMessage(
+                $"⚠ {rejected} ta oflayn savdoni server qabul qilmadi: {lastRejectError} — batafsili «Sync» tugmasida",
+                error: true);
         RefreshSyncButton();
     }
+
+    /// <summary>Xato smena ochilmaganidan bo'lsa — bu vaqtinchalik holat: smena ochilgach
+    /// navbatdagi savdolar o'tib ketadi, shuning uchun bunday savdoni bloklamaymiz.</summary>
+    private static bool IsShiftNotOpenError(string message) =>
+        message.Contains("smena", StringComparison.OrdinalIgnoreCase);
 
     private async void Sync_Click(object sender, RoutedEventArgs e)
     {
         SyncButton.IsEnabled = false;
-        try { await SyncPendingSalesAsync(silent: false); }
+        try
+        {
+            // Smena (ochish/yopish) ham navbatda bo'lishi mumkin — to'liq sinxronizatsiya.
+            await CheckAndSyncAsync();
+            if (!AppState.IsOnline)
+            {
+                ShowMessage("Internet yo'q — savdolar navbatda saqlanmoqda", error: true);
+                return;
+            }
+            var blocked = AppState.Offline.GetBlockedSales();
+            if (blocked.Count > 0) { ShowBlockedSalesDialog(blocked); return; }
+
+            // Onlayn bo'lsa ham navbat kamaymagan bo'lsa — sababini ko'rsatamiz
+            // (masalan smena ochilmagan: server savdoni ochiq smenasiz qabul qilmaydi).
+            if (AppState.Offline.PendingCount() > 0)
+            {
+                var why = AppState.Offline.LastPendingError();
+                ShowMessage(string.IsNullOrEmpty(why)
+                    ? "Savdolar hali yuborilmadi — birozdan so'ng avtomatik qayta urinadi"
+                    : $"Savdolar yuborilmadi: {why}", error: true);
+            }
+        }
         finally { SyncButton.IsEnabled = true; }
+    }
+
+    /// <summary>Server qabul qilmagan oflayn savdolar ro'yxati va sabablari; kassir
+    /// tuzatgandan keyin (masalan qoldiq kirim qilingach) qayta yuborishi mumkin.</summary>
+    private void ShowBlockedSalesDialog(List<(string Id, DateTime CreatedAt, string Error)> blocked)
+    {
+        var shown = blocked.Take(15).Select(b =>
+            $"• {b.CreatedAt.ToLocalTime():dd.MM.yyyy HH:mm} — {b.Error}");
+        var text = string.Join("\n", shown);
+        if (blocked.Count > 15) text += $"\n… va yana {blocked.Count - 15} ta";
+
+        var answer = MessageBox.Show(
+            $"{blocked.Count} ta oflayn savdoni server qabul qilmadi:\n\n{text}\n\n" +
+            "«Ha» — hozir qayta yuborishga urinish.\n" +
+            "«Yo'q» — keyinroq (savdolar saqlanib qoladi).",
+            "Yuborilmagan oflayn savdolar", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (answer != MessageBoxResult.Yes) return;
+
+        AppState.Offline.UnblockAllSales();
+        RefreshSyncButton();
+        _ = SyncPendingSalesAsync(silent: false);
     }
 
     // ---------- Parallel savdolar (tablar) ----------
@@ -292,6 +375,7 @@ public partial class PosWindow : Window
 
     private void SaleTab_Click(object sender, RoutedEventArgs e)
     {
+        if (CartLocked()) return;
         var i = (int)((System.Windows.Controls.Button)sender).Tag;
         if (i == _currentIndex) return;
         SwitchSession(i);
@@ -299,6 +383,7 @@ public partial class PosWindow : Window
 
     private void CloseSale_Click(object sender, RoutedEventArgs e)
     {
+        if (CartLocked()) return;
         var i = (int)((System.Windows.Controls.Button)sender).Tag;
         if (_sessions.Count <= 1) return;
 
@@ -326,6 +411,7 @@ public partial class PosWindow : Window
 
     private void AddSale_Click(object sender, RoutedEventArgs e)
     {
+        if (CartLocked()) return;
         SaveCurrentSession();
         _sessions.Add(new SaleSession());
         _currentIndex = _sessions.Count - 1;
@@ -565,6 +651,10 @@ public partial class PosWindow : Window
     /// </summary>
     private void ProcessScannedCode(string code, bool fromScanner)
     {
+        // To'lov so'rovi ketayotganda skanerlangan tovar tozalanishi kerak bo'lgan savatga
+        // tushib qolmasligi uchun — kassir to'lov tugagach qayta skanerlaydi.
+        if (CartLocked()) { SearchBox.Clear(); return; }
+
         // 1) Tarozi vazn-kodi: "2" + 6 xonali mahsulot kodi + 5 xonali vazn (gramm) + nazorat raqami.
         //    Vazn deb faqat topilgan mahsulot ROSTDAN tarozili bo'lsagina qabul qilamiz:
         //    IsWeighed belgisi qo'yilgan YOKI birligi Kilogram (import IsWeighed'ni yozmasligi mumkin).
@@ -735,6 +825,7 @@ public partial class PosWindow : Window
 
     private void ProductCard_Click(object sender, RoutedEventArgs e)
     {
+        if (CartLocked()) return;
         if (((FrameworkElement)sender).Tag is ProductDto p) AddToCart(p);
     }
 
@@ -783,6 +874,7 @@ public partial class PosWindow : Window
 
     private void Inc_Click(object sender, RoutedEventArgs e)
     {
+        if (CartLocked()) return;
         if (((FrameworkElement)sender).Tag is CartLine l)
         {
             // Markirovkali tovarda har dona alohida kod bilan skanerlanadi — qo'lda ko'paytirilmaydi.
@@ -800,6 +892,7 @@ public partial class PosWindow : Window
 
     private void Dec_Click(object sender, RoutedEventArgs e)
     {
+        if (CartLocked()) return;
         if (((FrameworkElement)sender).Tag is CartLine l)
         {
             if (l.Quantity <= 1) _cart.Remove(l);
@@ -811,12 +904,14 @@ public partial class PosWindow : Window
 
     private void Remove_Click(object sender, RoutedEventArgs e)
     {
+        if (CartLocked()) return;
         if (((FrameworkElement)sender).Tag is CartLine l) { _cart.Remove(l); RecalcTotals(); }
         FocusScanInput();
     }
 
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
+        if (CartLocked()) return;
         _cart.Clear();
         PaidBox.Text = "0";
         RecalcTotals();
@@ -840,8 +935,20 @@ public partial class PosWindow : Window
 
     private decimal CartTotal() => _cart.Sum(l => l.LineTotal);
 
+    /// <summary>To'lov ketayotgan bo'lsa savatni o'zgartirishga yo'l qo'ymaydi.</summary>
+    private bool CartLocked()
+    {
+        if (!_checkoutBusy) return false;
+        ShowMessage("To'lov bajarilmoqda — biroz kuting", error: true);
+        return true;
+    }
+
     private void RecalcTotals()
     {
+        // Savat tarkibi yoki summa o'zgardi — bu boshqa savdo, avvalgi urinish kaliti
+        // endi yaramaydi (aks holda server eski savdoning chekini qaytarib yuborardi).
+        _clientSaleId = null;
+
         // InitializeComponent paytida PaidBox Text="0" TextChanged'ni ishga tushiradi,
         // lekin ba'zi elementlar hali yaratilmagan bo'lishi mumkin.
         if (TotalText is null || ChangeText is null) return;
@@ -918,6 +1025,22 @@ public partial class PosWindow : Window
             return;
         }
 
+        // Navbatdagi oflayn savdolar shu smenaga tushishi kerak: smena yopilgandan keyin
+        // server ularni qabul qilmaydi ("Avval smenani oching") va ular navbatda qotib qoladi.
+        if (AppState.Offline.PendingCount() > 0)
+        {
+            await SyncPendingSalesAsync(silent: true);
+            var left = AppState.Offline.PendingCount();
+            if (left > 0)
+            {
+                var answer = MessageBox.Show(
+                    $"{left} ta oflayn savdo hali serverga yuborilmagan. Smena yopilsa ular shu " +
+                    "smena hisobotiga tushmaydi.\n\nBaribir yopilsinmi?",
+                    "Yuborilmagan savdolar bor", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (answer != MessageBoxResult.Yes) return;
+            }
+        }
+
         try
         {
             var closed = await AppState.Backend.CloseShiftAsync(countedCash, printedLocally: true);
@@ -979,6 +1102,10 @@ public partial class PosWindow : Window
     /// "Chop etish" tugmasini darhol ko'rsatadimi (pastdagi "Chop etish" tugmasi uchun true).</param>
     private async Task CheckoutAsync(bool allowImmediatePrint)
     {
+        // F12 tugmasi CheckoutButton o'chirilgan bo'lsa ham ishlaydi — shu sabab qulf
+        // tugmaning IsEnabled'ida emas, alohida bayroqda. Aks holda bitta savdo ikki marta
+        // yuborilishi mumkin edi.
+        if (_checkoutBusy) return;
         if (_shift is null) { ShowMessage("Avval smenani oching", error: true); return; }
         if (_cart.Count == 0) { ShowMessage("Savatcha bo'sh", error: true); return; }
 
@@ -1004,22 +1131,37 @@ public partial class PosWindow : Window
             debtorId = d.Id;
         }
 
-        // O'tkazma: mijozga QR (karta raqami) ko'rsatamiz, kassir pul tushganini tasdiqlagachgina savdo yaratiladi
-        if (payment == "Transfer")
-        {
-            var qrWindow = new TransferQrWindow(total) { Owner = this };
-            if (qrWindow.ShowDialog() != true)
-            {
-                FocusScanInput();
-                return;
-            }
-        }
-
+        _checkoutBusy = true;
         CheckoutButton.IsEnabled = false;
+        // Savdo tasdiqlangach chek shu yerga tushadi. Chop etish/ko'rish oynasi qulf
+        // bo'shatilgandan keyin ochiladi — chek oynasi turganda ham kassir keyingi
+        // mijozning tovarlarini skanerlay olsin.
+        ReceiptData? completed = null;
         try
         {
+            // O'tkazma: mijozga QR (karta raqami) ko'rsatamiz, kassir pul tushganini
+            // tasdiqlagachgina savdo yaratiladi.
+            if (payment == "Transfer")
+            {
+                var qrWindow = new TransferQrWindow(total) { Owner = this };
+                if (qrWindow.ShowDialog() != true)
+                {
+                    FocusScanInput();
+                    return;
+                }
+            }
+
+            // Savatning nusxasi: so'rov, chek va qoldiq kamaytirish shundan oladi —
+            // savat tozalangandan keyin ham ma'lumot yo'qolmaydi.
+            var soldLines = _cart.ToList();
+
+            // Kalit faqat bir marta yaratiladi: oldingi urinish javobsiz qolgan bo'lsa
+            // xuddi o'sha kalit qayta ketadi va savdo takrorlanmaydi.
+            _clientSaleId ??= Guid.NewGuid().ToString("N");
+
             var req = new CreateSaleRequest
             {
+                ClientSaleId = _clientSaleId,
                 PaymentMethod = payment,
                 PaidAmount = payment == "Debt" ? 0 : (paid > 0 ? paid : total),
                 DebtorId = debtorId,
@@ -1027,7 +1169,7 @@ public partial class PosWindow : Window
                 // Yashil "To'lash va Chek chiqarish" → fiskal (QR-li). Pastdagi "Chop etish"
                 // (allowImmediatePrint) → nofiskal (QR-siz): soliqqa yuborilmaydi.
                 Fiscalize = !allowImmediatePrint,
-                Items = _cart.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity, MarkingCode = l.MarkingCode }).ToList()
+                Items = soldLines.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity, MarkingCode = l.MarkingCode }).ToList()
             };
             var receipt = new ReceiptData
             {
@@ -1041,74 +1183,139 @@ public partial class PosWindow : Window
                 Payment = payment,
                 Total = total,
                 Paid = req.PaidAmount,
-                Lines = _cart.Select(l => new ReceiptLine
+                Lines = soldLines.Select(l => new ReceiptLine
                 {
                     Name = l.Product.Name, Quantity = l.Quantity, Price = l.Product.Price, LineTotal = l.LineTotal,
                     MxikCode = l.Product.MxikCode, Barcode = l.Product.Barcode, MarkingCode = l.MarkingCode, IsVat = l.Product.IsVat
                 }).ToList()
             };
 
+            SaleDto? sale = null;
             if (AppState.IsOnline)
             {
-                // ─── Onlayn: serverga yuboramiz ────────────────────────────
-                var sale = await AppState.Backend.CreateSaleAsync(req);
+                try
+                {
+                    sale = await CreateSaleWithRetryAsync(req);
+                }
+                catch (ApiException)
+                {
+                    // Server savdoni aniq rad etdi — pastdagi catch sababini ko'rsatadi,
+                    // savat esa kassir tuzatishi uchun joyida qoladi.
+                    throw;
+                }
+                catch
+                {
+                    // Server javob bermadi (tarmoq uzildi yoki vaqt tugadi). Ilgari shu yerda
+                    // savat to'la qolib ketardi. Endi idempotentlik kaliti borligi uchun savdoni
+                    // oflayn navbatga qo'yish xavfsiz: u serverda allaqachon o'tgan bo'lsa sync
+                    // o'sha savdoning o'zini oladi (dublikat yaratilmaydi), o'tmagan bo'lsa —
+                    // yaratadi. Har ikki holatda ham savat tozalanadi.
+                    SetOnlineState(false);
+                }
+            }
+
+            if (sale is not null)
+            {
+                // ─── Onlayn: savdo serverda ro'yxatga olindi ───────────────
                 receipt.ReceiptNumber = sale.ReceiptNumber;
                 receipt.Change = sale.ChangeAmount;
                 receipt.SaleId = sale.Id; // fiskal QR'ni keyin so'rab olish uchun
+
+                // Savatni SHU ZAHOTI tozalaymiz. Keyingi ishlar (qoldiq keshi, filtr, chek)
+                // savatga bog'liq emas va ulardagi xato savatni to'la qoldirmasligi kerak:
+                // aks holda kassir savdoni ikkinchi marta o'tkazardi.
+                CloseCurrentSessionAfterSale();
                 _lastReceipt = receipt;
                 ReprintButton.IsEnabled = true;
+                completed = receipt;
                 ShowMessage($"✓ Chek {sale.ReceiptNumber} · Jami {sale.TotalAmount:N0} · Qaytim {sale.ChangeAmount:N0}", error: false);
-
-                // Qoldiqlarni lokal kamaytiramiz — butun katalogni serverdan qayta yuklamaymiz
-                // (har savdodan keyingi to'liq yuklash sotuvni sezilarli sekinlashtirardi).
-                foreach (var line in _cart)
-                {
-                    var cached = _allProducts.FirstOrDefault(p => p.Id == line.Product.Id);
-                    if (cached is not null) cached.Quantity -= line.Quantity;
-                }
-                AppState.Offline.SaveProducts(_allProducts);
-                CloseCurrentSessionAfterSale();
-                ApplyFilter();
+                UpdateStockCache(soldLines);
             }
             else
             {
-                // ─── Oflayn: lokal keshga saqlaymiz ────────────────────────
+                // ─── Oflayn (yoki server javob bermadi): lokal navbatga ────
                 var localId = $"OFF-{DateTime.Now:yyyyMMdd-HHmmss-fff}";
                 receipt.ReceiptNumber = localId;
                 receipt.Change = Math.Max(0, req.PaidAmount - total);
                 AppState.Offline.EnqueueSale(localId, req);
 
-                // Lokal mahsulot qoldiqlarini kamaytiramiz (kesh)
-                foreach (var line in _cart)
-                {
-                    var cached = _allProducts.FirstOrDefault(p => p.Id == line.Product.Id);
-                    if (cached is not null) cached.Quantity -= line.Quantity;
-                }
-                AppState.Offline.SaveProducts(_allProducts);
-
+                CloseCurrentSessionAfterSale();
                 _lastReceipt = receipt;
                 ReprintButton.IsEnabled = true;
+                completed = receipt;
                 RefreshSyncButton();
                 ShowMessage($"✓ Oflayn saqlandi: {localId}. Internet tiklansa avtomatik yuboriladi.", error: false);
-                CloseCurrentSessionAfterSale();
-                ApplyFilter();
+                UpdateStockCache(soldLines);
             }
-
-            // Pastdagi "Chop etish": kassir allaqachon chop etishni tanlagan — ko'rish oynasida
-            // yana bir marta tugma bosdirmaymiz, chekni to'g'ridan-to'g'ri printerga yuboramiz.
-            // O'tkazmada bu "Pul tushdi" tasdig'idan keyin darhol chek chiqishini bildiradi.
-            if (allowImmediatePrint)
-                PrintReceiptSafe(receipt);
-            else
-                new ReceiptPreviewWindow(receipt, ReceiptViewMode.Fiscal) { Owner = this }.ShowDialog();
+        }
+        catch (ApiException api)
+        {
+            // Server so'rovni rad etdi — savdo aniq yaratilmadi, savat joyida qoladi.
+            // Kalitni bekor qilamiz: keyingi urinish yangi savdo sifatida ketsin.
+            _clientSaleId = null;
+            ShowMessage(api.Message, error: true);
         }
         catch (Exception ex)
         {
+            // Bu yerga faqat kutilmagan xato tushadi (savdo yaratilmagan) — savat joyida qoladi.
             ShowMessage(ex.Message, error: true);
         }
         finally
         {
+            _checkoutBusy = false;
             CheckoutButton.IsEnabled = true;
+        }
+
+        // Chek — qulfdan tashqarida: modal oyna ochiq turganda savat bloklanmaydi.
+        if (completed is null) return;
+
+        // Pastdagi "Chop etish": kassir allaqachon chop etishni tanlagan — ko'rish oynasida
+        // yana bir marta tugma bosdirmaymiz, chekni to'g'ridan-to'g'ri printerga yuboramiz.
+        // O'tkazmada bu "Pul tushdi" tasdig'idan keyin darhol chek chiqishini bildiradi.
+        if (allowImmediatePrint)
+            PrintReceiptSafe(completed);
+        else
+            new ReceiptPreviewWindow(completed, ReceiptViewMode.Fiscal) { Owner = this }.ShowDialog();
+    }
+
+    /// <summary>Savdoni serverga yuboradi. Javob kelmasa (tarmoq/vaqt tugashi) qisqa tanaffus
+    /// bilan yana bir marta uriniladi — idempotentlik kaliti tufayli bu takroriy savdo
+    /// yaratmaydi: savdo allaqachon o'tgan bo'lsa server o'shaning o'zini qaytaradi.
+    /// Har bir urinish alohida muddat bilan cheklanadi — kassir uzoq kutib qolmasin.</summary>
+    private static async Task<SaleDto> CreateSaleWithRetryAsync(CreateSaleRequest req)
+    {
+        const int attempts = 2;
+        for (var i = 1; ; i++)
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+            try
+            {
+                return await AppState.Backend.CreateSaleAsync(req, cts.Token);
+            }
+            catch (ApiException) { throw; } // server rad etdi — qayta urinish foyda bermaydi
+            catch when (i < attempts) { await Task.Delay(400); }
+        }
+    }
+
+    /// <summary>Sotilgan tovarlar qoldig'ini lokal keshda kamaytiradi (butun katalogni
+    /// serverdan qayta yuklash sotuvni sezilarli sekinlashtirardi). Bu yerdagi xato savdoga
+    /// ta'sir qilmasligi uchun alohida ushlanadi — savat allaqachon tozalangan bo'ladi.</summary>
+    private void UpdateStockCache(IReadOnlyList<CartLine> soldLines)
+    {
+        try
+        {
+            foreach (var line in soldLines)
+            {
+                var cached = _allProducts.FirstOrDefault(p => p.Id == line.Product.Id);
+                if (cached is not null) cached.Quantity -= line.Quantity;
+            }
+            AppState.Offline.SaveProducts(_allProducts);
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            // Savdo o'tdi, faqat kesh yangilanmadi — keyingi katalog yuklashda tiklanadi.
+            System.Diagnostics.Debug.WriteLine("Qoldiq keshini yangilashda xato: " + ex.Message);
         }
     }
 

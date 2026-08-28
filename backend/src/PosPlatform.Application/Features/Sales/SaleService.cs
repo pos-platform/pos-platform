@@ -98,6 +98,17 @@ public class SaleService : ISaleService
         var cashierId = _currentUser.UserId
             ?? throw new UnauthorizedException("Joriy foydalanuvchi aniqlanmadi.");
 
+        // Idempotentlik: kassa javobni ololmay qayta yuborgan bo'lsa (tarmoq uzildi yoki
+        // oflayn navbat qayta urinmoqda), yangi savdo yaratmaymiz — avvalgisini qaytaramiz.
+        var clientSaleId = string.IsNullOrWhiteSpace(request.ClientSaleId)
+            ? null
+            : request.ClientSaleId.Trim();
+        if (clientSaleId is not null)
+        {
+            var duplicate = await FindByClientSaleIdAsync(clientSaleId, cancellationToken);
+            if (duplicate is not null) return duplicate;
+        }
+
         if (request.Items.Count == 0)
         {
             throw new ValidationException("Savdoda kamida bitta mahsulot bo'lishi kerak.");
@@ -151,6 +162,7 @@ public class SaleService : ISaleService
 
         var sale = new Sale
         {
+            ClientSaleId = clientSaleId,
             BranchId = request.BranchId ?? _currentUser.BranchId,
             CashierId = cashierId,
             CashShiftId = shift.Id,
@@ -304,7 +316,19 @@ public class SaleService : ISaleService
             });
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException) when (clientSaleId is not null)
+        {
+            // Xuddi shu kalitli so'rov ayni paytda parallel kelgan bo'lishi mumkin (kassa
+            // birinchi so'rovning javobini kutmasdan qayta yuborgan). Unique indeks ikkinchisini
+            // rad etadi — tranzaksiya bekor bo'ladi, biz esa birinchi savdoni qaytaramiz.
+            var duplicate = await FindByClientSaleIdAsync(clientSaleId, cancellationToken);
+            if (duplicate is not null) return duplicate;
+            throw; // boshqa sabab — asl xatoni yashirmaymiz
+        }
 
         // Fiskalizatsiya (nasiyadan tashqari — pastdagi izohga qarang). Kassir "Chop etish"
         // (nofiskal, QR-siz) tugmasini bosgan bo'lsa request.Fiscalize=false keladi — chek
@@ -313,6 +337,17 @@ public class SaleService : ISaleService
         await _db.SaveChangesAsync(cancellationToken);
 
         return SaleDto.FromEntity(sale);
+    }
+
+    /// <summary>Idempotentlik kaliti bo'yicha avval yaratilgan savdoni topadi (bo'lmasa null).</summary>
+    private async Task<SaleDto?> FindByClientSaleIdAsync(string clientSaleId, CancellationToken cancellationToken)
+    {
+        var existing = await _db.Sales
+            .AsNoTracking()
+            .Include(s => s.Items)
+            .Include(s => s.Receipt)
+            .FirstOrDefaultAsync(s => s.ClientSaleId == clientSaleId, cancellationToken);
+        return existing is null ? null : SaleDto.FromEntity(existing);
     }
 
     /// <summary>

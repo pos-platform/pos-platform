@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, reactive, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, reactive, computed, watch, nextTick } from 'vue'
 import { productsApi, categoriesApi, suppliersApi, storesApi, downloadBlob } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
 import { useAuthStore } from '../stores/auth'
@@ -16,6 +16,10 @@ const error = ref('')
 const success = ref('')
 const saving = ref(false)
 const uploading = ref(false)
+// Modal ichidagi xabar — modal yopilmasdan ketma-ket mahsulot qo'shish uchun
+const modalSuccess = ref('')
+const nameInput = ref(null)
+const addedCount = ref(0)
 
 // Filters
 const filterCategory = ref('')
@@ -376,7 +380,10 @@ async function openCreate() {
   }
   editId.value = null
   error.value = ''
+  modalSuccess.value = ''
+  addedCount.value = 0
   showModal.value = true
+  focusName()
 }
 
 function openEdit(p) {
@@ -404,14 +411,38 @@ function openEdit(p) {
   })
   editId.value = p.id
   error.value = ''
+  modalSuccess.value = ''
   showModal.value = true
 }
 
-function closeModal() { showModal.value = false }
+function closeModal() {
+  showModal.value = false
+  modalSuccess.value = ''
+}
+
+function focusName() {
+  nextTick(() => nameInput.value?.focus())
+}
+
+// Modal yopilmasdan keyingi mahsulotni kiritish uchun formani tozalash.
+// Kategoriya / ta'minotchi / do'kon / birlik / НДС kabi takrorlanuvchi maydonlar saqlanadi.
+function resetForNext() {
+  const keep = {
+    categoryId: form.categoryId,
+    supplierId: form.supplierId,
+    branchId: form.branchId,
+    unit: form.unit,
+    isVat: form.isVat,
+    isMarked: form.isMarked,
+    markupPercent: form.markupPercent
+  }
+  Object.assign(form, blankForm(), keep)
+}
 
 async function submit() {
   error.value = ''
   success.value = ''
+  modalSuccess.value = ''
 
   // Agar soni > 0 va do'kon tanlanmagan bo'lsa, yagona do'konni avtomatik tanlash
   const qty = Number(form.quantity) || 0
@@ -450,11 +481,17 @@ async function submit() {
     if (editId.value) {
       await productsApi.update(editId.value, payload)
       success.value = `"${payload.name}" yangilandi`
+      showModal.value = false
+      modalSuccess.value = ''
     } else {
       await productsApi.create(payload)
       success.value = `"${payload.name}" qo'shildi`
+      // Modal ochiq qoladi — ketma-ket mahsulot qo'shish uchun
+      addedCount.value++
+      modalSuccess.value = `"${payload.name}" qo'shildi. Keyingisini kiriting.`
+      resetForNext()
+      focusName()
     }
-    showModal.value = false
     await loadAll()
   } catch (e) {
     error.value = errorMessage(e)
@@ -796,11 +833,15 @@ function printBarcode(product) {
   <div v-if="showModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-head">
-        <h3>{{ editId ? 'Mahsulotni tahrirlash' : 'Mahsulot qo\'shish' }}</h3>
+        <h3>
+          {{ editId ? 'Mahsulotni tahrirlash' : 'Mahsulot qo\'shish' }}
+          <span v-if="!editId && addedCount" class="added-badge">{{ addedCount }} ta qo'shildi</span>
+        </h3>
         <button class="modal-x" @click="closeModal">×</button>
       </div>
       <form class="modal-body" @submit.prevent="submit">
         <div v-if="error" class="alert alert-error">{{ error }}</div>
+        <div v-if="modalSuccess" class="alert alert-success">{{ modalSuccess }}</div>
 
         <!-- Shtrix-kod | PLU | Birlik -->
         <div style="display:flex; gap:8px; margin-bottom:12px">
@@ -883,7 +924,7 @@ function printBarcode(product) {
         <!-- Nomi + Tavsif -->
         <div class="field">
           <label>Nomi <span class="req-star">*</span></label>
-          <input v-model="form.name" class="input" required />
+          <input ref="nameInput" v-model="form.name" class="input" required />
         </div>
         <div class="field">
           <label>Tavsif</label>
@@ -973,6 +1014,16 @@ function printBarcode(product) {
 
         <button class="btn" style="width:100%; margin-top:12px" :disabled="saving || uploading">
           {{ saving ? 'Saqlanmoqda...' : (editId ? 'Saqlash' : 'Mahsulot qo\'shish') }}
+        </button>
+        <button
+          v-if="!editId"
+          type="button"
+          class="btn btn-ghost"
+          style="width:100%; margin-top:8px"
+          :disabled="saving"
+          @click="closeModal"
+        >
+          Yopish
         </button>
       </form>
     </div>
@@ -1141,6 +1192,16 @@ function printBarcode(product) {
 
 /* Majburiy yulduzcha */
 .req-star { color: var(--danger); }
+.added-badge {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--success, #16a34a);
+  background: rgba(22, 163, 74, 0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
 
 /* iOS toggle */
 .ios-toggle {

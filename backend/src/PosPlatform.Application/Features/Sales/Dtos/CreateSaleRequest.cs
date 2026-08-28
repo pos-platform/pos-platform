@@ -9,6 +9,15 @@ public class CreateSaleRequest
     public Guid? BranchId { get; set; }
 
     /// <summary>
+    /// Idempotentlik kaliti — kassa har bir savat uchun bir marta generatsiya qiladi.
+    /// Javob yetib bormaganda kassa xuddi shu kalit bilan qayta yuboradi va server
+    /// yangi savdo yaratmay, avvalgisini qaytaradi (takroriy savdo bo'lmaydi).
+    /// Ixtiyoriy: eski kassa versiyalari bu maydonsiz ishlayveradi.
+    /// </summary>
+    [MaxLength(64)]
+    public string? ClientSaleId { get; set; }
+
+    /// <summary>
     /// Kassa stantsiyasi (PC/terminal) identifikatori, masalan "KASSA-1".
     /// Desktop shu qiymatni yuboradi; fiskal agent shu bo'yicha o'z terminalining cheklarini oladi.
     /// </summary>

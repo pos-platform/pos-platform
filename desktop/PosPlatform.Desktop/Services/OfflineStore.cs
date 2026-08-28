@@ -80,6 +80,16 @@ public class OfflineStore : IDisposable
             Exec("ALTER TABLE ProductCache ADD COLUMN IsWeighed INTEGER NOT NULL DEFAULT 0");
         if (!ColumnExists("ProductCache", "PluNumber"))
             Exec("ALTER TABLE ProductCache ADD COLUMN PluNumber INTEGER");
+
+        // Navbatdagi savdo serverga yuborilmasa sababini saqlaymiz. Blocked=1 bo'lgan yozuv
+        // avtomatik sinovdan chetlatiladi — aks holda u butun navbatni to'sib qo'yardi
+        // ("Sync (17)" hech qachon kamaymasligining asosiy sababi).
+        if (!ColumnExists("PendingSales", "Attempts"))
+            Exec("ALTER TABLE PendingSales ADD COLUMN Attempts INTEGER NOT NULL DEFAULT 0");
+        if (!ColumnExists("PendingSales", "LastError"))
+            Exec("ALTER TABLE PendingSales ADD COLUMN LastError TEXT");
+        if (!ColumnExists("PendingSales", "Blocked"))
+            Exec("ALTER TABLE PendingSales ADD COLUMN Blocked INTEGER NOT NULL DEFAULT 0");
     }
 
     /// <summary>Jadvalda ustun mavjudligini tekshiradi (sxema migratsiyasi uchun).</summary>
@@ -248,17 +258,19 @@ public class OfflineStore : IDisposable
 
     public void EnqueueSale(string localId, CreateSaleRequest request)
     {
-        var cmd = Cmd("INSERT OR REPLACE INTO PendingSales VALUES(@Id,@Payload,@At)");
+        var cmd = Cmd("INSERT OR REPLACE INTO PendingSales(Id,Payload,CreatedAt,Attempts,LastError,Blocked) " +
+                      "VALUES(@Id,@Payload,@At,0,NULL,0)");
         cmd.Parameters.AddWithValue("@Id",      localId);
         cmd.Parameters.AddWithValue("@Payload", JsonSerializer.Serialize(request, _json));
         cmd.Parameters.AddWithValue("@At",      DateTime.UtcNow.ToString("O"));
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Yuborilishi kerak bo'lgan savdolar (bloklanganlari kirmaydi).</summary>
     public List<(string Id, CreateSaleRequest Request)> GetPendingSales()
     {
         var list = new List<(string, CreateSaleRequest)>();
-        using var cmd = Cmd("SELECT Id, Payload FROM PendingSales ORDER BY CreatedAt");
+        using var cmd = Cmd("SELECT Id, Payload FROM PendingSales WHERE Blocked = 0 ORDER BY CreatedAt");
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
@@ -268,6 +280,56 @@ public class OfflineStore : IDisposable
         return list;
     }
 
+    /// <summary>Server rad etgan (qayta yuborish foyda bermaydigan) savdoni navbatdan chetlatadi,
+    /// lekin o'chirmaydi — kassir sababini ko'rishi va kerak bo'lsa qayta urinishi mumkin.</summary>
+    public void MarkSaleFailed(string id, string error)
+    {
+        var cmd = Cmd("UPDATE PendingSales SET Blocked = 1, Attempts = Attempts + 1, LastError = @Err WHERE Id = @Id");
+        cmd.Parameters.AddWithValue("@Err", error.Length > 500 ? error.Substring(0, 500) : error);
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>Vaqtinchalik xato — savdo navbatda qoladi, faqat urinishlar soni oshadi.</summary>
+    public void MarkSaleRetry(string id, string error)
+    {
+        var cmd = Cmd("UPDATE PendingSales SET Attempts = Attempts + 1, LastError = @Err WHERE Id = @Id");
+        cmd.Parameters.AddWithValue("@Err", error.Length > 500 ? error.Substring(0, 500) : error);
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public List<(string Id, DateTime CreatedAt, string Error)> GetBlockedSales()
+    {
+        var list = new List<(string, DateTime, string)>();
+        using var cmd = Cmd("SELECT Id, CreatedAt, LastError FROM PendingSales WHERE Blocked = 1 ORDER BY CreatedAt");
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            DateTime.TryParse(r.GetString(1), out var at);
+            list.Add((r.GetString(0), at, r.IsDBNull(2) ? "" : r.GetString(2)));
+        }
+        return list;
+    }
+
+    /// <summary>Navbatda turgan (bloklanmagan) savdoning oxirgi xato sababi — kassirga
+    /// «nega yuborilmayapti» degan savolga javob berish uchun.</summary>
+    public string? LastPendingError()
+    {
+        using var cmd = Cmd("SELECT LastError FROM PendingSales WHERE Blocked = 0 AND LastError IS NOT NULL " +
+                            "ORDER BY CreatedAt LIMIT 1");
+        return cmd.ExecuteScalar() as string;
+    }
+
+    public int BlockedCount()
+    {
+        using var cmd = Cmd("SELECT COUNT(*) FROM PendingSales WHERE Blocked = 1");
+        return Convert.ToInt32(cmd.ExecuteScalar());
+    }
+
+    /// <summary>Bloklangan savdolarni navbatga qaytaradi (kassir "Qayta urinish" desa).</summary>
+    public void UnblockAllSales() => Exec("UPDATE PendingSales SET Blocked = 0 WHERE Blocked = 1");
+
     public void RemovePendingSale(string id)
     {
         var cmd = Cmd("DELETE FROM PendingSales WHERE Id=@Id");
@@ -275,9 +337,10 @@ public class OfflineStore : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Yuborilishi kutilayotgan savdolar soni (bloklanganlari hisobga olinmaydi).</summary>
     public int PendingCount()
     {
-        using var cmd = Cmd("SELECT COUNT(*) FROM PendingSales");
+        using var cmd = Cmd("SELECT COUNT(*) FROM PendingSales WHERE Blocked = 0");
         return Convert.ToInt32(cmd.ExecuteScalar());
     }
 
