@@ -10,7 +10,7 @@
     <AssemblyName>PosPlatform.Desktop</AssemblyName>
     <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <!-- Avtomatik yangilanish shu versiyaga tayanadi: publish-desktop-update.ps1 -Version bilan oshiriladi -->
-    <Version>1.0.7</Version>
+    <Version>1.0.8</Version>
   </PropertyGroup>
 
   <ItemGroup>

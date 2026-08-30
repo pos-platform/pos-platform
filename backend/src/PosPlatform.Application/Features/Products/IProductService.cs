@@ -9,6 +9,12 @@ public interface IProductService
     /// <summary>Kassa (POS) uchun yengil ro'yxat — faqat zarur maydonlar, SQL proyeksiyasi bilan.</summary>
     Task<IReadOnlyList<PosProductDto>> GetForPosAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Kassa katalogining tamg'asi — mahsulot/kategoriya soni va oxirgi o'zgarish vaqti.
+    /// Kassa buni davriy so'rab turadi va faqat farq bo'lganda to'liq ro'yxatni tortadi.
+    /// </summary>
+    Task<PosCatalogStampDto> GetPosStampAsync(CancellationToken cancellationToken = default);
+
     Task<ProductDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<ProductDto> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default);

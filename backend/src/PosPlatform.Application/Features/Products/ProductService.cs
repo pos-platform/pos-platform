@@ -71,6 +71,40 @@ public class ProductService : IProductService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<PosCatalogStampDto> GetPosStampAsync(CancellationToken cancellationToken = default)
+    {
+        var branchId = _currentUser.BranchId;
+
+        // Kassaga ko'rinadigan mahsulotlar — GetForPosAsync bilan bir xil filtr.
+        IQueryable<Product> products = _db.Products.AsNoTracking();
+        if (branchId is not null)
+            products = products.Where(p => p.BranchId == branchId || p.BranchId == null);
+
+        // Qoldiq alohida jadvalda o'zgaradi (savdo, kirim, spisaniye) — uni ham
+        // tamg'aga qo'shmasak, boshqa kassadagi savdodan keyin qoldiq eskirib qolardi.
+        IQueryable<BranchStock> stocks = _db.BranchStocks.AsNoTracking();
+        if (branchId is not null)
+            stocks = stocks.Where(s => s.BranchId == branchId);
+
+        var categories = _db.Categories.AsNoTracking();
+
+        // Beshta yengil agregat: COUNT va MAX — qatorlarning o'zi tortilmaydi.
+        var productCount = await products.CountAsync(cancellationToken);
+        var productsAt = await products.MaxAsync(p => (DateTime?)(p.UpdatedAt ?? p.CreatedAt), cancellationToken);
+        var stocksAt = await stocks.MaxAsync(s => (DateTime?)(s.UpdatedAt ?? s.CreatedAt), cancellationToken);
+        var categoryCount = await categories.CountAsync(cancellationToken);
+        var categoriesAt = await categories.MaxAsync(c => (DateTime?)(c.UpdatedAt ?? c.CreatedAt), cancellationToken);
+
+        return new PosCatalogStampDto
+        {
+            ProductCount = productCount,
+            ProductsUpdatedAt = productsAt,
+            StocksUpdatedAt = stocksAt,
+            CategoryCount = categoryCount,
+            CategoriesUpdatedAt = categoriesAt
+        };
+    }
+
     public async Task<ProductDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var product = await _db.Products

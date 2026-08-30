@@ -28,6 +28,20 @@ public partial class PosWindow : Window
     private List<CategoryDto> _categories = new();
     private Guid? _selectedCategoryId;
     private System.Windows.Threading.DispatcherTimer? _syncTimer;
+    // ─── Katalogni avtomatik yangilash ──────────────────────────────────────
+    // Har CatalogPollInterval da serverdan yengil "tamg'a" so'raladi (~100 bayt).
+    // U o'zgarmagan bo'lsa hech nima qilinmaydi: na to'liq ro'yxat tortiladi,
+    // na SQLite yoziladi, na ekrandagi kartochkalar qayta quriladi.
+    private static readonly TimeSpan CatalogPollInterval = TimeSpan.FromSeconds(60);
+    private PosCatalogStamp? _catalogStamp;
+    private DateTime _lastCatalogCheck = DateTime.MinValue;
+    // Qoldiq har savdoda o'zgaradi — faqat qoldiq uchun ro'yxatni har daqiqada
+    // tortish isrof bo'lardi, shu sabab u siyrakroq (5 daqiqada bir) yangilanadi.
+    private static readonly TimeSpan StockRefreshInterval = TimeSpan.FromMinutes(5);
+    private DateTime _lastStockRefresh = DateTime.MinValue;
+    private bool _catalogBusy;
+    private ScrollViewer? _productsScroll;
+
     // Standart to'lov turi — karta (kassada eng ko'p ishlatiladigan tur).
     private string _payment = "Card";
     // To'lov so'rovi ketayotganda savat va savdo tablari o'zgarmasligi kerak:
@@ -55,9 +69,14 @@ public partial class PosWindow : Window
         BuildSaleTabs();
         Loaded += async (_, _) =>
         {
+            // Tamg'a ro'yxatlardan OLDIN olinadi: agar shu ikkisi orasida admin narxni
+            // o'zgartirsa, tamg'a eski bo'lgani uchun keyingi tekshiruv uni albatta sezadi.
+            // Teskari tartibda (avval ro'yxat, keyin tamg'a) o'sha o'zgarish tushib qolardi.
+            _catalogStamp = await TryGetCatalogStampAsync();
             // Uchala so'rov bir-biriga bog'liq emas — parallel yuklaymiz (startni tezlashtiradi).
             await Task.WhenAll(LoadShiftAsync(), LoadCategoriesAsync(), LoadProductsAsync());
             StartSyncTimer();
+            UpdateCatalogStatus();
             AppState.Scanner.BarcodeReceived += OnBarcodeScanned;
             AppState.RestartScanner();
             SearchBox.Focus();
@@ -189,6 +208,134 @@ public partial class PosWindow : Window
         // Navbatdagi smena yopish serverga yuborilsin
         if (AppState.Offline.HasPendingShiftClose())
             await SyncPendingShiftCloseAsync();
+
+        // Katalog o'zgarganmi — yengil tamg'a orqali tekshiramiz (o'zi intervalni hisoblaydi).
+        await CheckCatalogAsync();
+    }
+
+    // ─── Katalogni avtomatik yangilash ───────────────────────────────────────
+
+    /// <summary>Tamg'ani oladi. Oflayn yoki xato bo'lsa — null (jim o'tamiz).</summary>
+    private async Task<PosCatalogStamp?> TryGetCatalogStampAsync()
+    {
+        try
+        {
+            var stamp = await AppState.Backend.GetPosCatalogStampAsync();
+            if (stamp is not null) _lastCatalogCheck = DateTime.UtcNow;
+            return stamp;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Katalog o'zgarganmi — tekshiradi va faqat o'zgargan bo'lsagina ro'yxatni jim yangilaydi.
+    /// <paramref name="force"/> — "↻" tugmasi: interval kutilmaydi, ro'yxat baribir tortiladi.
+    /// </summary>
+    private async Task CheckCatalogAsync(bool force = false)
+    {
+        // To'lov ketayotganda ro'yxat qayta qurilmaydi — kassir skanerlash/to'lov
+        // o'rtasida ekran o'zgarib ketmasin.
+        if (_checkoutBusy) return;
+        if (!force && DateTime.UtcNow - _lastCatalogCheck < CatalogPollInterval) return;
+        // Oldingi tekshiruv hali tugamagan bo'lsa (sekin tarmoq) — ikkinchisini boshlamaymiz.
+        if (_catalogBusy) return;
+
+        _catalogBusy = true;
+        try
+        {
+            await RunCatalogCheckAsync(force);
+        }
+        finally
+        {
+            _catalogBusy = false;
+        }
+    }
+
+    private async Task RunCatalogCheckAsync(bool force)
+    {
+        var stamp = await TryGetCatalogStampAsync();
+        if (stamp is null)
+        {
+            // Oflayn. Avtomatik tekshiruvda jim o'tamiz; "↻" bosilgan bo'lsa kassir
+            // javob kutayapti — keshdan yuklab, oflayn holatini ko'rsatamiz.
+            if (force) await LoadProductsAsync();
+            return;
+        }
+
+        var prev = _catalogStamp;
+        // prev == null — startda oflayn edik: nima o'zgargani noma'lum, to'liq yuklaymiz.
+        var catalogChanged = force || prev is null || !prev.SameProducts(stamp);
+        var categoriesChanged = force || prev is null || !prev.SameCategories(stamp);
+        // Qoldiq har savdoda o'zgaradi (boshqa kassa ham sotadi) — uni har daqiqada
+        // tortsak, ro'yxat bekorga qayta-qayta yuklanardi. Shu sabab siyrakroq.
+        var stockChanged = !catalogChanged
+            && prev is not null && !prev.SameStocks(stamp)
+            && DateTime.UtcNow - _lastStockRefresh >= StockRefreshInterval;
+
+        var reloadProducts = catalogChanged || stockChanged;
+        if (!reloadProducts && !categoriesChanged)
+        {
+            UpdateCatalogStatus();
+            return;
+        }
+
+        var loaded = true;
+        if (categoriesChanged) loaded &= await LoadCategoriesAsync();
+        if (reloadProducts) loaded &= await LoadProductsAsync(silent: true);
+
+        // Tamg'aning faqat haqiqatan yuklangan qismi yangilanadi — aks holda yuklash
+        // uzilib qolsa, kassa o'zini "yangi" deb hisoblab, eski narxda ishlab ketardi.
+        if (loaded)
+        {
+            _catalogStamp ??= stamp;
+            if (reloadProducts) _catalogStamp.CopyProductsFrom(stamp);
+            if (categoriesChanged) _catalogStamp.CopyCategoriesFrom(stamp);
+        }
+        UpdateCatalogStatus();
+
+        // Xabar faqat haqiqiy katalog o'zgarishida (narx, nom, yangi tovar) chiqadi:
+        // qoldiq har savdoda o'zgaradi, uni e'lon qilaversak kassirni charchatadi.
+        if (loaded && !force && (catalogChanged || categoriesChanged))
+            ShowMessage("Tovarlar ro'yxati yangilandi", error: false);
+    }
+
+    /// <summary>Sarlavhadagi "Tovarlar: HH:mm" ko'rsatkichi — oxirgi muvaffaqiyatli tekshiruv vaqti.</summary>
+    private void UpdateCatalogStatus()
+    {
+        CatalogStatusText.Text = _lastCatalogCheck == DateTime.MinValue
+            ? ""
+            : $"Tovarlar: {_lastCatalogCheck.ToLocalTime():HH:mm}";
+    }
+
+    /// <summary>Vizual daraxtdan birinchi mos avlodni topadi (ListBox ichidagi ScrollViewer uchun).</summary>
+    private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T typed) return typed;
+            var found = FindDescendant<T>(child);
+            if (found is not null) return found;
+        }
+        return null;
+    }
+
+    private double? GetProductsScrollOffset()
+    {
+        _productsScroll ??= FindDescendant<ScrollViewer>(ProductsControl);
+        return _productsScroll?.VerticalOffset;
+    }
+
+    private void RestoreProductsScrollOffset(double offset)
+    {
+        if (offset <= 0 || _productsScroll is null) return;
+        // Qatorlar endigina qayta qurildi — layout tugagach tiklaymiz.
+        Dispatcher.BeginInvoke(
+            new Action(() => _productsScroll!.ScrollToVerticalOffset(offset)),
+            DispatcherPriority.Background);
     }
 
     private async Task SyncPendingShiftCloseAsync()
@@ -248,7 +395,8 @@ public partial class PosWindow : Window
         {
             if (!silent)
                 ShowMessage($"✓ {synced} ta oflayn savdo serverga yuborildi", error: false);
-            await LoadProductsAsync(); // qoldiqlar yangilandi
+            // Fonda ketgan sinxronlash — ekranni bloklamasdan jim yangilaymiz.
+            await LoadProductsAsync(silent: true); // qoldiqlar yangilandi
         }
         if (rejected > 0)
             ShowMessage(
@@ -472,18 +620,26 @@ public partial class PosWindow : Window
         SearchBox.Focus();
     }
 
-    private async Task LoadCategoriesAsync()
+    /// <summary>Kategoriyalarni yuklaydi. Qaytaradi: serverdan olindimi.</summary>
+    private async Task<bool> LoadCategoriesAsync()
     {
+        var loaded = false;
         try
         {
             _categories = await AppState.Backend.GetCategoriesAsync();
             AppState.Offline.SaveCategories(_categories);
+            loaded = true;
         }
         catch
         {
             _categories = AppState.Offline.LoadCategories();
         }
+        // Tanlangan kategoriya o'chirilgan bo'lsa "Barchasi"ga qaytamiz — aks holda
+        // filtr hech nimaga mos kelmay, ro'yxat bo'sh bo'lib qolardi.
+        if (_selectedCategoryId is Guid selected && _categories.All(c => c.Id != selected))
+            _selectedCategoryId = null;
         BuildCategoryChips();
+        return loaded;
     }
 
     private void BuildCategoryChips()
@@ -546,27 +702,45 @@ public partial class PosWindow : Window
         RenderShiftBar();
     }
 
-    private async Task LoadProductsAsync()
+    /// <summary>
+    /// Mahsulotlarni serverdan yuklaydi (xato bo'lsa keshdan).
+    /// <paramref name="silent"/> — avtomatik yangilash: ekranni bloklovchi overlay ham,
+    /// "oflayn" xabari ham ko'rsatilmaydi va kassir ko'rib turgan joy saqlanadi.
+    /// Qaytaradi: ro'yxat serverdan olindimi (false — keshdan ishladik).
+    /// </summary>
+    private async Task<bool> LoadProductsAsync(bool silent = false)
     {
-        LoadingOverlay.Visibility = Visibility.Visible;
+        if (!silent) LoadingOverlay.Visibility = Visibility.Visible;
+        // Avtomatik yangilashda ro'yxat tepaga sakramasin.
+        var scroll = silent ? GetProductsScrollOffset() : null;
+        var loaded = false;
         try
         {
+            // Yangi ro'yxat — YANGI obyektlar. Savatdagi qatorlar eski ProductDto'ga
+            // havola qilib turadi, shu sabab savdo o'rtasida narx o'zgarib ketmaydi:
+            // mijozga aytilgan summa savdo yakunlanguncha o'zgarmas bo'lib qoladi.
             _allProducts = await AppState.Backend.GetProductsAsync();
             AppState.Offline.SaveProducts(_allProducts);
             SetOnlineState(true);
+            // Qoldiqlar ham shu bilan yangilandi — keyingi "faqat qoldiq" tekshiruvi
+            // shu nuqtadan sanaladi (qaytarish, oflayn sync, "↻" — hammasi kiradi).
+            _lastStockRefresh = DateTime.UtcNow;
+            loaded = true;
         }
         catch
         {
             _allProducts = AppState.Offline.LoadProducts();
             SetOnlineState(false);
-            if (_allProducts.Count > 0)
+            if (!silent && _allProducts.Count > 0)
                 ShowMessage("Oflayn rejim — keshdan yuklandi", error: false);
         }
         finally
         {
-            LoadingOverlay.Visibility = Visibility.Collapsed;
+            if (!silent) LoadingOverlay.Visibility = Visibility.Collapsed;
         }
         ApplyFilter();
+        if (scroll is double offset) RestoreProductsScrollOffset(offset);
+        return loaded;
     }
 
     private void RenderShiftBar()
@@ -1494,7 +1668,8 @@ public partial class PosWindow : Window
         RefreshButton.IsEnabled = false;
         try
         {
-            await LoadProductsAsync();
+            // Majburiy: interval kutilmaydi, kategoriyalar ham qayta yuklanadi.
+            await CheckCatalogAsync(force: true);
         }
         finally
         {

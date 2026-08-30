@@ -35,6 +35,15 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<PosProductDto>>> GetForPos(CancellationToken cancellationToken)
         => Ok(await _productService.GetForPosAsync(cancellationToken));
 
+    /// <summary>
+    /// Kassa katalogining tamg'asi — o'ta yengil javob (~100 bayt). Kassa buni har
+    /// daqiqada so'raydi va faqat oldingisidan farq qilsa to'liq ro'yxatni yuklaydi.
+    /// </summary>
+    [HttpGet("pos/stamp")]
+    [ProducesResponseType(typeof(PosCatalogStampDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PosCatalogStampDto>> GetPosStamp(CancellationToken cancellationToken)
+        => Ok(await _productService.GetPosStampAsync(cancellationToken));
+
     /// <summary>Id bo'yicha mahsulot.</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]

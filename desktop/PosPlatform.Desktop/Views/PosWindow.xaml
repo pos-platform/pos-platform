@@ -353,6 +353,10 @@
                     <Button Content="📋 Savdolar" Style="{StaticResource Pill}" Margin="0,0,8,0" Click="SalesHistory_Click"
                             ToolTip="Kunlik savdolar va chekni qayta chop etish" />
                     <Button Content="↩ Qaytarish" Style="{StaticResource Pill}" Margin="0,0,8,0" Click="Refund_Click" />
+                    <!-- Tovarlar ro'yxati oxirgi marta qachon tekshirilgani (avtomatik yangilanadi) -->
+                    <TextBlock x:Name="CatalogStatusText" Text="" FontSize="11" Foreground="#94A3B8"
+                               VerticalAlignment="Center" Margin="0,0,8,0"
+                               ToolTip="Tovarlar va narxlar avtomatik yangilanadi (har daqiqada tekshiriladi)" />
                     <!-- Oflayn ko'rsatkich + sinxronlash tugmasi -->
                     <Border x:Name="OnlineBadge" CornerRadius="10" Padding="8,4" Margin="0,0,8,0"
                             Background="#DCFCE7" ToolTip="Internet bor — onlayn rejim">

@@ -161,6 +161,46 @@ public class CategoryDto
     public string Name { get; set; } = "";
 }
 
+/// <summary>
+/// Katalog "tamg'asi" — api/products/pos/stamp javobi. Kassa buni davriy so'rab,
+/// avvalgisi bilan solishtiradi: farq bo'lsagina to'liq ro'yxat yuklanadi.
+/// Soni — qo'shish/o'chirishni, vaqti — tahrirni ushlaydi.
+/// Qoldiq vaqti alohida: u har savdoda o'zgaradi, shu sabab boshqacha muomala qilinadi.
+/// </summary>
+public class PosCatalogStamp
+{
+    public int ProductCount { get; set; }
+    public DateTime? ProductsUpdatedAt { get; set; }
+    public DateTime? StocksUpdatedAt { get; set; }
+    public int CategoryCount { get; set; }
+    public DateTime? CategoriesUpdatedAt { get; set; }
+
+    /// <summary>Mahsulot kartochkalari (narx, nom, tarkib) o'zgarmaganmi.</summary>
+    public bool SameProducts(PosCatalogStamp other)
+        => ProductCount == other.ProductCount && ProductsUpdatedAt == other.ProductsUpdatedAt;
+
+    /// <summary>Qoldiqlar o'zgarmaganmi.</summary>
+    public bool SameStocks(PosCatalogStamp other) => StocksUpdatedAt == other.StocksUpdatedAt;
+
+    public bool SameCategories(PosCatalogStamp other)
+        => CategoryCount == other.CategoryCount && CategoriesUpdatedAt == other.CategoriesUpdatedAt;
+
+    /// <summary>Mahsulot ro'yxati haqiqatan yuklangach — shu qismni yangilaymiz.</summary>
+    public void CopyProductsFrom(PosCatalogStamp other)
+    {
+        ProductCount = other.ProductCount;
+        ProductsUpdatedAt = other.ProductsUpdatedAt;
+        StocksUpdatedAt = other.StocksUpdatedAt;
+    }
+
+    /// <summary>Kategoriyalar yuklangach — shu qismni yangilaymiz.</summary>
+    public void CopyCategoriesFrom(PosCatalogStamp other)
+    {
+        CategoryCount = other.CategoryCount;
+        CategoriesUpdatedAt = other.CategoriesUpdatedAt;
+    }
+}
+
 public class ShiftDto
 {
     public Guid Id { get; set; }

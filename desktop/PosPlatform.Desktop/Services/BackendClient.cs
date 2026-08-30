@@ -78,6 +78,19 @@ public class BackendClient
     public async Task<List<ProductDto>> GetProductsAsync()
         => (await _http.GetFromJsonAsync<List<ProductDto>>("api/products/pos", Json)) ?? new();
 
+    /// <summary>
+    /// Katalog tamg'asi — mahsulot/kategoriya soni va oxirgi o'zgarish vaqti.
+    /// Javob juda kichik, shu sabab qisqa muddat (8 sek) qo'yiladi: sekin tarmoqda
+    /// kassa sinxronlash sikli shu so'rovni kutib qolmasin.
+    /// </summary>
+    public async Task<PosCatalogStamp?> GetPosCatalogStampAsync()
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+        var resp = await _http.GetAsync("api/products/pos/stamp", cts.Token);
+        await EnsureOk(resp);
+        return await resp.Content.ReadFromJsonAsync<PosCatalogStamp>(Json, cts.Token);
+    }
+
     public async Task<List<CategoryDto>> GetCategoriesAsync()
         => (await _http.GetFromJsonAsync<List<CategoryDto>>("api/categories", Json)) ?? new();
 
