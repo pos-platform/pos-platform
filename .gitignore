@@ -49,7 +49,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 ## ---------- Backend orqali xizmat qilinadigan frontend build + yuklamalar ----------
-backend/src/PosPlatform.Api/wwwroot/
+backend/src/PosCloud.Api/wwwroot/
 
 ## ---------- Muhit / maxfiy ----------
 .env

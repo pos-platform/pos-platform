@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  PosPlatform — lokal backup yaratadi va masofaviy serverga yuklaydi.
+  PosCloud — lokal backup yaratadi va masofaviy serverga yuklaydi.
 
 .DESCRIPTION
   1. pg_dump orqali lokal .dump fayl yaratadi (backup-db.ps1 mantiqiga o'xshash).

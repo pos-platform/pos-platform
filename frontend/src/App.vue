@@ -165,7 +165,7 @@ function logout() {
       <button class="hamb" aria-label="Menyu" @click="mobileNavOpen = true">☰</button>
       <div class="mt-brand">
         <img src="/logo.png" alt="" />
-        <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosPlatform' }}</span>
+        <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosCloud' }}</span>
       </div>
     </header>
 
@@ -175,7 +175,7 @@ function logout() {
     <aside v-if="showNav" class="sidebar">
       <div class="sidebar-brand">
         <img src="/logo.png" alt="Logo" class="brand-img" />
-        <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosPlatform' }}</span>
+        <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosCloud' }}</span>
         <button class="sidebar-close" aria-label="Yopish" @click="mobileNavOpen = false">×</button>
       </div>
 

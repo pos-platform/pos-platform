@@ -190,7 +190,7 @@ function printReceipt(sale) {
   </style>
 </head>
 <body>
-  <h2>PosPlatform</h2>
+  <h2>PosCloud</h2>
   <div class="center muted">${new Date(sale.createdAt || Date.now()).toLocaleString('uz-UZ')}</div>
   <div class="center">Chek: <strong>${sale.receiptNumber}</strong></div>
   <hr/>

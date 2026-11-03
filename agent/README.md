@@ -1,4 +1,4 @@
-# PosPlatform.Agent — Lokal fiskal/printer agenti
+# PosCloud.Agent — Lokal fiskal/printer agenti
 
 Kassir kompyuterida ishlaydigan lokal .NET 8 worker. Backenddan fiskalizatsiya
 kutayotgan cheklarni **pull** qiladi, fiskalizatsiya qiladi, chekni chop etadi va
@@ -33,7 +33,7 @@ har chek uchun `IFiscalDevice.FiscalizeAsync` + `IReceiptPrinter.PrintAsync` →
 Avval backend ishlab tursin, so'ng:
 
 ```bash
-cd agent/PosPlatform.Agent
+cd agent/PosCloud.Agent
 dotnet run
 ```
 

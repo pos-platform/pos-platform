@@ -1,4 +1,4 @@
-# PosPlatform — Deploy checklist (devops uchun)
+# PosCloud — Deploy checklist (devops uchun)
 
 Bir sahifalik amaliy ro'yxat. Batafsil izoh: [README.md](README.md).
 Ikki yo'l bor — **A) Linux + systemd** yoki **B) Docker**. Bittasini tanlang.
@@ -58,13 +58,13 @@ Tasodifiy kalit (Linux): `openssl rand -base64 48`
   ```bash
   cd frontend && npm ci && npm run build
   # Vite dist/ ga build qiladi; uni backend wwwroot ga ko'chiring:
-  rm -rf ../backend/src/PosPlatform.Api/wwwroot/* 
-  cp -r dist/* ../backend/src/PosPlatform.Api/wwwroot/
+  rm -rf ../backend/src/PosCloud.Api/wwwroot/* 
+  cp -r dist/* ../backend/src/PosCloud.Api/wwwroot/
   ```
 - [ ] Backend publish (wwwroot ham publish natijasiga kiradi):
   ```bash
   cd backend
-  dotnet publish src/PosPlatform.Api -c Release -o /opt/posplatform
+  dotnet publish src/PosCloud.Api -c Release -o /opt/posplatform
   ```
 - [ ] `wwwroot/index.html` (Vue build) `/opt/posplatform/wwwroot` ichida ekanini tekshiring.
 - [ ] `deploy/posplatform.service` ni `/etc/systemd/system/` ga qo'ying,

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  PosPlatform PostgreSQL bazasini zaxiralaydi (pg_dump) va eski zaxiralarni tozalaydi.
+  PosCloud PostgreSQL bazasini zaxiralaydi (pg_dump) va eski zaxiralarni tozalaydi.
 
 .DESCRIPTION
   Har kuni ishga tushirish uchun mo'ljallangan (register-backup-task.ps1 orqali rejalashtiriladi).

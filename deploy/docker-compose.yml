@@ -1,4 +1,4 @@
-# PosPlatform — Docker Compose (Postgres + API).
+# PosCloud — Docker Compose (Postgres + API).
 # Ishlatish (loyiha ildizidan emas, shu deploy/ papkadan):
 #   1) deploy/.env faylga sirlarni yozing (.env.example dan nusxa oling)
 #   2) docker compose up -d --build

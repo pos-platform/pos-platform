@@ -1,4 +1,4 @@
-# PosPlatform — Backend
+# PosCloud — Backend
 
 O'zbekiston uchun POS + web CRM tizimining backend asosi.
 .NET 8 (ASP.NET Core Web API), EF Core + PostgreSQL, JWT autentifikatsiya.
@@ -8,10 +8,10 @@ O'zbekiston uchun POS + web CRM tizimining backend asosi.
 ```
 backend/
 └── src/
-    ├── PosPlatform.Domain          # Entitylar, enumlar (hech narsaga bog'liq emas)
-    ├── PosPlatform.Application      # DTO, interfeyslar, biznes servislar (use-case)
-    ├── PosPlatform.Infrastructure   # EF Core DbContext, PostgreSQL, JWT, BCrypt, DI
-    └── PosPlatform.Api              # Controllerlar, JWT sozlamasi, Swagger, Program.cs
+    ├── PosCloud.Domain          # Entitylar, enumlar (hech narsaga bog'liq emas)
+    ├── PosCloud.Application      # DTO, interfeyslar, biznes servislar (use-case)
+    ├── PosCloud.Infrastructure   # EF Core DbContext, PostgreSQL, JWT, BCrypt, DI
+    └── PosCloud.Api              # Controllerlar, JWT sozlamasi, Swagger, Program.cs
 ```
 
 Bog'liqlik yo'nalishi: `Api → Infrastructure → Application → Domain`.
@@ -27,7 +27,7 @@ Bog'liqlik yo'nalishi: `Api → Infrastructure → Application → Domain`.
 
 ## 1. Sozlash
 
-`src/PosPlatform.Api/appsettings.json` ichida:
+`src/PosCloud.Api/appsettings.json` ichida:
 
 - **ConnectionStrings:DefaultConnection** — o'z PostgreSQL ma'lumotlaringizga moslang.
 - **Jwt:Key** — productionda **kamida 32 belgi**li kuchli maxfiy kalitga almashtiring
@@ -45,13 +45,13 @@ Migration `Init` allaqachon yaratilgan. Bazaga qo'llash (DB yaratiladi):
 
 ```bash
 cd backend
-dotnet ef database update --project src/PosPlatform.Infrastructure --startup-project src/PosPlatform.Api
+dotnet ef database update --project src/PosCloud.Infrastructure --startup-project src/PosCloud.Api
 ```
 
 Yangi migration qo'shish (entity o'zgartirgandan keyin):
 
 ```bash
-dotnet ef migrations add <Nomi> --project src/PosPlatform.Infrastructure --startup-project src/PosPlatform.Api
+dotnet ef migrations add <Nomi> --project src/PosCloud.Infrastructure --startup-project src/PosCloud.Api
 ```
 
 ## 3. Ishga tushirish
@@ -60,7 +60,7 @@ dotnet ef migrations add <Nomi> --project src/PosPlatform.Infrastructure --start
 cd backend
 dotnet restore
 dotnet build
-dotnet run --project src/PosPlatform.Api
+dotnet run --project src/PosCloud.Api
 ```
 
 Swagger: <http://localhost:5000/swagger>
@@ -113,7 +113,7 @@ Vue dev server `http://localhost:5173` uchun ruxsat berilgan.
 ### Fiskal oqim (lokal agent bilan)
 
 Savdo yakunlanganda `IFiscalReceiptService` chekni **Queued** holatiga qo'yadi.
-Lokal .NET agent (`agent/PosPlatform.Agent`) backenddan kutayotgan cheklarni
+Lokal .NET agent (`agent/PosCloud.Agent`) backenddan kutayotgan cheklarni
 **pull** qiladi (agent NAT ortida turgani uchun push emas), fiskalizatsiya qiladi,
 chop etadi va natijani qaytaradi:
 
@@ -129,7 +129,7 @@ Savdo → Receipt(Queued)
 
 Agent endpointlari **API-kalit** bilan himoyalangan (`X-Agent-Key` sarlavhasi,
 `appsettings.json` → `Agent:ApiKey`). Agentni ishga tushirish uchun
-[../agent/PosPlatform.Agent](../agent/PosPlatform.Agent) ga qarang.
+[../agent/PosCloud.Agent](../agent/PosCloud.Agent) ga qarang.
 
 | Metod | Yo'l                          | Himoya       | Tavsif                          |
 |-------|-------------------------------|--------------|---------------------------------|

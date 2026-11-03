@@ -1,4 +1,4 @@
-# PosPlatform — systemd service (Linux, Docker'siz deploy)
+# PosCloud — systemd service (Linux, Docker'siz deploy)
 # Joylash:  /etc/systemd/system/posplatform.service
 # So'ng:    sudo systemctl daemon-reload && sudo systemctl enable --now posplatform
 #
@@ -7,14 +7,14 @@
 # (fayl huquqi 600, faqat root o'qiy oladi), shunda sirlar systemd unit ichida turmaydi.
 
 [Unit]
-Description=PosPlatform API (.NET 8)
+Description=PosCloud API (.NET 8)
 After=network.target postgresql.service
 Wants=postgresql.service
 
 [Service]
 Type=simple
 WorkingDirectory=/opt/posplatform
-ExecStart=/usr/bin/dotnet /opt/posplatform/PosPlatform.Api.dll
+ExecStart=/usr/bin/dotnet /opt/posplatform/PosCloud.Api.dll
 Restart=always
 RestartSec=5
 KillSignal=SIGINT

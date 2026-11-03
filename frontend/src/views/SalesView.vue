@@ -468,7 +468,7 @@ function openReceiptWindow(sale) {
   </style>
 </head>
 <body>
-  <h2>PosPlatform</h2>
+  <h2>PosCloud</h2>
   ${isRefund ? '<div class="center bold">QAYTARISH CHEKI</div>' : ''}
   <div class="center muted">${new Date(sale.createdAt || Date.now()).toLocaleString('uz-UZ')}</div>
   <div class="center">Chek: <strong>${sale.receiptNumber}</strong></div>

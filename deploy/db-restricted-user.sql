@@ -1,4 +1,4 @@
--- PosPlatform — cheklangan huquqli PostgreSQL foydalanuvchi
+-- PosCloud — cheklangan huquqli PostgreSQL foydalanuvchi
 -- Productionda application ulanish uchun; superuser "postgres" emas!
 --
 -- Ishlatish:

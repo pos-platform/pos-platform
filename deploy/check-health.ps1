@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  PosPlatform backend'ni /health endpoint orqali tekshiradi.
+  PosCloud backend'ni /health endpoint orqali tekshiradi.
   Muammo aniqlansa — email yoki Telegram xabari yuboradi.
 
 .DESCRIPTION
@@ -99,9 +99,9 @@ $shouldAlert = (-not $isHealthy -and $wasHealthy) -or ($isHealthy -and -not $was
 if (-not $shouldAlert) { exit 0 }
 
 $emoji   = if ($isHealthy) { "✅" } else { "🔴" }
-$subject = "$emoji PosPlatform [$hostname] — $($status.ToUpper())"
+$subject = "$emoji PosCloud [$hostname] — $($status.ToUpper())"
 $body    = @"
-PosPlatform health holati o'zgardi
+PosCloud health holati o'zgardi
 
 Server  : $hostname
 Vaqt    : $now

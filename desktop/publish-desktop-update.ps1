@@ -37,7 +37,7 @@ if ($Version -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') {
     exit 1
 }
 
-$proj      = Join-Path $PSScriptRoot "PosPlatform.Desktop\PosPlatform.Desktop.csproj"
+$proj      = Join-Path $PSScriptRoot "PosCloud.Desktop\PosCloud.Desktop.csproj"
 $publishRoot = Join-Path $PSScriptRoot "publish"
 $outDir    = Join-Path $publishRoot "app"                       # vaqtinchalik build chiqishi
 $zip       = Join-Path $publishRoot "PosPlatform.Desktop.zip"   # DOIMIY nom

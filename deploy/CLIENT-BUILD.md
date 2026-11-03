@@ -1,8 +1,8 @@
 # Kassa kompyuteri uchun build/publish — Desktop + Agent
 
 Bu yo'riqnoma **kassir kompyuteriga** (Windows) o'rnatiladigan ikki ilova uchun:
-- **Desktop** (`PosPlatform.Desktop`) — kassir sotuv interfeysi (WPF)
-- **Agent** (`PosPlatform.Agent`) — lokal fiskal modul + chek printeri bilan ishlaydi
+- **Desktop** (`PosCloud.Desktop`) — kassir sotuv interfeysi (WPF)
+- **Agent** (`PosCloud.Agent`) — lokal fiskal modul + chek printeri bilan ishlaydi
 
 Ikkalasi ham cloud backend `https://poscloud.uz` ga ulanadi (allaqachon sozlangan).
 
@@ -17,7 +17,7 @@ Ikkalasi ham cloud backend `https://poscloud.uz` ga ulanadi (allaqachon sozlanga
 Developer mashinasida (loyiha ildizidan):
 
 ```powershell
-dotnet publish desktop/PosPlatform.Desktop/PosPlatform.Desktop.csproj `
+dotnet publish desktop/PosCloud.Desktop/PosCloud.Desktop.csproj `
   -c Release -r win-x64 --self-contained true `
   -p:PublishSingleFile=true `
   -o publish/desktop
@@ -26,7 +26,7 @@ dotnet publish desktop/PosPlatform.Desktop/PosPlatform.Desktop.csproj `
 Natija: `publish/desktop/` — ichida `PosPlatform.Desktop.exe` + `appsettings.json`.
 
 - `appsettings.json` allaqachon `BaseUrl = https://poscloud.uz`.
-- Butun `publish/desktop` papkani kassa kompyuteriga ko'chiring (masalan `C:\PosPlatform\Desktop`).
+- Butun `publish/desktop` papkani kassa kompyuteriga ko'chiring (masalan `C:\PosCloud\Desktop`).
 - `PosPlatform.Desktop.exe` ni ishga tushiring → login oynasi → `admin` yoki kassir hisobi.
 - Ish stoli yorlig'i (shortcut) yarating: `.exe` ustiga o'ng tugma → "Send to → Desktop".
 
@@ -38,14 +38,14 @@ Natija: `publish/desktop/` — ichida `PosPlatform.Desktop.exe` + `appsettings.j
 ## 2. Agent (fiskal + printer) — publish
 
 ```powershell
-dotnet publish agent/PosPlatform.Agent/PosPlatform.Agent.csproj `
+dotnet publish agent/PosCloud.Agent/PosCloud.Agent.csproj `
   -c Release -r win-x64 --self-contained true `
   -p:PublishSingleFile=true `
   -o publish/agent
 ```
 
-Natija: `publish/agent/` — `PosPlatform.Agent.exe` + `appsettings.json`.
-Papkani kassa kompyuteriga ko'chiring (masalan `C:\PosPlatform\Agent`).
+Natija: `publish/agent/` — `PosCloud.Agent.exe` + `appsettings.json`.
+Papkani kassa kompyuteriga ko'chiring (masalan `C:\PosCloud\Agent`).
 
 ### Agent sozlamalari (MUHIM) — `appsettings.json`
 
@@ -70,10 +70,10 @@ Agent doim ishlab turishi kerak (kassa yoqilganda o'zi boshlanishi uchun). Ikki 
 ### A) Task Scheduler — "at logon" (oddiy)
 
 ```powershell
-$exe = "C:\PosPlatform\Agent\PosPlatform.Agent.exe"
-schtasks /Create /TN "PosPlatformAgent" /TR "$exe" /SC ONLOGON /RL HIGHEST /F
+$exe = "C:\PosCloud\Agent\PosCloud.Agent.exe"
+schtasks /Create /TN "PosCloudAgent" /TR "$exe" /SC ONLOGON /RL HIGHEST /F
 # Darhol ishga tushirish:
-schtasks /Run /TN "PosPlatformAgent"
+schtasks /Run /TN "PosCloudAgent"
 ```
 
 ### B) Windows Service (NSSM bilan — barqarorroq)
@@ -81,10 +81,10 @@ schtasks /Run /TN "PosPlatformAgent"
 [NSSM](https://nssm.cc/) yuklab oling, so'ng:
 
 ```powershell
-nssm install PosPlatformAgent "C:\PosPlatform\Agent\PosPlatform.Agent.exe"
-nssm set PosPlatformAgent AppDirectory "C:\PosPlatform\Agent"
-nssm set PosPlatformAgent Start SERVICE_AUTO_START
-nssm start PosPlatformAgent
+nssm install PosCloudAgent "C:\PosCloud\Agent\PosCloud.Agent.exe"
+nssm set PosCloudAgent AppDirectory "C:\PosCloud\Agent"
+nssm set PosCloudAgent Start SERVICE_AUTO_START
+nssm start PosCloudAgent
 ```
 
 > Agent fon-servis (Worker) — UI yo'q. Ishlayotganini loglardan yoki backendda
@@ -106,7 +106,7 @@ nssm start PosPlatformAgent
 Kod o'zgargach, har kassada faqat **exe'ni almashtiring**:
 1. Developer mashinasida yana `dotnet publish ...` (yuqoridagi buyruqlar).
 2. Eski `.exe` (va o'zgargan fayllar) o'rniga yangisini ko'chiring.
-3. Agent service'ni qayta ishga tushiring (`nssm restart PosPlatformAgent` yoki Task'ni qayta `Run`).
+3. Agent service'ni qayta ishga tushiring (`nssm restart PosCloudAgent` yoki Task'ni qayta `Run`).
 
 > **appsettings.json**'ni almashtirmang (har kassaning printer/ApiKey sozlamasi unda turadi) —
 > faqat `.exe` va kod fayllarini yangilang. Agar config strukturasi o'zgarsa — qo'lda moslang.

@@ -44,7 +44,7 @@ async function submit() {
         <div class="brand-logo">
           <img src="/logo.png" alt="Logo" />
         </div>
-        <h1>PosPlatform</h1>
+        <h1>PosCloud</h1>
         <p class="sub">Hisobingizga kiring</p>
       </div>
 
@@ -79,7 +79,7 @@ async function submit() {
         </button>
       </form>
 
-      <p class="foot">© PosPlatform — savdo boshqaruv tizimi</p>
+      <p class="foot">© PosCloud — savdo boshqaruv tizimi</p>
     </div>
   </div>
 </template>

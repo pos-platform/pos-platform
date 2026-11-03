@@ -1,4 +1,4 @@
-# PosPlatform — Frontend (Vue 3)
+# PosCloud — Frontend (Vue 3)
 
 POS + CRM tizimining web interfeysi. Vue 3 + Vite, sodda custom CSS (UI kutubxonasiz),
 Pinia (holat) va vue-router. Backend REST API bilan ishlaydi.

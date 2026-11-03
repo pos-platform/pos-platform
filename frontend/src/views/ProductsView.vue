@@ -201,6 +201,7 @@ const blankForm = () => ({
   isMarked: false,
   markingCode: '',
   packageCode: '',
+  commitentTin: '',
   supplierId: '',
   unit: 'Piece',
   isWeighed: false,
@@ -401,6 +402,7 @@ function openEdit(p) {
     isMarked: p.isMarked,
     markingCode: p.markingCode || '',
     packageCode: p.packageCode || '',
+    commitentTin: p.commitentTin || '',
     supplierId: p.supplierId || '',
     unit: p.unit,
     isWeighed: p.isWeighed,
@@ -470,6 +472,7 @@ async function submit() {
       isMarked: form.isMarked,
       markingCode: form.markingCode?.trim() || null,
       packageCode: form.packageCode?.trim() || null,
+      commitentTin: form.commitentTin?.trim() || null,
       supplierId: form.supplierId || null,
       unit: form.unit,
       isWeighed: form.isWeighed,
@@ -989,6 +992,13 @@ function printBarcode(product) {
             <label>Markirovka kodi (Код маркировки)</label>
             <input v-model="form.markingCode" class="input" placeholder="Ixtiyoriy" />
           </div>
+        </div>
+
+        <!-- Komitent STIR (komissiya tovari) -->
+        <div class="field">
+          <label>Komitent STIR / JSHSHIR</label>
+          <input v-model="form.commitentTin" class="input" inputmode="numeric" maxlength="14"
+                 placeholder="Komissiya tovari bo'lsa: 9 yoki 14 raqam" />
         </div>
 
         <!-- Tarozida tortiladi -->

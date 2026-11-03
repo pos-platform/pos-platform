@@ -1,4 +1,4 @@
-name: Deploy PosPlatform
+name: Deploy PosCloud
 on:
   push:
     branches: [main]
@@ -57,10 +57,10 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Restore
         working-directory: backend
-        run: dotnet restore src/PosPlatform.Api
+        run: dotnet restore src/PosCloud.Api
       - name: Publish backend
         working-directory: backend
-        run: dotnet publish src/PosPlatform.Api -c Release -o ./publish
+        run: dotnet publish src/PosCloud.Api -c Release -o ./publish
       - name: Upload backend artifact
         uses: actions/upload-artifact@v4
         with:
@@ -77,10 +77,10 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Publish agent (Windows self-contained)
-        working-directory: agent/PosPlatform.Agent
+        working-directory: agent/PosCloud.Agent
         run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o ./publish
       - name: Inject Agent API key (GitHub secret)
-        working-directory: agent/PosPlatform.Agent/publish
+        working-directory: agent/PosCloud.Agent/publish
         env:
           AGENT_API_KEY: ${{ secrets.AGENT_API_KEY }}
         run: |
@@ -91,13 +91,13 @@ jobs:
           jq --arg k "$AGENT_API_KEY" '.Agent.ApiKey = $k' appsettings.json > "$tmp" && mv "$tmp" appsettings.json
           echo "ApiKey o'rnatildi (uzunlik: ${#AGENT_API_KEY})"
       - name: Zip agent
-        working-directory: agent/PosPlatform.Agent
-        run: cd publish && zip -qr ../PosPlatform-Agent.zip .
+        working-directory: agent/PosCloud.Agent
+        run: cd publish && zip -qr ../PosCloud-Agent.zip .
       - name: Upload agent build
         uses: actions/upload-artifact@v4
         with:
-          name: PosPlatform-Agent
-          path: agent/PosPlatform.Agent/PosPlatform-Agent.zip
+          name: PosCloud-Agent
+          path: agent/PosCloud.Agent/PosCloud-Agent.zip
           retention-days: 30
   deploy:
     needs: [changes, build-frontend, build-backend]
@@ -140,7 +140,7 @@ jobs:
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/posplatform/
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "sudo mkdir -p /opt/posplatform/wwwroot/uploads && sudo chown -R posplatform:posplatform /opt/posplatform && sudo systemctl restart posplatform && sleep 2 && sudo systemctl status posplatform --no-pager"
+            "UNIT=\$(systemctl show -p FragmentPath --value posplatform) && sudo sed -i 's#PosPlatform\.Api\.dll#PosCloud.Api.dll#' \"\$UNIT\" && sudo systemctl daemon-reload && sudo mkdir -p /opt/posplatform/wwwroot/uploads && sudo chown -R posplatform:posplatform /opt/posplatform && sudo systemctl restart posplatform && sleep 2 && sudo systemctl status posplatform --no-pager"
       - name: Deploy frontend only (backend unchanged)
         if: needs.changes.outputs.backend == 'false' && needs.changes.outputs.frontend == 'true'
         run: |

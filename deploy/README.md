@@ -1,4 +1,4 @@
-# PosPlatform — Production deploy qo'llanmasi
+# PosCloud — Production deploy qo'llanmasi
 
 Bu papkada sotuvga/ishlatishga chiqarish (production) uchun kerakli sozlama va skriptlar.
 

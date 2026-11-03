@@ -1,4 +1,4 @@
-# PosPlatform
+# PosCloud
 
 O'zbekiston uchun **POS + web CRM** tizimi. Kassa savdosi, mahsulot/kategoriya
 boshqaruvi, soliq (MXIK / QQS) hisobi va kelajakda fiskal (FDS / Rahmat MK),
@@ -19,12 +19,12 @@ Talablar: **.NET 8 SDK**, **Node.js 18+**, **PostgreSQL 14+**.
 ### 1. Backend
 ```bash
 cd backend
-dotnet run --project src/PosPlatform.Api
+dotnet run --project src/PosCloud.Api
 ```
 Ishga tushganda avtomatik: migratsiyalar qo'llanadi + boshlang'ich **admin** va
 **"Umumiy"** kategoriyasi yaratiladi. Swagger: <http://localhost:5000/swagger>.
 
-> Connection string va Jwt:Key — `backend/src/PosPlatform.Api/appsettings.json`.
+> Connection string va Jwt:Key — `backend/src/PosCloud.Api/appsettings.json`.
 
 ### 2. Frontend
 ```bash
@@ -36,7 +36,7 @@ npm run dev
 
 ### 3. Agent (ixtiyoriy, fiskal simulyatsiya)
 ```bash
-cd agent/PosPlatform.Agent
+cd agent/PosCloud.Agent
 dotnet run
 ```
 Savdo yaratilganda agent uni "fiskalizatsiya" qiladi va chekni konsolga chop etadi.
