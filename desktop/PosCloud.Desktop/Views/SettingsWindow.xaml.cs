@@ -55,7 +55,10 @@ public partial class SettingsWindow : Window
         }
 
         VersionText.Text = $"Joriy versiya: {UpdateService.CurrentVersion}. " +
-                           $"Yangi versiya mavjud: {upd.Version} ({upd.SizeBytes / 1024.0 / 1024.0:0.#} MB)";
+                           $"Yangi versiya mavjud: {upd.Version} ({upd.SizeBytes / 1024.0 / 1024.0:0.#} MB)" +
+                           (upd.IsMigration
+                               ? ". Bir martalik: dastur yangi o'rnatish tizimiga o'tkaziladi — keyingi yangilanishlar ancha kichik bo'ladi."
+                               : "");
         UpdateButtonText.Text = $"⬇ Yangilash — v{upd.Version}";
         UpdateButton.Visibility = Visibility.Visible;
     }
@@ -65,8 +68,12 @@ public partial class SettingsWindow : Window
         var upd = UpdateService.Available;
         if (upd is null) return;
 
+        // Qayta ishga tushganda xotiradagi savatchalar yo'qoladi — kassirni ogohlantiramiz.
+        var cartWarning = Owner is PosWindow { HasUnfinishedSales: true }
+            ? "\n\nDiqqat: savatchada tugallanmagan sotuv bor — dastur qayta ochilganda u o'chadi."
+            : "";
         var ok = MessageBox.Show(this,
-            $"Yangi {upd.Version} versiyasi o'rnatilsinmi?\nDastur yangilanib, avtomatik qayta ochiladi.",
+            $"Yangi {upd.Version} versiyasi o'rnatilsinmi?\nDastur yangilanib, avtomatik qayta ochiladi.{cartWarning}",
             "Yangilash", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (ok != MessageBoxResult.Yes) return;
 

@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -196,6 +198,34 @@ if (app.Environment.IsDevelopment())
 // Statik fayllar: Vue SPA build'i + yuklangan rasmlar (wwwroot, wwwroot/uploads).
 Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads"));
 app.UseStaticFiles();
+
+// Desktop (kassa) yangilanishlari — Velopack release fayllari: releases.win.json, *.nupkg, Setup.exe.
+// publish-desktop-update.ps1 -Upload ularni ContentRoot/updates/velopack ga tashlaydi.
+// Alohida tarmoq: topilmagan fayl SPA index.html'ga tushmay 404 qaytaradi, auth/litsenziya/rate limit
+// ham qo'llanmaydi (kassa login'dan oldin tekshiradi, katta fayllar limitga urilmasin).
+var velopackDir = Path.Combine(app.Environment.ContentRootPath, "updates", "velopack");
+Directory.CreateDirectory(velopackDir);
+app.Map("/updates/velopack", updates =>
+{
+    var contentTypes = new FileExtensionContentTypeProvider();
+    contentTypes.Mappings[".nupkg"] = "application/octet-stream";
+    updates.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(velopackDir),
+        ContentTypeProvider = contentTypes,
+        // releases.win.json keshlanmasin — yangi versiya kassalarga darhol ko'rinsin.
+        OnPrepareResponse = ctx =>
+        {
+            if (ctx.File.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                ctx.Context.Response.Headers.CacheControl = "no-cache";
+        }
+    });
+    updates.Run(ctx =>
+    {
+        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        return Task.CompletedTask;
+    });
+});
 
 app.UseHttpsRedirection();
 

@@ -5,6 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace PosCloud.Api.Controllers;
 
 /// <summary>
+/// ESKI (o'tish davri) — 1.0.8 va undan oldingi kassalar faqat shu endpointni biladi.
+/// Yangi kassalar Velopack orqali /updates/velopack/ dan yangilanadi (Program.cs).
+/// Eski kassa shu yerdan yangi versiyani olgach, u Sozlamalarda bir martalik "o'tish"ni
+/// taklif qiladi. Barcha kassalar o'tib bo'lgach controller'ni olib tashlash mumkin.
+///
 /// Desktop POS ilovasi uchun avtomatik yangilanish endpointlari.
 /// Serverda ContentRoot/updates/desktop papkasida DOIM bitta zip turadi:
 ///   PosPlatform.Desktop.zip  +  version.json  ({"version":"1.2.3"})

@@ -53,8 +53,9 @@ services:
     volumes:
       # Yuklangan rasmlar/uploads konteyner qayta yaratilsa ham saqlanadi.
       - uploads:/app/wwwroot/uploads
-      # Desktop (kassa) yangilanishi. Hostdagi deploy/updates/desktop/ ichida doim
-      # PosPlatform.Desktop.zip + version.json turadi — kassalar api/desktop-update orqali ko'radi.
+      # Desktop (kassa) yangilanishi. deploy/updates/velopack/ — Velopack paketlari
+      # (kassalar /updates/velopack/ dan oladi); deploy/updates/desktop/ — o'tish davri uchun
+      # eski zip + version.json (api/desktop-update).
       # Bind mount: konteyner qayta qurilsa ham fayllar yo'qolmaydi.
       - ./updates:/app/updates
 

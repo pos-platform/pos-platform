@@ -18,7 +18,7 @@ public static class DeviceIdentity
 
     /// <summary>
     /// Qurilma ID. Asosiy manba — Windows o'rnatilishida yaratiladigan MachineGuid
-    /// (Windows qayta o'rnatilmaguncha o'zgarmaydi). O'qib bo'lmasa — ilova papkasidagi
+    /// (Windows qayta o'rnatilmaguncha o'zgarmaydi). O'qib bo'lmasa — %LOCALAPPDATA%\PosPlatform\
     /// device-id.txt fayliga bir marta GUID yozib, keyin o'shani ishlatamiz.
     /// </summary>
     public static string Get()
@@ -47,16 +47,30 @@ public static class DeviceIdentity
 
     private static string ReadOrCreateFallback()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "device-id.txt");
+        // Fayl dastur papkasidan tashqarida: Velopack har yangilanishda dastur papkasini almashtiradi.
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "PosPlatform");
+        var path = Path.Combine(dir, "device-id.txt");
+        // Eski o'rnatishlarda fayl exe yonida yotardi — bir marta ko'chirib olamiz (ID o'zgarmasin).
+        var legacyPath = Path.Combine(AppContext.BaseDirectory, "device-id.txt");
         try
         {
-            if (File.Exists(path))
+            foreach (var candidate in new[] { path, legacyPath })
             {
-                var saved = File.ReadAllText(path).Trim();
-                if (!string.IsNullOrWhiteSpace(saved)) return saved;
+                if (!File.Exists(candidate)) continue;
+                var saved = File.ReadAllText(candidate).Trim();
+                if (string.IsNullOrWhiteSpace(saved)) continue;
+                if (candidate != path)
+                {
+                    Directory.CreateDirectory(dir);
+                    File.WriteAllText(path, saved);
+                }
+                return saved;
             }
 
             var generated = Guid.NewGuid().ToString();
+            Directory.CreateDirectory(dir);
             File.WriteAllText(path, generated);
             return generated;
         }

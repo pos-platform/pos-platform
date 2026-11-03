@@ -1529,6 +1529,9 @@ public partial class PosWindow : Window
         RefreshUpdateBadge();
     }
 
+    /// <summary>Biror savdo oynasida tovar qolgan — yangilanishdan oldin ogohlantirish uchun.</summary>
+    public bool HasUnfinishedSales => _sessions.Any(s => s.Cart.Count > 0);
+
     /// <summary>Serverda yangi versiya bor-yo'qligini tekshirib, ⚙ tugmadagi belgini yangilaydi.</summary>
     private async Task CheckUpdateAsync()
     {

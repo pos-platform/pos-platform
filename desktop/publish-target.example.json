@@ -4,9 +4,12 @@
   "_server": "SSH manzili — kalit bilan parolsiz kirish sozlangan bo'lsin (ssh-copy-id).",
   "server": "user@poscloud.uz",
 
-  "_remotePath": "Backend ContentRoot ichidagi updates/desktop papkasi. systemd: /opt/posplatform/updates/desktop | Docker (compose bind mount): ~/pos-platform/deploy/updates/desktop",
-  "remotePath": "/opt/posplatform/updates/desktop",
+  "_velopackPath": "Backend ContentRoot ichidagi updates/velopack papkasi (Velopack paketlari). systemd: /opt/posplatform/updates/velopack | Docker (compose bind mount): ~/pos-platform/deploy/updates/velopack",
+  "velopackPath": "/opt/posplatform/updates/velopack",
 
-  "_verifyUrl": "Yuklangach avtomatik tekshiriladi — shu manzil yangi versiyani qaytarishi kerak.",
-  "verifyUrl": "https://poscloud.uz/api/desktop-update/version"
+  "_feedUrl": "Shu papkaning tashqi manzili: delta uchun oldingi versiya shu yerdan olinadi, yuklangach shu yerda tekshiriladi.",
+  "feedUrl": "https://poscloud.uz/updates/velopack",
+
+  "_remotePath": "ESKI format (o'tish davri, -SkipLegacy bo'lmasa): backend ContentRoot/updates/desktop. systemd: /opt/posplatform/updates/desktop | Docker: ~/pos-platform/deploy/updates/desktop",
+  "remotePath": "/opt/posplatform/updates/desktop"
 }

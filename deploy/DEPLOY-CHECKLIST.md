@@ -112,49 +112,51 @@ Tasodifiy kalit (Linux): `openssl rand -base64 48`
 
 ## 6. Kassa (desktop) yangilanishini chiqarish
 
-Kassalar `api/desktop-update/version` dan tekshiradi. Server papkasida zip **bo'lmasa
-endpoint 204 qaytaradi va kassalarda yangilanish umuman chiqmaydi**.
+Kassa ilovasi **Velopack** bilan yangilanadi. Yangilanish **majburiy emas**: kassa serverni
+tekshirib ⚙ tugmasida qizil belgi ko'rsatadi, kassir Sozlamalar → **⬇ Yangilash** ni bosganda
+yuklab o'rnatadi (delta — odatda bir necha MB) va dastur o'zi qayta ochiladi.
 
-Serverda **doim bir xil ikkita fayl** turadi (versiya fayl nomida emas):
+Kassalar `https://poscloud.uz/updates/velopack/releases.win.json` ni o'qiydi. Backend bu
+papkani statik beradi (`Program.cs`, auth talab qilinmaydi):
 
 ```
-<ContentRoot>/updates/desktop/PosPlatform.Desktop.zip   <- har chiqarishda ustidan yoziladi
-<ContentRoot>/updates/desktop/version.json              <- {"version":"1.0.6", ...}
+<ContentRoot>/updates/velopack/releases.win.json       <- versiyalar ro'yxati (oxirida yuklanadi)
+<ContentRoot>/updates/velopack/PosCloud-x.y.z-full.nupkg
+<ContentRoot>/updates/velopack/PosCloud-x.y.z-delta.nupkg
+<ContentRoot>/updates/velopack/PosCloud-win-Setup.exe  <- yangi kassaga o'rnatish
 ```
 
-- [ ] Dev mashinada zip yasang (skript eski ziplarni o'zi o'chiradi):
+- [ ] Bir marta: `desktop\publish-target.json` yarating (`publish-target.example.json` dan nusxa)
+      va `velopackPath` ni moslang:
+  - **YO'L A (systemd):** `/opt/posplatform/updates/velopack`
+  - **YO'L B (Docker):** `~/pos-platform/deploy/updates/velopack` (compose `./updates` ni bind mount qiladi)
+- [ ] `PosCloud.Desktop.csproj` dagi `<Version>` dan katta versiya bilan chiqaring:
   ```powershell
   cd desktop
-  .\publish-desktop-update.ps1 -Version 1.0.6
-  # natija: desktop\publish\PosPlatform.Desktop.zip (~70 MB) + desktop\publish\version.json
+  .\publish-desktop-update.ps1 -Version 1.0.9 -Upload
   ```
-- [ ] Serverga yuklang — eng qulayi `-Upload` (publish-target.json dagi manzilga o'zi tashlaydi,
-      avval zipni `.tmp` bilan, to'liq tushgach version.json — kassa yarim faylni olmaydi):
-  ```powershell
-  .\publish-desktop-update.ps1 -Version 1.0.6 -Upload
-  ```
-  Qo'lda qilinsa — **ContentRoot/updates/desktop/** ichiga ikkala fayl:
-  - **YO'L A (systemd):** `/opt/posplatform/updates/desktop/`
-    ```bash
-    scp desktop/publish/PosPlatform.Desktop.zip desktop/publish/version.json \
-        user@poscloud.uz:/opt/posplatform/updates/desktop/
-    ```
-  - **YO'L B (Docker):** hostdagi `deploy/updates/desktop/` (compose bind mount qiladi)
-    ```bash
-    mkdir -p deploy/updates/desktop
-    scp desktop/publish/PosPlatform.Desktop.zip desktop/publish/version.json \
-        user@poscloud.uz:~/pos-platform/deploy/updates/desktop/
-    ```
-- [ ] Tekshiring (version.json dagi versiya qaytishi kerak):
+  Skript: build → serverdagi oldingi versiyani oladi → `vpk pack` (full + delta + Setup.exe) →
+  har faylni `.tmp` bilan yuklab nomini almashtiradi → `releases.win.json` eng oxirida →
+  eski paketlarni o'chiradi → yangi versiya serverda ko'rinishini tekshiradi.
+- [ ] Tekshiring:
   ```bash
-  curl https://poscloud.uz/api/desktop-update/version
-  # {"version":"1.0.6","fileName":"PosPlatform.Desktop.zip","sizeBytes":...}
+  curl https://poscloud.uz/updates/velopack/releases.win.json
+  # {"Assets":[{"PackageId":"PosCloud","Version":"1.0.9","Type":"Full",...}]}
   ```
 - [ ] Kassada: ⚙ Sozlamalar → "Yangi versiya mavjud" → **⬇ Yangilash**.
 
-> Serverda faqat bitta zip yig'iladi — joy to'lmaydi. Eski `PosPlatform.Desktop-x.y.z.zip`
-> fayllari qolib ketgan bo'lsa `-Upload` ularni o'chiradi; backend ham ularni faqat
-> zaxira sifatida (version.json yo'q bo'lsa) o'qiydi.
+### O'tish davri: 1.0.8 va undan eski kassalar
+
+Eski kassalar faqat `api/desktop-update` (zip + `version.json`, `<ContentRoot>/updates/desktop/`)
+ni biladi. Shuning uchun skript hozircha **eski formatni ham** yasab, `remotePath` ga yuklaydi.
+Eski kassa oddiy usulda yangi versiyani oladi, so'ng Sozlamalarda bir martalik o'tishni taklif
+qiladi: `PosCloud-win-Setup.exe` yuklanadi va dastur `%LocalAppData%\PosCloud` ga qayta
+o'rnatiladi (sozlamalar, parol, oflayn baza `%APPDATA%`/`%LOCALAPPDATA%\PosPlatform` da —
+yo'qolmaydi). Eski papkadagi yorliq bosilsa ham dastur yangi o'rnatilgan nusxani ochadi.
+
+Hamma kassalar o'tgach: skriptni `-SkipLegacy` bilan ishlating, `DesktopUpdateController`
+va `updates/desktop` papkasini olib tashlash mumkin.
+
 > Docker'da `/app/updates` bind mount qilingan, shuning uchun `docker compose up -d --build`
 > dan keyin ham fayllar saqlanadi.
 

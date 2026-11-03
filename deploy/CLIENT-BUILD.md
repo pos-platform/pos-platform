@@ -12,26 +12,22 @@ Ikkalasi ham cloud backend `https://poscloud.uz` ga ulanadi (allaqachon sozlanga
 
 ---
 
-## 1. Desktop (kassir ilovasi) — publish
+## 1. Desktop (kassir ilovasi) — o'rnatish
 
-Developer mashinasida (loyiha ildizidan):
+Desktop **Velopack** installer bilan o'rnatiladi va keyin o'zi yangilanadi
+(chiqarish: `DEPLOY-CHECKLIST.md` → 6-bo'lim, `desktop\publish-desktop-update.ps1`).
 
-```powershell
-dotnet publish desktop/PosCloud.Desktop/PosCloud.Desktop.csproj `
-  -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=true `
-  -o publish/desktop
-```
+- Kassa kompyuterida yuklab oling va ishga tushiring:
+  `https://poscloud.uz/updates/velopack/PosCloud-win-Setup.exe`
+  (yoki dev mashinadagi `desktop\publish\releases\PosCloud-win-Setup.exe` ni ko'chiring).
+- Admin huquqi kerak emas: dastur `%LocalAppData%\PosCloud` ga o'rnatiladi, ish stoli va
+  Start menyuga **PosCloud** yorlig'i qo'yiladi va o'zi ochiladi → login → `admin` yoki kassir hisobi.
+- Yangi versiya chiqqanda ⚙ tugmasida qizil belgi paydo bo'ladi → Sozlamalar → **⬇ Yangilash**.
+- O'chirish: Windows "Programs and Features" → PosCloud.
 
-Natija: `publish/desktop/` — ichida `PosPlatform.Desktop.exe` + `appsettings.json`.
-
-- `appsettings.json` allaqachon `BaseUrl = https://poscloud.uz`.
-- Butun `publish/desktop` papkani kassa kompyuteriga ko'chiring (masalan `C:\PosCloud\Desktop`).
-- `PosPlatform.Desktop.exe` ni ishga tushiring → login oynasi → `admin` yoki kassir hisobi.
-- Ish stoli yorlig'i (shortcut) yarating: `.exe` ustiga o'ng tugma → "Send to → Desktop".
-
-> **Printer/skaner** sozlamalari ilovaning ichidagi **Settings** oynasidan yoki
-> `appsettings.json` (`Printer:Name = POS-80`) orqali. Har kassa o'z printeriga moslaydi.
+> **Printer/skaner** sozlamalari ilovaning ichidagi **Settings** oynasidan
+> (`%APPDATA%\PosPlatform\settings.json` ga saqlanadi — yangilanishda yo'qolmaydi).
+> Har kassa o'z printeriga moslaydi.
 
 ---
 

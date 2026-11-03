@@ -12,6 +12,8 @@
     <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <!-- Avtomatik yangilanish shu versiyaga tayanadi: publish-desktop-update.ps1 -Version bilan oshiriladi -->
     <Version>1.0.8</Version>
+    <!-- Velopack App.xaml'ning avtomatik Main'idan oldin ishlashi kerak — Program.cs -->
+    <StartupObject>PosCloud.Desktop.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +23,7 @@
     <PackageReference Include="System.IO.Ports" Version="8.0.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
   <ItemGroup>
