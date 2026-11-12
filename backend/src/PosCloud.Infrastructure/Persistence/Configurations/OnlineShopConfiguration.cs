@@ -85,6 +85,14 @@ public class OnlineOrderConfiguration : IEntityTypeConfiguration<OnlineOrder>
         builder.Property(o => o.Comment).HasMaxLength(500);
         builder.Property(o => o.CancelReason).HasMaxLength(500);
         builder.Property(o => o.TransferProofUrl).HasMaxLength(500);
+        builder.Property(o => o.CourierName).HasMaxLength(100);
+        builder.Property(o => o.CourierPhone).HasMaxLength(20);
+        builder.Property(o => o.ClientRequestId).HasMaxLength(64);
+
+        // Idempotentlik: bir mijozda bir xil kalit bilan faqat bitta buyurtma.
+        builder.HasIndex(o => new { o.ShopUserId, o.ClientRequestId })
+            .IsUnique()
+            .HasFilter("\"ClientRequestId\" IS NOT NULL");
 
         builder.Property(o => o.ItemsTotal).HasColumnType("numeric(18,2)");
         builder.Property(o => o.DeliveryFee).HasColumnType("numeric(18,2)");
@@ -94,6 +102,29 @@ public class OnlineOrderConfiguration : IEntityTypeConfiguration<OnlineOrder>
         builder.HasOne(o => o.ShopUser).WithMany().HasForeignKey(o => o.ShopUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(o => o.Customer).WithMany().HasForeignKey(o => o.CustomerId).OnDelete(DeleteBehavior.SetNull);
         builder.HasOne(o => o.Sale).WithMany().HasForeignKey(o => o.SaleId).OnDelete(DeleteBehavior.SetNull);
+
+        // Bosqich 6: kuryer, promokod, bonus, online to'lov.
+        builder.Property(o => o.CourierCashCollected).HasColumnType("numeric(18,2)");
+        builder.Property(o => o.PromoCode).HasMaxLength(50);
+        builder.Property(o => o.PromoDiscount).HasColumnType("numeric(18,2)");
+        builder.Property(o => o.BonusUsed).HasColumnType("numeric(18,2)");
+        builder.HasIndex(o => new { o.CourierUserId, o.Status });
+        builder.HasIndex(o => o.PromoCodeId);
+
+        builder.HasOne(o => o.CourierUser).WithMany().HasForeignKey(o => o.CourierUserId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<PromoCode>().WithMany().HasForeignKey(o => o.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
+    }
+}
+
+public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
+{
+    public void Configure(EntityTypeBuilder<PromoCode> builder)
+    {
+        builder.Property(p => p.Code).IsRequired().HasMaxLength(50);
+        builder.HasIndex(p => new { p.OrganizationId, p.Code }).IsUnique();
+        builder.Property(p => p.DiscountPercent).HasColumnType("numeric(5,2)");
+        builder.Property(p => p.DiscountAmount).HasColumnType("numeric(18,2)");
+        builder.Property(p => p.MinOrderAmount).HasColumnType("numeric(18,2)");
     }
 }
 
@@ -106,6 +137,8 @@ public class OnlineOrderItemConfiguration : IEntityTypeConfiguration<OnlineOrder
         builder.Property(i => i.Quantity).HasColumnType("numeric(18,3)");
         builder.Property(i => i.PickedQuantity).HasColumnType("numeric(18,3)");
         builder.Property(i => i.LineTotal).HasColumnType("numeric(18,2)");
+        // Mavjud qatorlar uchun bo'sh massiv (NOT NULL ustun).
+        builder.Property(i => i.MarkingCodes).HasDefaultValueSql("'{}'::text[]");
 
         builder.HasOne(i => i.OnlineOrder)
             .WithMany(o => o.Items)
@@ -134,5 +167,36 @@ public class OnlineStoreSettingsConfiguration : IEntityTypeConfiguration<OnlineS
         builder.Property(s => s.MinOrderAmount).HasColumnType("numeric(18,2)");
         builder.Property(s => s.DeliveryFee).HasColumnType("numeric(18,2)");
         builder.Property(s => s.FreeDeliveryFrom).HasColumnType("numeric(18,2)");
+        builder.Property(s => s.DeliveryServiceMxikCode).HasMaxLength(20);
+
+        // White-label ilova: slug va paket ID — unik (null'lar hisobga olinmaydi).
+        builder.Property(s => s.Slug).HasMaxLength(40);
+        builder.HasIndex(s => s.Slug).IsUnique().HasFilter("\"Slug\" IS NOT NULL");
+        builder.Property(s => s.AppName).HasMaxLength(30);
+        builder.Property(s => s.AppPackageId).HasMaxLength(150);
+        builder.HasIndex(s => s.AppPackageId).IsUnique().HasFilter("\"AppPackageId\" IS NOT NULL");
+        builder.Property(s => s.BrandColor).HasMaxLength(7);
+        builder.Property(s => s.AndroidLatestVersion).HasMaxLength(30);
+        builder.Property(s => s.AndroidStoreUrl).HasMaxLength(500);
+        builder.Property(s => s.IosLatestVersion).HasMaxLength(30);
+        builder.Property(s => s.IosStoreUrl).HasMaxLength(500);
+    }
+}
+
+public class ShopDeviceTokenConfiguration : IEntityTypeConfiguration<ShopDeviceToken>
+{
+    public void Configure(EntityTypeBuilder<ShopDeviceToken> builder)
+    {
+        builder.Property(t => t.Token).IsRequired().HasMaxLength(512);
+        builder.HasIndex(t => t.Token).IsUnique();
+        builder.Property(t => t.Platform).IsRequired().HasMaxLength(10);
+        builder.Property(t => t.Locale).IsRequired().HasMaxLength(5);
+        builder.HasIndex(t => t.ShopUserId);
+        builder.HasIndex(t => t.LastSeenAt);
+
+        builder.HasOne(t => t.ShopUser)
+            .WithMany()
+            .HasForeignKey(t => t.ShopUserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

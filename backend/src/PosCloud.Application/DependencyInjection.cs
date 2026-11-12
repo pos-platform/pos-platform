@@ -26,7 +26,9 @@ using PosCloud.Application.Features.ShopAuth;
 using PosCloud.Application.Features.ShopCatalog;
 using PosCloud.Application.Features.ShopProfile;
 using PosCloud.Application.Features.ShopOrders;
+using PosCloud.Application.Features.ShopPush;
 using PosCloud.Application.Features.OnlineOrders;
+using PosCloud.Application.Features.OnlineStores;
 using PosCloud.Application.Features.Shifts;
 using PosCloud.Application.Features.Stock;
 using PosCloud.Application.Features.Stores;
@@ -71,6 +73,8 @@ public static class DependencyInjection
         services.AddScoped<IStockTransferService, StockTransferService>();
         services.AddScoped<ICashMovementService, CashMovementService>();
         services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<PosCloud.Application.Features.Loyalty.ILoyaltyService, PosCloud.Application.Features.Loyalty.LoyaltyService>();
+        services.AddScoped<PosCloud.Application.Features.Loyalty.IShopBonusService, PosCloud.Application.Features.Loyalty.ShopBonusService>();
         services.AddScoped<IOnlinePaymentService, OnlinePaymentService>();
         services.AddScoped<ILabelService, LabelService>();
 
@@ -79,7 +83,11 @@ public static class DependencyInjection
         services.AddScoped<IShopCatalogService, ShopCatalogService>();
         services.AddScoped<IShopProfileService, ShopProfileService>();
         services.AddScoped<IShopOrderService, ShopOrderService>();
+        services.AddScoped<IShopPushService, ShopPushService>();
         services.AddScoped<IOnlineOrderService, OnlineOrderService>();
+        services.AddScoped<IOnlineStoreService, OnlineStoreService>();
+        services.AddScoped<PosCloud.Application.Features.Courier.ICourierService, PosCloud.Application.Features.Courier.CourierService>();
+        services.AddScoped<PosCloud.Application.Features.PromoCodes.IPromoCodeService, PosCloud.Application.Features.PromoCodes.PromoCodeService>();
 
         // Restoran moduli
         services.AddScoped<IDishService, DishService>();

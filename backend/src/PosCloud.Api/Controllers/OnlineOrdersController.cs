@@ -4,6 +4,7 @@ using PosCloud.Api.Authorization;
 using PosCloud.Application.Common.Authorization;
 using PosCloud.Application.Features.OnlineOrders;
 using PosCloud.Application.Features.OnlineOrders.Dtos;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Api.Controllers;
 
@@ -20,13 +21,17 @@ public class OnlineOrdersController : ControllerBase
         _service = service;
     }
 
-    /// <summary>active=true (standart) — doska uchun faol buyurtmalar; false — from'dan (standart 7 kun) barchasi.</summary>
+    /// <summary>
+    /// active=true (standart) — doska uchun faol buyurtmalar; false — from'dan (standart 7 kun) to'gacha (shu kun ham kiradi) barchasi.
+    /// status berilsa — faqat shu holat, sana oralig'i bo'yicha (active e'tiborga olinmaydi).
+    /// </summary>
     [HttpGet]
     [HasPermission(Permissions.SalesView)]
     public async Task<ActionResult<IReadOnlyList<OnlineOrderDto>>> GetList(
         [FromQuery] Guid? branchId, [FromQuery] bool active = true, [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null, [FromQuery] OnlineOrderStatus? status = null,
         CancellationToken ct = default) =>
-        Ok(await _service.GetListAsync(branchId, active, from, ct));
+        Ok(await _service.GetListAsync(branchId, active, from, to, status, ct));
 
     [HttpGet("{id:guid}")]
     [HasPermission(Permissions.SalesView)]
@@ -67,8 +72,32 @@ public class OnlineOrdersController : ControllerBase
 
     [HttpPost("{id:guid}/dispatch")]
     [HasPermission(Permissions.SalesCreate)]
-    public async Task<ActionResult<OnlineOrderDto>> Dispatch(Guid id, CancellationToken ct) =>
-        Ok(await _service.DispatchAsync(id, ct));
+    public async Task<ActionResult<OnlineOrderDto>> Dispatch(Guid id, DispatchOnlineOrderRequest? request, CancellationToken ct) =>
+        Ok(await _service.DispatchAsync(id, request, ct));
+
+    /// <summary>Do'kon tomonidan bekor qilish (Ready, AwaitingTransfer, ReadyForPickup, OnTheWay): savdo qaytariladi. Ochiq smena kerak.</summary>
+    [HttpPost("{id:guid}/cancel")]
+    [HasPermission(Permissions.SalesRefund)]
+    public async Task<ActionResult<OnlineOrderDto>> Cancel(Guid id, CancelOnlineOrderRequest request, CancellationToken ct) =>
+        Ok(await _service.CancelAsync(id, request.Reason, ct));
+
+    /// <summary>Faol kuryerlar (xodim filiali yoki branchId bo'yicha) va yo'ldagi buyurtmalari soni.</summary>
+    [HttpGet("couriers")]
+    [HasPermission(Permissions.SalesView)]
+    public async Task<ActionResult<IReadOnlyList<CourierListItemDto>>> GetCouriers([FromQuery] Guid? branchId, CancellationToken ct) =>
+        Ok(await _service.GetCouriersAsync(branchId, ct));
+
+    /// <summary>Kuryerda turgan (topshirilmagan) naqdlar. branchId bo'lmasa — xodim filiali yoki butun tashkilot.</summary>
+    [HttpGet("courier-cash")]
+    [HasPermission(Permissions.SalesView)]
+    public async Task<ActionResult<IReadOnlyList<CourierCashItemDto>>> GetCourierCash([FromQuery] Guid? branchId, CancellationToken ct) =>
+        Ok(await _service.GetCourierCashAsync(branchId, ct));
+
+    /// <summary>Kuryer naqdni topshirdi: kassa kirimi (ochiq smena kerak).</summary>
+    [HttpPost("{id:guid}/cash-handover")]
+    [HasPermission(Permissions.SalesCreate)]
+    public async Task<ActionResult<OnlineOrderDto>> CashHandover(Guid id, CancellationToken ct) =>
+        Ok(await _service.CashHandoverAsync(id, ct));
 
     [HttpPost("{id:guid}/delivered")]
     [HasPermission(Permissions.SalesCreate)]

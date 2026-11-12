@@ -63,6 +63,12 @@ public static class AppState
 
     public static bool IsRestaurant => BusinessType == "Restaurant";
 
+    /// <summary>Skaner (COM) kodini vaqtincha boshqa oynaga yo'naltirish (online buyurtma yig'ish). Null — kassa savatchasiga.</summary>
+    public static Action<string>? ScanOverride { get; set; }
+
+    /// <summary>Online buyurtmalar SignalR ulanishi (faqat do'kon rejimida).</summary>
+    public static OnlineOrdersHub? OnlineHub { get; set; }
+
     public static bool IsOnline { get; set; } = true;
 
     public static bool PrinterEnabled { get; set; }

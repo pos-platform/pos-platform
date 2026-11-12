@@ -35,7 +35,8 @@ public class InventoryService : IInventoryService
 
     public async Task<InventoryDto> CreateAsync(CreateInventoryRequest req, CancellationToken ct = default)
     {
-        IQueryable<Product> query = _db.Products;
+        // Xizmat (yetkazish) mahsuloti omborda yo'q — inventarizatsiyaga kirmaydi.
+        IQueryable<Product> query = _db.Products.Where(p => p.ProductType != Domain.Enums.ProductType.Service);
 
         if (req.ProductIds is { Count: > 0 })
             query = query.Where(p => req.ProductIds.Contains(p.Id));

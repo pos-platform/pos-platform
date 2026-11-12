@@ -19,7 +19,7 @@ public interface IShopAuthService
     Task<SendOtpResponse> SendOtpAsync(SendOtpRequest request, string? ipAddress, CancellationToken ct = default);
     Task<ShopAuthResponse> VerifyOtpAsync(VerifyOtpRequest request, CancellationToken ct = default);
     Task<ShopAuthResponse> RefreshAsync(RefreshTokenRequest request, CancellationToken ct = default);
-    Task LogoutAsync(RefreshTokenRequest request, CancellationToken ct = default);
+    Task LogoutAsync(LogoutRequest request, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -206,7 +206,7 @@ public class ShopAuthService : IShopAuthService
         return response;
     }
 
-    public async Task LogoutAsync(RefreshTokenRequest request, CancellationToken ct = default)
+    public async Task LogoutAsync(LogoutRequest request, CancellationToken ct = default)
     {
         var hash = HashToken(request.RefreshToken);
         var token = await _db.ShopRefreshTokens.IgnoreQueryFilters()
@@ -214,6 +214,16 @@ public class ShopAuthService : IShopAuthService
         if (token is null) return;
 
         token.RevokedAt = DateTime.UtcNow;
+
+        // Ixtiyoriy: shu qurilmaning push tokeni (faqat shu mijozniki bo'lsa) o'chiriladi.
+        if (!string.IsNullOrWhiteSpace(request.DeviceToken))
+        {
+            var deviceToken = request.DeviceToken.Trim();
+            var devices = await _db.ShopDeviceTokens.IgnoreQueryFilters()
+                .Where(d => d.ShopUserId == token.ShopUserId && d.Token == deviceToken).ToListAsync(ct);
+            _db.ShopDeviceTokens.RemoveRange(devices);
+        }
+
         await _db.SaveChangesAsync(ct);
     }
 

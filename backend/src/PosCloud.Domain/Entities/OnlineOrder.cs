@@ -71,6 +71,47 @@ public class OnlineOrder : BaseEntity
     public DateTime? CancelledAt { get; set; }
     public string? CancelReason { get; set; }
 
+    /// <summary>Yig'ish boshlangan vaqt.</summary>
+    public DateTime? PickingStartedAt { get; set; }
+
+    /// <summary>Kuryerga berishda kiritiladi (mijozga ko'rsatiladi).</summary>
+    public string? CourierName { get; set; }
+    public string? CourierPhone { get; set; }
+
+    /// <summary>Ilova yuborgan idempotentlik kaliti: tarmoq uzilib qayta yuborilsa ikkinchi buyurtma yaratilmaydi.</summary>
+    public string? ClientRequestId { get; set; }
+
+    /// <summary>Biriktirilgan kuryer (xodim, Role = Courier). Null — kuryer ismi qo'lda kiritilgan yoki hali berilmagan.</summary>
+    public Guid? CourierUserId { get; set; }
+    public User? CourierUser { get; set; }
+
+    /// <summary>Kuryer mijozdan olgan naqd summa (yetkazilganda).</summary>
+    public decimal? CourierCashCollected { get; set; }
+
+    /// <summary>Kuryer naqdni kassaga topshirgan vaqt (kirim yozilgan).</summary>
+    public DateTime? CourierCashHandedOverAt { get; set; }
+
+    /// <summary>"Tayyor"da "naqd kuryerda" chiqimi yozilgan — topshirish (kirim) kutiladi.</summary>
+    public bool CourierCashExpected { get; set; }
+
+    /// <summary>Oxirgi muvaffaqiyatsiz yetkazish (kuryer tarixi uchun).</summary>
+    public Guid? CourierFailedByUserId { get; set; }
+    public DateTime? CourierFailedAt { get; set; }
+
+    /// <summary>Promokod (ID va matn nusxasi) va uning chegirmasi.</summary>
+    public Guid? PromoCodeId { get; set; }
+    public string? PromoCode { get; set; }
+    public decimal PromoDiscount { get; set; }
+
+    /// <summary>Bonus (ball) bilan to'lanadigan qism. "Tayyor"da balldan yechiladi.</summary>
+    public decimal BonusUsed { get; set; }
+
+    /// <summary>"Tayyor"da ball yechildi (qayta yechilmasligi va bekor qilinganda qaytarilishi uchun).</summary>
+    public bool BonusCharged { get; set; }
+
+    /// <summary>Transfer usulida online to'lov tizimi (Payme/Click) tanlangan — karta raqami o'rniga to'lov tugmasi.</summary>
+    public PaymentProvider? OnlinePaymentProvider { get; set; }
+
     public ICollection<OnlineOrderItem> Items { get; set; } = new List<OnlineOrderItem>();
 }
 
@@ -99,4 +140,7 @@ public class OnlineOrderItem : BaseEntity
 
     /// <summary>Almashtirilgan bo'lsa — asl qator (yangi qator shunga ishora qiladi).</summary>
     public Guid? ReplacesItemId { get; set; }
+
+    /// <summary>Markirovka (DataMatrix) kodlari — markirovkali dona tovarda soni butun miqdorga teng bo'lishi shart.</summary>
+    public List<string> MarkingCodes { get; set; } = new();
 }

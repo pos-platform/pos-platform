@@ -281,9 +281,16 @@ public class ShopCatalogService : IShopCatalogService
             MinOrderAmount = s.MinOrderAmount,
             DeliveryFee = s.DeliveryFee,
             FreeDeliveryFrom = s.FreeDeliveryFrom,
+            DeliveryMinMinutes = s.DeliveryMinMinutes,
+            DeliveryMaxMinutes = s.DeliveryMaxMinutes,
             AllowCash = s.AllowCash,
-            AllowTransfer = s.AllowTransfer,
-            AllowCardOnDelivery = s.AllowCardOnDelivery
+            AllowTransfer = s.AllowTransfer && !string.IsNullOrWhiteSpace(s.TransferCardNumber),
+            AllowCardOnDelivery = s.AllowCardOnDelivery,
+            AllowPayme = s.AllowPayme,
+            AllowClick = s.AllowClick,
+            BonusPayEnabled = s.BonusPayEnabled && s.BonusMaxPercent > 0,
+            BonusMaxPercent = s.BonusPayEnabled ? s.BonusMaxPercent : 0,
+            DeliveryRadiusKm = s.DeliveryRadiusKm
         };
     }
 
@@ -301,7 +308,7 @@ public class ShopCatalogService : IShopCatalogService
             : now >= opens || now < closes;
     }
 
-    private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
+    internal static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
     {
         const double r = 6371.0;
         double ToRad(double d) => d * Math.PI / 180.0;

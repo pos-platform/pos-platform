@@ -82,6 +82,7 @@ public partial class PosWindow : Window
             SearchBox.Focus();
             WarnMissingReceiptHeader();
             _ = CheckUpdateAsync();
+            _ = StartOnlineOrdersAsync();
         };
         Closed += (_, _) =>
         {
@@ -90,7 +91,50 @@ public partial class PosWindow : Window
             NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
             AppState.Scanner.BarcodeReceived -= OnBarcodeScanned;
             AppState.Scanner.Stop();
+            StopOnlineOrders();
         };
+    }
+
+    // ─── Online buyurtmalar (mobil ilova) ─────────────────────────────────────
+
+    /// <summary>Do'kon rejimida SignalR'ga ulanadi: yangi buyurtmada ovoz va badge.</summary>
+    private async Task StartOnlineOrdersAsync()
+    {
+        if (AppState.IsRestaurant) return;
+        try
+        {
+            var settings = await AppState.Backend.GetOnlineStoreSettingsAsync();
+            // Ilovaga hech qachon ulanmagan do'kon — tugma ko'rsatilmaydi.
+            if (settings is null || !settings.IsEnabled) return;
+        }
+        catch
+        {
+            return; // huquq yo'q yoki oflayn
+        }
+
+        OnlineOrdersButton.Visibility = Visibility.Visible;
+        var hub = new OnlineOrdersHub();
+        hub.NewCountChanged += count => Dispatcher.Invoke(() =>
+        {
+            OnlineOrdersBadge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            OnlineOrdersBadgeText.Text = count.ToString();
+        });
+        hub.OrderCreated += e => Dispatcher.Invoke(() =>
+            ShowMessage($"🛒 Yangi online buyurtma #{e.Number}", error: false));
+        AppState.OnlineHub = hub;
+        await hub.StartAsync();
+    }
+
+    private void StopOnlineOrders()
+    {
+        var hub = AppState.OnlineHub;
+        AppState.OnlineHub = null;
+        if (hub is not null) _ = hub.DisposeAsync().AsTask();
+    }
+
+    private void OnlineOrders_Click(object sender, RoutedEventArgs e)
+    {
+        new OnlineOrdersWindow(AppState.OnlineHub) { Owner = this }.Show();
     }
 
     /// <summary>Obuna muddati 7 kun ichida tugayotgan bo'lsa yuqorida eslatma ko'rsatadi.
@@ -597,6 +641,7 @@ public partial class PosWindow : Window
             DebtorCombo.SelectedItem = debtors.FirstOrDefault(d => d.Id == did);
         else
             DebtorCombo.SelectedIndex = -1;
+        RefreshCustomerUi();
         RecalcTotals();
     }
 
@@ -616,9 +661,155 @@ public partial class PosWindow : Window
             PaidBox.Text = "0";
             SetPayment("Card", refocus: false);
             DebtorCombo.SelectedIndex = -1;
+            // Bonus karta mijozi va ball faqat shu savdoga tegishli edi.
+            CurrentSession.Customer = null;
+            CurrentSession.RedeemPoints = 0;
+            RefreshCustomerUi();
             RecalcTotals();
         }
         SearchBox.Focus();
+    }
+
+    // ---------- Bonus karta (CONTRACT-7 §3–4) ----------
+
+    private const string BonusCardPrefix = "PCB1.";
+    // RedeemBox matnini dasturdan o'rnatayotganda TextChanged sessiyani qayta yozmasin.
+    private bool _syncingRedeemBox;
+
+    private SaleSession CurrentSession => _sessions[_currentIndex];
+
+    /// <summary>QR kodni serverda tekshirib, mijozni skanerlash paytidagi savdo tabiga biriktiradi.</summary>
+    private async Task AttachBonusCardAsync(string code)
+    {
+        var session = CurrentSession;
+        if (!AppState.IsOnline)
+        {
+            ShowNotFound("Bonus karta uchun internet kerak");
+            return;
+        }
+
+        ShowMessage("Bonus karta tekshirilmoqda…", error: false);
+        LoyaltyCustomerDto customer;
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            customer = await AppState.Backend.ResolveLoyaltyCodeAsync(code, cts.Token);
+        }
+        catch (ApiException api)
+        {
+            // Masalan: "Bonus karta kodi eskirgan — mijoz ilovada QR'ni yangilasin".
+            ShowNotFound(api.Message);
+            return;
+        }
+        catch
+        {
+            ShowNotFound("Bonus karta uchun internet kerak");
+            return;
+        }
+
+        // Javob kutilayotganda tab yopilgan yoki shu savdo to'lanib bo'lgan bo'lishi mumkin.
+        if (!_sessions.Contains(session)) return;
+        if (_checkoutBusy && session == CurrentSession)
+        {
+            ShowMessage("To'lov bajarilmoqda — bonus kartani keyingi savdoda skanerlang", error: true);
+            return;
+        }
+
+        session.Customer = customer;
+        session.RedeemPoints = 0;
+        if (session == CurrentSession)
+        {
+            RefreshCustomerUi();
+            RecalcTotals();
+        }
+        ShowMessage($"✓ Mijoz biriktirildi: {CustomerDisplayName(customer)} · {customer.Points:N0} ball", error: false);
+        FocusScanInput();
+    }
+
+    private static string CustomerDisplayName(LoyaltyCustomerDto c) =>
+        string.IsNullOrWhiteSpace(c.Name) ? "Mijoz" : c.Name.Trim();
+
+    /// <summary>Mijoz chipi va "Ball bilan to'lash" panelini joriy sessiyaga moslaydi.</summary>
+    private void RefreshCustomerUi()
+    {
+        if (CustomerChip is null || RedeemPanel is null || _sessions.Count == 0) return;
+        var s = CurrentSession;
+        var c = s.Customer;
+        if (c is null)
+        {
+            CustomerChip.Visibility = Visibility.Collapsed;
+            RedeemPanel.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            var parts = new List<string> { "👤 " + CustomerDisplayName(c) };
+            if (!string.IsNullOrWhiteSpace(c.MaskedPhone)) parts.Add(c.MaskedPhone!);
+            parts.Add($"{c.Points:N0} ball");
+            CustomerChipText.Text = string.Join(" · ", parts);
+            CustomerChip.Visibility = Visibility.Visible;
+            // Balans yoki ruxsat etilgan foiz 0 bo'lsa — ball bilan to'lash paneli kerak emas.
+            RedeemPanel.Visibility = c.Points >= 1 && c.MaxRedeemPercent > 0
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        _syncingRedeemBox = true;
+        RedeemBox.Text = s.RedeemPoints.ToString("0", CultureInfo.InvariantCulture);
+        _syncingRedeemBox = false;
+    }
+
+    /// <summary>Ishlatish mumkin bo'lgan maksimal ball: min(balans, jami × maxRedeemPercent / 100),
+    /// butun so'mga pastga yaxlitlangan. Yakuniy cheklovni server qo'yadi.</summary>
+    private decimal MaxRedeem()
+    {
+        if (_sessions.Count == 0 || CurrentSession.Customer is not { } c) return 0;
+        var cap = Math.Floor(CartTotal() * c.MaxRedeemPercent / 100m);
+        return Math.Max(0, Math.Min(Math.Floor(c.Points), cap));
+    }
+
+    /// <summary>Kassir kiritgan ball, maksimal chegaraga qisilgan holda.</summary>
+    private decimal EffectiveRedeem()
+    {
+        if (_sessions.Count == 0 || CurrentSession.Customer is null) return 0;
+        var wanted = Math.Floor(Math.Max(0, CurrentSession.RedeemPoints));
+        return Math.Min(wanted, MaxRedeem());
+    }
+
+    /// <summary>Mijoz to'laydigan summa (jami − ball).</summary>
+    private decimal PayableTotal() => CartTotal() - EffectiveRedeem();
+
+    private void RedeemBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_syncingRedeemBox || _sessions.Count == 0) return;
+        CurrentSession.RedeemPoints = ParseDecimal(RedeemBox.Text);
+        RecalcTotals();
+    }
+
+    private void RedeemAll_Click(object sender, RoutedEventArgs e)
+    {
+        if (CartLocked()) return;
+        RedeemBox.Text = MaxRedeem().ToString("0", CultureInfo.InvariantCulture);
+    }
+
+    private void DetachCustomer_Click(object sender, RoutedEventArgs e)
+    {
+        if (CartLocked()) return;
+        CurrentSession.Customer = null;
+        CurrentSession.RedeemPoints = 0;
+        RefreshCustomerUi();
+        RecalcTotals();
+        FocusScanInput();
+    }
+
+    private void BonusCard_Click(object sender, RoutedEventArgs e)
+    {
+        if (!AppState.IsOnline)
+        {
+            ShowMessage("Bonus karta uchun internet kerak", error: true);
+            return;
+        }
+        SearchBox.Focus();
+        SearchBox.SelectAll();
+        ShowMessage("Mijoz ilovasidagi bonus karta QR kodini skanerlang (QR 90 soniya amal qiladi)", error: false);
     }
 
     /// <summary>Kategoriyalarni yuklaydi. Qaytaradi: serverdan olindimi.</summary>
@@ -805,6 +996,12 @@ public partial class PosWindow : Window
     // COM port skanerdan barcode kelganda (ThreadPool thread) UI thread'da qayta ishlash
     private void OnBarcodeScanned(string barcode)
     {
+        // Online buyurtma yig'ilayotganda skaner kodi o'sha oynaga ketadi (savatchaga emas).
+        if (AppState.ScanOverride is { } redirect)
+        {
+            redirect(barcode);
+            return;
+        }
         Dispatcher.Invoke(() => ProcessScannedCode(barcode, fromScanner: true));
     }
 
@@ -829,6 +1026,15 @@ public partial class PosWindow : Window
         // To'lov so'rovi ketayotganda skanerlangan tovar tozalanishi kerak bo'lgan savatga
         // tushib qolmasligi uchun — kassir to'lov tugagach qayta skanerlaydi.
         if (CartLocked()) { SearchBox.Clear(); return; }
+
+        // 0) Mijoz ilovasidagi bonus karta (dinamik QR): "PCB1.<payload>.<imzo>".
+        //    Tovar emas — mijozni joriy savdo tabiga biriktiramiz (server tekshiradi).
+        if (code.StartsWith(BonusCardPrefix, StringComparison.Ordinal))
+        {
+            SearchBox.Clear();
+            _ = AttachBonusCardAsync(code);
+            return;
+        }
 
         // 1) Tarozi vazn-kodi: "2" + 6 xonali mahsulot kodi + 5 xonali vazn (gramm) + nazorat raqami.
         //    Vazn deb faqat topilgan mahsulot ROSTDAN tarozili bo'lsagina qabul qilamiz:
@@ -1089,6 +1295,9 @@ public partial class PosWindow : Window
         if (CartLocked()) return;
         _cart.Clear();
         PaidBox.Text = "0";
+        // Mijoz biriktirilgan holda qoladi, faqat ball miqdori nolga qaytadi.
+        CurrentSession.RedeemPoints = 0;
+        RefreshCustomerUi();
         RecalcTotals();
         // Savatni tozalagandan keyin ham shtrix-skaner darhol ishlashi uchun
         // fokusni qidiruv maydoniga qaytaramiz (HID skaner kiritishi shu yerga tushadi).
@@ -1105,7 +1314,7 @@ public partial class PosWindow : Window
 
     private void ExactCash_Click(object sender, RoutedEventArgs e)
     {
-        PaidBox.Text = CartTotal().ToString("0");
+        PaidBox.Text = PayableTotal().ToString("0");
     }
 
     private decimal CartTotal() => _cart.Sum(l => l.LineTotal);
@@ -1128,8 +1337,12 @@ public partial class PosWindow : Window
         // lekin ba'zi elementlar hali yaratilmagan bo'lishi mumkin.
         if (TotalText is null || ChangeText is null) return;
 
-        var total = CartTotal();
+        // Mijoz ball bilan to'layotgan bo'lsa — JAMI to'lanadigan (kamaytirilgan) summani ko'rsatadi.
+        var gross = CartTotal();
+        var redeem = EffectiveRedeem();
+        var total = gross - redeem;
         TotalText.Text = total.ToString("N0");
+        UpdateRedeemUi(gross, redeem, total);
         var paid = ParseDecimal(PaidBox.Text);
         // Aralash to'lovda PaidBox — naqd qismi, o'ng katak — kartadan yechiladigan qoldiq.
         var mixed = _payment == "Mixed";
@@ -1153,6 +1366,24 @@ public partial class PosWindow : Window
     }
 
     private void PaidBox_TextChanged(object sender, TextChangedEventArgs e) => RecalcTotals();
+
+    /// <summary>"Ball bilan to'lash" panelidagi maksimum va "Ball: −X" yozuvini yangilaydi.</summary>
+    private void UpdateRedeemUi(decimal gross, decimal redeem, decimal payable)
+    {
+        if (RedeemPanel is null || RedeemSummaryText is null || _sessions.Count == 0) return;
+        if (CurrentSession.Customer is not { } c) return;
+
+        RedeemMaxText.Text = $"Balans: {c.Points:N0} · maks {MaxRedeem():N0} ({c.MaxRedeemPercent:0.##}%)";
+        if (redeem > 0)
+        {
+            RedeemSummaryText.Text = $"Tovarlar: {gross:N0} · Ball: −{redeem:N0} · To'lanadi: {payable:N0}";
+            RedeemSummaryText.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            RedeemSummaryText.Visibility = Visibility.Collapsed;
+        }
+    }
 
     // ---------- Smena ----------
 
@@ -1291,7 +1522,11 @@ public partial class PosWindow : Window
         if (_shift is null) { ShowMessage("Avval smenani oching", error: true); return; }
         if (_cart.Count == 0) { ShowMessage("Savatcha bo'sh", error: true); return; }
 
-        var total = CartTotal();
+        // Ball bilan to'lov: naqd/karta summalari kamaytirilgan jamidan hisoblanadi.
+        // Server yakuniy cheklovni qo'yadi — savdodan keyin SaleDto qiymatlari olinadi.
+        var customer = CurrentSession.Customer;
+        var redeem = EffectiveRedeem();
+        var total = CartTotal() - redeem;
         var paid = ParseDecimal(PaidBox.Text);
         var payment = _payment;
         // Tarozili mahsulotlarda jami kasrli bo'lishi mumkin (masalan 223 070,4);
@@ -1365,7 +1600,11 @@ public partial class PosWindow : Window
                 // Yashil "To'lash va Chek chiqarish" → fiskal (QR-li). Pastdagi "Chop etish"
                 // (allowImmediatePrint) → nofiskal (QR-siz): soliqqa yuborilmaydi.
                 Fiscalize = !allowImmediatePrint,
-                Items = soldLines.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity, MarkingCode = l.MarkingCode }).ToList()
+                // Oflayn navbatga ham shu holicha tushadi: mijoz avvalroq (onlayn) tanilgan,
+                // ball yetmasa server sync paytida o'zi cheklaydi.
+                CustomerId = customer?.CustomerId,
+                RedeemPoints = redeem > 0 ? redeem : null,
+                Items =soldLines.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity, MarkingCode = l.MarkingCode }).ToList()
             };
             var receipt = new ReceiptData
             {
@@ -1380,6 +1619,8 @@ public partial class PosWindow : Window
                 Total = total,
                 Paid = req.PaidAmount,
                 CardAmount = cardAmount,
+                CustomerMaskedPhone = customer?.MaskedPhone,
+                LoyaltyPointsRedeemed = redeem,
                 Lines = soldLines.Select(l => new ReceiptLine
                 {
                     Name = l.Product.Name, Quantity = l.Quantity, Price = l.Product.Price, LineTotal = l.LineTotal,
@@ -1418,6 +1659,7 @@ public partial class PosWindow : Window
                 receipt.ReceiptNumber = sale.ReceiptNumber;
                 receipt.Change = sale.ChangeAmount;
                 receipt.SaleId = sale.Id; // fiskal QR'ni keyin so'rab olish uchun
+                if (customer is not null) ApplyServerLoyalty(receipt, sale, soldLines);
 
                 // Savatni SHU ZAHOTI tozalaymiz. Keyingi ishlar (qoldiq keshi, filtr, chek)
                 // savatga bog'liq emas va ulardagi xato savatni to'la qoldirmasligi kerak:
@@ -1426,7 +1668,8 @@ public partial class PosWindow : Window
                 _lastReceipt = receipt;
                 ReprintButton.IsEnabled = true;
                 completed = receipt;
-                ShowMessage($"✓ Chek {sale.ReceiptNumber} · Jami {sale.TotalAmount:N0} · Qaytim {sale.ChangeAmount:N0}", error: false);
+                var bonusInfo = sale.LoyaltyPointsEarned > 0 ? $" · Bonus +{sale.LoyaltyPointsEarned:N0}" : "";
+                ShowMessage($"✓ Chek {sale.ReceiptNumber} · Jami {sale.TotalAmount:N0} · Qaytim {sale.ChangeAmount:N0}{bonusInfo}", error: false);
                 UpdateStockCache(soldLines);
             }
             else
@@ -1474,6 +1717,26 @@ public partial class PosWindow : Window
             PrintReceiptSafe(completed);
         else
             new ReceiptPreviewWindow(completed, ReceiptViewMode.Fiscal) { Owner = this }.ShowDialog();
+    }
+
+    /// <summary>Bonus karta savdosida chekni server qiymatlari bilan yangilaydi: server ballni
+    /// cheklagan bo'lishi mumkin va uni qatorlarga chegirma sifatida taqsimlaydi (fiskal chek
+    /// qatorlari shunga mos bo'lishi kerak). Server — yagona haqiqat manbai.</summary>
+    private static void ApplyServerLoyalty(ReceiptData receipt, SaleDto sale, IReadOnlyList<CartLine> soldLines)
+    {
+        receipt.Total = sale.TotalAmount;
+        receipt.LoyaltyPointsEarned = sale.LoyaltyPointsEarned;
+        receipt.LoyaltyPointsRedeemed = sale.LoyaltyPointsRedeemed;
+
+        // Qatorlar so'rov tartibida qaytadi deb hisoblaymiz; mos kelmasa lokal qatorlar qoladi.
+        if (sale.Items.Count != receipt.Lines.Count) return;
+        for (var i = 0; i < sale.Items.Count; i++)
+            if (sale.Items[i].ProductId != soldLines[i].Product.Id) return;
+        for (var i = 0; i < sale.Items.Count; i++)
+        {
+            receipt.Lines[i].LineTotal = sale.Items[i].LineTotal;
+            receipt.Lines[i].Discount = sale.Items[i].DiscountAmount;
+        }
     }
 
     /// <summary>Savdoni serverga yuboradi. Javob kelmasa (tarmoq/vaqt tugashi) qisqa tanaffus

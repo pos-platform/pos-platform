@@ -18,6 +18,9 @@ export const productsApi = {
     fd.append('file', file)
     return http.post('/api/products/import', fd).then((r) => r.data) // { created, failed, errors }
   },
+  // Ommaviy "ilovada ko'rsatish/yashirish" → { updated }
+  setShowOnline: (productIds, showOnline) =>
+    http.put('/api/products/show-online', { productIds, showOnline }).then((r) => r.data),
   exportExcel: () => http.get('/api/products/export', { responseType: 'blob' }).then((r) => r.data),
   importTemplate: () => http.get('/api/products/import-template', { responseType: 'blob' }).then((r) => r.data),
   importTemplateTxt: () =>
@@ -225,6 +228,17 @@ export const cashMovementsApi = {
   remove: (id) => http.delete(`/api/cash-movements/${id}`).then((r) => r.data)
 }
 
+// Cashback va bonus (CONTRACT-7)
+export const loyaltyApi = {
+  getSettings: () => http.get('/api/loyalty/settings').then((r) => r.data),
+  saveSettings: (payload) => http.put('/api/loyalty/settings', payload).then((r) => r.data),
+  // { earned, redeemed, expired, activeCustomers, outstandingPoints }
+  report: (params) => http.get('/api/loyalty/report', { params }).then((r) => r.data),
+  // Mijoz bonus tarixi → [{ id, createdAt, type, source, points, amount, comment, receiptNumber }] yoki PagedResult
+  customerHistory: (customerId, params) =>
+    http.get(`/api/customers/${customerId}/loyalty-history`, { params }).then((r) => r.data)
+}
+
 export const customersApi = {
   list: () => http.get('/api/customers').then((r) => r.data),
   get: (id) => http.get(`/api/customers/${id}`).then((r) => r.data),
@@ -307,4 +321,38 @@ export function discountPercentFor(product, activePromos) {
     if (applies && p.discountPercent > best) best = p.discountPercent
   }
   return best
+}
+
+// Online do'kon (mobil ilova). SuperAdmin: barcha tashkilotlar; do'kon admini: o'z sozlamalari.
+export const onlineStoresAdminApi = {
+  list: (params) => http.get('/api/admin/online-stores', { params }).then((r) => r.data),
+  get: (orgId) => http.get(`/api/admin/online-stores/${orgId}`).then((r) => r.data),
+  update: (orgId, payload) => http.put(`/api/admin/online-stores/${orgId}`, payload).then((r) => r.data),
+  // Bosqich 8: do'konning alohida mobil ilovasi (white-label) sozlamalari
+  updateApp: (orgId, payload) => http.put(`/api/admin/online-stores/${orgId}/app`, payload).then((r) => r.data)
+}
+
+export const onlineStoreApi = {
+  get: () => http.get('/api/online-store/settings').then((r) => r.data),
+  update: (payload) => http.put('/api/online-store/settings', payload).then((r) => r.data),
+  requestListing: () => http.post('/api/online-store/request').then((r) => r.data),
+  uploadLogo: (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return http.post('/api/products/image', fd).then((r) => r.data) // { url }
+  }
+}
+
+// Admin panel: online buyurtmalar (faqat ko'rish; amallar kassada)
+export const onlineOrdersApi = {
+  list: (params) => http.get('/api/online-orders', { params }).then((r) => r.data),
+  get: (id) => http.get(`/api/online-orders/${id}`).then((r) => r.data)
+}
+
+// Promokodlar (online do'kon, tashkilot bo'yicha). Huquq: settings.manage.
+export const promoCodesApi = {
+  list: () => http.get('/api/promo-codes').then((r) => r.data),
+  create: (payload) => http.post('/api/promo-codes', payload).then((r) => r.data),
+  update: (id, payload) => http.put(`/api/promo-codes/${id}`, payload).then((r) => r.data),
+  remove: (id) => http.delete(`/api/promo-codes/${id}`).then((r) => r.data)
 }

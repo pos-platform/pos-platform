@@ -29,6 +29,9 @@ public class CreateProductDto
 
     public string? ImageUrl { get; set; }
 
+    /// <summary>Mobil ilovada ko'rsatilsinmi. Null — yaratishda ha, tahrirda o'zgarmaydi (eski klientlar uchun).</summary>
+    public bool? ShowOnline { get; set; }
+
     public string? Description { get; set; }
 
     /// <summary>QQS (НДС) bilanmi.</summary>

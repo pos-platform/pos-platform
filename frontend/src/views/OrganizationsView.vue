@@ -43,7 +43,7 @@ const desktopOnlyForm = reactive({ username: '', password: '', fullName: '', pho
 const showEditForm = ref(false)
 const editForm = reactive({ id: '', username: '', fullName: '', phone: '', role: 'Cashier', branchId: '', terminalId: '', newPassword: '' })
 
-const roleLabel = { Admin: 'Admin', Manager: 'Menejer', Cashier: 'Kassir', SuperAdmin: 'SuperAdmin' }
+const roleLabel = { Admin: 'Admin', Manager: 'Menejer', Cashier: 'Kassir', Courier: 'Kuryer', SuperAdmin: 'SuperAdmin' }
 
 const totalUsers = computed(() => orgs.value.reduce((s, o) => s + o.userCount, 0))
 const totalLicensed = computed(() => orgs.value.reduce((s, o) => s + o.licensedCount, 0))
@@ -204,6 +204,12 @@ async function createAdminWithDesktop() {
 
 async function createDesktopOnly() {
   err.value = ''
+  // Kuryer: telefon va do'kon majburiy, litsenziya/Kassa ID yuborilmaydi
+  const isCourier = desktopOnlyForm.role === 'Courier'
+  if (isCourier && (!desktopOnlyForm.phone.trim() || !desktopOnlyForm.branchId)) {
+    err.value = 'Kuryer uchun telefon va do\'kon majburiy.'
+    return
+  }
   busy.value = true
   try {
     const payload = {
@@ -212,8 +218,8 @@ async function createDesktopOnly() {
       fullName: desktopOnlyForm.fullName.trim(),
       phone: desktopOnlyForm.phone.trim(),
       role: desktopOnlyForm.role,
-      licenseMonths: Number(desktopOnlyForm.licenseMonths) || 0,
-      terminalId: desktopOnlyForm.terminalId.trim() || null
+      licenseMonths: isCourier ? 0 : Number(desktopOnlyForm.licenseMonths) || 0,
+      terminalId: isCourier ? null : desktopOnlyForm.terminalId.trim() || null
     }
     if (desktopOnlyForm.branchId) payload.branchId = desktopOnlyForm.branchId
     await organizationsApi.createUser(selected.value.id, payload)
@@ -717,7 +723,7 @@ onMounted(load)
             </div>
             <div v-for="u in item.users" :key="u.userId" class="alert-user-row">
               <span class="alert-username">{{ u.username }}</span>
-              <span class="pill pill-gray" style="font-size:11px">{{ u.role === 'Cashier' ? 'Kassir' : u.role === 'Manager' ? 'Menejer' : u.role }}</span>
+              <span class="pill pill-gray" style="font-size:11px">{{ roleLabel[u.role] || u.role }}</span>
               <span v-if="u.branchName" class="store-tag">{{ u.branchName }}</span>
               <template v-if="alertModal === 'unpaid'">
                 <span class="alert-status st-none">Hali to'lanmagan</span>
@@ -757,11 +763,12 @@ onMounted(load)
             <select v-model="desktopOnlyForm.role" class="select">
               <option value="Cashier">Kassir</option>
               <option value="Manager">Menejer</option>
+              <option value="Courier">Kuryer</option>
             </select>
           </div>
-          <div class="field" style="max-width:160px"><label>Obuna (oy)</label><input v-model="desktopOnlyForm.licenseMonths" type="number" min="0" class="input" /></div>
+          <div v-if="desktopOnlyForm.role !== 'Courier'" class="field" style="max-width:160px"><label>Obuna (oy)</label><input v-model="desktopOnlyForm.licenseMonths" type="number" min="0" class="input" /></div>
         </div>
-        <div class="field" style="margin-top:8px"><label>Kassa ID</label><input v-model="desktopOnlyForm.terminalId" class="input" placeholder="Masalan: KASSA-1" /><p class="muted" style="font-size:12px;margin:4px 0 0">Kassa ID kassa ilovasi Sozlamalaridagi "Kassa stantsiyasi ID" bilan bir xil bo'lishi shart. Bo'sh = istalgan kassadan kiradi.</p></div>
+        <div v-if="desktopOnlyForm.role !== 'Courier'" class="field" style="margin-top:8px"><label>Kassa ID</label><input v-model="desktopOnlyForm.terminalId" class="input" placeholder="Masalan: KASSA-1" /><p class="muted" style="font-size:12px;margin:4px 0 0">Kassa ID kassa ilovasi Sozlamalaridagi "Kassa stantsiyasi ID" bilan bir xil bo'lishi shart. Bo'sh = istalgan kassadan kiradi.</p></div>
         <div v-if="orgStores.length" class="field" style="margin-top:8px">
           <label>Do'kon</label>
           <select v-model="desktopOnlyForm.branchId" class="select">
@@ -769,7 +776,8 @@ onMounted(load)
             <option v-for="s in orgStores" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
         </div>
-        <p class="muted" style="font-size:12px;margin:4px 0 0">0 = faollashtirilmagan (keyin "+1 oy" bilan faollashtirasiz).</p>
+        <p v-if="desktopOnlyForm.role === 'Courier'" class="muted" style="font-size:12px;margin:4px 0 0">Kuryer mobil ilovadan login/parol bilan kiradi. Telefon va do'kon majburiy; obuna va Kassa ID kerak emas.</p>
+        <p v-else class="muted" style="font-size:12px;margin:4px 0 0">0 = faollashtirilmagan (keyin "+1 oy" bilan faollashtirasiz).</p>
         <button class="btn" style="width:100%; margin-top:14px" :disabled="busy">Qo'shish</button>
       </form>
     </div>

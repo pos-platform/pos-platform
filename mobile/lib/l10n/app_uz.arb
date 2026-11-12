@@ -10,5 +10,831 @@
   "phoneNumber": "Telefon raqam",
   "smsCode": "SMS kod",
   "login": "Kirish",
-  "browseWithoutLogin": "Hozircha kirmasdan ko‘rish"
+  "browseWithoutLogin": "Hozircha kirmasdan ko‘rish",
+  "getCode": "Kodni olish",
+  "codeSentTelegram": "Kod Telegram orqali {phone} raqamiga yuborildi",
+  "@codeSentTelegram": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "codeSentSms": "Kod {phone} raqamiga yuborildi",
+  "@codeSentSms": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "resendIn": "qayta yuborish {time}",
+  "@resendIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "resendCode": "Kodni qayta yuborish",
+  "sendViaSms": "SMS orqali yuborish",
+  "changeNumber": "Raqamni o‘zgartirish",
+  "invalidPhone": "Telefon raqamni to‘liq kiriting",
+  "retry": "Qayta urinish",
+  "signInRequired": "Buyurtma berish uchun kiring",
+  "signOut": "Chiqish",
+  "profileAddressCount": "{count} ta",
+  "@profileAddressCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profilePersonalInfo": "Shaxsiy ma’lumotlar",
+  "profileAddresses": "Manzillarim",
+  "profileLanguage": "Til",
+  "profileLanguageName": "O‘zbekcha",
+  "profileLanguageLater": "Tilni o‘zgartirish keyingi versiyada. Hozir qurilma tili ishlatiladi.",
+  "profileCancel": "Bekor qilish",
+  "profileSignOutTitle": "Akkauntdan chiqasizmi?",
+  "profileSignOutMessage": "Qayta kirish uchun telefon raqamingizga kod yuboriladi.",
+  "profileDeleteAccount": "Akkauntni o‘chirish",
+  "profileDeleteTitle": "Akkaunt o‘chirilsinmi?",
+  "profileDeleteMessage": "Ism, manzillar va boshqa shaxsiy ma’lumotlar o‘chiriladi, barcha qurilmalardan chiqasiz. Buni qaytarib bo‘lmaydi.",
+  "profileDeleteConfirmWord": "O‘CHIRISH",
+  "profileDeleteTypeHint": "Tasdiqlash uchun {word} deb yozing",
+  "@profileDeleteTypeHint": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "profileDeleteButton": "O‘chirish",
+  "profileGuestTitle": "Profilga kiring",
+  "profileGuestText": "Buyurtmalar, manzillar va bonuslar uchun telefon raqamingiz bilan kiring.",
+  "profileNameBannerTitle": "Ismingizni kiriting",
+  "profileNameBannerText": "Do‘kon va kuryer sizga ism bilan murojaat qilishi uchun.",
+  "profileFirstName": "Ism",
+  "profileLastName": "Familiya",
+  "profilePhone": "Telefon raqam",
+  "profilePhoneVerified": "Tasdiqlangan",
+  "profileBirthDate": "Tug‘ilgan sana",
+  "profileBirthDateHint": "Tug‘ilgan kuningizda bonus sovg‘a qilamiz",
+  "profileGender": "Jins",
+  "profileGenderMale": "Erkak",
+  "profileGenderFemale": "Ayol",
+  "profileEmail": "Email",
+  "profileEmailHint": "elektron chek va xabarlar uchun, ixtiyoriy",
+  "profileEmailInvalid": "Email noto‘g‘ri",
+  "profileFirstNameRequired": "Ismni kiriting",
+  "profileSave": "Saqlash",
+  "profileSaved": "Saqlandi",
+  "addressesTitle": "Manzillarim",
+  "addressAdd": "Yangi manzil qo‘shish",
+  "addressDefaultBadge": "Asosiy",
+  "addressEmpty": "Hali manzil qo‘shilmagan",
+  "addressOutOfZoneNote": "Manzil yetkazish hududidan tashqarida bo‘lsa, buyurtmani do‘kondan olib ketishingiz mumkin.",
+  "addressNewTitle": "Manzil qo‘shish",
+  "addressEditTitle": "Manzilni tahrirlash",
+  "addressLine": "Manzil",
+  "addressLineHint": "Ko‘cha, uy raqami",
+  "addressLineRequired": "Manzilni kiriting",
+  "addressEntrance": "Podyezd",
+  "addressFloor": "Qavat",
+  "addressApartment": "Xonadon",
+  "addressIntercom": "Domofon kodi",
+  "addressLandmark": "Mo‘ljal",
+  "addressLandmarkHint": "Masalan: maktab yonida",
+  "addressComment": "Kuryer uchun izoh",
+  "addressCommentHint": "Masalan: darvoza ko‘k rangda",
+  "addressLabel": "Nomi",
+  "addressLabelHome": "Uy",
+  "addressLabelWork": "Ish",
+  "addressLabelOther": "Boshqa",
+  "addressLabelCustomHint": "Masalan: Onamnikiga",
+  "addressLabelRequired": "Manzil nomini kiriting",
+  "addressMakeDefault": "Asosiy manzil",
+  "addressSave": "Manzilni saqlash",
+  "addressDelete": "Manzilni o‘chirish",
+  "addressDeleteConfirm": "Bu manzil o‘chirilsinmi?",
+  "addressNotFound": "Manzil topilmadi",
+  "addressDetailEntrance": "{value}-podyezd",
+  "@addressDetailEntrance": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "addressDetailFloor": "{value}-qavat",
+  "@addressDetailFloor": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "addressDetailApartment": "{value}-xonadon",
+  "@addressDetailApartment": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "addressDetailIntercom": "domofon {value}",
+  "@addressDetailIntercom": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersTitle": "Buyurtmalarim",
+  "ordersTabActive": "Faol",
+  "ordersTabActiveCount": "Faol ({count})",
+  "@ordersTabActiveCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersTabHistory": "Tarix",
+  "ordersEmptyActive": "Hozir faol buyurtmalar yo‘q",
+  "ordersEmptyHistory": "Buyurtmalar tarixi bo‘sh",
+  "ordersSignInPrompt": "Buyurtmalaringizni ko‘rish uchun kiring",
+  "ordersTrack": "Kuzatish",
+  "ordersReorder": "Qayta buyurtma",
+  "ordersDelivery": "Yetkazish",
+  "ordersPickup": "Olib ketish",
+  "ordersItemKinds": "{count} xil",
+  "@ordersItemKinds": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersToday": "Bugun",
+  "ordersYesterday": "Kecha",
+  "ordersOrderNumber": "Buyurtma #{number}",
+  "@ordersOrderNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersCallStore": "Do‘konga qo‘ng‘iroq qilish",
+  "ordersBack": "Ortga",
+  "ordersMoney": "{amount} so‘m",
+  "@ordersMoney": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersStatusNew": "Yangi",
+  "ordersStatusAccepted": "Tasdiqlandi",
+  "ordersStatusPicking": "Yig‘ilmoqda",
+  "ordersStatusReady": "Tayyor",
+  "ordersStatusAwaitingTransfer": "To‘lov kutilmoqda",
+  "ordersStatusOnTheWay": "Yo‘lda",
+  "ordersStatusReadyForPickup": "Olib ketishga tayyor",
+  "ordersStatusDelivered": "Yetkazildi",
+  "ordersStatusPickedUp": "Olib ketildi",
+  "ordersStatusRejected": "Rad etildi",
+  "ordersStatusCancelled": "Bekor qilindi",
+  "ordersCardLabel": "Buyurtma holati",
+  "ordersScheduled": "Yetkazish vaqti: {time}",
+  "@ordersScheduled": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersHeadlineNew": "Do‘kon buyurtmangizni tasdiqlashi kutilmoqda",
+  "ordersHeadlineAccepted": "Do‘kon buyurtmangizni tasdiqladi",
+  "ordersHeadlinePicking": "Do‘kon buyurtmangizni yig‘moqda",
+  "ordersHeadlineReady": "Buyurtmangiz yig‘ildi",
+  "ordersHeadlineAwaitingTransfer": "O‘tkazmangiz kutilmoqda",
+  "ordersHeadlineOnTheWay": "Kuryer yo‘lda",
+  "ordersHeadlineReadyForPickup": "Buyurtmani do‘kondan olib ketishingiz mumkin",
+  "ordersHeadlineDelivered": "Buyurtma yetkazildi. Xaridingiz uchun rahmat!",
+  "ordersStepPlaced": "Buyurtma qabul qilindi",
+  "ordersStepAccepted": "Do‘kon tasdiqladi",
+  "ordersStepPicking": "Yig‘ilmoqda",
+  "ordersStepPickingSub": "Kassir mahsulotlarni yig‘moqda",
+  "ordersStepDispatched": "Kuryerga topshirildi",
+  "ordersStepReadyForPickup": "Olib ketishga tayyor",
+  "ordersStepDelivered": "Yetkazildi",
+  "ordersStepPickedUp": "Olib ketildi",
+  "ordersStepAwaitingTransfer": "O‘tkazma tasdiqlanishi kutilmoqda",
+  "ordersPaymentUnpaid": "To‘lanmagan",
+  "ordersPaymentPaid": "To‘langan",
+  "ordersPaymentRefunded": "Qaytarilgan",
+  "ordersMethodCash": "Naqd",
+  "ordersMethodCard": "Karta (kuryer terminali)",
+  "ordersMethodTransfer": "Kartaga o‘tkazma",
+  "ordersItemsSummary": "{count} xil mahsulot · {total}",
+  "@ordersItemsSummary": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersContents": "Tarkibi",
+  "ordersItemRemoved": "Olib tashlandi",
+  "ordersItemReplacement": "Almashtirish",
+  "ordersItemsTotal": "Mahsulotlar",
+  "ordersDeliveryFee": "Yetkazish",
+  "ordersTotal": "Jami",
+  "ordersCancel": "Bekor qilish",
+  "ordersCancelDisabled": "Yig‘ish boshlangani uchun bekor qilib bo‘lmaydi",
+  "ordersCancelTitle": "Buyurtmani bekor qilasizmi?",
+  "ordersCancelReasonHint": "Sabab (ixtiyoriy)",
+  "ordersCancelDone": "Buyurtma bekor qilindi",
+  "ordersRejectedTitle": "Do‘kon buyurtmani rad etdi",
+  "ordersCancelledTitle": "Buyurtma bekor qilindi",
+  "ordersReason": "Sabab: {reason}",
+  "@ordersReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersTransferTitle": "Kartaga o‘tkazma",
+  "ordersTransferHint": "Quyidagi kartaga {amount} o‘tkazing va chek rasmini yuklang",
+  "@ordersTransferHint": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersTransferCard": "Karta raqami",
+  "ordersTransferHolder": "Karta egasi",
+  "ordersTransferAmount": "Summa",
+  "ordersCopy": "Nusxa olish",
+  "ordersCopied": "Nusxa olindi",
+  "ordersUploadProof": "Chek rasmini yuklash",
+  "ordersReuploadProof": "Boshqa rasm yuklash",
+  "ordersProofUploaded": "Chek yuklandi — do‘kon to‘lovni tasdiqlashini kuting",
+  "ordersTransferWaitReady": "Karta raqami buyurtma yig‘ilgach ko‘rsatiladi",
+  "ordersPaymentConfirmed": "To‘lov tasdiqlandi",
+  "ordersFileTooBig": "Rasm 5 MB dan katta bo‘lmasin",
+  "catSum": "{sum} so‘m",
+  "@catSum": {
+    "placeholders": {
+      "sum": {
+        "type": "String"
+      }
+    }
+  },
+  "catUnitKg": "kg",
+  "catUnitPiece": "dona",
+  "catDecrease": "Kamaytirish",
+  "catIncrease": "Ko‘paytirish",
+  "catRetry": "Qayta urinish",
+  "catCancel": "Bekor qilish",
+  "catSwitchStoreTitle": "Do‘konni almashtirasizmi?",
+  "catSwitchStoreBody": "Savatchada boshqa do‘kon mahsulotlari bor. Do‘kon almashtirilsa, savatcha tozalanadi.",
+  "catSwitchStoreConfirm": "Tozalash va almashtirish",
+  "catChooseStore": "Do‘konni tanlang",
+  "catChooseAnotherStore": "Boshqa do‘kon tanlash",
+  "catChangeStore": "Do‘konni almashtirish",
+  "catSearchStores": "Do‘kon nomi",
+  "catNoStores": "Do‘kon topilmadi",
+  "catDistanceKm": "{km} km",
+  "@catDistanceKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "catOpenNow": "Ochiq",
+  "catClosedNow": "Yopiq",
+  "catSearchHint": "Mahsulot yoki shtrix-kod qidirish",
+  "catClear": "Tozalash",
+  "catAll": "Hammasi",
+  "catPopular": "Ommabop",
+  "catSearchResults": "Qidiruv natijalari",
+  "catSort": "Tartiblash",
+  "catSortPopular": "Ommabop",
+  "catSortName": "Nomi bo‘yicha",
+  "catSortPriceAsc": "Avval arzon",
+  "catSortPriceDesc": "Avval qimmat",
+  "catNoProducts": "Hozircha mahsulot yo‘q",
+  "catNothingFound": "Hech narsa topilmadi",
+  "catDeliveryBannerTitle": "Eshigingizgacha yetkazamiz",
+  "catFreeDeliveryFrom": "{sum}dan yuqori buyurtmaga yetkazish bepul",
+  "@catFreeDeliveryFrom": {
+    "placeholders": {
+      "sum": {
+        "type": "String"
+      }
+    }
+  },
+  "catAddToCart": "Savatchaga qo‘shish",
+  "catAddToCartSum": "Savatchaga · {sum}",
+  "@catAddToCartSum": {
+    "placeholders": {
+      "sum": {
+        "type": "String"
+      }
+    }
+  },
+  "catAddedToCart": "Savatchaga qo‘shildi",
+  "catBack": "Orqaga",
+  "catBarcode": "Shtrix-kod {code}",
+  "@catBarcode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "catInStock": "Omborda bor · {qty}",
+  "@catInStock": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "catOutOfStock": "Tugagan",
+  "cartEmpty": "Savatcha bo‘sh",
+  "cartEmptyHint": "Katalogdan mahsulot tanlang",
+  "cartGoShopping": "Xaridga o‘tish",
+  "cartClear": "Tozalash",
+  "cartClearConfirm": "Savatcha tozalansinmi?",
+  "cartCheckout": "Rasmiylashtirish",
+  "cartFreeDeliveryLeft": "Bepul yetkazishgacha {sum} qoldi",
+  "@cartFreeDeliveryLeft": {
+    "placeholders": {
+      "sum": {
+        "type": "String"
+      }
+    }
+  },
+  "cartFreeDeliveryReached": "Yetkazish bepul!",
+  "cartMinOrderShortfall": "Minimal buyurtma {min}. Yana {left} lik mahsulot qo‘shing.",
+  "@cartMinOrderShortfall": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "cartProblemNotFound": "Endi sotuvda yo‘q",
+  "cartProblemOutOfStock": "Tugagan",
+  "cartProblemNotEnough": "Faqat {qty} mavjud",
+  "@cartProblemNotEnough": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "cartProblemInvalidQuantity": "Miqdor noto‘g‘ri",
+  "cartFixQuantity": "Kamaytirish",
+  "cartRemove": "O‘chirish",
+  "cartItemsKinds": "Mahsulotlar ({count} xil)",
+  "@cartItemsKinds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartDelivery": "Yetkazib berish",
+  "cartFree": "Bepul",
+  "cartTotal": "Jami",
+  "checkoutTitle": "Rasmiylashtirish",
+  "checkoutDelivery": "Yetkazib berish",
+  "checkoutPickup": "Do‘kondan olib ketish",
+  "checkoutPickupFrom": "Olib ketish manzili",
+  "checkoutAddress": "Yetkazish manzili",
+  "checkoutAddAddress": "Yangi manzil qo‘shish",
+  "checkoutNoAddress": "Yetkazish uchun manzil kiriting",
+  "checkoutEntrance": "{v}-podyezd",
+  "@checkoutEntrance": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutFloor": "{v}-qavat",
+  "@checkoutFloor": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutApartment": "{v}-xonadon",
+  "@checkoutApartment": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutTime": "Vaqt",
+  "checkoutAsap": "Imkon qadar tez",
+  "checkoutStoreClosed": "Do‘kon hozir yopiq",
+  "checkoutPickTime": "Vaqtni tanlash",
+  "checkoutPickTimeHint": "Bugun / ertaga, 1 soatlik oraliq",
+  "checkoutToday": "Bugun {range}",
+  "@checkoutToday": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutTomorrow": "Ertaga {range}",
+  "@checkoutTomorrow": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutNoSlots": "Bugun va ertaga bo‘sh vaqt yo‘q",
+  "checkoutPayment": "To‘lov usuli",
+  "checkoutNoPayment": "Do‘konda to‘lov usuli sozlanmagan",
+  "checkoutPayCash": "Naqd pul",
+  "checkoutPayCashHint": "Qabul qilganda to‘lanadi",
+  "checkoutPayCard": "Karta (terminal)",
+  "checkoutPayCardHint": "Qabul qilganda terminal orqali",
+  "checkoutPayTransfer": "Kartaga o‘tkazma",
+  "checkoutPayTransferHint": "Yig‘ilgandan keyin karta raqami ko‘rsatiladi",
+  "checkoutOutOfStock": "Mahsulot tugab qolsa",
+  "checkoutPolicyCallMe": "Menga qo‘ng‘iroq qiling",
+  "checkoutPolicyReplace": "O‘xshashiga almashtiring",
+  "checkoutPolicyRemove": "Olib tashlang",
+  "checkoutCommentCourier": "Kuryerga izoh",
+  "checkoutComment": "Izoh",
+  "checkoutCommentHint": "Masalan: domofon ishlamaydi, qo‘ng‘iroq qiling",
+  "checkoutContactless": "Eshik oldiga qoldirish (kontaktsiz)",
+  "checkoutFixCart": "Savatchadagi muammolarni tuzating",
+  "checkoutItemsPlusDelivery": "Mahsulotlar {items} + yetkazish {delivery}",
+  "@checkoutItemsPlusDelivery": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      },
+      "delivery": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutItemsOnly": "Mahsulotlar {items}",
+  "@checkoutItemsOnly": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutPlaceOrder": "Buyurtma berish",
+  "checkoutAddressRequired": "Yetkazish manzilini tanlang",
+  "checkoutPaymentRequired": "To‘lov usulini tanlang",
+  "checkoutTimeRequired": "Yetkazish vaqtini tanlang",
+  "legalTerms": "Foydalanish shartlari",
+  "legalPrivacy": "Maxfiylik siyosati",
+  "legalAgreePrefix": "Davom etish orqali ",
+  "legalAgreeMiddle": " va ",
+  "legalAgreeSuffix": "ga rozilik bildirasiz.",
+  "legalTermsLink": "foydalanish shartlari",
+  "legalPrivacyLink": "maxfiylik siyosati",
+  "updateRequiredTitle": "Yangilash kerak",
+  "updateRequiredMessage": "Ilovaning bu versiyasi endi qo‘llab-quvvatlanmaydi. Davom etish uchun yangi versiyani o‘rnating.",
+  "updateButton": "Yangilash",
+  "updateAvailableTitle": "Yangi versiya mavjud",
+  "updateAvailableMessage": "Ilovaning yangi versiyasini o‘rnatishni tavsiya qilamiz.",
+  "updateAvailableVersion": "{version} versiyasi chiqdi. Yangilashni tavsiya qilamiz.",
+  "updateLater": "Keyinroq",
+  "updateMaintenanceTitle": "Texnik ishlar",
+  "updateMaintenanceMessage": "Hozir texnik ishlar olib borilmoqda. Birozdan keyin qayta urinib ko‘ring.",
+  "updateRetry": "Qayta urinish",
+  "@updateAvailableVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "langSheetTitle": "Ilova tili",
+  "langUzbek": "O‘zbekcha",
+  "langRussian": "Русский",
+  "langDevice": "Qurilma tili",
+  "pushChannelName": "Buyurtmalar",
+  "pushChannelDescription": "Buyurtma holati haqida xabarlar",
+  "namePromptHint": "Ismingizni kiriting — do‘kon va kuryer sizga shunday murojaat qiladi.",
+  "namePromptSkip": "Keyinroq",
+  "deliveryMinutesRange": "{min}–{max} daqiqa",
+  "@deliveryMinutesRange": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "deliveryMinutesUpTo": "{minutes} daqiqagacha",
+  "@deliveryMinutesUpTo": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "mapPickerTitle": "Xaritada belgilash",
+  "mapPickerConfirm": "Shu yerni tanlash",
+  "addressMapPick": "Xaritada belgilash",
+  "addressMapChange": "Xaritada o‘zgartirish",
+  "addressMapCoords": "Koordinata: {coords}",
+  "@addressMapCoords": {
+    "placeholders": {
+      "coords": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersProofCamera": "Kamerada suratga olish",
+  "ordersProofGallery": "Galereyadan tanlash",
+  "ordersProofPickFailed": "Rasmni olib bo‘lmadi. Kamera yoki galereyaga ruxsat bering.",
+  "ordersReorderEmpty": "Bu buyurtmadan savatchaga qo‘shiladigan mahsulot yo‘q",
+  "ordersCourier": "Kuryer: {name}",
+  "@ordersCourier": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersCallCourier": "Kuryerga qo‘ng‘iroq",
+  "ordersEta": "Taxminiy yetkazish: {range}",
+  "@ordersEta": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersFiscalReceipt": "Fiskal chek",
+  "ordersReceiptNumber": "Chek № {number}",
+  "@ordersReceiptNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersRefundPending": "Pul qaytariladi",
+  "ordersRefundDone": "Pul qaytarildi",
+  "courierEntry": "Kuryer sifatida kirish",
+  "courierLoginTitle": "Kuryer kirishi",
+  "courierLoginSubtitle": "Do‘kon bergan login va parol bilan kiring",
+  "courierUsername": "Login",
+  "courierPassword": "Parol",
+  "courierSignIn": "Kirish",
+  "courierBackToCustomer": "Mijoz sifatida kirish",
+  "courierNotCourier": "Bu akkaunt kuryer emas",
+  "courierSessionExpired": "Sessiya tugadi. Qayta kiring.",
+  "courierTabActive": "Faol",
+  "courierTabToday": "Bugun",
+  "courierRouteAll": "Marshrut (hammasi)",
+  "courierEmptyActive": "Hozircha biriktirilgan buyurtma yo‘q",
+  "courierEmptyToday": "Bugun yakunlangan buyurtma yo‘q",
+  "courierMoney": "{amount} so‘m",
+  "@courierMoney": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "courierCollectCash": "{amount} olish kerak",
+  "@courierCollectCash": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "courierPaid": "To‘langan",
+  "courierPaymentPending": "To‘lov kutilmoqda",
+  "courierDistanceKm": "{value} km",
+  "@courierDistanceKm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "courierDistanceM": "{value} m",
+  "@courierDistanceM": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "courierItemsCount": "{count} ta mahsulot",
+  "@courierItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "courierLogout": "Chiqish",
+  "courierLogoutConfirm": "Kuryer rejimidan chiqasizmi?",
+  "courierCancel": "Bekor qilish",
+  "courierRetry": "Qayta urinish",
+  "courierCall": "Qo‘ng‘iroq",
+  "courierCustomer": "Mijoz",
+  "courierAddress": "Manzil",
+  "courierEntrance": "Podyezd",
+  "courierFloor": "Qavat",
+  "courierApartment": "Xonadon",
+  "courierIntercom": "Domofon",
+  "courierLandmark": "Mo‘ljal",
+  "courierComment": "Izoh",
+  "courierContactless": "Kontaktsiz yetkazish",
+  "courierItems": "Tarkibi",
+  "courierTotal": "Jami",
+  "courierYandexNavi": "Yandex Navigator",
+  "courierGoogleMaps": "Google Maps",
+  "courierDelivered": "Yetkazildi",
+  "courierFailed": "Yetkazib bo‘lmadi",
+  "courierCashTitle": "Naqd pul olindi",
+  "courierCashHint": "Olingan summa",
+  "courierConfirm": "Tasdiqlash",
+  "courierDeliveredConfirm": "Buyurtma yetkazilganini tasdiqlaysizmi?",
+  "courierFailedTitle": "Nima uchun yetkazib bo‘lmadi?",
+  "courierReasonNoAnswer": "Mijoz javob bermadi",
+  "courierReasonNotFound": "Manzil topilmadi",
+  "courierReasonRefused": "Mijoz rad etdi",
+  "courierReasonOther": "Boshqa",
+  "courierReasonOtherHint": "Sababni yozing",
+  "courierStatusNotDelivered": "Yetkazilmadi",
+  "courierOpenAppError": "Ilovani ochib bo‘lmadi",
+  "courierDoneDelivered": "Buyurtma yetkazildi",
+  "courierDoneFailed": "Buyurtma do‘konga qaytarildi",
+  "courierMode": "Kuryer",
+  "courierNoCoordinates": "Koordinata yo‘q — manzil matni bo‘yicha qidiriladi",
+  "cartPromoTitle": "Promokod",
+  "cartPromoHint": "Promokodni kiriting",
+  "cartPromoApply": "Qo‘llash",
+  "cartPromoRemove": "Olib tashlash",
+  "cartPromoApplied": "Chegirma: −{amount}",
+  "@cartPromoApplied": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cartPromoDiscount": "Promokod chegirmasi",
+  "cartBonusUsed": "Bonusdan",
+  "checkoutBonusTitle": "Bonus bilan to‘lash",
+  "checkoutBonusBalance": "Balans: {amount}",
+  "@checkoutBonusBalance": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutBonusWillUse": "{amount} ishlatiladi",
+  "@checkoutBonusWillUse": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutBonusMaxPercent": "summaning {percent}% gacha",
+  "@checkoutBonusMaxPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutDeliveryUnavailable": "Bu manzilga yetkazib berilmaydi",
+  "checkoutSwitchToPickup": "Olib ketishni tanlash",
+  "checkoutDistance": "Masofa: {km} km",
+  "@checkoutDistance": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutPayPayme": "Payme",
+  "checkoutPayClick": "Click",
+  "checkoutPayOnlineHint": "Yig‘ilgandan keyin ilovada to‘lash",
+  "ordersPayOnlineTitle": "Online to‘lov",
+  "ordersPayOnlineHint": "Buyurtma yig‘ildi. Yakuniy summani ilovada to‘lang: {amount}",
+  "@ordersPayOnlineHint": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersPayWith": "{provider} orqali to‘lash",
+  "@ordersPayWith": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersPayOpenFailed": "To‘lov sahifasini ochib bo‘lmadi",
+  "mapMyLocation": "Joylashuvimni aniqlash",
+  "mapLocationOff": "Qurilmada joylashuv (GPS) o‘chiq",
+  "mapLocationDenied": "Joylashuvga ruxsat berilmadi",
+  "mapLocationDeniedForever": "Joylashuvga ruxsat sozlamalarda o‘chirilgan",
+  "mapLocationFailed": "Joylashuvni aniqlab bo‘lmadi",
+  "mapOpenSettings": "Sozlamalar",
+  "mapSearchHint": "Manzilni qidirish",
+  "mapSearchEmpty": "Hech narsa topilmadi",
+  "mapAddressLoading": "Manzil aniqlanmoqda…",
+  "mapAddressUnknown": "Manzil aniqlanmadi — matnni o‘zingiz yozing",
+  "mapMoveHint": "Xaritani suring — pin ostidagi manzil aniqlanadi",
+  "addressReplaceTitle": "Manzil matni almashtirilsinmi?",
+  "addressReplace": "Almashtirish",
+  "addressKeep": "Qoldirish",
+  "bonusTitle": "Bonus karta",
+  "bonusBalance": "Balans",
+  "bonusPoints": "{value} ball",
+  "@bonusPoints": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "bonusHint": "Kassada shu QR’ni ko‘rsating — cashback avtomatik yoziladi va ball bilan to‘lash mumkin",
+  "bonusRefreshIn": "Kod {time} dan keyin yangilanadi",
+  "@bonusRefreshIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "bonusRefreshing": "Kod yangilanmoqda…",
+  "bonusRefreshFailed": "Kodni yangilab bo‘lmadi",
+  "bonusExpired": "Kod eskirdi — yangilang",
+  "bonusRetry": "Qayta urinish",
+  "bonusQrSemantics": "Bonus karta QR kodi",
+  "bonusNoQr": "Bu do‘kon uchun QR kod hozircha mavjud emas",
+  "bonusHistory": "Tarix",
+  "bonusHistoryEmpty": "Hali ball harakatlari yo‘q",
+  "bonusTypeEarn": "Cashback",
+  "bonusTypeRedeem": "Sarflandi",
+  "bonusTypeExpire": "Muddati o‘tdi",
+  "bonusTypeAdjust": "Tuzatish",
+  "bonusTypeSignup": "Ro‘yxatdan o‘tish bonusi",
+  "bonusTypeRefund": "Qaytarish",
+  "bonusTypeOther": "Boshqa",
+  "bonusSourceStore": "Do‘kon",
+  "bonusSourceOnline": "Online",
+  "bonusReceipt": "Chek №{number}",
+  "@bonusReceipt": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "bonusGuestTitle": "Bonus karta",
+  "bonusGuestText": "Telefon raqamingiz bilan kiring — har xariddan cashback yig‘ing va ball bilan to‘lang",
+  "bonusNoStoresTitle": "Hali bonus kartangiz yo‘q",
+  "bonusNoStoresText": "Do‘kon tanlang — karta avtomatik ochiladi",
+  "bonusChooseStore": "Do‘kon tanlash"
 }

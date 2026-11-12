@@ -16,6 +16,12 @@ public class CustomerDto
     public string? Comment { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>Mobil ilova akkaunti (bo'lsa) — admin panelda "ilova" belgisi.</summary>
+    public Guid? ShopUserId { get; set; }
+
+    /// <summary>Oxirgi ball harakati vaqti.</summary>
+    public DateTime? LastActivityAt { get; set; }
+
     public static CustomerDto FromEntity(Customer c) => new()
     {
         Id = c.Id,
@@ -27,7 +33,9 @@ public class CustomerDto
         DiscountPercent = c.DiscountPercent,
         IsActive = c.IsActive,
         Comment = c.Comment,
-        CreatedAt = c.CreatedAt
+        CreatedAt = c.CreatedAt,
+        ShopUserId = c.ShopUserId,
+        LastActivityAt = c.LastActivityAt
     };
 }
 

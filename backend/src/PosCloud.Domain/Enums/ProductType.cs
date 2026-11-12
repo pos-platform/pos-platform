@@ -10,5 +10,8 @@ public enum ProductType
     Good = 0,
 
     /// <summary>Ovqat (taom) — sotuvda, retsept orqali tovarlardan tayyorlanadi.</summary>
-    Dish = 1
+    Dish = 1,
+
+    /// <summary>Xizmat (masalan, yetkazib berish) — ombordan ayirilmaydi, POS/katalog ro'yxatlarida ko'rinmaydi.</summary>
+    Service = 2
 }

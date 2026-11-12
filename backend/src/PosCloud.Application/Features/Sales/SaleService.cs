@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using PosCloud.Application.Common;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
+using PosCloud.Application.Features.Loyalty;
+using PosCloud.Application.Features.OnlineOrders;
 using PosCloud.Application.Features.Promotions;
 using PosCloud.Application.Features.Sales.Dtos;
 using PosCloud.Domain.Entities;
@@ -177,6 +179,9 @@ public class SaleService : ISaleService
             Status = SaleStatus.Completed
         };
 
+        // Ball hisoblash uchun: qator, mahsulot va narxi pasaytirilganmi (online aksiya narxi qotirilgan).
+        var earnSource = new List<(SaleItem Item, Product Product, bool PriceReduced)>();
+
         foreach (var line in request.Items)
         {
             if (!products.TryGetValue(line.ProductId, out var product))
@@ -241,7 +246,7 @@ public class SaleService : ISaleService
                 costPrice = product.CostPrice;
             }
 
-            sale.Items.Add(new SaleItem
+            var saleItem = new SaleItem
             {
                 ProductId = product.Id,
                 ProductName = product.Name,
@@ -258,8 +263,47 @@ public class SaleService : ISaleService
                 VatPercent = vatPercent,
                 VatAmount = vatAmount,
                 LineTotal = lineTotal
-            });
+            };
+            sale.Items.Add(saleItem);
+            earnSource.Add((saleItem, product, request.SkipPromotions && unitPrice < product.Price));
         }
+
+        // Bonus sozlamalari — mijoz tashkiloti bo'yicha.
+        var loyalty = customer is not null
+            ? await LoyaltyRules.LoadAsync(_db, customer.OrganizationId, cancellationToken)
+            : null;
+
+        // Ball bilan to'lov: qatorlarga chegirma sifatida mutanosib taqsimlanadi (fiskal chek to'g'ri bo'lishi uchun),
+        // savdo jami va QQS shundan KEYIN hisoblanadi. Oflayn navbatdagi savdo kech kelib balans yetmasa —
+        // savdo rad etilmaydi, ball mavjud miqdorgacha qisqartiriladi (tranzaksiya izohida yoziladi).
+        var redeemRequested = Math.Max(0, Math.Floor(request.RedeemPoints ?? 0));
+        decimal redeemed = 0;
+        if (redeemRequested > 0)
+        {
+            if (request.CustomerId is null)
+                throw new ValidationException("Ball bilan to'lash uchun mijozni tanlang.");
+
+            var preTotal = sale.Items.Sum(i => i.LineTotal);
+            var balance = Math.Floor(Math.Max(0, customer?.LoyaltyPoints ?? 0));
+            var byPercent = Math.Floor(preTotal * (loyalty?.MaxRedeemPercent ?? 0) / 100m);
+            redeemed = Math.Max(0, Math.Min(Math.Min(redeemRequested, balance), Math.Min(byPercent, Math.Floor(preTotal))));
+
+            if (redeemed > 0)
+            {
+                var items = sale.Items.ToList();
+                var shares = OnlineOrderPricing.Distribute(items.Select(i => i.LineTotal).ToList(), redeemed);
+                for (var k = 0; k < items.Count; k++)
+                {
+                    if (shares[k] <= 0) continue;
+                    var it = items[k];
+                    it.DiscountAmount = Round2(it.DiscountAmount + shares[k]);
+                    it.LineTotal = Round2(it.LineTotal - shares[k]);
+                    it.VatAmount = Round2(it.LineTotal * it.VatPercent / (100m + it.VatPercent));
+                }
+            }
+        }
+        // Ball qisqartirilgan bo'lsa kassa kamroq summa hisoblagan — naqd tekshiruvida shu farqqa yo'l qo'yamiz.
+        var redeemShortfall = redeemRequested - redeemed;
 
         sale.TotalAmount = sale.Items.Sum(i => i.LineTotal);
         sale.DiscountAmount = sale.Items.Sum(i => i.DiscountAmount);
@@ -267,7 +311,8 @@ public class SaleService : ISaleService
 
         // Kassada tiyin ishlatilmaydi — tarozili mahsulotlar tufayli jami kasrli bo'lsa
         // (masalan 223 070,4), butun so'mga yaxlitlangan qiymat bilan solishtiramiz.
-        if (request.PaymentMethod == PaymentMethod.Cash && request.PaidAmount < Math.Round(sale.TotalAmount, 0, MidpointRounding.AwayFromZero))
+        if (request.PaymentMethod == PaymentMethod.Cash
+            && request.PaidAmount + redeemShortfall < Math.Round(sale.TotalAmount, 0, MidpointRounding.AwayFromZero))
         {
             throw new ValidationException("Berilgan summa savdo summasidan kam.");
         }
@@ -291,20 +336,22 @@ public class SaleService : ISaleService
 
         _db.Sales.Add(sale);
 
-        // Mijoz sodiqlik ballari (savdo summasining 1%).
-        if (customer is not null)
+        // Bonus: ball bilan to'lov (Redeem) va cashback (Earn) — sozlamalar bo'yicha (LoyaltyRules).
+        if (customer is not null && loyalty is not null)
         {
-            var points = Round2(sale.TotalAmount * 0.01m);
-            customer.LoyaltyPoints += points;
-            sale.LoyaltyPointsEarned = points;
-            _db.LoyaltyTransactions.Add(new LoyaltyTransaction
+            var source = LoyaltyRules.SourceFor(clientSaleId);
+            if (redeemed > 0)
             {
-                CustomerId = customer.Id,
-                Points = points,
-                Amount = sale.TotalAmount,
-                Comment = $"Savdo {sale.ReceiptNumber}",
-                Sale = sale
-            });
+                var note = redeemShortfall > 0
+                    ? $" (so'ralgan {redeemRequested:0}, balans/chegara bo'yicha {redeemed:0} ga qisqartirildi)"
+                    : string.Empty;
+                sale.LoyaltyPointsRedeemed = -LoyaltyRules.Apply(_db, customer, -redeemed, LoyaltyTransactionType.Redeem,
+                    source, redeemed, $"Savdo {sale.ReceiptNumber} — ball bilan to'lov{note}", sale);
+            }
+
+            sale.LoyaltyPointsEarned = EarnPoints(loyalty, sale, earnSource
+                .Select(e => new LoyaltyEarnLine(e.Product.CategoryId, e.Product.ProductType, e.Item.LineTotal,
+                    e.Item.DiscountAmount > 0 || e.PriceReduced)), customer, source);
         }
 
         // Nasiya — qarzdor balansiga qo'shamiz va harakat yozamiz.
@@ -472,6 +519,22 @@ public class SaleService : ISaleService
         refund.Receipt = new Receipt { FiscalStatus = FiscalStatus.NotSent };
 
         original.Status = SaleStatus.Refunded;
+
+        // Bonus: topilgan ball qaytarib olinadi (balans 0 dan pastga tushmaydi), kassada ball bilan to'langan qism qaytariladi.
+        // Online buyurtmada yechilgan bonus bu yerda emas — buyurtma bekor qilinganda OnlineOrderService qaytaradi.
+        if (original.CustomerId is { } refundCustomerId
+            && (original.LoyaltyPointsEarned > 0 || original.LoyaltyPointsRedeemed > 0)
+            && await _db.Customers.FirstOrDefaultAsync(c => c.Id == refundCustomerId, cancellationToken) is { } refundCustomer)
+        {
+            var source = LoyaltyRules.SourceFor(original.ClientSaleId);
+            // Avval sarflangan ball qaytariladi, keyin topilgani olinadi — sof natija to'g'ri chiqadi.
+            if (original.LoyaltyPointsRedeemed > 0)
+                LoyaltyRules.Apply(_db, refundCustomer, original.LoyaltyPointsRedeemed, LoyaltyTransactionType.Refund, source,
+                    original.LoyaltyPointsRedeemed, $"Qaytarish {refund.ReceiptNumber} — ball bilan to'langan qism qaytarildi", refund);
+            if (original.LoyaltyPointsEarned > 0)
+                LoyaltyRules.Apply(_db, refundCustomer, -original.LoyaltyPointsEarned, LoyaltyTransactionType.Refund, source,
+                    original.TotalAmount, $"Qaytarish {refund.ReceiptNumber} — topilgan ball qaytarib olindi", refund);
+        }
 
         // Qaytarilgan tovarlar filial qoldig'iga qaytadi.
         var refundBranchId = original.BranchId;
@@ -798,19 +861,21 @@ public class SaleService : ISaleService
         _db.Receipts.Add(receipt);
         sale.Receipt = receipt;
 
+        // Cashback — kassadagi savdo bilan bir xil qoidalar (LoyaltyRules). Servis haqi bazaga kirmaydi (faqat qatorlar).
         if (customer is not null)
         {
-            var points = Round2(sale.TotalAmount * 0.01m);
-            customer.LoyaltyPoints += points;
-            sale.LoyaltyPointsEarned = points;
-            _db.LoyaltyTransactions.Add(new LoyaltyTransaction
-            {
-                CustomerId = customer.Id,
-                Points = points,
-                Amount = sale.TotalAmount,
-                Comment = $"Savdo {sale.ReceiptNumber}",
-                Sale = sale
-            });
+            var loyalty = await LoyaltyRules.LoadAsync(_db, customer.OrganizationId, cancellationToken);
+            var itemProductIds = sale.Items.Select(i => i.ProductId).Distinct().ToList();
+            var itemProducts = await _db.Products
+                .Where(p => itemProductIds.Contains(p.Id))
+                .Select(p => new { p.Id, p.CategoryId, p.ProductType })
+                .ToDictionaryAsync(p => p.Id, cancellationToken);
+
+            sale.LoyaltyPointsEarned = EarnPoints(loyalty, sale, sale.Items.Select(i =>
+                itemProducts.TryGetValue(i.ProductId, out var p)
+                    ? new LoyaltyEarnLine(p.CategoryId, p.ProductType, i.LineTotal, i.DiscountAmount > 0)
+                    : new LoyaltyEarnLine(Guid.Empty, ProductType.Good, i.LineTotal, i.DiscountAmount > 0)),
+                customer, LoyaltySource.Store);
         }
 
         if (debtor is not null)
@@ -880,6 +945,16 @@ public class SaleService : ISaleService
     }
 
     private static decimal Round2(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Cashback ballini hisoblab yozadi (Earn). Yozilgan ballni qaytaradi.</summary>
+    private decimal EarnPoints(EffectiveLoyaltySettings loyalty, Sale sale, IEnumerable<LoyaltyEarnLine> lines,
+        Customer customer, LoyaltySource source)
+    {
+        var points = LoyaltyRules.ComputeEarn(loyalty, sale.TotalAmount, lines);
+        if (points <= 0) return 0;
+        return LoyaltyRules.Apply(_db, customer, points, LoyaltyTransactionType.Earn, source, sale.TotalAmount,
+            $"Savdo {sale.ReceiptNumber}", sale);
+    }
 
     /// <summary>
     /// Aralash to'lovning karta qismini tekshirib savdoga yozadi. Fiskal chekda to'lov shakli

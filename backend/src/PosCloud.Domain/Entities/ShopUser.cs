@@ -83,3 +83,25 @@ public class ShopRefreshToken : BaseEntity
     public DateTime ExpiresAt { get; set; }
     public DateTime? RevokedAt { get; set; }
 }
+
+/// <summary>
+/// Mijoz qurilmasining push (FCM) tokeni. GLOBAL (OrganizationId = null).
+/// Token yagona: boshqa akkaunt shu qurilmadan kirsa, token unga o'tkaziladi.
+/// </summary>
+public class ShopDeviceToken : BaseEntity
+{
+    public Guid ShopUserId { get; set; }
+    public ShopUser? ShopUser { get; set; }
+
+    /// <summary>FCM registration token.</summary>
+    public string Token { get; set; } = string.Empty;
+
+    /// <summary>"android" yoki "ios".</summary>
+    public string Platform { get; set; } = string.Empty;
+
+    /// <summary>Xabar tili: "uz" yoki "ru".</summary>
+    public string Locale { get; set; } = "uz";
+
+    /// <summary>Ilova tokenni oxirgi marta ro'yxatdan o'tkazgan vaqt (90 kundan eski — o'chiriladi).</summary>
+    public DateTime LastSeenAt { get; set; } = DateTime.UtcNow;
+}

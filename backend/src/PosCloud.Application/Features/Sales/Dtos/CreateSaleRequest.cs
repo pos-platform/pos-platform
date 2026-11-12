@@ -53,6 +53,14 @@ public class CreateSaleRequest
     public decimal CardAmount { get; set; }
 
     /// <summary>
+    /// Bonus ball bilan to'lanadigan summa (1 ball = 1 so'm), <see cref="CustomerId"/> bilan birga. Server tekshiradi:
+    /// ≤ mijoz balansi va ≤ jami × maxRedeemPercent/100; qatorlarga chegirma sifatida mutanosib taqsimlanadi.
+    /// Oflayn navbatdan kech kelgan savdoda balans yetmasa — rad etilmaydi, mavjud miqdorgacha qisqartiriladi.
+    /// </summary>
+    [Range(0, double.MaxValue)]
+    public decimal? RedeemPoints { get; set; }
+
+    /// <summary>
     /// Faqat server ichida (online buyurtma "Tayyor"): qator narxi buyurtmada aksiya bilan qotirilgan,
     /// shuning uchun aksiya qayta qo'llanmaydi. JSON'dan o'qilmaydi.
     /// </summary>

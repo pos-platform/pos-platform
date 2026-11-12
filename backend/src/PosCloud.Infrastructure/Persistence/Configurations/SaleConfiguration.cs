@@ -29,6 +29,7 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.Property(s => s.PaidAmount).HasColumnType("numeric(18,2)");
         builder.Property(s => s.ChangeAmount).HasColumnType("numeric(18,2)");
         builder.Property(s => s.CardAmount).HasColumnType("numeric(18,2)");
+        builder.Property(s => s.LoyaltyPointsRedeemed).HasColumnType("numeric(18,2)");
         builder.Property(s => s.ServiceChargePercent).HasColumnType("numeric(9,2)");
         builder.Property(s => s.ServiceChargeAmount).HasColumnType("numeric(18,2)");
 

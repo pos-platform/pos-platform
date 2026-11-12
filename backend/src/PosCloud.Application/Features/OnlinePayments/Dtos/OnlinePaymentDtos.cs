@@ -38,6 +38,13 @@ public class CreateOnlinePaymentRequest
 
     [Required]
     public PaymentProvider Provider { get; set; }
+
+    /// <summary>
+    /// Faqat server ichida (online buyurtma): to'lov summasi savdo summasidan farq qilsa (yetkazish narxi chekka kirmagan).
+    /// JSON'dan o'qilmaydi.
+    /// </summary>
+    [JsonIgnore]
+    public decimal? AmountOverride { get; set; }
 }
 
 // Payme Subscribe API RPC

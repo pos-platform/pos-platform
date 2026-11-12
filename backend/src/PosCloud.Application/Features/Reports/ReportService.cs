@@ -100,7 +100,7 @@ public class ReportService : IReportService
 
     public async Task<StockReportDto> GetStockReportAsync(Guid? branchId = null, CancellationToken ct = default)
     {
-        IQueryable<Domain.Entities.Product> query = _db.Products
+        IQueryable<Domain.Entities.Product> query = _db.Products.Where(p => p.ProductType != Domain.Enums.ProductType.Service)
             .AsNoTracking()
             .Include(p => p.Category)
             .Include(p => p.Stocks);

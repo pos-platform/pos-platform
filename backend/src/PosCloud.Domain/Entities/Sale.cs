@@ -53,6 +53,9 @@ public class Sale : BaseEntity
     /// <summary>Ushbu savdodan topilgan ball.</summary>
     public decimal LoyaltyPointsEarned { get; set; }
 
+    /// <summary>Kassada ball bilan to'langan summa (qatorlarga chegirma sifatida taqsimlangan).</summary>
+    public decimal LoyaltyPointsRedeemed { get; set; }
+
     // --- Restoran (ochiq buyurtma) metadatasi ---
 
     /// <summary>Restoran stoli — ochiq buyurtma qaysi stolga tegishli (ixtiyoriy).</summary>

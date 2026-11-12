@@ -23,6 +23,9 @@ public class OnlineOrderItemDto
 
     /// <summary>Filialdagi jami qoldiq (rezerv ichida).</summary>
     public decimal StockQuantity { get; set; }
+
+    /// <summary>Skanerlangan markirovka kodlari (markirovkali qatorda soni = butun miqdor).</summary>
+    public List<string> MarkingCodes { get; set; } = [];
 }
 
 public class OnlineOrderDto
@@ -70,6 +73,16 @@ public class OnlineOrderDto
     public DateTime? DeliveredAt { get; set; }
     public DateTime? CancelledAt { get; set; }
     public string? CancelReason { get; set; }
+    public DateTime? PickingStartedAt { get; set; }
+    public string? CourierName { get; set; }
+    public string? CourierPhone { get; set; }
+    public Guid? CourierUserId { get; set; }
+    public decimal? CourierCashCollected { get; set; }
+    public DateTime? CourierCashHandedOverAt { get; set; }
+    public string? PromoCode { get; set; }
+    public decimal PromoDiscount { get; set; }
+    public decimal BonusUsed { get; set; }
+    public PaymentProvider? OnlinePaymentProvider { get; set; }
 
     public List<OnlineOrderItemDto> Items { get; set; } = [];
 
@@ -112,6 +125,16 @@ public class OnlineOrderDto
         DeliveredAt = o.DeliveredAt,
         CancelledAt = o.CancelledAt,
         CancelReason = o.CancelReason,
+        PickingStartedAt = o.PickingStartedAt,
+        CourierName = o.CourierName,
+        CourierPhone = o.CourierPhone,
+        CourierUserId = o.CourierUserId,
+        CourierCashCollected = o.CourierCashCollected,
+        CourierCashHandedOverAt = o.CourierCashHandedOverAt,
+        PromoCode = o.PromoCode,
+        PromoDiscount = o.PromoDiscount,
+        BonusUsed = o.BonusUsed,
+        OnlinePaymentProvider = o.OnlinePaymentProvider,
         Items = o.Items.OrderBy(i => i.CreatedAt).Select(i => new OnlineOrderItemDto
         {
             Id = i.Id,
@@ -128,7 +151,8 @@ public class OnlineOrderDto
             LineTotal = i.LineTotal,
             IsRemoved = i.IsRemoved,
             ReplacesItemId = i.ReplacesItemId,
-            StockQuantity = stock is not null && stock.TryGetValue(i.ProductId, out var q) ? q : 0
+            StockQuantity = stock is not null && stock.TryGetValue(i.ProductId, out var q) ? q : 0,
+            MarkingCodes = i.MarkingCodes.ToList()
         }).ToList()
     };
 }
@@ -138,6 +162,48 @@ public class RejectOnlineOrderRequest
     [Required]
     [MaxLength(500)]
     public string Reason { get; set; } = string.Empty;
+}
+
+/// <summary>Do'kon tomonidan bekor qilish (Ready va undan keyin): savdo qaytariladi.</summary>
+public class CancelOnlineOrderRequest
+{
+    [Required]
+    [MaxLength(500)]
+    public string Reason { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Kuryerga berish: courierUserId berilsa ism/telefon foydalanuvchidan olinadi (kuryer ilovasida ko'rinadi);
+/// aks holda ism/telefon qo'lda (ixtiyoriy, mijozga ko'rsatiladi).
+/// </summary>
+public class DispatchOnlineOrderRequest
+{
+    public Guid? CourierUserId { get; set; }
+
+    [MaxLength(100)]
+    public string? CourierName { get; set; }
+
+    [MaxLength(20)]
+    public string? CourierPhone { get; set; }
+}
+
+/// <summary>GET /api/online-orders/couriers elementi.</summary>
+public class CourierListItemDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public int ActiveOrders { get; set; }
+}
+
+/// <summary>GET /api/online-orders/courier-cash elementi — kuryerda turgan (topshirilmagan) naqd.</summary>
+public class CourierCashItemDto
+{
+    public Guid OrderId { get; set; }
+    public int Number { get; set; }
+    public string? CourierName { get; set; }
+    public decimal Amount { get; set; }
+    public DateTime? DeliveredAt { get; set; }
 }
 
 /// <summary>Yig'ish paytidagi o'zgarishlar.</summary>
@@ -157,6 +223,12 @@ public class PickItemChange
     public decimal? PickedQuantity { get; set; }
 
     public bool IsRemoved { get; set; }
+
+    /// <summary>
+    /// Markirovka kodlari: berilsa — qatorning TO'LIQ ro'yxati (eskisini almashtiradi); null — o'zgarmaydi.
+    /// Kerakli soni = Ceiling(PickedQuantity ?? Quantity); takror kod rad etiladi.
+    /// </summary>
+    public List<string>? MarkingCodes { get; set; }
 }
 
 public class PickItemAdd

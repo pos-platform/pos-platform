@@ -111,6 +111,8 @@ public class ReceiptPrinter
             foreach (var ln in ReceiptLayout.ItemHeaderRows(line, 37))
                 Add(ln, bold: true, size: 13);
             Add(ReceiptLayout.ItemVatRow(line, 40), size: 12);
+            if (ReceiptLayout.ItemDiscountRow(line) is { } disc)
+                Add(disc, size: 12);
 
             if (showCodes)
                 foreach (var ln in ReceiptLayout.ItemDetailRows(line, 40))
@@ -118,6 +120,8 @@ public class ReceiptPrinter
 
             Add(sep);
         }
+        foreach (var ln in ReceiptLayout.RedeemRows(r))
+            Add(ln);
         Add($"JAMI: {r.Total:N0} so'm", bold: true, size: 17);
         Add($"QQS jami: {r.VatTotal:N2}");
         Add($"To'lov: {PaymentLabel(r.Payment)}");
@@ -126,6 +130,15 @@ public class ReceiptPrinter
         Add($"Berilgan: {r.Paid:N0}");
         Add($"Qaytim: {r.Change:N0}");
         Add(sep);
+
+        // Bonus karta bloki (mijoz biriktirilgan bo'lsa).
+        var loyalty = ReceiptLayout.LoyaltyRows(r).ToList();
+        if (loyalty.Count > 0)
+        {
+            foreach (var ln in loyalty)
+                Add(ln, bold: true);
+            Add(sep);
+        }
 
         // Fiskal belgi + QR (agent fiskalizatsiya qilgach to'ladi).
         // Tashqi fiskal qurilma (ФМ/fleshka) QR'ni o'zi chiqarsa, POS QR'ni bosmaydi —

@@ -28,6 +28,12 @@ const searchName = ref('')
 const filterQtyOp = ref('')
 const filterQtyVal = ref('')
 const filterUnit = ref('') // '' = hammasi, 'Kilogram' = kg, 'Piece' = dona
+const filterOnline = ref('') // '' = hammasi, 'yes' = ilovada, 'no' = ilovada emas
+
+// Ommaviy tanlash ("Ilovada ko'rsatish / yashirish")
+const selectedIds = ref(new Set())
+const bulkBusy = ref(false)
+const bulkMsg = ref('')
 
 // Barcode scanner
 const barcodeInput = ref(null)
@@ -198,6 +204,7 @@ const blankForm = () => ({
   quantity: 0,
   imageUrl: '',
   isVat: true,
+  showOnline: true,
   isMarked: false,
   markingCode: '',
   packageCode: '',
@@ -226,6 +233,11 @@ const filteredProducts = computed(() => {
 
   if (filterUnit.value) {
     list = list.filter((p) => p.unit === filterUnit.value)
+  }
+
+  if (filterOnline.value) {
+    const want = filterOnline.value === 'yes'
+    list = list.filter((p) => (p.showOnline !== false) === want)
   }
 
   if (searchName.value.trim()) {
@@ -302,9 +314,55 @@ function setPage(p) {
   if (typeof p === 'number') currentPage.value = Math.min(Math.max(1, p), totalPages.value)
 }
 
-watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit], () => {
+watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit, filterOnline], () => {
   currentPage.value = 1
 })
+
+// ───── ommaviy tanlash ─────
+const allOnPageSelected = computed(
+  () => paginatedProducts.value.length > 0 && paginatedProducts.value.every((p) => selectedIds.value.has(p.id))
+)
+
+function toggleSelect(id) {
+  const s = new Set(selectedIds.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  selectedIds.value = s
+}
+
+function toggleSelectPage() {
+  const s = new Set(selectedIds.value)
+  const all = allOnPageSelected.value
+  for (const p of paginatedProducts.value) {
+    if (all) s.delete(p.id)
+    else s.add(p.id)
+  }
+  selectedIds.value = s
+}
+
+function clearSelection() {
+  selectedIds.value = new Set()
+}
+
+async function bulkShowOnline(show) {
+  const ids = [...selectedIds.value]
+  if (!ids.length || bulkBusy.value) return
+  bulkBusy.value = true
+  bulkMsg.value = ''
+  error.value = ''
+  try {
+    const res = await productsApi.setShowOnline(ids, show)
+    // Yuklangan ro'yxatni joyida yangilaymiz (qayta yuklamasdan).
+    const set = new Set(ids)
+    for (const p of products.value) if (set.has(p.id)) p.showOnline = show
+    bulkMsg.value = `${res?.updated ?? ids.length} ta mahsulot ${show ? 'ilovada ko\'rsatildi' : 'ilovadan yashirildi'}.`
+    clearSelection()
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    bulkBusy.value = false
+  }
+}
 
 watch(pageSize, () => {
   currentPage.value = 1
@@ -399,6 +457,7 @@ function openEdit(p) {
     quantity: p.quantity,
     imageUrl: p.imageUrl || '',
     isVat: p.isVat,
+    showOnline: p.showOnline !== false,
     isMarked: p.isMarked,
     markingCode: p.markingCode || '',
     packageCode: p.packageCode || '',
@@ -469,6 +528,7 @@ async function submit() {
       quantity: qty,
       imageUrl: form.imageUrl || null,
       isVat: form.isVat,
+      showOnline: form.showOnline,
       isMarked: form.isMarked,
       markingCode: form.markingCode?.trim() || null,
       packageCode: form.packageCode?.trim() || null,
@@ -691,6 +751,11 @@ function printBarcode(product) {
         <option value="Kilogram">kg</option>
         <option value="Piece">dona</option>
       </select>
+      <select v-model="filterOnline" class="select" style="width:150px" title="Mobil ilovada ko'rinishi">
+        <option value="">Ilovada: hammasi</option>
+        <option value="yes">Ilovada: ha</option>
+        <option value="no">Ilovada: yo'q</option>
+      </select>
       <select v-if="stores.length" v-model="filterBranch" class="select" style="flex:1; min-width:140px">
         <option value="">Barcha do'konlar</option>
         <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
@@ -756,9 +821,21 @@ function printBarcode(product) {
       </div>
     </div>
 
+    <!-- Ommaviy amallar: tanlov bo'sh bo'lmasa -->
+    <div v-if="selectedIds.size" class="bulk-bar">
+      <span>Tanlandi: <b>{{ selectedIds.size }}</b></span>
+      <button class="btn btn-sm" :disabled="bulkBusy" @click="bulkShowOnline(true)">📱 Ilovada ko'rsatish</button>
+      <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="bulkShowOnline(false)">Ilovadan yashirish</button>
+      <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="clearSelection">Tanlovni bekor qilish</button>
+    </div>
+    <div v-else-if="bulkMsg" class="bulk-bar bulk-ok">{{ bulkMsg }}</div>
+
     <table class="table">
       <thead>
         <tr>
+          <th style="width:32px">
+            <input type="checkbox" :checked="allOnPageSelected" title="Sahifadagilarni tanlash" @change="toggleSelectPage" />
+          </th>
           <th style="width:52px"></th>
           <th>Nomi</th>
           <th>Kategoriya</th>
@@ -774,7 +851,7 @@ function printBarcode(product) {
       </thead>
       <tbody>
         <tr v-if="loading">
-          <td :colspan="stores.length ? 11 : 10" class="muted" style="text-align:center; padding:32px">Yuklanmoqda...</td>
+          <td :colspan="stores.length ? 12 : 11" class="muted" style="text-align:center; padding:32px">Yuklanmoqda...</td>
         </tr>
         <tr
           v-for="p in paginatedProducts"
@@ -782,9 +859,13 @@ function printBarcode(product) {
           :id="`product-row-${p.id}`"
           :style="barcodeHighlight === p.id ? 'background:#FEF9C3; transition:background 0.3s' : ''"
         >
+          <td><input type="checkbox" :checked="selectedIds.has(p.id)" @change="toggleSelect(p.id)" /></td>
           <td><div class="thumb"><img v-if="p.imageUrl" :src="mediaUrl(p.imageUrl)" alt="" /></div></td>
           <td>
-            <div style="font-weight:500">{{ p.name }}</div>
+            <div style="font-weight:500">
+              {{ p.name }}
+              <span v-if="p.showOnline !== false" class="online-mark" title="Mobil ilovada ko'rinadi">📱</span>
+            </div>
             <div v-if="p.mxikCode && p.mxikCode !== '00000000'" class="muted" style="font-size:12px">MXIK: {{ p.mxikCode }}</div>
             <span v-if="p.isWeighed" class="pill pill-amber" style="margin-top:2px; display:inline-block">tarozi</span>
           </td>
@@ -811,7 +892,7 @@ function printBarcode(product) {
           </td>
         </tr>
         <tr v-if="!paginatedProducts.length && !loading">
-          <td :colspan="stores.length ? 11 : 10" class="muted" style="text-align:center; padding:32px">Mahsulot yo'q</td>
+          <td :colspan="stores.length ? 12 : 11" class="muted" style="text-align:center; padding:32px">Mahsulot yo'q</td>
         </tr>
       </tbody>
     </table>
@@ -941,6 +1022,13 @@ function printBarcode(product) {
             <input v-model="form.quantity" type="number" min="0" step="0.001" class="input" />
           </div>
           <div style="display:flex; gap:20px; padding-bottom:6px">
+            <div class="toggle-col" title="Mobil ilovada (online do'konda) ko'rsatilsinmi">
+              <span>Ilovada</span>
+              <label class="ios-toggle">
+                <input v-model="form.showOnline" type="checkbox" />
+                <span class="ios-slider"></span>
+              </label>
+            </div>
             <div class="toggle-col">
               <span>НДС</span>
               <label class="ios-toggle">
@@ -1066,6 +1154,19 @@ function printBarcode(product) {
 </template>
 
 <style scoped>
+/* Ommaviy amallar paneli */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.bulk-ok { color: var(--success, #0b6b45); }
+.online-mark { font-size: 12px; margin-left: 4px; opacity: 0.8; }
+
 /* Umumiy qiymat kartochkalari */
 .stats-row {
   display: flex;

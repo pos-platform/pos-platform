@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PosCloud.Api.Authorization;
+using PosCloud.Application.Common.Authorization;
 using PosCloud.Application.Features.Products;
 using PosCloud.Application.Features.Products.Dtos;
 
@@ -71,6 +73,14 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProductDto>> Update(Guid id, UpdateProductDto dto, CancellationToken cancellationToken)
         => Ok(await _productService.UpdateAsync(id, dto, cancellationToken));
+
+    /// <summary>Mahsulotlarni ommaviy ilovada ko'rsatish/yashirish. Javob: { updated: n }.</summary>
+    [HttpPut("show-online")]
+    [HasPermission(Permissions.ProductsEdit)]
+    [ProducesResponseType(typeof(BulkShowOnlineResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BulkShowOnlineResult>> SetShowOnline(BulkShowOnlineRequest request,
+        CancellationToken cancellationToken)
+        => Ok(await _productService.SetShowOnlineAsync(request, cancellationToken));
 
     /// <summary>Mahsulotni o'chiradi (ishlatilmagan bo'lsa).</summary>
     [HttpDelete("{id:guid}")]

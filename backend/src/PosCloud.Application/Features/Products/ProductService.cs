@@ -23,7 +23,8 @@ public class ProductService : IProductService
 
     public async Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        IQueryable<Product> query = _db.Products
+        // Xizmat (yetkazish) mahsuloti yashirin — avtomatik boshqariladi.
+        IQueryable<Product> query = _db.Products.Where(p => p.ProductType != ProductType.Service)
             .AsNoTracking()
             .Include(p => p.Supplier)
             .Include(p => p.Branch)
@@ -41,7 +42,7 @@ public class ProductService : IProductService
     {
         var branchId = _currentUser.BranchId;
 
-        IQueryable<Product> query = _db.Products.AsNoTracking();
+        IQueryable<Product> query = _db.Products.AsNoTracking().Where(p => p.ProductType != ProductType.Service);
         if (branchId is not null)
             query = query.Where(p => p.BranchId == branchId || p.BranchId == null);
 
@@ -78,7 +79,7 @@ public class ProductService : IProductService
         var branchId = _currentUser.BranchId;
 
         // Kassaga ko'rinadigan mahsulotlar — GetForPosAsync bilan bir xil filtr.
-        IQueryable<Product> products = _db.Products.AsNoTracking();
+        IQueryable<Product> products = _db.Products.AsNoTracking().Where(p => p.ProductType != ProductType.Service);
         if (branchId is not null)
             products = products.Where(p => p.BranchId == branchId || p.BranchId == null);
 
@@ -124,6 +125,10 @@ public class ProductService : IProductService
 
     public async Task<ProductDto> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default)
     {
+        // Xizmat turi faqat avtomatik ("Yetkazib berish xizmati") — qo'lda yaratilmaydi.
+        if (dto.ProductType == ProductType.Service)
+            throw new ValidationException("Xizmat turidagi mahsulot avtomatik yaratiladi — tovar yoki taom tanlang.");
+
         var categoryExists = await _db.Categories.AnyAsync(c => c.Id == dto.CategoryId, cancellationToken);
         if (!categoryExists)
         {
@@ -142,6 +147,7 @@ public class ProductService : IProductService
             CostPrice = dto.CostPrice,
             Price = dto.Price,
             ImageUrl = dto.ImageUrl,
+            ShowOnline = dto.ShowOnline ?? true,
             Description = dto.Description?.Trim(),
             IsVat = dto.IsVat,
             IsMarked = dto.IsMarked,
@@ -173,11 +179,38 @@ public class ProductService : IProductService
         return ProductDto.FromEntity(product, _currentUser.BranchId);
     }
 
+    public async Task<BulkShowOnlineResult> SetShowOnlineAsync(BulkShowOnlineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = request.ProductIds.Distinct().ToList();
+        if (ids.Count == 0) return new BulkShowOnlineResult(0);
+        if (ids.Count > 1000)
+            throw new ValidationException("Bir so'rovda ko'pi bilan 1000 ta mahsulot.");
+
+        // Tenant filtri ishlaydi — boshqa tashkilot mahsuloti topilmaydi. Faqat qiymati farq qiladiganlar yuklanadi
+        // (ko'pi bilan 1000 ta); SaveChanges UpdatedAt'ni yangilaydi — kassa katalog tamg'asi o'zgarishni sezadi.
+        var show = request.ShowOnline;
+        var products = await _db.Products
+            .Where(p => ids.Contains(p.Id) && p.ShowOnline != show)
+            .ToListAsync(cancellationToken);
+        foreach (var p in products)
+            p.ShowOnline = show;
+
+        if (products.Count > 0)
+            await _db.SaveChangesAsync(cancellationToken);
+
+        return new BulkShowOnlineResult(products.Count);
+    }
+
     public async Task<ProductDto> UpdateAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default)
     {
         var product = await _db.Products
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Mahsulot topilmadi: {id}");
+
+        // Xizmat turi faqat avtomatik ("Yetkazib berish xizmati") — qo'lda yaratilmaydi.
+        if (dto.ProductType == ProductType.Service)
+            throw new ValidationException("Xizmat turidagi mahsulot avtomatik yaratiladi — tovar yoki taom tanlang.");
 
         var categoryExists = await _db.Categories.AnyAsync(c => c.Id == dto.CategoryId, cancellationToken);
         if (!categoryExists)
@@ -193,6 +226,7 @@ public class ProductService : IProductService
         product.CostPrice = dto.CostPrice;
         product.Price = dto.Price;
         product.ImageUrl = dto.ImageUrl;
+        if (dto.ShowOnline is { } showOnline) product.ShowOnline = showOnline;
         product.Description = dto.Description?.Trim();
         product.IsVat = dto.IsVat;
         product.IsMarked = dto.IsMarked;
@@ -476,7 +510,8 @@ public class ProductService : IProductService
 
     public async Task<byte[]> ExportAsync(CancellationToken cancellationToken = default)
     {
-        IQueryable<Product> query = _db.Products
+        // Xizmat (yetkazish) mahsuloti yashirin — avtomatik boshqariladi.
+        IQueryable<Product> query = _db.Products.Where(p => p.ProductType != ProductType.Service)
             .AsNoTracking()
             .Include(p => p.Category)
             .Include(p => p.Supplier)

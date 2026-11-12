@@ -75,38 +75,38 @@ To'lov holati alohida: `Unpaid → Paid → Refunded`.
 - [x] **1.7 Buyurtma (xodim)**: `/api/online-orders` — accept/reject/start-picking/items/ready/payment-received/dispatch/delivered.
       "Ready"da `Sale` yaratish. Ombor rezervi (`BranchStock.Reserved`).
 - [x] **1.8 SignalR**: `/hubs/orders`, filial guruhlari; yangi buyurtma va holat o'zgarishi xabarlari.
-- [ ] **1.9 SuperAdmin**: `/api/admin/online-stores` (yoqish, tasdiqlash, bloklash, to'lov usullari, tavsiya, tarif muddati);
+- [x] **1.9 SuperAdmin**: `/api/admin/online-stores` (yoqish, tasdiqlash, bloklash, to'lov usullari, tavsiya, tarif muddati);
       do'kon admini: `GET/PUT /api/online-store/settings`.
-- [ ] **1.10 Fon vazifalar**: eskirgan OTP/refresh tokenlarni tozalash.
+- [x] **1.10 Fon vazifalar**: eskirgan OTP/refresh tokenlarni tozalash.
 
 ## Bosqich 2 — Desktop (WPF)
 
-- [ ] 2.1 SignalR klient, "Online buyurtmalar" oynasi (4 ustun), ovozli bildirishnoma.
-- [ ] 2.2 Yig'ish paneli: skaner bilan belgilash, almashtirish/olib tashlash, yig'ish varag'ini chop etish.
-- [ ] 2.3 "Tayyor" → `Sale` + fiskal chek; "O'tkazma kutilmoqda" va "To'lov tushdi".
-- [ ] 2.4 "Buyurtma qabul qilish" yoqish/o'chirish, kuryer naqd pulini qabul qilish.
+- [x] 2.1 SignalR klient, "Online buyurtmalar" oynasi (4 ustun), ovozli bildirishnoma.
+- [x] 2.2 Yig'ish paneli: skaner bilan belgilash, almashtirish/olib tashlash, yig'ish varag'ini chop etish.
+- [x] 2.3 "Tayyor" → `Sale` + fiskal chek; "O'tkazma kutilmoqda" va "To'lov tushdi".
+- [x] 2.4 "Buyurtma qabul qilish" yoqish/o'chirish, kuryer naqd pulini qabul qilish.
 
 ## Bosqich 3 — Admin panel (Vue)
 
-- [ ] 3.1 SuperAdmin: online do'konlar ro'yxati va sozlamalari.
-- [ ] 3.2 Do'kon admini: online sozlamalar (karta, ish vaqti, minimal summa), mahsulotda `ShowOnline`, rasmlar.
+- [x] 3.1 SuperAdmin: online do'konlar ro'yxati va sozlamalari.
+- [x] 3.2 Do'kon admini: online sozlamalar (karta, ish vaqti, minimal summa), mahsulotda `ShowOnline`, rasmlar.
 
 ## Bosqich 4 — Flutter MVP (`mobile/`)
 
 - [x] 4.1 Loyiha: `flutter create`, paketlar (riverpod, go_router, dio, freezed, secure_storage), tema, i18n (uz/ru).
-- [ ] 4.2 Kirish (telefon + kod), token saqlash va yangilash.
-- [ ] 4.3 Do'kon tanlash, katalog, qidiruv, mahsulot sahifasi.
-- [ ] 4.4 Savatcha, rasmiylashtirish (yetkazish/olib ketish, naqd/o'tkazma).
-- [ ] 4.5 Buyurtmalarim, kuzatish, o'tkazma ekrani (karta raqami nusxa + chek rasmi).
-- [ ] 4.6 Profil, manzillar (xarita), akkauntni o'chirish.
-- [ ] 4.7 Push (FCM): `DeviceToken`, holat xabarlari.
+- [x] 4.2 Kirish (telefon + kod), token saqlash va yangilash.
+- [x] 4.3 Do'kon tanlash, katalog, qidiruv, mahsulot sahifasi.
+- [x] 4.4 Savatcha, rasmiylashtirish (yetkazish/olib ketish, naqd/o'tkazma).
+- [x] 4.5 Buyurtmalarim, kuzatish, o'tkazma ekrani (karta raqami nusxa + chek rasmi).
+- [x] 4.6 Profil, manzillar (xarita), akkauntni o'chirish.
+- [x] 4.7 Push (FCM): `DeviceToken`, holat xabarlari. (kod tayyor — Firebase fayllari qo'yilgach ishlaydi, `mobile/docs/PUSH.md`)
 
 ## Bosqich 5 — Chiqarish
 
-- [ ] 5.1 Ikonka, splash, maxfiylik siyosati sahifasi.
-- [ ] 5.2 Android: imzolash, Play internal testing.
+- [x] 5.1 Ikonka, splash, maxfiylik siyosati sahifasi.
+- [ ] 5.2 Android: imzolash, Play internal testing. (gradle sozlamasi va `mobile/docs/RELEASE.md` tayyor — keystore, Play akkaunt egasidan)
 - [ ] 5.3 iOS: Codemagic yoki Mac, TestFlight.
-- [ ] 5.4 Monitoring (Crashlytics/Sentry), majburiy yangilash (`/api/app/config`).
+- [x] 5.4 Monitoring (Crashlytics/Sentry), majburiy yangilash (`/api/app/config`).
 
 ## Keyingi bosqichlar (MVP'dan keyin)
 
@@ -200,3 +200,135 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
   Xabar xatosi amalni buzmaydi (loglanadi). Chaqiriladi: mijoz yaratish/bekor qilish/chek yuklash, xodimning barcha o'tishlari.
   Tekshiruv: `dotnet build` 0 xato. **Runtime sinalmagan.**
   Keyinga: bir nechta server nusxasi bo'lsa Redis backplane; SuperAdmin (tashkilotsiz) hech qaysi guruhga kirmaydi.
+- 2026-11-12 — 1.9 — `OnlineStoreService`; `AdminOnlineStoresController` (`/api/admin/online-stores`, `Roles=SuperAdmin`): `GET ?filter=all|requested|enabled|blocked&search=`
+  (barcha tashkilotlar, Store filiallar soni, 30 kunlik buyurtmalar; so'rov yuborganlar birinchi), `GET/PUT /{orgId}` (yoqish, bloklash — sabab majburiy,
+  tavsiya, tartib, `PaidUntil`, to'lov usullari — yoqilganda kamida bittasi; yoqilganda `IsRequested` tushadi).
+  `OnlineStoreController` (`/api/online-store`): `GET settings` (`sales.view`), `PUT settings` (`settings.manage`: qabul, nom, tavsif, logo, telefon,
+  yetkazish/olib ketish — kamida bittasi, minimal summa, yetkazish narxi, bepul chegarasi, ish vaqti — ikkalasi birga, karta 16–20 raqam, holder,
+  o'tkazma dispatchdan oldin), `POST request` (ilovaga chiqish so'rovi), `PUT accepting` (`sales.create` — kassadagi tugma, 2.4 uchun).
+  Sozlama yozuvi kerak bo'lganda yaratiladi (standart — ko'rinmaydi). `IsVisible` hisoblanadi.
+  O'tkazma faqat karta raqami kiritilgan bo'lsa ishlaydi (katalog `allowTransfer` va buyurtma tekshiruvi).
+  Tekshiruv: `dotnet build` 0 xato. **Runtime sinalmagan.**
+- 2026-11-12 — 1.10 — `ShopCleanupService` (Api, `BackgroundService`; Infrastructure'da Hosting paketi yo'qligi uchun Api'da): ishga tushgandan 2 daq keyin,
+  so'ng har 6 soatda — OTP 1 kundan eski, refresh token muddati 1 kundan oldin tugagan yoki 30 kundan oldin bekor qilingan → `ExecuteDeleteAsync`.
+  Xato loglanadi, servis to'xtamaydi. `dotnet ef migrations has-pending-model-changes` — 1.6–1.10 da model o'zgarmagan, migratsiya kerak emas.
+  Tekshiruv: `dotnet build` 0 xato. **Runtime sinalmagan.**
+  Keyinga: uzoq vaqt `New` holatida qolgan buyurtmalarni avtomatik bekor qilish (mijozga xabar bilan), o'chirilgan akkauntlarni yakuniy tozalash.
+  Keyingisi: 2.1 desktop.
+- 2026-11-12 — 2.1 — Desktop: `Microsoft.AspNetCore.SignalR.Client` 8.0.11; `Services/OnlineOrdersHub` (token `AppState.Token`, avtomatik qayta ulanish,
+  to'liq uzilsa har 30 s urinish, ulangach ro'yxat API'dan qayta olinadi; yangi buyurtmada `SystemSounds.Exclamation`). Kassa oynasida "🛒 Online" tugmasi
+  + "Yangi" soni badge'i — faqat do'kon rejimida va SuperAdmin do'konni yoqqan bo'lsa (`GET /api/online-store/settings`). `Views/OnlineOrdersWindow`:
+  4 ustun (Yangi / Yig'ilmoqda = Accepted+Picking / Tayyor = Ready+AwaitingTransfer+ReadyForPickup / Yo'lda), kartochkada vaqt, tur, to'lov, mijoz, summa;
+  real vaqt holati sarlavhada. Modellar `Models/OnlineOrderModels.cs`, API `BackendClient` (online-orders, online-store).
+- 2026-11-12 — 2.2 — Yig'ish paneli: skaner maydoni (klaviatura skaneri) va COM skaner (`AppState.ScanOverride` — oyna ochiq turganda kod savatchaga
+  emas, shu oynaga ketadi) qatorni belgilaydi, "Yig'ildi x / y"; belgilar faqat kassada (`CheckedItems`, oyna yopilsa ham saqlanadi).
+  Qator: "Miqdor" (tarozi/kam), "Almashtirish" (yangi shtrix-kod — kesh `Offline.LoadProducts()` dan, miqdor), "Yo'q" (olib tashlash; mijoz siyosati ko'rsatiladi);
+  "Mahsulot qo'shish". "Yig'ish varag'i" — `PrintDialog` + `FlowDocument` (☐, nom, shtrix-kod, miqdor). Oddiy so'rov oynasi `Views/PromptWindow.cs`.
+- 2026-11-12 — 2.3 — "Tayyor · fiskal chek": belgilanmagan qator bo'lsa ogohlantirish → `POST ready` (`terminalId` bilan) → `GET /api/sales/{saleId}` →
+  `ReceiptPreviewWindow` (Fiscal) — chek oddiy savdodagi kabi (`SalesHistoryWindow.ToReceiptData` `internal` qilindi). "To'lov tushdi" (AwaitingTransfer,
+  Ready/ReadyForPickup/OnTheWay'da o'tkazma to'lanmagan bo'lsa), "O'tkazma cheki" (rasm brauzerda), "Chek" (qayta ko'rish).
+- 2026-11-12 — 2.4 — Sarlavhada "Buyurtma qabul qilish yoqilgan" (`PUT /api/online-store/accepting`, xato bo'lsa qaytariladi). "Kuryerga berildi" (dispatch),
+  "Yetkazildi · kuryer pulini oldim" (naqd bo'lsa summa bilan tasdiqlash → `delivered`, server Paid qiladi), "Mijozga topshirildi" (olib ketish).
+  Tekshiruv (2.1–2.4): `dotnet build` 0 xato (4 ogohlantirish — eski `UpdateService`). **Runtime sinalmagan.**
+  Keyinga: kuryer ismi/raqami (dizaynda "Kuryer: Bekzod"), kuryer naqd pulini smenaga alohida "kirim" qilish (hozir savdo "Tayyor"da naqd deb yoziladi),
+  yig'ishda markirovka (DataMatrix) skanerlash, javon raqami ("Javon A-3" — modelda yo'q), ovozni takrorlash (qabul qilinmaguncha),
+  mijoz telefonini yashirish (dizaynda `+998 90 *** ** 67`).
+- 2026-11-12 — 3.1 — Vue: `AdminOnlineStoresView` (`/admin/online-stores`, SuperAdmin menyusida "Online do'konlar"): filtr (barchasi / so'rov yuborgan /
+  ilovada / bloklangan), qidiruv, jadval (holat, Store filiallar, tarif muddati, 30 kunlik buyurtma, qabul); tanlanganda yon panel — yoqish, bloklash + sabab,
+  tavsiya, tartib, tarif muddati (kun oxirigacha), to'lov usullari (karta raqami yo'q bo'lsa ogohlantirish), ish vaqti/yetkazish ma'lumoti.
+  API: `onlineStoresAdminApi`. Tarjima: `nav.onlineStores` (uz/ru).
+- 2026-11-12 — 3.2 — Vue: `OnlineStoreView` (`/online-store`, Admin + `settings.manage`, faqat do'kon rejimida — `storeOnly`): holat kartasi
+  (ilovada / so'rov / bloklangan, platforma bergan to'lov usullari, tarif), "Ilovaga chiqish so'rovi", qabul qilish, nom, telefon, tavsif, logo
+  (yuklash `/api/products/image` orqali), ish vaqti, yetkazish/olib ketish, minimal summa, yetkazish narxi, bepul chegarasi, karta raqami/egasi,
+  o'tkazma dispatchdan oldin. Mahsulot formasiga "Ilovada" (`showOnline`) tugmasi; backend `CreateProductDto.ShowOnline` (`bool?`:
+  yaratishda null → true, tahrirda null → o'zgarmaydi — eski klientlar yashirilgan mahsulotni qayta ochib yubormasligi uchun), `ProductDto.ShowOnline`.
+  Mahsulot rasmlari — mavjud yuklash (bitta rasm).
+  Tekshiruv: `npm run build` muvaffaqiyatli, backend `dotnet build` 0 xato. **Runtime sinalmagan.**
+  Keyinga: mahsulotga bir nechta rasm (karusel), ommaviy "ilovada ko'rsatish/yashirish", admin panelda online buyurtmalar ro'yxati/hisoboti.
+- 2026-11-12 — 4.2 — Mobil kirish: `core/api/api_client.dart` (Dio + `SessionManager`: token oldindan yangilanadi, refresh BITTA vaqtda bitta —
+  umumiy `Future`; 401 da boshqa so'rov allaqachon yangilagan bo'lsa qayta refresh qilinmaydi; refresh 401/400 → sessiya tozalanadi),
+  `api_exception.dart` (server `{error}`, `Retry-After`), `features/auth/` — `TokenStorage` (flutter_secure_storage, `tokenStorageProvider` testda almashtiriladi),
+  `AuthRepository` (interceptorsiz Dio), `AuthController` (unknown/signedOut/guest/signedIn), `LoginScreen` (+998 formatlash, kod kataklari — uzunlik serverdan,
+  SMS avtoto'ldirish, qayta yuborish taymeri, Telegram → "SMS orqali yuborish", raqamni o'zgartirish, 429 da taymer), `SplashScreen`.
+  Router: `refreshListenable` + redirect (splash/login/ichkari; mehmon katalogga kiradi). Test yangilandi (xotiradagi TokenStorage).
+  Tekshiruv: `flutter analyze` 0 muammo. **Runtime sinalmagan.**
+  Keyinga: ism so'rash ekrani (`profileCompleted=false`) — 4.6 da; foydalanish shartlari/maxfiylik havolalari — 5.1.
+- 2026-11-12 — 4.3–4.6 (parallel agentlar, lead integratsiya qildi) —
+  4.3 `features/catalog/`: modellar (ish vaqti serverdagi kabi, tungi smena), `CatalogRepository`, do'kon tanlash (`storeSelectionProvider`,
+  branchId secure storage'da; savatchada boshqa do'kon tovari bo'lsa tozalashni so'raydi), `HomeScreen` (qidiruv 400 ms, bepul yetkazish banneri,
+  kategoriya chiplari, tartiblash, 2 ustunli cheksiz setka, pastki "Savatcha" paneli), `StoresScreen`, `ProductScreen` (eski narx, −%, qoldiq, stepper).
+  4.4 `features/cart/` (`cartControllerProvider`: tarozi 0.1 kg, dona butun; `cartQuoteProvider` — o'zgarishda 400 ms debounce bilan `/quote`, eski so'rov bekor),
+  `CartScreen` (summalar faqat serverdan, qator muammolari, minimal summa, mehmon → kirish), `features/checkout/` (yetkazish/olib ketish sozlamaga qarab,
+  manzil tanlash + yangi manzil `/address-new` — root navigator, tab almashmaydi; "imkon qadar tez" yoki bugun/ertaga 1 soatlik oraliq ish vaqtida,
+  UTC+5→UTC; ruxsat etilgan to'lov usullari; tugasa siyosati; izoh; kontaktsiz → POST → `/orders/<id>`).
+  4.5 `features/orders/`: ro'yxat (Faol/Tarix, sahifalash), kuzatish (5 bo'lak progress, timeline, sabab kartasi, "Tarkibi", bekor qilish faqat `canCancel`,
+  `tel:` qo'ng'iroq), o'tkazma bo'limi (karta nusxa, `image_picker` bilan chek ≤5 MB), SignalR `signalr_netcore` (`orderUpdatesProvider` — HomeShell'da
+  doim kuzatiladi) + 30 s polling zaxira. Paketlar: url_launcher, image_picker, signalr_netcore.
+  4.6 `features/profile/`: profil (ism banneri, til — keyinga, chiqish, akkauntni o'chirish "O'CHIRISH" so'zi bilan), shaxsiy ma'lumotlar, manzillar CRUD
+  (`ShopAddress`, `addressesProvider`; Uy/Ish/Boshqa).
+  Lead: `router.dart` barcha marshrutlar, `placeholder_screen.dart` o'chirildi, Android `INTERNET` ruxsati (release'da yo'q edi) va `tel:` `<queries>`,
+  iOS `NSPhotoLibraryUsageDescription`, test yangilandi. Tekshiruv: `flutter analyze` 0 muammo, `flutter test` 1/1. **Runtime sinalmagan.**
+  Keyinga: geolokatsiya (masofa), savatchani qurilmada saqlash, promokod/bonus/Payme/Click, idempotency key, "60–90 daqiqa", mahsulot karuseli/brend/jadval,
+  sevimlilar, "Qayta buyurtma" (savatchaga ulash), fiskal chek QR, ETA, kuryer ma'lumoti, chekni kamera bilan olish, xarita (manzil), til tanlash,
+  avatar, telefonni almashtirish, ism kiritishga majburiy yo'naltirish.
+- 2026-11-12 — 4.7 (backend qismi) — `ShopDeviceToken` + migratsiya `AddShopDeviceTokens`; `POST /api/me/devices` {token, platform, locale} (upsert, 10 tagacha),
+  `DELETE /api/me/devices/{token}`, logout'da ixtiyoriy `deviceToken`, akkaunt o'chirilganda tokenlar o'chadi, 90 kun ko'rinmagan token tozalanadi.
+  `IOnlineOrderNotifier.OrderChangedAsync(..., pushToCustomer)` — faqat do'kon holatni haqiqatan o'zgartirganda; bounded `OrderPushQueue` + `OrderPushService`
+  (BackgroundService) → `ShopPushService` (uz/ru matnlar) → `FcmPushSender` (HTTP v1, RS256 JWT qo'lda; sozlanmasa `LogPushSender`); yaroqsiz token o'chiriladi.
+  Config: `Push:Fcm:ProjectId`, `Push__Fcm__ServiceAccountJson|ServiceAccountPath`, `AndroidChannelId=orders`.
+  Tekshiruv: `dotnet build` 0 xato, `has-pending-model-changes` — o'zgarish yo'q. **Runtime sinalmagan.**
+  Qoldi (4.7 mobil): Firebase loyihasi, `google-services.json`/`GoogleService-Info.plist`, APNs kaliti; ilovada `firebase_messaging`, kirgach/token yangilanganda
+  `POST /api/me/devices`, chiqishda `deviceToken`, Android kanal "orders". Keyingisi: 4.7 mobil (Firebase kerak) yoki 5.1.
+- 2026-11-12 — 4.7 mobil / 5.1 / 5.2 / 5.4 / "keyinga" qismlari (parallel agentlar, lead yakuniy tekshiruv) —
+  Backend: `OnlineOrdersExtras` migratsiyasi — `OnlineOrder.CourierName/CourierPhone/PickingStartedAt/ClientRequestId` (unik (ShopUserId, ClientRequestId)),
+  `OnlineStoreSettings.DeliveryMinMinutes/DeliveryMaxMinutes/AutoCancelMinutes` (standart 30, 0 — o'chiq); buyurtma idempotentligi; `ShopOrderDto` + kuryer, chek raqami,
+  `fiscalQrUrl`, `estimatedDeliveryFrom/To`; `ShopStoreDto` + yetkazish daqiqalari; xodim `dispatch {courierName, courierPhone}`, yangi `POST cancel` (Ready..OnTheWay,
+  `sales.refund`, `SaleService.RefundAsync`, ochiq smena kerak, Paid→Refunded), `GET ?status=&to=` (to — shu kun ham kiradi); `OnlineOrderAutoCancelService` (har daqiqa,
+  shartli UPDATE — xodim qabul qilgan bo'lsa ustun); `PUT /api/products/show-online`; `GET /api/app/config` (`MobileApp` sozlamasi: min/latest build, storeUrl, maintenance).
+  Frontend: `public/privacy.html`, `terms.html` (uz/ru; TODO: support email, rekvizitlar yurist bilan), `OnlineOrdersView` (`/online-orders`, faqat ko'rish), mahsulotlarda
+  ommaviy "Ilovada ko'rsatish/yashirish" va filtr, `OnlineStoreView` + yetkazish vaqti va avtomatik bekor qilish. Lead: sana oralig'i `to+1` xatosi tuzatildi.
+  Desktop: kuryer so'rovi (sessiyada eslab qoladi), "Bekor qilish (qaytarish)", "Yangi" bor ekan ovoz har 30 s, kartada telefon yashirilgan.
+  Mobil: push (`firebase_core/messaging`, `flutter_local_notifications`, kanal "orders"; Firebase config bo'lmasa jim o'chadi; `POST /api/me/devices`, chiqishda deviceToken,
+  bosilganda `/orders/<id>`; google-services plagini faqat json bo'lsa qo'llanadi; `docs/PUSH.md`), til tanlash (saqlanadi, `Accept-Language`), ism so'rash (kirgach bir marta,
+  "Keyinroq"), geolokatsiya (do'konlar masofa bo'yicha), savatcha qurilmada saqlanadi, "Qayta buyurtma", `clientRequestId`, kuzatishda kuryer/ETA/chek QR/qaytarish matni,
+  chek uchun kamera, manzil xaritada (flutter_map + OSM, kalitsiz), yetkazish vaqti matni; ikonka/splash (`assets/branding`), maxfiylik/shartlar havolalari (login, profil),
+  Android imzolash (`key.properties` bo'lsa release, aks holda debug; `docs/RELEASE.md`), majburiy/yumshoq yangilash va texnik ishlar ekrani, Sentry (faqat `SENTRY_DSN` bilan).
+  Tekshiruv: backend `dotnet build` 0 xato + pending model o'zgarish yo'q; desktop 0 xato; `npm run build` OK; `flutter analyze` 0; `flutter test` 1/1.
+  **Runtime sinalmagan; Android SDK yo'qligi sababli APK/Gradle yig'ilmagan.**
+  Egasidan: Firebase (google-services.json, GoogleService-Info.plist, APNs .p8, server `Push__Fcm__ServiceAccountJson`), upload keystore + key.properties, Play Console,
+  Sentry DSN, `dotnet ef database update` (AddShopDeviceTokens, OnlineOrdersExtras), support email va huquqiy rekvizitlar, Android SDK'da bir marta build.
+  Qolgan keyinga: yetkazish narxi fiskal chekda (MXIK xizmat), kuryer naqdini smenaga alohida kirim, markirovka online yig'ishda, mahsulot karuseli/brend,
+  promokod/bonus/Payme/Click, reverse geocoding va yetkazish hududi, sevimlilar, avatar, telefonni almashtirish, Redis backplane, 5.3 iOS.
+- 2026-11-12 — Android emulyatorda birinchi ishga tushirish. Android Studio + emulyator `Medium_Phone_API_37.0` (cold boot ~100 s).
+  Build tuzatishlari: `android/gradle.properties` → `kotlin.incremental=false` (loyiha D:, pub kesh C: — Kotlin kesh xatosi);
+  `app/build.gradle.kts` → `compileSdk = maxOf(flutter, 37)` (flutter_local_notifications, androidx.core 1.19),
+  `minSdk = maxOf(flutter, 26)` (sentry_flutter → Android 8.0+). Debug APK yig'ildi va o'rnatildi; kirish ekrani ochildi.
+  Kuzatilgan: backend o'chiq bo'lsa splash ~15–20 s turadi (so'rov timeout'i — qisqartirish kerak); telefon maydonida
+  "+998" raqamdan yuqoriroq turibdi (vertikal tekislash); Firebase sozlanmagan — push o'chiq (google-services.json kerak).
+
+## Bosqich 6 — Kuryer, to'lovlar, bonus, promokod, markirovka, hudud (kelishuv: `docs/mobile/CONTRACT-6.md`)
+
+- [x] 6.1 Kuryer akkaunti (`UserRole.Courier`), `/api/courier`, kuryer rejimi mijoz ilovasi ichida, Navigator, marshrut.
+- [x] 6.2 Kuryer naqdi (Tayyor'da Expense, topshirganda Income), yetkazish xizmati fiskal chekda (`ProductType.Service`).
+- [x] 6.3 Markirovka (DataMatrix) online yig'ishda.
+- [x] 6.4 Promokod, bonus bilan to'lash, yetkazish radiusi, Payme/Click (yig'ilgach), xaritada joylashuv + manzil aniqlash.
+
+- 2026-11-12 — 6.1–6.4 (5 parallel agent, lead kelishuv yozdi va yakuniy tekshirdi) —
+  Backend: migratsiya `OnlineShopPhase6`; `UserRole.Courier=5` (`POST /api/users` + `fullName`, `phone`; kuryerga telefon+filial majburiy, litsenziya/qurilma bog'lash yo'q,
+  JWT 24 soat, refresh yo'q — 401 da qayta login); `CourierController` (`me`, `orders?history=`, `orders/{id}`, `delivered {cashCollected}`, `failed {reason}` → Ready'ga qaytadi);
+  SignalR `courier:{userId}` (`CourierOrderAssigned`); xodim `GET couriers`, `dispatch {courierUserId}`, markirovka (`markingCodes` to'liq ro'yxat, takror rad, kerakli soni
+  Ceiling(miqdor), Tayyor'da har kod alohida qator), `cash-handover` (faqat Delivered + ochiq smena), `courier-cash`; Tayyor'da promokod qayta hisoblanadi, bonus joriy ball bilan,
+  chegirma savdo qatorlariga mutanosib taqsimlanadi; "Yetkazib berish xizmati" (`ProductType.Service`, MXIK sozlamadan, POS/katalog/hisobotlardan yashirilgan);
+  mijoz quote/create: `promoCode`, `useBonus`, `addressId` (quote tokenli bo'lsa bonus/limit/hudud), `deliveryRadiusKm`, `onlinePaymentProvider`; `POST /api/shop/orders/{id}/pay`
+  (mavjud OnlinePaymentService, SaleId bo'yicha) → to'lov tasdiqlansa Paid + AwaitingTransfer'dan chiqadi; `GET /api/me/bonus`; `PromoCode` + `/api/promo-codes` CRUD.
+  Kelishuvdan farqlar: `canPayOnline` faqat Transfer'da; Tayyor'dan keyin bekor qilinsa bonus qaytariladi va topshirilmagan kuryer naqdi uchun tuzatuvchi Income;
+  promokod MaxUses parallel so'rovlarda 1–2 ga oshishi mumkin; yetkazish xizmati IsVat=true.
+  Desktop: kuryer tanlash oynasi (+ qo'lda), DataMatrix skanerlash (GTIN bo'yicha qatorga biriktirish, "Markirovka kodi" tugmasi, kodlar to'liq bo'lmasa Tayyor bloklanadi),
+  "Kuryer pullari (N) · summa" oynasi, promokod/bonus tafsilotda, Courier roli kassaga kira olmaydi.
+  Admin panel: "+ Kuryer" (UsersView), SuperAdmin desktop login formasida Kuryer, `PromoCodesView` (`/promo-codes`), OnlineStoreView: radius, yetkazish MXIK, bonus %; SA: Payme/Click;
+  OnlineOrdersView: kuryer naqdi, promokod, bonus, markirovka.
+  Mobil: kuryer rejimi (`features/courier/`: alohida sessiya, "Kuryer sifatida kirish", faol/bugun, masofa bo'yicha tartib, Yandex Navigator / Google Maps, "Marshrut (hammasi)"
+  9 nuqtagacha, qo'ng'iroq, Yetkazildi (naqd summa) / Yetkazib bo'lmadi (sabab), SignalR + 30 s polling); mijoz: promokod (savatcha), bonus kaliti, hudud xabari va masofa,
+  Payme/Click tanlovi va kuzatishda to'lov tugmalari (ilovaga qaytganda yangilanadi), xaritada "Joylashuvimni aniqlash", Nominatim reverse/qidiruv (User-Agent, ≥1.1 s).
+  Tekshiruv: backend 0 xato + pending model yo'q; desktop 0 xato; `npm run build` OK; `flutter analyze` 0; `flutter test` 1/1. **Runtime sinalmagan.**
+  Egasidan: Payme/Click merchant sozlamalari (mavjud to'lov konfiguratsiyasi), `dotnet ef database update` (OnlineShopPhase6).

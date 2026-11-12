@@ -257,7 +257,7 @@ public partial class SalesHistoryWindow : Window
     /// u holda nusxada asl qog'ozda bo'lmagan QR paydo bo'lardi. Tarix o'tmishni ko'rsatadi, hujjat
     /// yaratmaydi. Fiskal chek kerak bo'lsa — asl chek yoki /admin/fiscal-audit orqali.
     /// </summary>
-    private static ReceiptData ToReceiptData(SaleDto s) => new()
+    internal static ReceiptData ToReceiptData(SaleDto s) => new()
     {
         ReceiptNumber = s.ReceiptNumber,
         Date = s.CreatedAt.ToLocalTime(),
@@ -269,12 +269,15 @@ public partial class SalesHistoryWindow : Window
         Change = s.ChangeAmount,
         CardAmount = s.CardAmount,
         SaleId = s.Id,
+        LoyaltyPointsEarned = s.LoyaltyPointsEarned,
+        LoyaltyPointsRedeemed = s.LoyaltyPointsRedeemed,
         Lines = s.Items.Select(i => new ReceiptLine
         {
             Name = i.ProductName,
             Quantity = i.Quantity,
             Price = i.UnitPrice,
             LineTotal = i.LineTotal,
+            Discount = i.DiscountAmount,
             MxikCode = i.MxikCode,
             Unit = i.Unit,
             IsVat = i.VatPercent > 0,

@@ -104,6 +104,11 @@ public class ShopProfileService : IShopProfileService
             .Where(t => t.ShopUserId == shopUserId && t.RevokedAt == null).ToListAsync(ct);
         foreach (var t in tokens) t.RevokedAt = now;
 
+        // Push tokenlari — o'chirilgan akkauntga bildirishnoma bormasin.
+        var devices = await _db.ShopDeviceTokens.IgnoreQueryFilters()
+            .Where(d => d.ShopUserId == shopUserId).ToListAsync(ct);
+        _db.ShopDeviceTokens.RemoveRange(devices);
+
         // Do'konlardagi mijoz kartochkalari do'konniki — faqat bog'lanishni uzamiz.
         var customers = await _db.Customers.IgnoreQueryFilters()
             .Where(c => c.ShopUserId == shopUserId).ToListAsync(ct);

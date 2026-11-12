@@ -1,0 +1,7 @@
+# Nusxa oling: android/key.properties (bu fayl repoga KIRMAYDI).
+# storeFile — android/app papkasiga nisbatan yo'l yoki to'liq yo'l.
+# Parollarni hech qachon git'ga qo'ymang. Batafsil: mobile/docs/RELEASE.md
+storeFile=../upload-keystore.jks
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME

@@ -87,6 +87,10 @@ const navItems = [
   { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true, perm: 'customers.view', group: 'sales' },
   { name: 'debtors', key: 'nav.debtors', icon: '📕', admin: true, perm: 'debtors.view', group: 'sales' },
   { name: 'promotions', key: 'nav.promotions', icon: '🎉', admin: true, group: 'sales' },
+  { name: 'loyalty', key: 'nav.loyalty', icon: '💳', admin: true, perm: 'settings.manage', group: 'sales' },
+  { name: 'online-orders', key: 'nav.onlineOrders', icon: '📦', admin: true, perm: 'sales.view', storeOnly: true, group: 'sales' },
+  { name: 'promo-codes', key: 'nav.promoCodes', icon: '🎟️', admin: true, perm: 'settings.manage', storeOnly: true, group: 'sales' },
+  { name: 'online-store', key: 'nav.onlineStore', icon: '📱', admin: true, perm: 'settings.manage', storeOnly: true, group: 'sales' },
 
   // 2) Katalog va ombor
   { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view', group: 'catalog' },
@@ -121,13 +125,15 @@ const superNavItems = [
   { name: 'organizations', key: 'nav.organizations', icon: '🏢' },
   { name: 'admin-roles', key: 'nav.roles', icon: '🔑' },
   { name: 'audit', key: 'nav.audit', icon: '🛡️' },
-  { name: 'fiscal-audit', key: 'nav.fiscalAudit', icon: '🧾' }
+  { name: 'fiscal-audit', key: 'nav.fiscalAudit', icon: '🧾' },
+  { name: 'admin-online-stores', key: 'nav.onlineStores', icon: '📱' }
 ]
 
 function canSee(i) {
   if (i.admin && auth.role !== 'Admin') return false
   if (i.cashierOnly && auth.role === 'Admin') return false
   if (i.restaurantOnly && !auth.isRestaurant) return false
+  if (i.storeOnly && auth.isRestaurant) return false
   if (i.perm && !auth.hasPermission(i.perm)) return false
   return true
 }

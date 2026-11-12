@@ -203,6 +203,9 @@ public class OrganizationService : IOrganizationService
             throw new ConflictException($"'{username}' username allaqachon band.");
         }
 
+        await Courier.CourierRules.ValidateAsync(_db, request.Role, request.Phone, request.BranchId, orgId, ct);
+        var isCourier = request.Role == UserRole.Courier;
+
         var roleName = request.Role.ToString();
         var appRole = await _db.Roles
             .FirstOrDefaultAsync(r => r.OrganizationId == orgId && r.Name == roleName, ct);
@@ -217,9 +220,9 @@ public class OrganizationService : IOrganizationService
             AppRoleId = appRole?.Id,
             OrganizationId = orgId,
             BranchId = request.BranchId,
-            TerminalId = TerminalIdentity.Normalize(request.TerminalId),
+            TerminalId = isCourier ? null : TerminalIdentity.Normalize(request.TerminalId),
             IsActive = true,
-            LicensedUntil = request.LicenseMonths > 0 ? Today.AddMonths(request.LicenseMonths) : null
+            LicensedUntil = !isCourier && request.LicenseMonths > 0 ? Today.AddMonths(request.LicenseMonths) : null
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
@@ -245,6 +248,8 @@ public class OrganizationService : IOrganizationService
         if (await _db.Users.AnyAsync(u => u.Username == username && u.Id != userId, ct))
             throw new ConflictException($"'{username}' username allaqachon band.");
 
+        await Courier.CourierRules.ValidateAsync(_db, request.Role, request.Phone, request.BranchId, user.OrganizationId, ct);
+
         // Rol o'zgargan bo'lsa — shu tashkilotning mos AppRole'ini topamiz.
         if (request.Role != user.Role)
         {
@@ -260,7 +265,7 @@ public class OrganizationService : IOrganizationService
         user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
         user.Role = request.Role;
         user.BranchId = request.BranchId;
-        user.TerminalId = TerminalIdentity.Normalize(request.TerminalId);
+        user.TerminalId = request.Role == UserRole.Courier ? null : TerminalIdentity.Normalize(request.TerminalId);
 
         if (!string.IsNullOrWhiteSpace(request.NewPassword))
         {

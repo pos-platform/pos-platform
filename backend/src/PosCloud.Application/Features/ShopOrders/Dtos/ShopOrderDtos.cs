@@ -19,15 +19,25 @@ public class ShopOrderQuoteRequest
 
     [MaxLength(100)]
     public List<ShopOrderItemRequest> Items { get; set; } = [];
+
+    /// <summary>Promokod (ixtiyoriy). Yaroqsiz bo'lsa quote'da promoMessage, yaratishda 400.</summary>
+    [MaxLength(50)]
+    public string? PromoCode { get; set; }
+
+    /// <summary>Bonus (ball) bilan to'lash — faqat kirgan mijoz va do'konda yoqilgan bo'lsa.</summary>
+    public bool UseBonus { get; set; }
+
+    /// <summary>Yetkazishda majburiy (yaratishda): mijozning saqlangan manzili. Quote'da — yetkazish hududini tekshirish uchun.</summary>
+    public Guid? AddressId { get; set; }
 }
 
 public class CreateShopOrderRequest : ShopOrderQuoteRequest
 {
-    /// <summary>Yetkazishda majburiy: mijozning saqlangan manzili.</summary>
-    public Guid? AddressId { get; set; }
-
     /// <summary>Cash, Card (kuryer terminali) yoki Transfer.</summary>
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+
+    /// <summary>Transfer + Payme/Click: yig'ilgandan keyin online to'lov (karta raqami ko'rsatilmaydi).</summary>
+    public PaymentProvider? OnlinePaymentProvider { get; set; }
 
     /// <summary>Null — imkon qadar tez. UTC.</summary>
     public DateTime? ScheduledFor { get; set; }
@@ -38,6 +48,10 @@ public class CreateShopOrderRequest : ShopOrderQuoteRequest
     public string? Comment { get; set; }
 
     public OutOfStockPolicy OutOfStockPolicy { get; set; } = OutOfStockPolicy.CallMe;
+
+    /// <summary>Idempotentlik kaliti (ilova har yangi buyurtma uchun yaratadi). Shu kalit bilan buyurtma bo'lsa — o'sha qaytariladi.</summary>
+    [MaxLength(64)]
+    public string? ClientRequestId { get; set; }
 }
 
 public class CancelShopOrderRequest
@@ -84,6 +98,19 @@ public class ShopOrderQuoteDto
 
     /// <summary>Umumiy to'siq (do'kon yopiq, usul o'chirilgan) — foydalanuvchiga ko'rsatiladigan matn.</summary>
     public string? Message { get; set; }
+
+    /// <summary>Promokod chegirmasi; yaroqsiz bo'lsa 0 va promoMessage'da sabab.</summary>
+    public decimal PromoDiscount { get; set; }
+    public string? PromoMessage { get; set; }
+
+    /// <summary>Mijozning shu do'kondagi balli va shu buyurtmada ishlatiladigan qismi.</summary>
+    public decimal BonusAvailable { get; set; }
+    public decimal BonusUsed { get; set; }
+
+    /// <summary>Yetkazish hududi: false — manzil radiusdan tashqarida (buyurtma berilmaydi).</summary>
+    public bool DeliveryAvailable { get; set; } = true;
+    public string? DeliveryMessage { get; set; }
+    public double? DistanceKm { get; set; }
 }
 
 public class ShopOrderItemDto
@@ -151,6 +178,20 @@ public class ShopOrderDto : ShopOrderSummaryDto
     public DateTime? CancelledAt { get; set; }
     public string? CancelReason { get; set; }
     public DateTime? PaymentConfirmedAt { get; set; }
+    public DateTime? PickingStartedAt { get; set; }
+
+    public string? CourierName { get; set; }
+    public string? CourierPhone { get; set; }
+
+    /// <summary>Savdo cheki raqami ("Ready"dan keyin).</summary>
+    public string? ReceiptNumber { get; set; }
+
+    /// <summary>Fiskal chekning QR havolasi (ofd.uz). Null — chek hali fiskallashmagan yoki nofiskal.</summary>
+    public string? FiscalQrUrl { get; set; }
+
+    /// <summary>Taxminiy yetkazish oralig'i (UTC). Faqat yetkazishda, tugamagan buyurtmada va do'kon vaqtni kiritgan bo'lsa.</summary>
+    public DateTime? EstimatedDeliveryFrom { get; set; }
+    public DateTime? EstimatedDeliveryTo { get; set; }
 
     /// <summary>Mijoz hali bekor qila oladimi (Picking'gacha).</summary>
     public bool CanCancel { get; set; }
@@ -162,4 +203,34 @@ public class ShopOrderDto : ShopOrderSummaryDto
     /// <summary>O'tkazma uchun karta — faqat Transfer usulida va yakuniy summa ma'lum bo'lgach (Ready'dan) ko'rsatiladi.</summary>
     public string? TransferCardNumber { get; set; }
     public string? TransferCardHolder { get; set; }
+
+    public string? PromoCode { get; set; }
+    public decimal PromoDiscount { get; set; }
+    public decimal BonusUsed { get; set; }
+
+    /// <summary>Transfer + Payme/Click tanlangan bo'lsa — provayder.</summary>
+    public PaymentProvider? OnlinePaymentProvider { get; set; }
+
+    /// <summary>Hozir online to'lash mumkinmi (do'kon ruxsati, to'lanmagan, yig'ilgan, savdo bor).</summary>
+    public bool CanPayOnline { get; set; }
+
+    /// <summary>Mavjud provayderlar: "Payme", "Click".</summary>
+    public List<string> OnlineProviders { get; set; } = [];
+}
+
+/// <summary>Online to'lov havolasi so'rovi.</summary>
+public class PayShopOrderRequest
+{
+    public PaymentProvider Provider { get; set; }
+}
+
+public class PayShopOrderResponse
+{
+    public string PaymentUrl { get; set; } = string.Empty;
+}
+
+/// <summary>GET /api/me/bonus javobi.</summary>
+public class ShopBonusDto
+{
+    public decimal Points { get; set; }
 }

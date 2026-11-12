@@ -45,6 +45,13 @@ public class RefreshTokenRequest
     public string RefreshToken { get; set; } = string.Empty;
 }
 
+/// <summary>Chiqish: refresh token + ixtiyoriy shu qurilmaning push tokeni (o'chiriladi).</summary>
+public class LogoutRequest : RefreshTokenRequest
+{
+    [MaxLength(512)]
+    public string? DeviceToken { get; set; }
+}
+
 public class ShopAuthResponse
 {
     public string AccessToken { get; set; } = string.Empty;

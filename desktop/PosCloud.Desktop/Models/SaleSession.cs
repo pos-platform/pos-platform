@@ -10,4 +10,10 @@ public class SaleSession
     /// <summary>Standart to'lov turi — karta.</summary>
     public string PaymentMethod { get; set; } = "Card";
     public Guid? DebtorId { get; set; }
+
+    /// <summary>Bonus karta (QR) orqali biriktirilgan mijoz — shu savdo tabiga tegishli.</summary>
+    public LoyaltyCustomerDto? Customer { get; set; }
+
+    /// <summary>Kassir kiritgan "ball bilan to'lash" summasi (cheklanmagan xom qiymat).</summary>
+    public decimal RedeemPoints { get; set; }
 }

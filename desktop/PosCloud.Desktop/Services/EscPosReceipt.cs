@@ -87,6 +87,8 @@ public static class EscPosReceipt
                 Line(ln);
             Write(BOLD_OFF);
             Line(ReceiptLayout.ItemVatRow(l, printWidth));
+            if (ReceiptLayout.ItemDiscountRow(l) is { } disc)
+                Line(disc);
 
             if (showCodes)
                 foreach (var ln in ReceiptLayout.ItemDetailRows(l, printWidth))
@@ -95,6 +97,8 @@ public static class EscPosReceipt
             Divider();
         }
 
+        foreach (var ln in ReceiptLayout.RedeemRows(r))
+            Line(ln);
         Write(BOLD_ON);
         Write(DOUBLE);
         Line($"JAMI: {r.Total:N0} so'm");
@@ -107,6 +111,15 @@ public static class EscPosReceipt
         Line($"Berilgan: {r.Paid:N0}");
         Line($"Qaytim: {r.Change:N0}");
         Divider();
+
+        // Bonus karta bloki (mijoz biriktirilgan bo'lsa).
+        var loyalty = ReceiptLayout.LoyaltyRows(r).ToList();
+        if (loyalty.Count > 0)
+        {
+            foreach (var ln in loyalty)
+                Line(ln);
+            Divider();
+        }
 
         // Fiskal belgi + QR (agent fiskalizatsiya qilgach to'ladi).
         // Tashqi fiskal qurilma (ФМ/fleshka) QR'ni o'zi chiqarsa, POS QR'ni bosmaydi —

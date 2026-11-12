@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
+using PosCloud.Application.Features.Loyalty;
 using PosCloud.Application.Features.OnlineOrders.Dtos;
 using PosCloud.Application.Features.Promotions;
 using PosCloud.Application.Features.Sales;
@@ -13,7 +14,8 @@ namespace PosCloud.Application.Features.OnlineOrders;
 
 public interface IOnlineOrderService
 {
-    Task<IReadOnlyList<OnlineOrderDto>> GetListAsync(Guid? branchId, bool activeOnly, DateTime? from, CancellationToken ct = default);
+    Task<IReadOnlyList<OnlineOrderDto>> GetListAsync(Guid? branchId, bool activeOnly, DateTime? from,
+        DateTime? to = null, OnlineOrderStatus? status = null, CancellationToken ct = default);
     Task<OnlineOrderDto> GetAsync(Guid id, CancellationToken ct = default);
     Task<OnlineOrderDto> AcceptAsync(Guid id, CancellationToken ct = default);
     Task<OnlineOrderDto> RejectAsync(Guid id, string reason, CancellationToken ct = default);
@@ -21,8 +23,20 @@ public interface IOnlineOrderService
     Task<OnlineOrderDto> UpdatePickingAsync(Guid id, UpdatePickingRequest request, CancellationToken ct = default);
     Task<OnlineOrderDto> ReadyAsync(Guid id, ReadyOnlineOrderRequest request, CancellationToken ct = default);
     Task<OnlineOrderDto> PaymentReceivedAsync(Guid id, CancellationToken ct = default);
-    Task<OnlineOrderDto> DispatchAsync(Guid id, CancellationToken ct = default);
+    Task<OnlineOrderDto> DispatchAsync(Guid id, DispatchOnlineOrderRequest? request = null, CancellationToken ct = default);
     Task<OnlineOrderDto> DeliveredAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Do'kon tomonidan bekor qilish (Ready, AwaitingTransfer, ReadyForPickup, OnTheWay): savdo qaytariladi.</summary>
+    Task<OnlineOrderDto> CancelAsync(Guid id, string reason, CancellationToken ct = default);
+
+    /// <summary>Faol kuryerlar (filial bo'yicha) va ulardagi yo'ldagi buyurtmalar soni.</summary>
+    Task<IReadOnlyList<CourierListItemDto>> GetCouriersAsync(Guid? branchId, CancellationToken ct = default);
+
+    /// <summary>Kuryer naqdni topshirdi: kassa kirimi ("Online #N — kuryer topshirdi").</summary>
+    Task<OnlineOrderDto> CashHandoverAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Kuryerda turgan (topshirilmagan) naqdlar.</summary>
+    Task<IReadOnlyList<CourierCashItemDto>> GetCourierCashAsync(Guid? branchId, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -47,7 +61,7 @@ public class OnlineOrderService : IOnlineOrderService
     }
 
     public async Task<IReadOnlyList<OnlineOrderDto>> GetListAsync(Guid? branchId, bool activeOnly, DateTime? from,
-        CancellationToken ct = default)
+        DateTime? to = null, OnlineOrderStatus? status = null, CancellationToken ct = default)
     {
         IQueryable<OnlineOrder> query = Scope().AsNoTracking()
             .Include(o => o.Branch)
@@ -58,12 +72,23 @@ public class OnlineOrderService : IOnlineOrderService
         if (effectiveBranch is { } b)
             query = query.Where(o => o.BranchId == b);
 
-        if (activeOnly)
+        if (status is { } st)
+            query = query.Where(o => o.Status == st);
+
+        // Holat berilsa — faol filtri o'rniga sana oralig'i ishlaydi (masalan, tarixdagi bekor qilinganlar).
+        if (activeOnly && status is null)
             query = query.Where(o => !OnlineOrderRules.FinishedStatuses.Contains(o.Status));
         else
         {
             var since = DateTime.SpecifyKind((from ?? DateTime.UtcNow.AddDays(-7)).Date, DateTimeKind.Utc);
             query = query.Where(o => o.CreatedAt >= since);
+        }
+
+        if (to is { } toDate)
+        {
+            // "to" kun bo'yicha, shu kun ham kiradi.
+            var until = DateTime.SpecifyKind(toDate.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(o => o.CreatedAt < until);
         }
 
         var orders = await query.OrderByDescending(o => o.CreatedAt).Take(500).ToListAsync(ct);
@@ -108,6 +133,7 @@ public class OnlineOrderService : IOnlineOrderService
         order.Status = OnlineOrderStatus.Rejected;
         order.CancelledAt = DateTime.UtcNow;
         order.CancelReason = reason.Trim();
+        await OnlineOrderPricing.ReleasePromoAsync(_db, order, ct);
 
         await SaveAndNotify(order, ct);
         return await GetAsync(id, ct);
@@ -119,6 +145,7 @@ public class OnlineOrderService : IOnlineOrderService
         Require(order, OnlineOrderStatus.Accepted);
 
         order.Status = OnlineOrderStatus.Picking;
+        order.PickingStartedAt = DateTime.UtcNow;
         await SaveAndNotify(order, ct);
         return await GetAsync(id, ct);
     }
@@ -148,7 +175,15 @@ public class OnlineOrderService : IOnlineOrderService
 
             item.IsRemoved = false;
             item.PickedQuantity = change.PickedQuantity;
+
+            if (change.MarkingCodes is not null)
+                item.MarkingCodes = NormalizeMarkingCodes(item, change.MarkingCodes);
         }
+
+        // Bir xil kod buyurtmaning ikki qatorida bo'lmasin.
+        var allCodes = order.Items.Where(i => !i.IsRemoved).SelectMany(i => i.MarkingCodes).ToList();
+        if (allCodes.Count != allCodes.Distinct(StringComparer.Ordinal).Count())
+            throw new ValidationException("Bir markirovka kodi ikki marta skanerlangan.");
 
         if (request.Add.Count > 0)
         {
@@ -192,7 +227,7 @@ public class OnlineOrderService : IOnlineOrderService
             }
         }
 
-        Recalculate(order);
+        await RecalculateAsync(order, ct);
         await OnlineOrderRules.AdjustReservationAsync(_db, order, +1, ct);
 
         await SaveAndNotify(order, ct);
@@ -208,16 +243,120 @@ public class OnlineOrderService : IOnlineOrderService
         if (lines.Count == 0)
             throw new ValidationException("Buyurtmada mahsulot qolmadi. Rad eting yoki mahsulot qo'shing.");
 
-        Recalculate(order);
-
         // Idempotentlik: javob kelmay qayta bosilsa ikkinchi savdo yaratilmaydi (SaleService avvalgisini qaytaradi).
         var clientSaleId = $"online:{order.Id:N}";
         var saleExists = await _db.Sales.AnyAsync(s => s.ClientSaleId == clientSaleId, ct);
 
-        // Rezervni bo'shatamiz — savdo esa ombordan haqiqiy miqdorni ayiradi. Ikkalasi bitta SaveChanges'da saqlanadi.
-        // Savdo avvalroq yaratilgan bo'lsa, rezerv o'shanda bo'shatilgan.
+        var settings = await _db.OnlineStoreSettings.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.OrganizationId == order.OrganizationId, ct);
+
+        // Yetkazish narxi fiskal chekda: MXIK kiritilgan va narx > 0 bo'lsa — yashirin "Yetkazib berish xizmati" mahsuloti.
+        // Mahsulot SaleService uni bazadan o'qishi uchun oldindan saqlanadi (buyurtma hali o'zgartirilmagan).
+        Product? deliveryProduct = null;
+        var deliveryMxik = settings?.DeliveryServiceMxikCode?.Trim();
+        if (!saleExists && order.FulfillmentType == FulfillmentType.Delivery && order.DeliveryFee > 0
+            && !string.IsNullOrEmpty(deliveryMxik))
+            deliveryProduct = await EnsureDeliveryProductAsync(order.OrganizationId!.Value, deliveryMxik, ct);
+
+        await RecalculateAsync(order, ct);
+
+        // Markirovka: har markirovkali qatorda kodlar soni = butun miqdor.
+        foreach (var i in lines.Where(i => i.Product?.IsMarked == true))
+        {
+            var need = (int)Math.Ceiling(OnlineOrderRules.ReservedQuantity(i));
+            if (i.MarkingCodes.Count != need)
+                throw new ValidationException(
+                    $"\"{i.ProductName}\" markirovkali tovar — {need} ta DataMatrix kod kerak, skanerlangan: {i.MarkingCodes.Count}.");
+        }
+
+        Customer? customer = null;
         if (!saleExists)
+        {
+            // Bonus: "Tayyor" paytidagi ball bilan qayta tekshiramiz — kam bo'lsa borini ishlatamiz va summani qayta hisoblaymiz.
+            if (order.BonusUsed > 0)
+            {
+                customer = order.CustomerId is { } cid
+                    ? await _db.Customers.FirstOrDefaultAsync(c => c.Id == cid, ct)
+                    : null;
+                var available = Math.Max(0, Math.Floor(customer?.LoyaltyPoints ?? 0));
+                if (order.BonusUsed > available)
+                {
+                    order.BonusUsed = available;
+                    order.TotalAmount = order.ItemsTotal - order.PromoDiscount - order.BonusUsed + order.DeliveryFee;
+                }
+            }
+
+            // Rezervni bo'shatamiz — savdo esa ombordan haqiqiy miqdorni ayiradi. Ikkalasi bitta SaveChanges'da saqlanadi.
+            // Savdo avvalroq yaratilgan bo'lsa, rezerv o'shanda bo'shatilgan.
             await OnlineOrderRules.AdjustReservationAsync(_db, order, -1, ct);
+        }
+
+        // Savdo qatorlari: markirovkali tovar — har kod alohida qator (miqdor 1).
+        var saleItems = new List<CreateSaleItemRequest>();
+        foreach (var i in lines)
+        {
+            if (i.Product?.IsMarked == true)
+                saleItems.AddRange(i.MarkingCodes.Select(code => new CreateSaleItemRequest
+                {
+                    ProductId = i.ProductId,
+                    Quantity = 1,
+                    UnitPriceOverride = i.UnitPrice,
+                    MarkingCode = code
+                }));
+            else
+                saleItems.Add(new CreateSaleItemRequest
+                {
+                    ProductId = i.ProductId,
+                    Quantity = OnlineOrderRules.ReservedQuantity(i),
+                    UnitPriceOverride = i.UnitPrice
+                });
+        }
+
+        // Promokod + bonus chegirmasi qatorlarga mutanosib taqsimlanadi (fiskal chek summasi to'g'ri bo'lishi uchun).
+        var grosses = saleItems.Select(l => Round2(l.UnitPriceOverride!.Value * l.Quantity)).ToList();
+        var discounts = OnlineOrderPricing.Distribute(grosses, order.PromoDiscount + order.BonusUsed);
+        for (var k = 0; k < saleItems.Count; k++)
+            saleItems[k].DiscountAmount = discounts[k];
+        var expectedTotal = grosses.Sum() - discounts.Sum();
+
+        if (deliveryProduct is not null)
+        {
+            saleItems.Add(new CreateSaleItemRequest
+            {
+                ProductId = deliveryProduct.Id,
+                Quantity = 1,
+                UnitPriceOverride = order.DeliveryFee
+            });
+            expectedTotal += Round2(order.DeliveryFee);
+        }
+
+        if (!saleExists)
+        {
+            if (order.BonusUsed > 0 && customer is not null)
+            {
+                // Ball yuqorida joriy balans bilan qisqartirilgan — Apply to'liq yozadi (Redeem, Online).
+                LoyaltyRules.Apply(_db, customer, -order.BonusUsed, LoyaltyTransactionType.Redeem, LoyaltySource.Online,
+                    order.BonusUsed, $"Online #{order.Number} — bonus bilan to'lov");
+                order.BonusCharged = true;
+            }
+
+            // Kuryer naqdi: savdo naqd deb smenaga yoziladi, lekin pul kuryerda — shu summaga chiqim (topshirganda kirim).
+            if (order.FulfillmentType == FulfillmentType.Delivery && order.PaymentMethod == PaymentMethod.Cash
+                && order.PaymentStatus == OrderPaymentStatus.Unpaid)
+            {
+                var shiftId = await OpenShiftIdAsync(ct);
+                _db.CashMovements.Add(new CashMovement
+                {
+                    OrganizationId = order.OrganizationId,
+                    Type = CashMovementType.Expense,
+                    Amount = expectedTotal,
+                    Comment = $"Online #{order.Number} — naqd kuryerda",
+                    BranchId = order.BranchId,
+                    CashShiftId = shiftId
+                });
+                order.CourierCashExpected = true;
+            }
+        }
 
         var sale = await _sales.CreateAsync(new CreateSaleRequest
         {
@@ -226,17 +365,18 @@ public class OnlineOrderService : IOnlineOrderService
             TerminalId = request.TerminalId,
             Fiscalize = request.Fiscalize,
             PaymentMethod = order.PaymentMethod,
-            TransferSource = order.PaymentMethod == PaymentMethod.Transfer ? "Karta" : null,
+            TransferSource = order.PaymentMethod == PaymentMethod.Transfer
+                ? order.OnlinePaymentProvider?.ToString() ?? "Karta"
+                : null,
             CustomerId = order.CustomerId,
-            PaidAmount = Math.Round(order.ItemsTotal, 0, MidpointRounding.AwayFromZero),
+            PaidAmount = Math.Round(expectedTotal, 0, MidpointRounding.AwayFromZero),
             SkipPromotions = true,
-            Items = lines.Select(i => new CreateSaleItemRequest
-            {
-                ProductId = i.ProductId,
-                Quantity = OnlineOrderRules.ReservedQuantity(i),
-                UnitPriceOverride = i.UnitPrice
-            }).ToList()
+            Items = saleItems
         }, ct);
+
+        // Bonus tranzaksiyasini savdoga bog'laymiz (SaveAndNotify'da saqlanadi).
+        foreach (var tx in _db.LoyaltyTransactions.Local.Where(t => t.SaleId == null && t.Type == LoyaltyTransactionType.Redeem && t.CustomerId == order.CustomerId))
+            tx.SaleId = sale.Id;
 
         var now = DateTime.UtcNow;
         order.SaleId = sale.Id;
@@ -265,7 +405,8 @@ public class OnlineOrderService : IOnlineOrderService
         return await GetAsync(id, ct);
     }
 
-    public async Task<OnlineOrderDto> DispatchAsync(Guid id, CancellationToken ct = default)
+    public async Task<OnlineOrderDto> DispatchAsync(Guid id, DispatchOnlineOrderRequest? request = null,
+        CancellationToken ct = default)
     {
         var order = await Load(id, ct);
         if (order.Status == OnlineOrderStatus.AwaitingTransfer)
@@ -274,10 +415,152 @@ public class OnlineOrderService : IOnlineOrderService
         if (order.FulfillmentType != FulfillmentType.Delivery)
             throw new ValidationException("Olib ketish buyurtmasi kuryerga berilmaydi.");
 
+        if (request?.CourierUserId is { } courierId)
+        {
+            // Biriktirilgan kuryer: ism/telefon foydalanuvchi kartochkasidan.
+            var courier = await _db.Users.AsNoTracking()
+                              .FirstOrDefaultAsync(u => u.Id == courierId && u.Role == UserRole.Courier && u.IsActive, ct)
+                          ?? throw new ValidationException("Kuryer topilmadi yoki faol emas.");
+            if (courier.BranchId is { } cb && cb != order.BranchId)
+                throw new ValidationException("Kuryer boshqa filialga biriktirilgan.");
+
+            order.CourierUserId = courier.Id;
+            order.CourierName = Trim(Courier.CourierRules.DisplayName(courier), 100);
+            order.CourierPhone = Trim(courier.Phone, 20);
+        }
+        else
+        {
+            order.CourierUserId = null;
+            order.CourierName = Trim(request?.CourierName, 100);
+            order.CourierPhone = Trim(request?.CourierPhone, 20);
+        }
+
         order.Status = OnlineOrderStatus.OnTheWay;
         order.DispatchedAt = DateTime.UtcNow;
 
         await SaveAndNotify(order, ct);
+        if (order.CourierUserId is not null)
+            await _notifier.CourierAssignedAsync(order, ct);
+        return await GetAsync(id, ct);
+    }
+
+    public async Task<IReadOnlyList<CourierListItemDto>> GetCouriersAsync(Guid? branchId, CancellationToken ct = default)
+    {
+        var query = _db.Users.AsNoTracking().Where(u => u.Role == UserRole.Courier && u.IsActive);
+        if ((_currentUser.BranchId ?? branchId) is { } b)
+            query = query.Where(u => u.BranchId == b);
+
+        return await query
+            .OrderBy(u => u.FullName ?? u.Username)
+            .Select(u => new CourierListItemDto
+            {
+                Id = u.Id,
+                Name = u.FullName ?? u.Username,
+                Phone = u.Phone,
+                ActiveOrders = _db.OnlineOrders.Count(o => o.CourierUserId == u.Id && o.Status == OnlineOrderStatus.OnTheWay)
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<OnlineOrderDto> CashHandoverAsync(Guid id, CancellationToken ct = default)
+    {
+        var order = await Load(id, ct);
+        if (!order.CourierCashExpected || order.PaymentMethod != PaymentMethod.Cash)
+            throw new ValidationException("Bu buyurtma bo'yicha kuryerda naqd yo'q.");
+        if (order.CourierCashHandedOverAt is not null)
+            throw new ValidationException("Naqd allaqachon topshirilgan.");
+        if (order.Status != OnlineOrderStatus.Delivered)
+            throw new ValidationException("Buyurtma hali yetkazilmagan.");
+
+        var amount = order.CourierCashCollected ?? order.TotalAmount;
+        _db.CashMovements.Add(new CashMovement
+        {
+            OrganizationId = order.OrganizationId,
+            Type = CashMovementType.Income,
+            Amount = amount,
+            Comment = $"Online #{order.Number} — kuryer topshirdi",
+            BranchId = order.BranchId,
+            CashShiftId = await OpenShiftIdAsync(ct)
+        });
+        order.CourierCashHandedOverAt = DateTime.UtcNow;
+
+        await SaveAndNotify(order, ct);
+        return await GetAsync(id, ct);
+    }
+
+    public async Task<IReadOnlyList<CourierCashItemDto>> GetCourierCashAsync(Guid? branchId, CancellationToken ct = default)
+    {
+        var query = Scope().AsNoTracking()
+            .Where(o => o.CourierCashExpected && o.CourierCashHandedOverAt == null
+                        && o.Status == OnlineOrderStatus.Delivered);
+        if (_currentUser.BranchId is null && branchId is { } b)
+            query = query.Where(o => o.BranchId == b);
+
+        return await query
+            .OrderBy(o => o.DeliveredAt)
+            .Select(o => new CourierCashItemDto
+            {
+                OrderId = o.Id,
+                Number = o.Number,
+                CourierName = o.CourierName,
+                Amount = o.CourierCashCollected ?? o.TotalAmount,
+                DeliveredAt = o.DeliveredAt
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<OnlineOrderDto> CancelAsync(Guid id, string reason, CancellationToken ct = default)
+    {
+        var order = await Load(id, ct);
+        if (order.Status is OnlineOrderStatus.New or OnlineOrderStatus.Accepted or OnlineOrderStatus.Picking)
+            throw new ValidationException("Yig'ish tugamagan buyurtmani \"Rad etish\" orqali bekor qiling.");
+        Require(order, OnlineOrderStatus.Ready, OnlineOrderStatus.AwaitingTransfer,
+            OnlineOrderStatus.ReadyForPickup, OnlineOrderStatus.OnTheWay);
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ValidationException("Bekor qilish sababini kiriting.");
+
+        order.Status = OnlineOrderStatus.Cancelled;
+        order.CancelledAt = DateTime.UtcNow;
+        order.CancelReason = reason.Trim();
+        if (order.PaymentStatus == OrderPaymentStatus.Paid)
+            order.PaymentStatus = OrderPaymentStatus.Refunded;
+
+        await OnlineOrderPricing.ReleasePromoAsync(_db, order, ct);
+
+        // Yechilgan bonus mijozga qaytariladi.
+        if (order.BonusCharged && order.BonusUsed > 0 && order.CustomerId is { } customerId
+            && await _db.Customers.FirstOrDefaultAsync(c => c.Id == customerId, ct) is { } customer)
+        {
+            LoyaltyRules.Apply(_db, customer, order.BonusUsed, LoyaltyTransactionType.Refund, LoyaltySource.Online,
+                order.BonusUsed, $"Online #{order.Number} — bekor qilindi, bonus qaytarildi", saleId: order.SaleId);
+            order.BonusCharged = false;
+        }
+
+        // "Naqd kuryerda" chiqimi topshirilmasdan qolgan bo'lsa — savdo qaytarilishi (naqd chiqim) bilan ikki marta
+        // ayirilmasligi uchun shu summaga kirim yozamiz (smena hisobi to'g'ri qoladi).
+        if (order.CourierCashExpected && order.CourierCashHandedOverAt is null && order.Sale?.Status != SaleStatus.Refunded)
+        {
+            _db.CashMovements.Add(new CashMovement
+            {
+                OrganizationId = order.OrganizationId,
+                Type = CashMovementType.Income,
+                Amount = order.Sale?.TotalAmount ?? order.TotalAmount,
+                Comment = $"Online #{order.Number} — bekor qilindi (kuryer naqdi tuzatish)",
+                BranchId = order.BranchId,
+                CashShiftId = await OpenShiftIdAsync(ct)
+            });
+            order.CourierCashExpected = false;
+        }
+
+        // Savdo qaytariladi (ombor qoldig'i refund orqali qaytadi). RefundAsync o'zi SaveChanges qiladi —
+        // buyurtma o'zgarishlari ham shu tranzaksiyada saqlanadi. Savdo allaqachon qaytarilgan bo'lsa — faqat holat.
+        if (order.SaleId is { } saleId && order.Sale?.Status != SaleStatus.Refunded)
+            await _sales.RefundAsync(saleId, ct);
+        else
+            await _db.SaveChangesAsync(ct);
+
+        await _notifier.OrderChangedAsync(order, isNew: false, pushToCustomer: true, ct);
         return await GetAsync(id, ct);
     }
 
@@ -292,6 +575,9 @@ public class OnlineOrderService : IOnlineOrderService
                 throw new ValidationException("O'tkazma hali tasdiqlanmagan. Avval \"To'lov tushdi\"ni bosing.");
             // Naqd yoki terminal — topshirishda olinadi.
             MarkPaid(order);
+            // Naqd kuryerda bo'lsa — topshirish ("cash-handover") kutiladi.
+            if (order.PaymentMethod == PaymentMethod.Cash && order.CourierCashExpected)
+                order.CourierCashCollected ??= order.TotalAmount;
         }
 
         order.Status = OnlineOrderStatus.Delivered;
@@ -305,8 +591,10 @@ public class OnlineOrderService : IOnlineOrderService
 
     private async Task SaveAndNotify(OnlineOrder order, CancellationToken ct)
     {
+        // Push faqat holat haqiqatan o'zgarganda (yig'ish tahriri yoki oldindan to'lovda holat o'zgarmaydi).
+        var statusChanged = _db.OnlineOrders.Entry(order).Property(o => o.Status).IsModified;
         await _db.SaveChangesAsync(ct);
-        await _notifier.OrderChangedAsync(order, isNew: false, ct);
+        await _notifier.OrderChangedAsync(order, isNew: false, pushToCustomer: statusChanged, ct);
     }
 
     /// <summary>Tenant filtri ostidagi buyurtmalar; filialga biriktirilgan xodim — faqat o'z filiali.</summary>
@@ -336,20 +624,128 @@ public class OnlineOrderService : IOnlineOrderService
             throw new ValidationException($"Buyurtma holati \"{StatusText(order.Status)}\" — bu amalni bajarib bo'lmaydi.");
     }
 
+    private static string? Trim(string? s, int max)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return null;
+        s = s.Trim();
+        return s.Length > max ? s[..max] : s;
+    }
+
     private static void ValidateQuantity(decimal qty, bool isWeighed, string name)
     {
         if (qty <= 0 || qty > 10000 || decimal.Round(qty, 3) != qty || (!isWeighed && qty != Math.Floor(qty)))
             throw new ValidationException($"\"{name}\" miqdori noto'g'ri.");
     }
 
-    /// <summary>Yig'ilgan miqdor bo'yicha summa. Yetkazish narxi buyurtmadagi qiymatida qoladi.</summary>
-    private static void Recalculate(OnlineOrder order)
+    /// <summary>
+    /// Yig'ilgan miqdor bo'yicha summa. Yetkazish narxi buyurtmadagi qiymatida qoladi.
+    /// Promokod chegirmasi yangi mahsulotlar summasidan qayta hisoblanadi (foiz — qayta, summa — ko'pi bilan mahsulotlar summasi),
+    /// bonus esa qolgan summadan oshmaydi.
+    /// </summary>
+    private async Task RecalculateAsync(OnlineOrder order, CancellationToken ct)
     {
         foreach (var i in order.Items)
-            i.LineTotal = Math.Round(i.UnitPrice * OnlineOrderRules.ReservedQuantity(i), 2, MidpointRounding.AwayFromZero);
+            i.LineTotal = Round2(i.UnitPrice * OnlineOrderRules.ReservedQuantity(i));
 
         order.ItemsTotal = order.Items.Sum(i => i.LineTotal);
-        order.TotalAmount = order.ItemsTotal + order.DeliveryFee;
+
+        if (order.PromoCodeId is { } promoId)
+        {
+            var promo = await _db.PromoCodes.IgnoreQueryFilters().AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == promoId, ct);
+            order.PromoDiscount = promo is not null
+                ? OnlineOrderPricing.PromoDiscount(promo, order.ItemsTotal)
+                : Math.Min(order.PromoDiscount, order.ItemsTotal);
+        }
+        else
+        {
+            order.PromoDiscount = Math.Min(order.PromoDiscount, order.ItemsTotal);
+        }
+
+        order.BonusUsed = Math.Max(0, Math.Min(order.BonusUsed, Math.Floor(order.ItemsTotal - order.PromoDiscount)));
+        order.TotalAmount = order.ItemsTotal - order.PromoDiscount - order.BonusUsed + order.DeliveryFee;
+    }
+
+    private static decimal Round2(decimal v) => Math.Round(v, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Yig'ishda kiritilgan markirovka kodlari: bo'sh emas, takrorsiz, soni butun miqdordan oshmaydi.</summary>
+    private static List<string> NormalizeMarkingCodes(OnlineOrderItem item, List<string> codes)
+    {
+        if (item.Product?.IsMarked != true)
+        {
+            if (codes.Count == 0) return [];
+            throw new ValidationException($"\"{item.ProductName}\" markirovkali tovar emas.");
+        }
+
+        var list = codes.Select(c => c?.Trim() ?? string.Empty).ToList();
+        if (list.Any(c => c.Length == 0 || c.Length > 256))
+            throw new ValidationException($"\"{item.ProductName}\" uchun markirovka kodi noto'g'ri.");
+        if (list.Count != list.Distinct(StringComparer.Ordinal).Count())
+            throw new ValidationException($"\"{item.ProductName}\" uchun bir kod ikki marta skanerlangan.");
+
+        var need = (int)Math.Ceiling(OnlineOrderRules.ReservedQuantity(item));
+        if (list.Count > need)
+            throw new ValidationException($"\"{item.ProductName}\" uchun ko'pi bilan {need} ta kod kerak.");
+        return list;
+    }
+
+    /// <summary>Joriy xodimning ochiq smenasi (savdo va kassa harakatlari shu smenaga yoziladi).</summary>
+    private async Task<Guid> OpenShiftIdAsync(CancellationToken ct)
+    {
+        var userId = _currentUser.UserId ?? throw new UnauthorizedException("Joriy foydalanuvchi aniqlanmadi.");
+        return await _db.CashShifts.AsNoTracking()
+                   .Where(s => s.CashierId == userId && s.Status == ShiftStatus.Open)
+                   .Select(s => (Guid?)s.Id)
+                   .FirstOrDefaultAsync(ct)
+               ?? throw new ValidationException("Avval smenani oching (kassa sessiyasi).");
+    }
+
+    public const string DeliveryProductName = "Yetkazib berish xizmati";
+
+    /// <summary>
+    /// Tashkilotning yagona yashirin "Yetkazib berish xizmati" mahsuloti (ProductType.Service, ShowOnline=false).
+    /// Yo'q bo'lsa yaratiladi, MXIK sozlamadan yangilanadi. Darhol saqlanadi (SaleService bazadan o'qiydi).
+    /// </summary>
+    private async Task<Product> EnsureDeliveryProductAsync(Guid orgId, string mxik, CancellationToken ct)
+    {
+        var product = await _db.Products.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.OrganizationId == orgId && p.ProductType == ProductType.Service, ct);
+
+        if (product is not null)
+        {
+            if (product.MxikCode == mxik && !product.ShowOnline) return product;
+            product.MxikCode = mxik;
+            product.ShowOnline = false;
+            await _db.SaveChangesAsync(ct);
+            return product;
+        }
+
+        const string categoryName = "Xizmatlar";
+        var category = await _db.Categories.IgnoreQueryFilters()
+                           .FirstOrDefaultAsync(c => c.OrganizationId == orgId && c.Name == categoryName, ct)
+                       ?? _db.Categories.Add(new Category
+                       {
+                           OrganizationId = orgId,
+                           Name = categoryName,
+                           Note = "Avtomatik: online yetkazish xizmati"
+                       }).Entity;
+
+        product = new Product
+        {
+            OrganizationId = orgId,
+            Name = DeliveryProductName,
+            ProductType = ProductType.Service,
+            MxikCode = mxik,
+            Price = 0,
+            CostPrice = 0,
+            ShowOnline = false,
+            Unit = Unit.Piece,
+            Category = category,
+            CategoryId = category.Id
+        };
+        _db.Products.Add(product);
+        await _db.SaveChangesAsync(ct);
+        return product;
     }
 
     private async Task<bool> RequireTransferBeforeDispatch(OnlineOrder order, CancellationToken ct) =>

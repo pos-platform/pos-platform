@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.Customers.Dtos;
+using PosCloud.Application.Features.Loyalty;
 using PosCloud.Domain.Entities;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Application.Features.Customers;
 
@@ -77,17 +79,9 @@ public class CustomerService : ICustomerService
         var customer = await _db.Customers.FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Mijoz topilmadi: {id}");
 
-        customer.LoyaltyPoints += request.Points;
-        if (customer.LoyaltyPoints < 0) customer.LoyaltyPoints = 0;
-
-        var txn = new LoyaltyTransaction
-        {
-            CustomerId = id,
-            Points = request.Points,
-            Amount = 0,
-            Comment = request.Comment
-        };
-        _db.LoyaltyTransactions.Add(txn);
+        // Qo'lda tuzatish (Adjust). Manfiy tuzatish balansdan oshsa — 0 gacha.
+        LoyaltyRules.Apply(_db, customer, request.Points, LoyaltyTransactionType.Adjust, LoyaltySource.Store, 0,
+            request.Comment);
         await _db.SaveChangesAsync(cancellationToken);
 
         return CustomerDto.FromEntity(customer);

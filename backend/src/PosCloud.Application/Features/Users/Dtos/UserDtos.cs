@@ -8,6 +8,8 @@ public class UserDto
 {
     public Guid Id { get; set; }
     public string Username { get; set; } = string.Empty;
+    public string? FullName { get; set; }
+    public string? Phone { get; set; }
     public UserRole Role { get; set; }
     public Guid? AppRoleId { get; set; }
     public string? AppRoleName { get; set; }
@@ -24,6 +26,8 @@ public class UserDto
     {
         Id = u.Id,
         Username = u.Username,
+        FullName = u.FullName,
+        Phone = u.Phone,
         Role = u.Role,
         AppRoleId = u.AppRoleId,
         AppRoleName = u.AppRole?.Name,
@@ -65,6 +69,14 @@ public class CreateUserRequest
     [Required]
     [MinLength(6)]
     public string Password { get; set; } = string.Empty;
+
+    /// <summary>To'liq ism-sharif (ixtiyoriy).</summary>
+    [MaxLength(200)]
+    public string? FullName { get; set; }
+
+    /// <summary>Telefon raqami. Kuryer (Role = Courier) uchun majburiy.</summary>
+    [MaxLength(20)]
+    public string? Phone { get; set; }
 
     public UserRole Role { get; set; } = UserRole.Cashier;
 

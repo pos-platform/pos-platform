@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using PosCloud.Application.Features.ShopAuth;
 using Microsoft.AspNetCore.Mvc;
 using PosCloud.Api.Authentication;
 using PosCloud.Application.Common.Models;
@@ -25,8 +27,20 @@ public class ShopOrdersController : ControllerBase
     /// <summary>Savatcha hisobi: server narxi, qoldiq, yetkazish, minimal summa. Saqlamaydi; kirmasdan ham ishlaydi.</summary>
     [HttpPost("quote")]
     [AllowAnonymous]
-    public async Task<ActionResult<ShopOrderQuoteDto>> Quote(ShopOrderQuoteRequest request, CancellationToken ct) =>
-        Ok(await _service.QuoteAsync(request, ct));
+    public async Task<ActionResult<ShopOrderQuoteDto>> Quote(ShopOrderQuoteRequest request, CancellationToken ct)
+    {
+        // Token bo'lsa (ixtiyoriy) — bonus, promokod limiti va manzil hududi hisoblanadi.
+        Guid? shopUserId = null;
+        var auth = await HttpContext.AuthenticateAsync(ShopAuthDefaults.Scheme);
+        if (auth.Succeeded && auth.Principal.IsInRole(ShopRoles.Customer))
+            shopUserId = auth.Principal.GetShopUserId();
+        return Ok(await _service.QuoteAsync(request, shopUserId, ct));
+    }
+
+    /// <summary>Online to'lov (Payme/Click) havolasi — yakuniy summa ma'lum bo'lgach (canPayOnline).</summary>
+    [HttpPost("{id:guid}/pay")]
+    public async Task<ActionResult<PayShopOrderResponse>> Pay(Guid id, PayShopOrderRequest request, CancellationToken ct) =>
+        Ok(await _service.PayAsync(User.GetShopUserId(), id, request.Provider, ct));
 
     [HttpPost]
     public async Task<ActionResult<ShopOrderDto>> Create(CreateShopOrderRequest request, CancellationToken ct) =>

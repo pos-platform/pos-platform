@@ -31,6 +31,34 @@ public class OnlineStoreSettings : BaseEntity
     public bool AllowTransfer { get; set; } = true;
     public bool AllowCardOnDelivery { get; set; }
 
+    /// <summary>Online to'lov (yig'ilgandan keyin, yakuniy summa bo'yicha).</summary>
+    public bool AllowPayme { get; set; }
+    public bool AllowClick { get; set; }
+
+    // ---- SuperAdmin: alohida (white-label) mobil ilova ----
+
+    /// <summary>Ilova identifikatori (STORE_SLUG), unik, ^[a-z0-9-]{3,40}$.</summary>
+    public string? Slug { get; set; }
+
+    /// <summary>Ilova nomi (≤30). Bo'sh bo'lsa — DisplayName yoki tashkilot nomi.</summary>
+    public string? AppName { get; set; }
+
+    /// <summary>Android applicationId / iOS bundle id, unik.</summary>
+    public string? AppPackageId { get; set; }
+
+    /// <summary>Brend rangi (#RRGGBB).</summary>
+    public string? BrandColor { get; set; }
+
+    public int? AndroidMinBuild { get; set; }
+    public int? AndroidLatestBuild { get; set; }
+    public string? AndroidLatestVersion { get; set; }
+    public string? AndroidStoreUrl { get; set; }
+
+    public int? IosMinBuild { get; set; }
+    public int? IosLatestBuild { get; set; }
+    public string? IosLatestVersion { get; set; }
+    public string? IosStoreUrl { get; set; }
+
     // ---- Do'kon admini ----
 
     /// <summary>Hozir buyurtma qabul qilinadimi (band bo'lsa vaqtincha yopiladi).</summary>
@@ -59,4 +87,21 @@ public class OnlineStoreSettings : BaseEntity
 
     /// <summary>True — o'tkazma kuryerga berishdan oldin tasdiqlanishi shart. False — eshik oldida ham mumkin.</summary>
     public bool RequireTransferBeforeDispatch { get; set; } = true;
+
+    /// <summary>Taxminiy yetkazish vaqti oralig'i (daqiqa). Ikkalasi birga yoki ikkalasi null.</summary>
+    public int? DeliveryMinMinutes { get; set; }
+    public int? DeliveryMaxMinutes { get; set; }
+
+    /// <summary>"Yangi" buyurtma shuncha daqiqada qabul qilinmasa avtomatik bekor qilinadi. 0 — o'chiq.</summary>
+    public int AutoCancelMinutes { get; set; } = 30;
+
+    /// <summary>Yetkazish radiusi (filialdan, km). Null — cheklovsiz.</summary>
+    public double? DeliveryRadiusKm { get; set; }
+
+    /// <summary>"Yetkazib berish xizmati" MXIK kodi. Kiritilsa yetkazish narxi fiskal chekka alohida qator bo'lib tushadi.</summary>
+    public string? DeliveryServiceMxikCode { get; set; }
+
+    /// <summary>Bonus (ball) bilan to'lash yoqilganmi va mahsulotlar summasining ko'pi bilan necha foizi.</summary>
+    public bool BonusPayEnabled { get; set; }
+    public int BonusMaxPercent { get; set; }
 }

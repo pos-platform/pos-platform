@@ -9,5 +9,12 @@ namespace PosCloud.Application.Common.Interfaces;
 /// </summary>
 public interface IOnlineOrderNotifier
 {
-    Task OrderChangedAsync(OnlineOrder order, bool isNew, CancellationToken ct = default);
+    /// <param name="pushToCustomer">
+    /// true — do'kon holatni o'zgartirdi, mijozga push bildirishnoma ham yuboriladi (navbat orqali, so'rovni kutdirmaydi).
+    /// Yangi buyurtma, mijozning o'z amali (bekor qilish, chek yuklash) yoki holat o'zgarmagan bo'lsa — false.
+    /// </param>
+    Task OrderChangedAsync(OnlineOrder order, bool isNew, bool pushToCustomer, CancellationToken ct = default);
+
+    /// <summary>Buyurtma kuryerga biriktirildi — kuryer guruhiga (<c>courier:{userId}</c>) <c>CourierOrderAssigned</c>.</summary>
+    Task CourierAssignedAsync(OnlineOrder order, CancellationToken ct = default);
 }

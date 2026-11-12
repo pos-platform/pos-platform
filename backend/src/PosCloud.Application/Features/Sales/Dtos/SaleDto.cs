@@ -36,6 +36,9 @@ public class SaleDto
     public decimal CardAmount { get; set; }
     public Guid? CustomerId { get; set; }
     public decimal LoyaltyPointsEarned { get; set; }
+
+    /// <summary>Kassada ball bilan to'langan summa.</summary>
+    public decimal LoyaltyPointsRedeemed { get; set; }
     public Guid? TableId { get; set; }
     public Guid? WaiterId { get; set; }
     public int? GuestCount { get; set; }
@@ -69,6 +72,7 @@ public class SaleDto
         CardAmount = s.CardAmount,
         CustomerId = s.CustomerId,
         LoyaltyPointsEarned = s.LoyaltyPointsEarned,
+        LoyaltyPointsRedeemed = s.LoyaltyPointsRedeemed,
         TableId = s.TableId,
         WaiterId = s.WaiterId,
         GuestCount = s.GuestCount,

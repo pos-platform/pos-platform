@@ -7,6 +7,7 @@ using PosCloud.Infrastructure.Excel;
 using PosCloud.Infrastructure.Fiscal;
 using PosCloud.Infrastructure.Otp;
 using PosCloud.Infrastructure.Persistence;
+using PosCloud.Infrastructure.Push;
 
 namespace PosCloud.Infrastructure;
 
@@ -33,12 +34,24 @@ public static class DependencyInjection
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
 
+        // Bonus karta: dinamik QR imzosi (Loyalty:QrSigningKey yoki JWT kalitidan hosila).
+        services.AddSingleton<ILoyaltyQrSigner, LoyaltyQrSigner>();
+
         // Mobil ilova: mijoz tokeni va kirish kodi (Telegram Gateway → Eskiz SMS).
         services.AddSingleton<IShopTokenGenerator, ShopTokenGenerator>();
         services.Configure<OtpSettings>(configuration.GetSection(OtpSettings.SectionName));
         services.AddHttpClient<TelegramGatewayClient>();
         services.AddHttpClient<EskizSmsClient>();
         services.AddScoped<IOtpSender, OtpSender>();
+
+        // Mobil ilova: push bildirishnomalar (FCM HTTP v1). Sozlanmagan bo'lsa — faqat log.
+        services.Configure<PushSettings>(configuration.GetSection(PushSettings.SectionName));
+        services.AddHttpClient(FcmPushSender.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15));
+        var push = configuration.GetSection(PushSettings.SectionName).Get<PushSettings>() ?? new PushSettings();
+        if (push.Fcm.IsConfigured)
+            services.AddSingleton<IPushSender, FcmPushSender>();
+        else
+            services.AddSingleton<IPushSender, LogPushSender>();
 
         // Fiskalizatsiya seam'i — hozir placeholder. Keyin lokal agent (FDS/Rahmat MK)
         // bilan ishlaydigan implementatsiya bilan almashtiriladi.

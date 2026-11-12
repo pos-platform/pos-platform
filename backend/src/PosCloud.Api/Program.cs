@@ -43,7 +43,17 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
         options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+// Mijozga push: navbat + fon vazifa (FCM so'rovni kutdirmaydi).
+builder.Services.AddSingleton<PosCloud.Api.Background.OrderPushQueue>();
+builder.Services.AddHostedService<PosCloud.Api.Background.OrderPushService>();
 builder.Services.AddSingleton<IOnlineOrderNotifier, PosCloud.Api.Hubs.SignalROnlineOrderNotifier>();
+
+// Fon vazifa: eskirgan mijoz OTP va refresh tokenlarini tozalash.
+builder.Services.AddHostedService<PosCloud.Api.Background.ShopCleanupService>();
+// Fon vazifa: do'kon belgilangan vaqtda qabul qilmagan "Yangi" online buyurtmalarni bekor qilish (har daqiqa).
+builder.Services.AddHostedService<PosCloud.Api.Background.OnlineOrderAutoCancelService>();
+// Fon vazifa: faolsizlik tufayli bonus ball muddati (kuniga bir marta).
+builder.Services.AddHostedService<PosCloud.Api.Background.LoyaltyExpiryService>();
 
 // --- Controllerlar + enum'larni string sifatida (JSON) ---
 builder.Services.AddControllers()

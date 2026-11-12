@@ -13,11 +13,37 @@ public class OnlinePaymentService : IOnlinePaymentService
 {
     private readonly IApplicationDbContext _db;
     private readonly IPaymentGatewaySettings _settings;
+    private readonly IOnlineOrderNotifier _notifier;
 
-    public OnlinePaymentService(IApplicationDbContext db, IPaymentGatewaySettings settings)
+    public OnlinePaymentService(IApplicationDbContext db, IPaymentGatewaySettings settings, IOnlineOrderNotifier notifier)
     {
         _db = db;
         _settings = settings;
+        _notifier = notifier;
+    }
+
+    /// <summary>
+    /// To'lov tasdiqlangach: shu savdoga bog'langan online buyurtma (bo'lsa) to'langan deb belgilanadi,
+    /// "O'tkazma kutilmoqda" bo'lsa Ready/ReadyForPickup ga o'tadi, xodim va mijozga xabar (push) yuboriladi.
+    /// Callback'da tashkilot konteksti yo'q — IgnoreQueryFilters.
+    /// </summary>
+    private async Task MarkOnlineOrderPaidAsync(OnlinePayment payment, CancellationToken ct)
+    {
+        var order = await _db.OnlineOrders.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(o => o.SaleId == payment.SaleId, ct);
+        if (order is null || order.PaymentStatus != OrderPaymentStatus.Unpaid
+            || order.Status is OnlineOrderStatus.Rejected or OnlineOrderStatus.Cancelled)
+            return;
+
+        order.PaymentStatus = OrderPaymentStatus.Paid;
+        order.PaymentConfirmedAt = DateTime.UtcNow;
+        if (order.Status == OnlineOrderStatus.AwaitingTransfer)
+            order.Status = order.FulfillmentType == FulfillmentType.Pickup
+                ? OnlineOrderStatus.ReadyForPickup
+                : OnlineOrderStatus.Ready;
+
+        await _db.SaveChangesAsync(ct);
+        await _notifier.OrderChangedAsync(order, isNew: false, pushToCustomer: true, ct);
     }
 
     public async Task<OnlinePaymentDto> CreateAsync(CreateOnlinePaymentRequest request, CancellationToken cancellationToken = default)
@@ -35,9 +61,11 @@ public class OnlinePaymentService : IOnlinePaymentService
 
         var payment = new OnlinePayment
         {
+            // Mijoz (mobil) kontekstida joriy tashkilot yo'q — savdo tashkilotiga biriktiramiz.
+            OrganizationId = sale.OrganizationId,
             SaleId = request.SaleId,
             Provider = request.Provider,
-            Amount = sale.TotalAmount,
+            Amount = request.AmountOverride ?? sale.TotalAmount,
             Status = OnlinePaymentStatus.Pending
         };
 
@@ -80,6 +108,7 @@ public class OnlinePaymentService : IOnlinePaymentService
         p.PaidAt = DateTime.UtcNow;
         if (externalId != null) p.ExternalId = externalId;
         await _db.SaveChangesAsync(cancellationToken);
+        await MarkOnlineOrderPaidAsync(p, cancellationToken);
 
         return OnlinePaymentDto.FromEntity(p);
     }
@@ -176,6 +205,7 @@ public class OnlinePaymentService : IOnlinePaymentService
         payment.Status = OnlinePaymentStatus.Paid;
         payment.PaidAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
+        await MarkOnlineOrderPaidAsync(payment, ct);
 
         return new { id = rpc.Id, result = new { perform_time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), transaction = transId, state = 2 } };
     }
@@ -278,6 +308,8 @@ public class OnlinePaymentService : IOnlinePaymentService
         }
 
         await _db.SaveChangesAsync(ct);
+        if (payment.Status == OnlinePaymentStatus.Paid)
+            await MarkOnlineOrderPaidAsync(payment, ct);
 
         return new ClickCompleteResponse
         {

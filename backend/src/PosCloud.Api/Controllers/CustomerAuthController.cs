@@ -56,7 +56,7 @@ public class CustomerAuthController : ControllerBase
     /// <summary>Joriy qurilmadagi sessiyani yopadi.</summary>
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Logout(RefreshTokenRequest request, CancellationToken ct)
+    public async Task<IActionResult> Logout(LogoutRequest request, CancellationToken ct)
     {
         await _service.LogoutAsync(request, ct);
         return NoContent();

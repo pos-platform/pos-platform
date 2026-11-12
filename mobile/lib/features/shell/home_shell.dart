@@ -1,18 +1,23 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../orders/order_updates.dart';
 
 import '../../l10n/app_localizations.dart';
 
 enum AppTab { home, cart, orders, profile }
 
 /// Pastki menyu (dizayn: Main.dc.html — Asosiy, Savatcha, Buyurtmalar, Profil).
-class HomeShell extends StatelessWidget {
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Kirgan mijoz uchun buyurtma holatlari (SignalR) butun ilova davomida ulanib turadi.
+    ref.watch(orderUpdatesProvider);
     final t = AppLocalizations.of(context);
     return Scaffold(
       body: shell,

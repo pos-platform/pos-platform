@@ -76,6 +76,9 @@ public partial class LoginWindow : Window
             var resp = await AppState.Backend.LoginAsync(username, CurrentPassword, AppState.TerminalId);
             if (resp.Role == "Admin")
                 throw new Exception("Admin foydalanuvchilar desktop appga kira olmaydi.");
+            // Kuryer akkaunti faqat mobil (kuryer) ilovada ishlaydi — kassaga kiritilmaydi.
+            if (resp.Role == "Courier")
+                throw new Exception("Kuryer akkaunti kassaga kira olmaydi — mobil ilovadan foydalaning.");
 
             // "Eslab qolish": muvaffaqiyatli kirishda saqlaymiz, belgi olib tashlangan bo'lsa tozalaymiz.
             if (RememberBox.IsChecked == true) CredentialStore.Save(username, CurrentPassword);

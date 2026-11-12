@@ -41,9 +41,14 @@ public class UserService : IUserService
             throw new ConflictException($"'{username}' username allaqachon band.");
         }
 
+        // Kuryer: telefon va filial majburiy; ruxsatlar (AppRole) berilmaydi — faqat /api/courier.
+        await Features.Courier.CourierRules.ValidateAsync(_db, request.Role, request.Phone, request.BranchId,
+            _currentUser.OrganizationId, cancellationToken);
+        var isCourier = request.Role == Domain.Enums.UserRole.Courier;
+
         // AppRoleId berilmagan bo'lsa, UserRole enum bo'yicha org ichidan standart rolni topamiz.
-        var appRoleId = request.AppRoleId;
-        if (appRoleId is null && _currentUser.OrganizationId is not null)
+        var appRoleId = isCourier ? null : request.AppRoleId;
+        if (!isCourier && appRoleId is null && _currentUser.OrganizationId is not null)
         {
             var roleName = request.Role.ToString();
             var matchedRole = await _db.Roles
@@ -54,6 +59,8 @@ public class UserService : IUserService
         var user = new User
         {
             Username = username,
+            FullName = string.IsNullOrWhiteSpace(request.FullName) ? null : request.FullName.Trim(),
+            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
             PasswordHash = _passwordHasher.Hash(request.Password),
             Role = request.Role,
             AppRoleId = appRoleId,

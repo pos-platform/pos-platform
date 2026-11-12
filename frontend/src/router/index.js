@@ -27,6 +27,12 @@ const routes = [
     component: () => import('../views/FiscalAuditView.vue'),
     meta: { superAdmin: true }
   },
+  {
+    path: '/admin/online-stores',
+    name: 'admin-online-stores',
+    component: () => import('../views/AdminOnlineStoresView.vue'),
+    meta: { superAdmin: true }
+  },
   { path: '/', redirect: { name: 'dashboard' } },
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { adminOnly: true } },
   { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue') },
@@ -38,6 +44,12 @@ const routes = [
     meta: { adminOnly: true, perm: 'categories.view' }
   },
   { path: '/sales', name: 'sales', component: () => import('../views/SalesView.vue'), meta: { perm: 'sales.view' } },
+  {
+    path: '/online-orders',
+    name: 'online-orders',
+    component: () => import('../views/OnlineOrdersView.vue'),
+    meta: { adminOnly: true, perm: 'sales.view' }
+  },
   { path: '/shifts', name: 'shifts', component: () => import('../views/ShiftsView.vue') },
   {
     path: '/users',
@@ -50,6 +62,18 @@ const routes = [
     name: 'promotions',
     component: () => import('../views/PromotionsView.vue'),
     meta: { adminOnly: true }
+  },
+  {
+    path: '/promo-codes',
+    name: 'promo-codes',
+    component: () => import('../views/PromoCodesView.vue'),
+    meta: { adminOnly: true, perm: 'settings.manage' }
+  },
+  {
+    path: '/loyalty',
+    name: 'loyalty',
+    component: () => import('../views/LoyaltyView.vue'),
+    meta: { adminOnly: true, perm: 'settings.manage' }
   },
   {
     path: '/stores',
@@ -152,6 +176,12 @@ const routes = [
     name: 'kitchen-issues',
     component: () => import('../views/KitchenIssuesView.vue'),
     meta: { adminOnly: true }
+  },
+  {
+    path: '/online-store',
+    name: 'online-store',
+    component: () => import('../views/OnlineStoreView.vue'),
+    meta: { adminOnly: true, perm: 'settings.manage' }
   },
   {
     path: '/settings',

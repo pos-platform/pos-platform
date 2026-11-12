@@ -23,6 +23,9 @@ public interface IProductService
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>Mahsulotlarni ommaviy ilovada ko'rsatish/yashirish (joriy tashkilot ichida).</summary>
+    Task<BulkShowOnlineResult> SetShowOnlineAsync(BulkShowOnlineRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Noyob shtrix-kod (kod tovara) generatsiya qiladi.</summary>
     Task<string> GenerateBarcodeAsync(CancellationToken cancellationToken = default);
 

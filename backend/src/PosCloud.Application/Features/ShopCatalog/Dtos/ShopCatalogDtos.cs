@@ -36,9 +36,24 @@ public class ShopStoreDto
     public decimal DeliveryFee { get; set; }
     public decimal? FreeDeliveryFrom { get; set; }
 
+    /// <summary>Taxminiy yetkazish vaqti (daqiqa). Null — do'kon kiritmagan.</summary>
+    public int? DeliveryMinMinutes { get; set; }
+    public int? DeliveryMaxMinutes { get; set; }
+
     public bool AllowCash { get; set; }
     public bool AllowTransfer { get; set; }
     public bool AllowCardOnDelivery { get; set; }
+
+    /// <summary>Online to'lov (yig'ilgandan keyin): Payme / Click.</summary>
+    public bool AllowPayme { get; set; }
+    public bool AllowClick { get; set; }
+
+    /// <summary>Bonus bilan to'lash va mahsulotlar summasidan maksimal foiz.</summary>
+    public bool BonusPayEnabled { get; set; }
+    public int BonusMaxPercent { get; set; }
+
+    /// <summary>Yetkazish radiusi (km). Null — cheklovsiz.</summary>
+    public double? DeliveryRadiusKm { get; set; }
 }
 
 public class ShopCategoryDto

@@ -23,6 +23,9 @@ public class Customer : BaseEntity
 
     public string? Comment { get; set; }
 
+    /// <summary>Oxirgi ball harakati vaqti (ball muddati shu bo'yicha hisoblanadi).</summary>
+    public DateTime? LastActivityAt { get; set; }
+
     /// <summary>Mobil ilova akkaunti (bo'lsa). Bonus do'kon bo'yicha alohida, akkaunt global.</summary>
     public Guid? ShopUserId { get; set; }
     public ShopUser? ShopUser { get; set; }

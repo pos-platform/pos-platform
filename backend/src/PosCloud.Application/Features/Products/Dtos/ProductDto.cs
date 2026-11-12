@@ -21,6 +21,7 @@ public class ProductDto
     /// <summary>Ustama foiz = (Price - CostPrice) / CostPrice * 100.</summary>
     public decimal MarkupPercent { get; set; }
     public string? ImageUrl { get; set; }
+    public bool ShowOnline { get; set; }
     public string? Description { get; set; }
     public bool IsVat { get; set; }
     public bool IsMarked { get; set; }
@@ -60,6 +61,7 @@ public class ProductDto
             ? Math.Round((p.Price - p.CostPrice) / p.CostPrice * 100m, 2)
             : 0m,
         ImageUrl = p.ImageUrl,
+        ShowOnline = p.ShowOnline,
         Description = p.Description,
         IsVat = p.IsVat,
         IsMarked = p.IsMarked,

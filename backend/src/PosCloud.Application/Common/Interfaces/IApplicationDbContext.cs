@@ -52,6 +52,8 @@ public interface IApplicationDbContext
     // Task 8: Customer loyalty
     DbSet<Customer> Customers { get; }
     DbSet<LoyaltyTransaction> LoyaltyTransactions { get; }
+    DbSet<LoyaltySettings> LoyaltySettings { get; }
+    DbSet<LoyaltyCategoryRate> LoyaltyCategoryRates { get; }
 
     // Task 9: Online payments
     DbSet<OnlinePayment> OnlinePayments { get; }
@@ -59,9 +61,11 @@ public interface IApplicationDbContext
     DbSet<ShopUserAddress> ShopUserAddresses { get; }
     DbSet<ShopRefreshToken> ShopRefreshTokens { get; }
     DbSet<ShopOtpCode> ShopOtpCodes { get; }
+    DbSet<ShopDeviceToken> ShopDeviceTokens { get; }
     DbSet<OnlineOrder> OnlineOrders { get; }
     DbSet<OnlineOrderItem> OnlineOrderItems { get; }
     DbSet<OnlineStoreSettings> OnlineStoreSettings { get; }
+    DbSet<PromoCode> PromoCodes { get; }
 
     // Task 6: Label printing
     DbSet<LabelPrintJob> LabelPrintJobs { get; }

@@ -291,6 +291,13 @@ public class CreateSaleRequest
     /// false — "Chop etish" (nofiskal, QR-siz). Nasiya baribir fiskalizatsiya qilinmaydi.</summary>
     public bool Fiscalize { get; set; } = true;
 
+    /// <summary>Bonus karta orqali tanilgan mijoz (CONTRACT-7 §4).</summary>
+    public Guid? CustomerId { get; set; }
+
+    /// <summary>Ball bilan to'lanadigan qism (1 ball = 1 so'm). Server balans va
+    /// maxRedeemPercent bo'yicha cheklaydi; null — ball ishlatilmaydi.</summary>
+    public decimal? RedeemPoints { get; set; }
+
     public List<SaleItemRequest> Items { get; set; } = new();
 }
 
@@ -306,6 +313,15 @@ public class SaleDto
     public decimal PaidAmount { get; set; }
     public decimal ChangeAmount { get; set; }
     public decimal CardAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public Guid? CustomerId { get; set; }
+
+    /// <summary>Shu savdo uchun yozilgan bonus ballar.</summary>
+    public decimal LoyaltyPointsEarned { get; set; }
+
+    /// <summary>Ball bilan to'langan qism (chegirma sifatida qatorlarga taqsimlangan).</summary>
+    public decimal LoyaltyPointsRedeemed { get; set; }
+
     public List<SaleItemDto> Items { get; set; } = new();
     public ReceiptInfo? Receipt { get; set; }
 }
@@ -316,6 +332,7 @@ public class SaleItemDto
     public string ProductName { get; set; } = "";
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public decimal DiscountAmount { get; set; }
     public decimal LineTotal { get; set; }
     public string MxikCode { get; set; } = "";
     public string Unit { get; set; } = "Piece";
@@ -446,6 +463,15 @@ public class ReceiptData
     /// Yoqilgan bo'lsa, POS o'z QR blokini bosmaydi va fiskalizatsiyani kutmaydi —
     /// bir chekda ikkita QR (ikkilanish/double-registratsiya) chiqishining oldini oladi.</summary>
     public bool ExternalFiscalDevice { get; set; }
+
+    /// <summary>Bonus karta egasining yashirilgan telefoni (mijoz biriktirilgan bo'lsa).</summary>
+    public string? CustomerMaskedPhone { get; set; }
+
+    /// <summary>Shu xarid uchun yozilgan bonus ballar ("Bonus: +N ball").</summary>
+    public decimal LoyaltyPointsEarned { get; set; }
+
+    /// <summary>Ball bilan to'langan qism ("Ball bilan to'landi: −M").</summary>
+    public decimal LoyaltyPointsRedeemed { get; set; }
 }
 
 public class ReceiptLine
@@ -454,6 +480,9 @@ public class ReceiptLine
     public decimal Quantity { get; set; }
     public decimal Price { get; set; }
     public decimal LineTotal { get; set; }
+
+    /// <summary>Qator chegirmasi (masalan ball bilan to'lov taqsimoti) — bo'lsa chekda chiqadi.</summary>
+    public decimal Discount { get; set; }
 
     /// <summary>MXIK (ИКПУ) kodi — fiskal chekda mahsulot ostida chiqadi.</summary>
     public string MxikCode { get; set; } = "";
@@ -480,4 +509,14 @@ public class ReceiptLine
 
     /// <summary>Qator QQS summasi — narxga kiritilgan (13-band).</summary>
     public decimal VatAmount => IsVat ? Math.Round(LineTotal * 12m / 112m, 2) : 0m;
+}
+
+/// <summary>POST /api/loyalty/resolve javobi — bonus karta QR'idan tanilgan mijoz (CONTRACT-7 §3).</summary>
+public class LoyaltyCustomerDto
+{
+    public Guid CustomerId { get; set; }
+    public string Name { get; set; } = "";
+    public string? MaskedPhone { get; set; }
+    public decimal Points { get; set; }
+    public decimal MaxRedeemPercent { get; set; }
 }

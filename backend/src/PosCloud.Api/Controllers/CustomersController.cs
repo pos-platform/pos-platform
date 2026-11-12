@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PosCloud.Application.Features.Customers;
 using PosCloud.Application.Features.Customers.Dtos;
+using PosCloud.Application.Common.Models;
+using PosCloud.Application.Features.Loyalty;
+using PosCloud.Application.Features.Loyalty.Dtos;
 
 namespace PosCloud.Api.Controllers;
 
@@ -26,6 +29,13 @@ public class CustomersController : ControllerBase
     [HttpGet("by-phone")]
     public async Task<ActionResult<CustomerDto?>> ByPhone([FromQuery] string phone, CancellationToken cancellationToken)
         => Ok(await _customers.FindByPhoneAsync(phone, cancellationToken));
+
+    /// <summary>Mijozning bonus tarixi (sahifalangan, eng yangisi birinchi).</summary>
+    [HttpGet("{id:guid}/loyalty-history")]
+    public async Task<ActionResult<PagedResult<LoyaltyHistoryItemDto>>> GetLoyaltyHistory(Guid id,
+        [FromServices] ILoyaltyService loyalty, [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+        => Ok(await loyalty.GetCustomerHistoryAsync(id, page, pageSize, cancellationToken));
 
     [HttpPost]
     public async Task<ActionResult<CustomerDto>> Create(CreateCustomerRequest request, CancellationToken cancellationToken)

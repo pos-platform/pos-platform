@@ -1,4 +1,5 @@
 using PosCloud.Domain.Common;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Domain.Entities;
 
@@ -14,6 +15,12 @@ public class LoyaltyTransaction : BaseEntity
     public decimal Amount { get; set; }
 
     public string? Comment { get; set; }
+
+    /// <summary>Harakat turi (eski yozuvlar: musbat → Earn, manfiy → Redeem).</summary>
+    public LoyaltyTransactionType Type { get; set; } = LoyaltyTransactionType.Earn;
+
+    /// <summary>Manba: kassa yoki mobil ilova.</summary>
+    public LoyaltySource Source { get; set; } = LoyaltySource.Store;
 
     public Guid? SaleId { get; set; }
     public Sale? Sale { get; set; }

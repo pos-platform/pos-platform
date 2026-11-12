@@ -209,6 +209,90 @@ public class BackendClient
         await EnsureOk(resp);
     }
 
+    // ===================== Online buyurtmalar (mobil ilova) =====================
+
+    public async Task<List<OnlineOrderDto>> GetOnlineOrdersAsync(bool active = true)
+        => (await _http.GetFromJsonAsync<List<OnlineOrderDto>>($"api/online-orders?active={(active ? "true" : "false")}", Json)) ?? new();
+
+    public async Task<OnlineOrderDto> GetOnlineOrderAsync(Guid id)
+        => (await _http.GetFromJsonAsync<OnlineOrderDto>($"api/online-orders/{id}", Json))!;
+
+    /// <summary>Holat o'tishi: accept, start-picking, payment-received, dispatch, delivered.</summary>
+    public async Task<OnlineOrderDto> OnlineOrderActionAsync(Guid id, string action, object? body = null)
+    {
+        var resp = await _http.PostAsJsonAsync($"api/online-orders/{id}/{action}", body ?? new { });
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<OnlineOrderDto>(Json))!;
+    }
+
+    /// <summary>Ready → OnTheWay; kuryer ma'lumoti ixtiyoriy (qo'lda kiritilgan ism/telefon).</summary>
+    public Task<OnlineOrderDto> DispatchOnlineOrderAsync(Guid id, string? courierName, string? courierPhone)
+        => OnlineOrderActionAsync(id, "dispatch", new { courierName, courierPhone });
+
+    /// <summary>Ready → OnTheWay; tizimdagi kuryer akkauntiga biriktiriladi (ism/telefon server foydalanuvchidan oladi).</summary>
+    public Task<OnlineOrderDto> DispatchOnlineOrderToCourierAsync(Guid id, Guid courierUserId)
+        => OnlineOrderActionAsync(id, "dispatch", new { courierUserId });
+
+    /// <summary>Filialning faol kuryerlari (faol buyurtmalar soni bilan).</summary>
+    public async Task<List<OnlineCourierDto>> GetOnlineCouriersAsync(Guid? branchId = null)
+    {
+        var url = "api/online-orders/couriers" + (branchId is { } b ? $"?branchId={b}" : "");
+        return (await _http.GetFromJsonAsync<List<OnlineCourierDto>>(url, Json)) ?? new();
+    }
+
+    /// <summary>Kassaga hali topshirilmagan kuryer naqdlari.</summary>
+    public async Task<List<CourierCashDto>> GetCourierCashAsync(Guid? branchId = null)
+    {
+        var url = "api/online-orders/courier-cash" + (branchId is { } b ? $"?branchId={b}" : "");
+        return (await _http.GetFromJsonAsync<List<CourierCashDto>>(url, Json)) ?? new();
+    }
+
+    /// <summary>Kuryer naqdni topshirdi — server kassaga Income harakati yozadi.
+    /// Javob tanasi ishlatilmaydi (kelishuvda aniq ko'rsatilmagan) — faqat muvaffaqiyat tekshiriladi.</summary>
+    public async Task CourierCashHandoverAsync(Guid id)
+    {
+        var resp = await _http.PostAsJsonAsync($"api/online-orders/{id}/cash-handover", new { });
+        await EnsureOk(resp);
+    }
+
+    /// <summary>Tayyor/yo'ldagi buyurtmani bekor qilish — server savdoni qaytaradi (sales.refund).</summary>
+    public Task<OnlineOrderDto> CancelOnlineOrderAsync(Guid id, string reason)
+        => OnlineOrderActionAsync(id, "cancel", new { reason });
+
+    public Task<OnlineOrderDto> RejectOnlineOrderAsync(Guid id, string reason)
+        => OnlineOrderActionAsync(id, "reject", new { reason });
+
+    /// <summary>Tayyor: serverda oddiy savdo (fiskal chek) yaratiladi.</summary>
+    public Task<OnlineOrderDto> ReadyOnlineOrderAsync(Guid id, bool fiscalize = true)
+        => OnlineOrderActionAsync(id, "ready", new { terminalId = AppState.TerminalId, fiscalize });
+
+    /// <summary>Yig'ish o'zgarishlari: miqdor, olib tashlash, almashtirish.</summary>
+    public async Task<OnlineOrderDto> UpdateOnlineOrderItemsAsync(Guid id, object request)
+    {
+        var resp = await _http.PutAsJsonAsync($"api/online-orders/{id}/items", request);
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<OnlineOrderDto>(Json))!;
+    }
+
+    /// <summary>Bonus karta QR kodini (PCB1....) tekshirib, mijozni qaytaradi (CONTRACT-7 §3).
+    /// Kod eskirgan/boshqa do'konniki bo'lsa server 400 qaytaradi — ApiException.</summary>
+    public async Task<LoyaltyCustomerDto> ResolveLoyaltyCodeAsync(string code, CancellationToken cancellationToken = default)
+    {
+        var resp = await _http.PostAsJsonAsync("api/loyalty/resolve", new { code }, cancellationToken);
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<LoyaltyCustomerDto>(Json, cancellationToken))!;
+    }
+
+    public async Task<OnlineStoreSettingsDto?> GetOnlineStoreSettingsAsync()
+        => await _http.GetFromJsonAsync<OnlineStoreSettingsDto>("api/online-store/settings", Json);
+
+    public async Task<OnlineStoreSettingsDto> SetAcceptingOrdersAsync(bool isAccepting)
+    {
+        var resp = await _http.PutAsJsonAsync("api/online-store/accepting", new { isAccepting });
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<OnlineStoreSettingsDto>(Json))!;
+    }
+
     /// <summary>Backend tirik ekanligini tekshiradi (/health endpoint).</summary>
     public async Task<bool> PingAsync()
     {

@@ -58,6 +58,27 @@ public static class ReceiptLayout
     /// Aralash to'lovda naqd va karta qismlari (VMQ-943, 18-band: "nақд, пластик карта ёки аралаш").
     /// Boshqa to'lov turlarida hech narsa qaytmaydi — turning o'zi yetarli.
     /// </summary>
+    /// <summary>Ball bilan to'langan qism — JAMI'dan oldin chiqadi (bo'lmasa hech narsa).</summary>
+    public static IEnumerable<string> RedeemRows(ReceiptData r)
+    {
+        if (r.LoyaltyPointsRedeemed <= 0) yield break;
+        yield return $"Ball bilan to'landi: -{r.LoyaltyPointsRedeemed:N0}";
+    }
+
+    /// <summary>Bonus karta bloki: mijoz telefoni (yashirilgan) va yozilgan ballar.
+    /// Mijoz biriktirilmagan savdoda hech narsa qaytmaydi.</summary>
+    public static IEnumerable<string> LoyaltyRows(ReceiptData r)
+    {
+        if (!string.IsNullOrWhiteSpace(r.CustomerMaskedPhone))
+            yield return $"Mijoz: {r.CustomerMaskedPhone}";
+        if (r.LoyaltyPointsEarned > 0)
+            yield return $"Bonus: +{r.LoyaltyPointsEarned:N0} ball";
+    }
+
+    /// <summary>Qator chegirmasi ("Chegirma: −1 200") — chegirma bo'lmasa null.</summary>
+    public static string? ItemDiscountRow(ReceiptLine l) =>
+        l.Discount > 0 ? $"Chegirma: -{l.Discount:N0}" : null;
+
     public static IEnumerable<string> PaymentSplitRows(ReceiptData r)
     {
         if (r.Payment != "Mixed") yield break;
