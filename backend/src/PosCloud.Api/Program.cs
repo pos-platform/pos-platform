@@ -8,6 +8,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authorization;
+using PosCloud.Api.Authentication;
 using PosCloud.Api.Authorization;
 using PosCloud.Api.Middleware;
 using PosCloud.Api.Services;
@@ -37,6 +38,12 @@ builder.Services.AddSingleton<PosCloud.Application.Common.Interfaces.IPaymentGat
 // Joriy foydalanuvchi (JWT) — HttpContext orqali.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+
+// --- SignalR: online buyurtmalar (/hubs/orders). Enum'lar REST bilan bir xil — string. ---
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddSingleton<IOnlineOrderNotifier, PosCloud.Api.Hubs.SignalROnlineOrderNotifier>();
 
 // --- Controllerlar + enum'larni string sifatida (JSON) ---
 builder.Services.AddControllers()
@@ -123,9 +130,44 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
             ClockSkew = TimeSpan.Zero
         };
+        options.Events = new JwtBearerEvents { OnMessageReceived = HubTokenFromQuery };
+    })
+    // Mobil ilova mijozi: alohida audience. Xodim sxemasi mijoz tokenini (va aksincha) qabul qilmaydi.
+    .AddJwtBearer(ShopAuthDefaults.Scheme, options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.ShopAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+            ClockSkew = TimeSpan.Zero
+        };
+        options.Events = new JwtBearerEvents { OnMessageReceived = HubTokenFromQuery };
     });
 
-builder.Services.AddAuthorization();
+// WebSocket'da header yuborib bo'lmaydi — hub uchun token query'dan (?access_token=) olinadi. Faqat /hubs yo'lida.
+static Task HubTokenFromQuery(MessageReceivedContext context)
+{
+    var token = context.Request.Query["access_token"];
+    if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+        context.Token = token;
+    return Task.CompletedTask;
+}
+
+if (string.Equals(jwtSettings.ShopAudience, jwtSettings.Audience, StringComparison.Ordinal))
+    throw new InvalidOperationException("Jwt:ShopAudience Jwt:Audience dan farq qilishi shart.");
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(ShopAuthDefaults.Policy, policy => policy
+        .AddAuthenticationSchemes(ShopAuthDefaults.Scheme)
+        .RequireAuthenticatedUser()
+        .RequireRole(PosCloud.Application.Features.ShopAuth.ShopRoles.Customer));
+});
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 // --- Reverse proxy (nginx/IIS) ortida ishlash: original sxema (https) va client IP'ni o'qiymiz ---
@@ -147,6 +189,16 @@ builder.Services.AddRateLimiter(options =>
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 10,        // bir IP'dan daqiqasiga 10 ta urinish
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    // Mobil ilova: kod so'rash (SMS pulli) — bir IP'dan daqiqasiga 5 ta.
+    options.AddPolicy("otp", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -240,6 +292,7 @@ app.UseAuthorization();
 app.UseMiddleware<LicenseValidationMiddleware>();
 
 app.MapControllers();
+app.MapHub<PosCloud.Api.Hubs.OrdersHub>(PosCloud.Api.Hubs.OrdersHub.Path);
 
 // Health check — autentifikatsiyasiz, monitoring uchun.
 app.MapHealthChecks("/health").AllowAnonymous();

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using PosCloud.Domain.Enums;
 
 namespace PosCloud.Application.Features.Sales.Dtos;
@@ -50,6 +51,13 @@ public class CreateSaleRequest
     /// <summary>Aralash (Mixed) to'lovda kartadan yechilgan qism (majburiy, 0 &lt; x &lt; jami). Boshqalarda e'tiborga olinmaydi.</summary>
     [Range(0, double.MaxValue)]
     public decimal CardAmount { get; set; }
+
+    /// <summary>
+    /// Faqat server ichida (online buyurtma "Tayyor"): qator narxi buyurtmada aksiya bilan qotirilgan,
+    /// shuning uchun aksiya qayta qo'llanmaydi. JSON'dan o'qilmaydi.
+    /// </summary>
+    [JsonIgnore]
+    public bool SkipPromotions { get; set; }
 
     [Required]
     [MinLength(1)]

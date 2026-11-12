@@ -23,6 +23,10 @@ public class Customer : BaseEntity
 
     public string? Comment { get; set; }
 
+    /// <summary>Mobil ilova akkaunti (bo'lsa). Bonus do'kon bo'yicha alohida, akkaunt global.</summary>
+    public Guid? ShopUserId { get; set; }
+    public ShopUser? ShopUser { get; set; }
+
     public ICollection<LoyaltyTransaction> LoyaltyTransactions { get; set; } = new List<LoyaltyTransaction>();
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
 }

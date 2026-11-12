@@ -10,6 +10,10 @@ public class Branch : BaseEntity
 
     public string? Address { get; set; }
 
+    /// <summary>Xaritadagi joylashuv (mobil ilova: yaqin do'konlar).</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
     /// <summary>Filial faoliyat turi — Do'kon yoki Restoran. Bitta tashkilotda aralash bo'lishi mumkin.</summary>
     public BusinessType BusinessType { get; set; } = BusinessType.Store;
 

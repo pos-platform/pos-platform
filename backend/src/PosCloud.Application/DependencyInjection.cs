@@ -22,6 +22,11 @@ using PosCloud.Application.Features.Products;
 using PosCloud.Application.Features.Promotions;
 using PosCloud.Application.Features.Reports;
 using PosCloud.Application.Features.Sales;
+using PosCloud.Application.Features.ShopAuth;
+using PosCloud.Application.Features.ShopCatalog;
+using PosCloud.Application.Features.ShopProfile;
+using PosCloud.Application.Features.ShopOrders;
+using PosCloud.Application.Features.OnlineOrders;
 using PosCloud.Application.Features.Shifts;
 using PosCloud.Application.Features.Stock;
 using PosCloud.Application.Features.Stores;
@@ -68,6 +73,13 @@ public static class DependencyInjection
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IOnlinePaymentService, OnlinePaymentService>();
         services.AddScoped<ILabelService, LabelService>();
+
+        // Mobil ilova (online do'kon)
+        services.AddScoped<IShopAuthService, ShopAuthService>();
+        services.AddScoped<IShopCatalogService, ShopCatalogService>();
+        services.AddScoped<IShopProfileService, ShopProfileService>();
+        services.AddScoped<IShopOrderService, ShopOrderService>();
+        services.AddScoped<IOnlineOrderService, OnlineOrderService>();
 
         // Restoran moduli
         services.AddScoped<IDishService, DishService>();

@@ -55,6 +55,13 @@ public interface IApplicationDbContext
 
     // Task 9: Online payments
     DbSet<OnlinePayment> OnlinePayments { get; }
+    DbSet<ShopUser> ShopUsers { get; }
+    DbSet<ShopUserAddress> ShopUserAddresses { get; }
+    DbSet<ShopRefreshToken> ShopRefreshTokens { get; }
+    DbSet<ShopOtpCode> ShopOtpCodes { get; }
+    DbSet<OnlineOrder> OnlineOrders { get; }
+    DbSet<OnlineOrderItem> OnlineOrderItems { get; }
+    DbSet<OnlineStoreSettings> OnlineStoreSettings { get; }
 
     // Task 6: Label printing
     DbSet<LabelPrintJob> LabelPrintJobs { get; }

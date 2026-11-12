@@ -5,6 +5,7 @@ using PosCloud.Application.Common.Interfaces;
 using PosCloud.Infrastructure.Authentication;
 using PosCloud.Infrastructure.Excel;
 using PosCloud.Infrastructure.Fiscal;
+using PosCloud.Infrastructure.Otp;
 using PosCloud.Infrastructure.Persistence;
 
 namespace PosCloud.Infrastructure;
@@ -31,6 +32,13 @@ public static class DependencyInjection
 
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
+
+        // Mobil ilova: mijoz tokeni va kirish kodi (Telegram Gateway → Eskiz SMS).
+        services.AddSingleton<IShopTokenGenerator, ShopTokenGenerator>();
+        services.Configure<OtpSettings>(configuration.GetSection(OtpSettings.SectionName));
+        services.AddHttpClient<TelegramGatewayClient>();
+        services.AddHttpClient<EskizSmsClient>();
+        services.AddScoped<IOtpSender, OtpSender>();
 
         // Fiskalizatsiya seam'i — hozir placeholder. Keyin lokal agent (FDS/Rahmat MK)
         // bilan ishlaydigan implementatsiya bilan almashtiriladi.

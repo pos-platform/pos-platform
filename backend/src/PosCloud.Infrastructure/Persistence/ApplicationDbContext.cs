@@ -51,6 +51,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<LoyaltyTransaction> LoyaltyTransactions => Set<LoyaltyTransaction>();
     public DbSet<OnlinePayment> OnlinePayments => Set<OnlinePayment>();
+
+    // Mobil ilova (online do'kon)
+    public DbSet<ShopUser> ShopUsers => Set<ShopUser>();
+    public DbSet<ShopUserAddress> ShopUserAddresses => Set<ShopUserAddress>();
+    public DbSet<ShopRefreshToken> ShopRefreshTokens => Set<ShopRefreshToken>();
+    public DbSet<ShopOtpCode> ShopOtpCodes => Set<ShopOtpCode>();
+    public DbSet<OnlineOrder> OnlineOrders => Set<OnlineOrder>();
+    public DbSet<OnlineOrderItem> OnlineOrderItems => Set<OnlineOrderItem>();
+    public DbSet<OnlineStoreSettings> OnlineStoreSettings => Set<OnlineStoreSettings>();
     public DbSet<LabelPrintJob> LabelPrintJobs => Set<LabelPrintJob>();
     public DbSet<LabelPrintJobItem> LabelPrintJobItems => Set<LabelPrintJobItem>();
     public DbSet<RoleTemplate> RoleTemplates => Set<RoleTemplate>();

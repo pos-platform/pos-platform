@@ -11,4 +11,13 @@ public class JwtSettings
 
     /// <summary>Token amal qilish muddati (daqiqalarda). 24 soat — kassa smenasi to'liq qamrab olinadi.</summary>
     public int ExpiryMinutes { get; set; } = 1440;
+
+    /// <summary>Mobil ilova mijozi tokeni audience'i. Xodim audience'idan farq qilishi SHART.</summary>
+    public string ShopAudience { get; set; } = "PosCloudShop";
+
+    /// <summary>Mijoz access tokeni muddati (daqiqa). Qisqa — refresh token bilan yangilanadi.</summary>
+    public int ShopExpiryMinutes { get; set; } = 60;
+
+    /// <summary>Mijoz refresh tokeni muddati (kun).</summary>
+    public int ShopRefreshDays { get; set; } = 60;
 }

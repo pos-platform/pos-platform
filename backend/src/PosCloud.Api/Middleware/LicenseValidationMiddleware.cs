@@ -25,6 +25,8 @@ public class LicenseValidationMiddleware
         var principal = context.User;
         if (principal.Identity?.IsAuthenticated == true
             && !principal.IsInRole("SuperAdmin")
+            // Mobil ilova mijozi xodim emas — Users jadvalida yo'q, obuna unga taalluqli emas.
+            && !principal.IsInRole(PosCloud.Application.Features.ShopAuth.ShopRoles.Customer)
             && currentUser.UserId is Guid userId)
         {
             var today = DateTime.UtcNow.Date;

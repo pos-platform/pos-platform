@@ -208,8 +208,9 @@ public class SaleService : ISaleService
             var gross = Round2(unitPrice * line.Quantity);
 
             // Aksiya chegirmasi (avtomatik) + mijoz yuborgan qo'lda chegirma (agar bo'lsa).
-            var promoPercent = PromotionCalculator.GetDiscountPercent(
-                activePromotions, product.Id, product.CategoryId);
+            var promoPercent = request.SkipPromotions
+                ? 0m
+                : PromotionCalculator.GetDiscountPercent(activePromotions, product.Id, product.CategoryId);
             var promoDiscount = Round2(gross * promoPercent / 100m);
             var discount = Round2(promoDiscount + line.DiscountAmount);
 

@@ -16,4 +16,7 @@ public class BranchStock : BaseEntity
 
     /// <summary>Shu filial omborida mavjud miqdor.</summary>
     public decimal Quantity { get; set; }
+
+    /// <summary>Qabul qilingan online buyurtmalar uchun band qilingan miqdor (Quantity ichida).</summary>
+    public decimal Reserved { get; set; }
 }

@@ -32,6 +32,7 @@ public class ExceptionHandlingMiddleware
                 ConflictException => HttpStatusCode.Conflict,
                 ValidationException => HttpStatusCode.BadRequest,
                 UnauthorizedException => HttpStatusCode.Unauthorized,
+                TooManyRequestsException => HttpStatusCode.TooManyRequests,
                 _ => HttpStatusCode.InternalServerError
             };
 
@@ -42,6 +43,8 @@ public class ExceptionHandlingMiddleware
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
+            if (ex is TooManyRequestsException { RetryAfterSeconds: { } retryAfter })
+                context.Response.Headers.RetryAfter = retryAfter.ToString();
 
             var payload = JsonSerializer.Serialize(new
             {

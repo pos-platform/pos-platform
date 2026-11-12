@@ -1,0 +1,14 @@
+{
+  "@@locale": "ru",
+  "appTitle": "PosCloud Market",
+  "navHome": "Главная",
+  "navCart": "Корзина",
+  "navOrders": "Заказы",
+  "navProfile": "Профиль",
+  "comingSoon": "Скоро",
+  "loginSubtitle": "Товары из магазина — до вашей двери. Введите номер телефона, чтобы войти.",
+  "phoneNumber": "Номер телефона",
+  "smsCode": "Код из SMS",
+  "login": "Войти",
+  "browseWithoutLogin": "Посмотреть без входа"
+}

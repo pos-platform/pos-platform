@@ -62,6 +62,9 @@ public class Product : BaseEntity
     /// <summary>Mahsulot rasmi manzili (ixtiyoriy).</summary>
     public string? ImageUrl { get; set; }
 
+    /// <summary>Mobil ilovada ko'rinsinmi.</summary>
+    public bool ShowOnline { get; set; } = true;
+
     public Unit Unit { get; set; } = Unit.Piece;
 
     /// <summary>Tarozida tortib sotiladigan mahsulotmi.</summary>

@@ -1,0 +1,14 @@
+{
+  "@@locale": "uz",
+  "appTitle": "PosCloud Market",
+  "navHome": "Asosiy",
+  "navCart": "Savatcha",
+  "navOrders": "Buyurtmalar",
+  "navProfile": "Profil",
+  "comingSoon": "Tez orada",
+  "loginSubtitle": "Do‘kondagi mahsulotlar — uyingizgacha. Kirish uchun telefon raqamingizni kiriting.",
+  "phoneNumber": "Telefon raqam",
+  "smsCode": "SMS kod",
+  "login": "Kirish",
+  "browseWithoutLogin": "Hozircha kirmasdan ko‘rish"
+}

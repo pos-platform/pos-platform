@@ -9,6 +9,7 @@ public class BranchStockConfiguration : IEntityTypeConfiguration<BranchStock>
     public void Configure(EntityTypeBuilder<BranchStock> builder)
     {
         builder.Property(s => s.Quantity).HasColumnType("numeric(18,3)");
+        builder.Property(s => s.Reserved).HasColumnType("numeric(18,3)");
 
         // Bir filial + bir mahsulot = bitta yozuv (tashkilot bo'yicha)
         builder.HasIndex(s => new { s.BranchId, s.ProductId, s.OrganizationId }).IsUnique();
