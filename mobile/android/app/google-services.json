@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "914578415303",
+    "project_id": "xujamarket",
+    "storage_bucket": "xujamarket.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:914578415303:android:2bfee0f5ea67114a8368e2",
+        "android_client_info": {
+          "package_name": "uz.poscloud.poscloud_market"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKMMSl2oQZBHi2hi-xq0Tu774L0prgHtk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -366,3 +366,5 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
   Egasidan har yangi do'kon uchun: admin panel maydonlari, `stores/<slug>/` (store.json, icon 1024), Firebase'ga Android/iOS app qo'shish (google-services.json yangilash,
   GoogleService-Info.plist), `tool\store.ps1 -Slug <slug> -Build appbundle`, Play'da noyob listing; iOS — do'konning o'z Apple akkaunti. Commitdan oldin `-Slug default`.
   Bir martalik: Android SDK'da oddiy va do'kon buildini tekshirish; `dotnet ef database update` (StoreWhiteLabel).
+- 2026-11-13 — 4.7 Firebase — loyiha `xujamarket`, `mobile/android/app/google-services.json` qo'yildi; `flutter build apk --debug` OK, google-services plagini qo'llandi.
+  Backend ProjectId service account'dan olinadi. Qoldi: serverda `Push__Fcm__ServiceAccountPath`, qurilmada push sinovi; iOS (plist + APNs) keyin.
