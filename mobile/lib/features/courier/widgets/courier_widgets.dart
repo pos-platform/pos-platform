@@ -100,7 +100,7 @@ class CourierProfileChip extends ConsumerWidget {
           border: Border.all(color: AppColors.borderSoft),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 14,
             backgroundColor: AppColors.primarySoft,
             child: Icon(Icons.delivery_dining, size: 18, color: AppColors.primary),

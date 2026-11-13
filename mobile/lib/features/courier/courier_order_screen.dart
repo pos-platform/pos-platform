@@ -239,9 +239,9 @@ class _Body extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(12)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.do_not_touch_outlined, size: 18, color: AppColors.primary),
+                Icon(Icons.do_not_touch_outlined, size: 18, color: AppColors.primary),
                 const SizedBox(width: 8),
-                Text(t.courierContactless, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                Text(t.courierContactless, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
               ]),
             ),
           ],

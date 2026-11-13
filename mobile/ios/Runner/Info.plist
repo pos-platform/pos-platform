@@ -17,7 +17,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Poscloud Market</string>
+		<string>$(APP_DISPLAY_NAME)</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -78,10 +78,10 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>yandexnavi</string>
-		<string>comgooglemaps</string>
-	</array>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>yandexnavi</string>
+			<string>comgooglemaps</string>
+		</array>
 	</dict>
 </plist>

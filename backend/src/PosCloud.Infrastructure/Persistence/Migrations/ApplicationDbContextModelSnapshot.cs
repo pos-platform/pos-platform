@@ -1349,6 +1349,28 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<bool>("AllowTransfer")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("AndroidLatestBuild")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AndroidLatestVersion")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int?>("AndroidMinBuild")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AndroidStoreUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("AppName")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("AppPackageId")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.Property<int>("AutoCancelMinutes")
                         .HasColumnType("integer");
 
@@ -1361,6 +1383,10 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("BonusPayEnabled")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("BrandColor")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
 
                     b.Property<TimeOnly?>("ClosesAt")
                         .HasColumnType("time without time zone");
@@ -1397,6 +1423,20 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal?>("FreeDeliveryFrom")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<int?>("IosLatestBuild")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IosLatestVersion")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int?>("IosMinBuild")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IosStoreUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<bool>("IsAcceptingOrders")
                         .HasColumnType("boolean");
@@ -1439,6 +1479,10 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<bool>("RequireTransferBeforeDispatch")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
@@ -1455,8 +1499,16 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AppPackageId")
+                        .IsUnique()
+                        .HasFilter("\"AppPackageId\" IS NOT NULL");
+
                     b.HasIndex("OrganizationId")
                         .IsUnique();
+
+                    b.HasIndex("Slug")
+                        .IsUnique()
+                        .HasFilter("\"Slug\" IS NOT NULL");
 
                     b.ToTable("OnlineStoreSettings", (string)null);
                 });

@@ -1,0 +1,10 @@
+{
+  "slug": "example",
+  "appName": "Example Market",
+  "androidPackageId": "uz.poscloud.store.example",
+  "iosBundleId": "uz.poscloud.store.example",
+  "brandColor": "#1D4ED8",
+  "splashColor": "#1D4ED8",
+  "versionName": "1.0.0",
+  "buildNumber": 1
+}

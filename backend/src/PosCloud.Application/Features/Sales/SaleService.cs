@@ -349,9 +349,12 @@ public class SaleService : ISaleService
                     source, redeemed, $"Savdo {sale.ReceiptNumber} — ball bilan to'lov{note}", sale);
             }
 
-            sale.LoyaltyPointsEarned = EarnPoints(loyalty, sale, earnSource
-                .Select(e => new LoyaltyEarnLine(e.Product.CategoryId, e.Product.ProductType, e.Item.LineTotal,
-                    e.Item.DiscountAmount > 0 || e.PriceReduced)), customer, source);
+            // Online buyurtma savdosida cashback "Tayyor"da emas — mijoz qabul qilganda (Delivered) yoziladi
+            // (OnlineOrderCashback). Bekor qilinsa ball umuman yozilmaydi.
+            if (source != LoyaltySource.Online)
+                sale.LoyaltyPointsEarned = EarnPoints(loyalty, sale, earnSource
+                    .Select(e => new LoyaltyEarnLine(e.Product.CategoryId, e.Product.ProductType, e.Item.LineTotal,
+                        e.Item.DiscountAmount > 0 || e.PriceReduced)), customer, source);
         }
 
         // Nasiya — qarzdor balansiga qo'shamiz va harakat yozamiz.

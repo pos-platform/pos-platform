@@ -1440,4 +1440,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bonusChooseStore => 'Выбрать магазин';
+
+  @override
+  String get storeChooseBranch => 'Выберите филиал';
+
+  @override
+  String get storeUnavailableTitle => 'Магазин временно не работает';
+
+  @override
+  String get storeUnavailableText => 'Попробуйте позже.';
+
+  @override
+  String get navBonus => 'Бонусы';
 }

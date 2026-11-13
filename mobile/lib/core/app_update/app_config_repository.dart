@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../api/api_client.dart';
+import '../config.dart';
 
 /// `GET /api/app/config` javobi: majburiy/yumshoq yangilash va texnik ishlar holati.
 class RemoteAppConfig {
@@ -68,7 +69,13 @@ class AppConfigRepository {
   Future<RemoteAppConfig> fetch({required String platform, required String version, required int build}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/api/app/config',
-      queryParameters: {'platform': platform, 'version': version, 'build': build},
+      // Do'kon ilovasi: do'konning o'z versiya qiymatlari (bo'lsa) global qiymatlar o'rniga (kelishuv 8).
+      queryParameters: {
+        'platform': platform,
+        'version': version,
+        'build': build,
+        if (AppConfig.isStoreMode) 'store': AppConfig.storeSlug,
+      },
     );
     return RemoteAppConfig.fromJson(res.data ?? const {});
   }

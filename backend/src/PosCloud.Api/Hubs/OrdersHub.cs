@@ -84,7 +84,9 @@ public class SignalROnlineOrderNotifier : IOnlineOrderNotifier
             try
             {
                 _pushQueue.Enqueue(new OrderStatusPush(order.Id, order.ShopUserId, order.Number, order.Status,
-                    order.FulfillmentType, order.CancelReason, order.CourierName, order.CourierPhone));
+                    order.FulfillmentType, order.CancelReason, order.CourierName, order.CourierPhone,
+                    // Cashback Delivered'da yoziladi — savdo shu kontekstda kuzatilgan bo'lsa navigatsiyadan olinadi.
+                    order.Status == OnlineOrderStatus.Delivered ? order.Sale?.LoyaltyPointsEarned : null));
             }
             catch (Exception ex)
             {

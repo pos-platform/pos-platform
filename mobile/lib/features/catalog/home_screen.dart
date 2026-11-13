@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/config.dart';
+import '../../core/store_app/store_app.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
@@ -39,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(t.catChooseStore, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                  child: Text(AppConfig.isStoreMode ? t.storeChooseBranch : t.catChooseStore, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
                 ),
               ),
             ),
@@ -48,10 +50,12 @@ class HomeScreen extends ConsumerWidget {
                 message: ApiException.from(error).message,
                 onRetry: () => ref.invalidate(selectedStoreProvider),
               ),
-              TextButton(
-                onPressed: () => ref.read(storeSelectionProvider.notifier).clear(),
-                child: Text(t.catChooseAnotherStore),
-              ),
+              // Do'kon rejimida filial bitta bo'lsa — boshqa tanlov yo'q.
+              if (!(ref.watch(storeAppProvider).value?.singleBranch ?? false))
+                TextButton(
+                  onPressed: () => ref.read(storeSelectionProvider.notifier).clear(),
+                  child: Text(t.catChooseAnotherStore),
+                ),
             ]),
           _ => const Center(child: CircularProgressIndicator()),
         },
@@ -258,9 +262,9 @@ class _CatalogState extends ConsumerState<_Catalog> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         Text(_sortLabel(t, _sort),
-                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
                         const SizedBox(width: 4),
-                        const Icon(Icons.swap_vert, size: 20, color: AppColors.primary),
+                        Icon(Icons.swap_vert, size: 20, color: AppColors.primary),
                       ]),
                     ),
                   ),
@@ -337,25 +341,27 @@ class _CatalogState extends ConsumerState<_Catalog> {
 }
 
 /// Yuqori qator: do'kon nomi (bosilsa — do'kon almashtirish) va holati.
-class _StoreHeader extends StatelessWidget {
+class _StoreHeader extends ConsumerWidget {
   const _StoreHeader({required this.store});
 
   final ShopStore store;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context);
+    // Do'kon rejimida filial bitta bo'lsa — almashtirish yo'q (marketplace do'konlari ko'rsatilmaydi).
+    final canSwitch = !(ref.watch(storeAppProvider).value?.singleBranch ?? false);
     final status = [
       store.isOpenNow ? t.catOpenNow : t.catClosedNow,
       ?store.hoursText,
       ?deliveryTimeText(t, store),
     ].join(' · ');
     return Semantics(
-      button: true,
-      label: t.catChangeStore,
+      button: canSwitch,
+      label: canSwitch ? t.catChangeStore : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () => context.push('/home/stores'),
+        onTap: canSwitch ? () => context.push('/home/stores') : null,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44),
           child: Row(children: [
@@ -378,7 +384,7 @@ class _StoreHeader extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
-                  const Icon(Icons.keyboard_arrow_down, size: 20),
+                  if (canSwitch) const Icon(Icons.keyboard_arrow_down, size: 20),
                 ]),
               ]),
             ),
@@ -404,12 +410,12 @@ class _BonusChip extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: ActionChip(
-        avatar: const Icon(Icons.qr_code_2, size: 18, color: AppColors.primary),
+        avatar: Icon(Icons.qr_code_2, size: 18, color: AppColors.primary),
         label: Text(points == null ? t.bonusTitle : formatBonusPoints(t, points)),
-        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary),
+        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary),
         backgroundColor: AppColors.primarySoft,
         side: BorderSide.none,
-        onPressed: () => context.go('/profile/bonus'),
+        onPressed: () => context.go('/bonus'),
       ),
     );
   }
@@ -434,7 +440,7 @@ class _PromoBanner extends StatelessWidget {
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white, height: 1.25)),
             const SizedBox(height: 6),
             Text(t.catFreeDeliveryFrom(formatMoney(context, store.freeDeliveryFrom!)),
-                style: const TextStyle(fontSize: 13, color: AppColors.onPrimarySoft)),
+                style: TextStyle(fontSize: 13, color: AppColors.onPrimarySoft)),
           ]),
         ),
         const SizedBox(width: 12),

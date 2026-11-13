@@ -10,11 +10,14 @@ class CatalogRepository {
 
   final Dio _dio;
 
-  Future<List<ShopStore>> stores({String? search, double? lat, double? lng}) => apiCall(() async {
+  /// [organizationId] — faqat shu tashkilot filiallari (do'kon rejimi, kelishuv 8).
+  Future<List<ShopStore>> stores({String? search, double? lat, double? lng, String? organizationId}) =>
+      apiCall(() async {
         final r = await _dio.get<List<dynamic>>('/api/shop/stores', queryParameters: {
           if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
           'lat': ?lat,
           'lng': ?lng,
+          'organizationId': ?organizationId,
         });
         return (r.data ?? const []).map((e) => ShopStore.fromJson(e as Map<String, dynamic>)).toList();
       });

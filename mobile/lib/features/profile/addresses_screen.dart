@@ -108,7 +108,7 @@ class AddressCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
         side: main
-            ? const BorderSide(color: AppColors.primary, width: 2)
+            ? BorderSide(color: AppColors.primary, width: 2)
             : const BorderSide(color: AppColors.borderSoft),
       ),
       child: InkWell(
@@ -151,7 +151,7 @@ class AddressCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(t.addressDefaultBadge,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary)),
                           ),
                         ],
@@ -193,7 +193,7 @@ class _AddButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
         minimumSize: const Size.fromHeight(56),
-        side: const BorderSide(color: AppColors.primary, width: 1.5),
+        side: BorderSide(color: AppColors.primary, width: 1.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
       ),

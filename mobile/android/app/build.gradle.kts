@@ -22,7 +22,20 @@ if (hasReleaseKeystore) {
     FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
 }
 
+// Do'kon (white-label) ilovasi: android/store.properties (tool/store.ps1 yozadi, repoga KIRMAYDI).
+// Bo'lmasa — standart "PosCloud Market" (uz.poscloud.poscloud_market). Batafsil: mobile/docs/WHITE_LABEL.md.
+val storePropertiesFile = rootProject.file("store.properties")
+val storeProperties = Properties()
+if (storePropertiesFile.exists()) {
+    FileInputStream(storePropertiesFile).use { storeProperties.load(it) }
+}
+val storeApplicationId: String = storeProperties.getProperty("applicationId")?.trim()?.takeIf { it.isNotEmpty() }
+    ?: "uz.poscloud.poscloud_market"
+val storeAppLabel: String = storeProperties.getProperty("appLabel")?.trim()?.takeIf { it.isNotEmpty() }
+    ?: "PosCloud Market"
+
 android {
+    // namespace (Kotlin paketi) do'kon ilovalarida ham o'zgarmaydi — faqat applicationId o'zgaradi.
     namespace = "uz.poscloud.poscloud_market"
     // flutter_local_notifications va androidx.core 1.19 kamida 37 talab qiladi (minSdk'ga ta'sir qilmaydi).
     compileSdk = maxOf(flutter.compileSdkVersion, 37)
@@ -37,7 +50,10 @@ android {
 
     defaultConfig {
         // DIQQAT: Play'da nashr qilingandan keyin applicationId'ni O'ZGARTIRIB BO'LMAYDI.
-        applicationId = "uz.poscloud.poscloud_market"
+        // Do'kon ilovasida — store.properties dagi applicationId.
+        applicationId = storeApplicationId
+        // Ilova nomi (AndroidManifest: android:label="${appLabel}").
+        manifestPlaceholders["appLabel"] = storeAppLabel
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         // sentry_flutter kamida 26 (Android 8.0) talab qiladi.

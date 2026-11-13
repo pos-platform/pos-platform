@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/legal_links.dart';
+import '../../core/store_app/store_branding.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
@@ -131,17 +132,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(20)),
-                        child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 34),
-                      ),
-                    ),
+                    // Do'kon rejimida — do'kon logosi va nomi.
+                    const Align(alignment: Alignment.centerLeft, child: StoreLogo()),
                     const SizedBox(height: 20),
-                    Text(t.appTitle, style: textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+                    Text(brandAppName(ref, t), style: textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
                     const SizedBox(height: 8),
                     Text(t.loginSubtitle,
                         style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary, height: 1.5)),
@@ -240,7 +234,7 @@ class _LegalAgreementState extends State<_LegalAgreement> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    const link = TextStyle(
+    final link = TextStyle(
       color: AppColors.primary,
       fontWeight: FontWeight.w700,
       decoration: TextDecoration.underline,

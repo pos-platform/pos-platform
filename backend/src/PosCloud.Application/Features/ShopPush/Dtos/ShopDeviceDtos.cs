@@ -21,4 +21,5 @@ public class RegisterShopDeviceRequest
 
 /// <summary>Navbatdagi push vazifasi: buyurtma holati o'zgardi (mijoz ma'lumotisiz; kuryer — faqat "Yo'lda" matni uchun).</summary>
 public record OrderStatusPush(Guid OrderId, Guid ShopUserId, int Number, OnlineOrderStatus Status,
-    FulfillmentType FulfillmentType, string? Reason, string? CourierName = null, string? CourierPhone = null);
+    FulfillmentType FulfillmentType, string? Reason, string? CourierName = null, string? CourierPhone = null,
+    decimal? Cashback = null);

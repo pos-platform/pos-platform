@@ -22,6 +22,9 @@ import '../features/profile/addresses_screen.dart';
 import '../features/profile/personal_info_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/shell/home_shell.dart';
+import 'config.dart';
+import 'store_app/store_app.dart';
+import 'store_app/store_unavailable_screen.dart';
 
 final _rootKey = GlobalKey<NavigatorState>();
 
@@ -33,6 +36,9 @@ final _rootKey = GlobalKey<NavigatorState>();
 ///
 /// Kuryer rejimi (`/courier*`) mijoz yo'naltirishidan mustaqil: kuryer sessiyasi bo'lsa ilova to'g'ridan-to'g'ri
 /// `/courier` da ochiladi; kuryer chiqsa — mijoz `/login`, sessiya rad etilsa — `/courier/login`.
+///
+/// Do'kon rejimi (STORE_SLUG): do'kon ma'lumoti kelguncha `/splash`; do'kon ishlamasa — `/store-unavailable`;
+/// marketplace do'konlar ro'yxati yo'q — `/home/stores` faqat shu do'kon filiallari (filial bitta bo'lsa — `/home`).
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ValueNotifier<AuthStatus>(ref.read(authControllerProvider).status);
   ref.listen(authControllerProvider, (_, next) => authNotifier.value = next.status);
@@ -40,11 +46,14 @@ final routerProvider = Provider<GoRouter>((ref) {
   final courierNotifier = ValueNotifier<CourierAuthState>(ref.read(courierAuthProvider));
   ref.listen(courierAuthProvider, (_, next) => courierNotifier.value = next);
   ref.onDispose(courierNotifier.dispose);
+  final storeNotifier = ValueNotifier<AsyncValue<StoreApp?>>(ref.read(storeAppProvider));
+  ref.listen(storeAppProvider, (_, next) => storeNotifier.value = next);
+  ref.onDispose(storeNotifier.dispose);
 
   return GoRouter(
     navigatorKey: _rootKey,
     initialLocation: '/home',
-    refreshListenable: Listenable.merge([authNotifier, courierNotifier]),
+    refreshListenable: Listenable.merge([authNotifier, courierNotifier, storeNotifier]),
     redirect: (context, state) {
       final status = authNotifier.value;
       final loc = state.matchedLocation;
@@ -57,6 +66,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (courier.isSignedIn) return isCourierArea && !isCourierLogin ? null : '/courier';
       if (isCourierLogin) return null;
       if (isCourierArea) return courier.expired ? '/courier/login' : '/login';
+
+      // Do'kon rejimi.
+      const unavailable = '/store-unavailable';
+      if (AppConfig.isStoreMode) {
+        final store = storeNotifier.value;
+        final app = store.value;
+        if (app == null) {
+          if (store.hasError && !store.isLoading) return loc == unavailable ? null : unavailable;
+          // Yuklanmoqda (yoki "Qayta urinish" bosilgan) — joriy ekran yoki splash.
+          return loc == unavailable || loc == '/splash' ? null : '/splash';
+        }
+        if (loc == '/home/stores' && app.singleBranch) return '/home';
+      }
+      if (loc == unavailable) return '/home';
 
       if (status == AuthStatus.unknown) return loc == '/splash' ? null : '/splash';
       if (status == AuthStatus.signedOut) return loc == '/login' ? null : '/login';
@@ -71,6 +94,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(path: '/store-unavailable', builder: (_, _) => const StoreUnavailableScreen()),
+      // Eski havolalar (push, profil) — "Bonus" tabiga.
+      GoRoute(
+        path: '/profile/bonus',
+        redirect: (_, _) => '/bonus',
+        routes: [
+          GoRoute(path: ':organizationId', redirect: (_, s) => '/bonus/${s.pathParameters['organizationId']}'),
+        ],
+      ),
       GoRoute(path: '/courier/login', builder: (_, _) => const CourierLoginScreen()),
       GoRoute(
         path: '/courier',
@@ -107,6 +139,19 @@ final routerProvider = Provider<GoRouter>((ref) {
               ],
             ),
           ]),
+          // "Bonus" tabi — QR karta darhol (AppTab.bonus).
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/bonus',
+              builder: (_, _) => const BonusCardScreen(),
+              routes: [
+                GoRoute(
+                  path: ':organizationId',
+                  builder: (_, s) => BonusCardScreen(organizationId: s.pathParameters['organizationId']),
+                ),
+              ],
+            ),
+          ]),
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/orders',
@@ -127,16 +172,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 GoRoute(
                   path: 'personal',
                   builder: (_, s) => PersonalInfoScreen(fromPrompt: s.uri.queryParameters['prompt'] == '1'),
-                ),
-                GoRoute(
-                  path: 'bonus',
-                  builder: (_, _) => const BonusCardScreen(),
-                  routes: [
-                    GoRoute(
-                      path: ':organizationId',
-                      builder: (_, s) => BonusCardScreen(organizationId: s.pathParameters['organizationId']),
-                    ),
-                  ],
                 ),
                 GoRoute(
                   path: 'addresses',

@@ -52,3 +52,13 @@ app.*.map.json
 key.properties
 *.jks
 *.keystore
+
+# White-label (docs/WHITE_LABEL.md): tool/store.ps1 yaratadigan fayllar.
+# stores/<slug>/ (store.json, ikonkalar) REPOGA KIRADI; quyidagilar har buildda qayta yoziladi.
+/android/store.properties
+/store-icons.*.tmp.yaml
+/store-splash.*.tmp.yaml
+/android/app/google-services.json.default
+/android/app/google-services.json.default.none
+/ios/Runner/GoogleService-Info.plist.default
+/ios/Runner/GoogleService-Info.plist.default.none

@@ -124,6 +124,9 @@ public class CourierService : ICourierService
         order.Status = OnlineOrderStatus.Delivered;
         order.DeliveredAt = DateTime.UtcNow;
 
+        // Cashback — mijoz qabul qilgandan keyin (shu tranzaksiyada saqlanadi).
+        await OnlineOrderCashback.EarnOnDeliveredAsync(_db, order, ct);
+
         await _db.SaveChangesAsync(ct);
         await _notifier.OrderChangedAsync(order, isNew: false, pushToCustomer: true, ct);
         return Fill(new CourierOrderDto(), order, await StoreNameAsync(me.OrganizationId, ct));

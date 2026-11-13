@@ -432,5 +432,9 @@
   "bonusGuestText": "Войдите по номеру телефона — копите кешбэк с каждой покупки и оплачивайте баллами",
   "bonusNoStoresTitle": "У вас пока нет бонусной карты",
   "bonusNoStoresText": "Выберите магазин — карта откроется автоматически",
-  "bonusChooseStore": "Выбрать магазин"
+  "bonusChooseStore": "Выбрать магазин",
+  "storeChooseBranch": "Выберите филиал",
+  "storeUnavailableTitle": "Магазин временно не работает",
+  "storeUnavailableText": "Попробуйте позже.",
+  "navBonus": "Бонусы"
 }

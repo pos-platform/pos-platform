@@ -1,5 +1,7 @@
 # Push bildirishnomalar (FCM) — sozlash
 
+> Har do'konga alohida ilova (white-label): `docs/WHITE_LABEL.md` (`tool/store.ps1`).
+
 Ilova kodi tayyor (`lib/core/push/push_service.dart`). Firebase fayllari qo'shilmaguncha push **jimgina o'chiq**:
 `Firebase.initializeApp` xato beradi, ilova odatdagidek ishlaydi, Android build buzilmaydi.
 

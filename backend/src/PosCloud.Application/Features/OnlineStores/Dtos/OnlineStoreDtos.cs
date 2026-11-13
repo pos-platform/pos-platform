@@ -20,6 +20,10 @@ public class OnlineStoreListItemDto
     public DateTime? PaidUntil { get; set; }
     public bool IsAcceptingOrders { get; set; }
 
+    /// <summary>White-label ilova slug'i va nomi (sozlanmagan bo'lsa null).</summary>
+    public string? Slug { get; set; }
+    public string? AppName { get; set; }
+
     /// <summary>Oxirgi 30 kundagi online buyurtmalar soni.</summary>
     public int OrdersLast30Days { get; set; }
 }
@@ -72,6 +76,20 @@ public class OnlineStoreSettingsDto
     public bool BonusPayEnabled { get; set; }
     public int BonusMaxPercent { get; set; }
 
+    // White-label mobil ilova (SuperAdmin)
+    public string? Slug { get; set; }
+    public string? AppName { get; set; }
+    public string? AppPackageId { get; set; }
+    public string? BrandColor { get; set; }
+    public int? AndroidMinBuild { get; set; }
+    public int? AndroidLatestBuild { get; set; }
+    public string? AndroidLatestVersion { get; set; }
+    public string? AndroidStoreUrl { get; set; }
+    public int? IosMinBuild { get; set; }
+    public int? IosLatestBuild { get; set; }
+    public string? IosLatestVersion { get; set; }
+    public string? IosStoreUrl { get; set; }
+
     /// <summary>Ilovada hozir ko'rinadimi (yoqilgan, bloklanmagan, tarif amal qiladi, tashkilot faol).</summary>
     public bool IsVisible { get; set; }
 }
@@ -98,6 +116,31 @@ public class UpdateOnlineStoreAdminRequest
     /// <summary>Online to'lov (yig'ilgandan keyin): Payme / Click.</summary>
     public bool AllowPayme { get; set; }
     public bool AllowClick { get; set; }
+}
+
+/// <summary>SuperAdmin: alohida (white-label) mobil ilova sozlamalari. Hammasi ixtiyoriy; bo'sh — tozalash.</summary>
+public class UpdateStoreAppRequest
+{
+    /// <summary>^[a-z0-9-]{3,40}$, unik.</summary>
+    public string? Slug { get; set; }
+
+    public string? AppName { get; set; }
+
+    /// <summary>^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$, unik.</summary>
+    public string? AppPackageId { get; set; }
+
+    /// <summary>#RRGGBB.</summary>
+    public string? BrandColor { get; set; }
+
+    public int? AndroidMinBuild { get; set; }
+    public int? AndroidLatestBuild { get; set; }
+    public string? AndroidLatestVersion { get; set; }
+    public string? AndroidStoreUrl { get; set; }
+
+    public int? IosMinBuild { get; set; }
+    public int? IosLatestBuild { get; set; }
+    public string? IosLatestVersion { get; set; }
+    public string? IosStoreUrl { get; set; }
 }
 
 /// <summary>Do'kon admini o'zgartiradigan qism.</summary>

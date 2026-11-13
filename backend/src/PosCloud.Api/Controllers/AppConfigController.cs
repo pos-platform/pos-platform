@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PosCloud.Application.Features.ShopCatalog;
 
 namespace PosCloud.Api.Controllers;
 
@@ -15,28 +16,49 @@ namespace PosCloud.Api.Controllers;
 public class AppConfigController : ControllerBase
 {
     private readonly IConfiguration _configuration;
+    private readonly IShopCatalogService _catalog;
 
-    public AppConfigController(IConfiguration configuration)
+    public AppConfigController(IConfiguration configuration, IShopCatalogService catalog)
     {
         _configuration = configuration;
+        _catalog = catalog;
     }
 
     /// <summary>
-    /// GET /api/app/config?platform=android|ios&amp;version=1.0.0&amp;build=1
-    /// forceUpdate = build &lt; minSupportedBuild.
+    /// GET /api/app/config?platform=android|ios&amp;version=1.0.0&amp;build=1&amp;store=slug
+    /// forceUpdate = build &lt; minSupportedBuild. store berilsa — do'kon ilovasining qiymatlari
+    /// (to'ldirilganlari) global qiymatlar o'rniga ishlatiladi.
     /// </summary>
     [HttpGet]
-    public ActionResult<AppConfigResponse> Get(
+    public async Task<ActionResult<AppConfigResponse>> Get(
         [FromQuery] string? platform,
         [FromQuery] string? version,
-        [FromQuery] int? build)
+        [FromQuery] int? build,
+        [FromQuery] string? store,
+        CancellationToken ct)
     {
         var options = _configuration.GetSection(MobileAppOptions.SectionName).Get<MobileAppOptions>()
             ?? new MobileAppOptions();
 
         // Noma'lum platforma — Android qiymatlari (asosiy platforma).
         var isIos = string.Equals(platform, "ios", StringComparison.OrdinalIgnoreCase);
-        var p = (isIos ? options.Ios : options.Android) ?? new MobilePlatformOptions();
+        var global = (isIos ? options.Ios : options.Android) ?? new MobilePlatformOptions();
+        var p = new MobilePlatformOptions
+        {
+            MinSupportedBuild = global.MinSupportedBuild,
+            LatestBuild = global.LatestBuild,
+            LatestVersion = global.LatestVersion,
+            StoreUrl = global.StoreUrl
+        };
+
+        if (!string.IsNullOrWhiteSpace(store)
+            && await _catalog.GetStoreAppPlatformAsync(store, isIos, ct) is { } s)
+        {
+            if (s.MinBuild is { } min) p.MinSupportedBuild = min;
+            if (s.LatestBuild is { } latest) p.LatestBuild = latest;
+            if (!string.IsNullOrWhiteSpace(s.LatestVersion)) p.LatestVersion = s.LatestVersion;
+            if (!string.IsNullOrWhiteSpace(s.StoreUrl)) p.StoreUrl = s.StoreUrl;
+        }
 
         // Havolalar sozlanmagan bo'lsa — shu serverdagi statik sahifalar (wwwroot).
         var baseUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";

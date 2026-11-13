@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:ui' show Color;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:poscloud_market/app.dart';
+import 'package:poscloud_market/core/theme/app_colors.dart';
 import 'package:poscloud_market/features/auth/data/auth_models.dart';
 import 'package:poscloud_market/features/auth/data/token_storage.dart';
 
@@ -41,6 +44,22 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Asosiy'), findsOneWidget);
+    // Pastki menyu: 5 tab, o'rtada "Bonus". Mehmon bossa — kirish ekrani.
+    expect(find.text('Bonus'), findsOneWidget);
+    await tester.tap(find.text('Bonus'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Kodni olish'), findsOneWidget);
 
+  });
+
+  test('Brend rangi: och rang oq matn o‘qiladigan darajada to‘qlashtiriladi', () {
+    AppColors.applyBrand(const Color(0xFFFFEB3B)); // sariq
+    final c = AppColors.primary;
+    expect(1.05 / (c.computeLuminance() + 0.05), greaterThanOrEqualTo(4.5));
+    AppColors.applyBrand(null);
+    expect(AppColors.primary, AppColors.defaultPrimary);
+    expect(AppColors.parseHex('#0B6B45'), AppColors.defaultPrimary);
+    expect(AppColors.parseHex('zzz'), isNull);
   });
 }

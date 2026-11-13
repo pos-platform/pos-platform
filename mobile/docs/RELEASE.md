@@ -1,5 +1,7 @@
 # PosCloud Market — reliz qo'llanmasi
 
+> Har do'konga alohida ilova (white-label): `docs/WHITE_LABEL.md` (`tool/store.ps1`).
+
 Ilova ID: `uz.poscloud.poscloud_market` (Android `applicationId` va iOS bundle id).
 
 > **DIQQAT:** Play Market'ga birinchi marta yuklangandan keyin ilova ID'sini **o'zgartirib bo'lmaydi**.

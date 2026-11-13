@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/config.dart';
+import '../../core/store_app/store_app.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
@@ -45,7 +47,10 @@ class StoresScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(AppLocalizations.of(context).catChooseStore)),
+        appBar: AppBar(
+            title: Text(AppConfig.isStoreMode
+                ? AppLocalizations.of(context).storeChooseBranch
+                : AppLocalizations.of(context).catChooseStore)),
         body: StoreList(onSelected: () => context.canPop() ? context.pop() : context.go('/home')),
       );
 }
@@ -70,7 +75,11 @@ class _StoreListState extends ConsumerState<StoreList> {
 
   Future<List<ShopStore>> _load() async {
     final loc = await ref.read(userLocationProvider.future);
-    return ref.read(catalogRepositoryProvider).stores(search: _search.text, lat: loc?.lat, lng: loc?.lng);
+    // Do'kon rejimida — faqat shu do'kon filiallari.
+    final org = AppConfig.isStoreMode ? (await ref.read(storeAppProvider.future))?.organizationId : null;
+    return ref
+        .read(catalogRepositoryProvider)
+        .stores(search: _search.text, lat: loc?.lat, lng: loc?.lng, organizationId: org);
   }
 
   void _reload() => setState(() => _future = _load());
@@ -194,7 +203,7 @@ class _StoreTile extends StatelessWidget {
                 _OpenBadge(open: store.isOpenNow),
               ]),
             ),
-            if (selected) const Icon(Icons.check_circle, color: AppColors.primary),
+            if (selected) Icon(Icons.check_circle, color: AppColors.primary),
           ]),
         ),
       ),

@@ -326,6 +326,9 @@ public class ShopOrderService : IShopOrderService
         dto.PromoCode = order.PromoCode;
         dto.PromoDiscount = order.PromoDiscount;
         dto.BonusUsed = order.BonusUsed;
+        dto.CashbackEarned = order.Status == OnlineOrderStatus.Delivered && order.Sale is { } deliveredSale
+            ? deliveredSale.LoyaltyPointsEarned
+            : null;
         dto.OnlinePaymentProvider = order.OnlinePaymentProvider;
         dto.OnlineProviders = OnlineProviders(settings);
         dto.CanPayOnline = CanPayOnline(order, settings);

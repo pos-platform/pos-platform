@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/config.dart';
+import '../../../core/store_app/store_app.dart';
 import '../../auth/auth_controller.dart';
 
 double _num(Object? v) => v is num ? v.toDouble() : double.tryParse('$v') ?? 0;
@@ -150,8 +152,16 @@ final bonusCardRepositoryProvider = Provider<BonusCardRepository>((ref) => Bonus
 /// Bonus do'konlari (faqat kirgan foydalanuvchi; mehmon — bo'sh ro'yxat).
 final bonusStoresProvider = FutureProvider.autoDispose<List<BonusStore>>((ref) async {
   if (!ref.watch(authControllerProvider.select((a) => a.isSignedIn))) return const [];
-  return ref.read(bonusCardRepositoryProvider).stores();
+  return loadBonusStores(ref);
 });
+
+/// Bonus do'konlari; do'kon rejimida — faqat shu do'kon (boshqa do'konlar chiplari ko'rsatilmaydi).
+Future<List<BonusStore>> loadBonusStores(Ref ref) async {
+  final stores = await ref.read(bonusCardRepositoryProvider).stores();
+  if (!AppConfig.isStoreMode) return stores;
+  final org = (await ref.read(storeAppProvider.future))?.organizationId;
+  return [for (final s in stores) if (s.organizationId == org) s];
+}
 
 /// Tashkilot bo'yicha ball tarixi (sahifalab).
 class BonusHistoryNotifier extends AsyncNotifier<BonusHistoryPage> {

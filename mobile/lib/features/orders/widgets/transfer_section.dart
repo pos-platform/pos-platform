@@ -53,12 +53,12 @@ class _TransferSectionState extends ConsumerState<TransferSection> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+              leading: Icon(Icons.photo_camera_outlined, color: AppColors.primary),
               title: Text(t.ordersProofCamera),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
+              leading: Icon(Icons.photo_library_outlined, color: AppColors.primary),
               title: Text(t.ordersProofGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
@@ -126,7 +126,7 @@ class _TransferSectionState extends ConsumerState<TransferSection> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(t.ordersProofUploaded,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
                 ),
               ],
             ),
@@ -202,7 +202,7 @@ class _TransferSectionState extends ConsumerState<TransferSection> {
             IconButton(
               tooltip: t.ordersCopy,
               onPressed: () => _copy(copy),
-              icon: const Icon(Icons.copy_rounded, color: AppColors.primary),
+              icon: Icon(Icons.copy_rounded, color: AppColors.primary),
             ),
         ],
       ),

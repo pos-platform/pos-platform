@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using PosCloud.Application.Common;
 using PosCloud.Application.Common.Exceptions;
@@ -14,6 +15,7 @@ public interface IOnlineStoreService
     Task<IReadOnlyList<OnlineStoreListItemDto>> GetAllAsync(string? filter, string? search, CancellationToken ct = default);
     Task<OnlineStoreSettingsDto> GetForOrganizationAsync(Guid organizationId, CancellationToken ct = default);
     Task<OnlineStoreSettingsDto> UpdateAdminAsync(Guid organizationId, UpdateOnlineStoreAdminRequest request, CancellationToken ct = default);
+    Task<OnlineStoreSettingsDto> UpdateAppAsync(Guid organizationId, UpdateStoreAppRequest request, CancellationToken ct = default);
 
     // Do'kon admini / kassa (joriy tashkilot)
     Task<OnlineStoreSettingsDto> GetMineAsync(CancellationToken ct = default);
@@ -68,6 +70,8 @@ public class OnlineStoreService : IOnlineStoreService
             SortOrder = r.Settings?.SortOrder ?? 0,
             PaidUntil = r.Settings?.PaidUntil,
             IsAcceptingOrders = r.Settings?.IsAcceptingOrders ?? false,
+            Slug = r.Settings?.Slug,
+            AppName = r.Settings?.AppName,
             OrdersLast30Days = r.Orders
         });
 
@@ -83,7 +87,8 @@ public class OnlineStoreService : IOnlineStoreService
         var term = search?.Trim();
         if (!string.IsNullOrEmpty(term))
             list = list.Where(x => x.OrganizationName.Contains(term, StringComparison.OrdinalIgnoreCase)
-                                   || (x.DisplayName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
+                                   || (x.DisplayName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false)
+                                   || (x.Slug?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
 
         return list
             .OrderByDescending(x => x.IsRequested && !x.IsEnabled)
@@ -122,6 +127,64 @@ public class OnlineStoreService : IOnlineStoreService
         settings.AllowPayme = r.AllowPayme;
         settings.AllowClick = r.AllowClick;
         if (r.IsEnabled) settings.IsRequested = false; // so'rov ko'rib chiqildi
+
+        await _db.SaveChangesAsync(ct);
+        return ToDto(org, settings);
+    }
+
+    public async Task<OnlineStoreSettingsDto> UpdateAppAsync(Guid organizationId, UpdateStoreAppRequest r,
+        CancellationToken ct = default)
+    {
+        var org = await RequireOrganization(organizationId, ct);
+
+        var slug = NullIfEmpty(r.Slug)?.ToLowerInvariant();
+        if (slug is not null && !SlugRegex.IsMatch(slug))
+            throw new ValidationException("Slug 3–40 ta kichik lotin harfi, raqam yoki '-' dan iborat bo'lishi kerak.");
+
+        var appName = NullIfEmpty(r.AppName);
+        if (appName is { Length: > 30 })
+            throw new ValidationException("Ilova nomi 30 belgidan oshmasligi kerak.");
+
+        var packageId = NullIfEmpty(r.AppPackageId);
+        if (packageId is not null && (packageId.Length > 150 || !PackageIdRegex.IsMatch(packageId)))
+            throw new ValidationException("Paket ID noto'g'ri (masalan: uz.poscloud.mystore).");
+
+        var color = NullIfEmpty(r.BrandColor)?.ToUpperInvariant();
+        if (color is not null && !ColorRegex.IsMatch(color))
+            throw new ValidationException("Brend rangi #RRGGBB ko'rinishida bo'lishi kerak.");
+
+        ValidateBuilds(r.AndroidMinBuild, r.AndroidLatestBuild, "Android");
+        ValidateBuilds(r.IosMinBuild, r.IosLatestBuild, "iOS");
+
+        var androidVersion = NullIfEmpty(r.AndroidLatestVersion);
+        var iosVersion = NullIfEmpty(r.IosLatestVersion);
+        if (androidVersion is { Length: > 30 } || iosVersion is { Length: > 30 })
+            throw new ValidationException("Versiya 30 belgidan oshmasligi kerak.");
+
+        var androidUrl = NormalizeHttpsUrl(r.AndroidStoreUrl, "Android");
+        var iosUrl = NormalizeHttpsUrl(r.IosStoreUrl, "iOS");
+
+        // Unikallik: boshqa tashkilotda band bo'lmasligi kerak.
+        if (slug is not null && await _db.OnlineStoreSettings.IgnoreQueryFilters()
+                .AnyAsync(s => s.Slug == slug && s.OrganizationId != organizationId, ct))
+            throw new ConflictException($"\"{slug}\" slug'i boshqa do'konda band.");
+        if (packageId is not null && await _db.OnlineStoreSettings.IgnoreQueryFilters()
+                .AnyAsync(s => s.AppPackageId == packageId && s.OrganizationId != organizationId, ct))
+            throw new ConflictException($"\"{packageId}\" paket ID'si boshqa do'konda band.");
+
+        var settings = await GetOrCreate(organizationId, ct);
+        settings.Slug = slug;
+        settings.AppName = appName;
+        settings.AppPackageId = packageId;
+        settings.BrandColor = color;
+        settings.AndroidMinBuild = r.AndroidMinBuild;
+        settings.AndroidLatestBuild = r.AndroidLatestBuild;
+        settings.AndroidLatestVersion = androidVersion;
+        settings.AndroidStoreUrl = androidUrl;
+        settings.IosMinBuild = r.IosMinBuild;
+        settings.IosLatestBuild = r.IosLatestBuild;
+        settings.IosLatestVersion = iosVersion;
+        settings.IosStoreUrl = iosUrl;
 
         await _db.SaveChangesAsync(ct);
         return ToDto(org, settings);
@@ -228,6 +291,28 @@ public class OnlineStoreService : IOnlineStoreService
 
     // ---------------- yordamchilar ----------------
 
+    private static readonly Regex SlugRegex = new("^[a-z0-9-]{3,40}$", RegexOptions.Compiled);
+    private static readonly Regex PackageIdRegex = new(@"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$", RegexOptions.Compiled);
+    private static readonly Regex ColorRegex = new("^#[0-9A-F]{6}$", RegexOptions.Compiled);
+
+    private static void ValidateBuilds(int? min, int? latest, string platform)
+    {
+        if (min is < 0 || latest is < 0)
+            throw new ValidationException($"{platform} build raqamlari manfiy bo'lmasligi kerak.");
+        if (min is { } m && latest is { } l && l < m)
+            throw new ValidationException($"{platform}: oxirgi build minimal build'dan kichik bo'lmasligi kerak.");
+    }
+
+    /// <summary>Bo'sh — null; aks holda to'liq https havola bo'lishi shart.</summary>
+    private static string? NormalizeHttpsUrl(string? value, string platform)
+    {
+        var url = NullIfEmpty(value);
+        if (url is null) return null;
+        if (url.Length > 500 || !Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+            throw new ValidationException($"{platform} store havolasi https:// bilan boshlanadigan to'liq manzil bo'lishi kerak.");
+        return url;
+    }
+
     private Guid CurrentOrganization() =>
         _currentUser.OrganizationId ?? throw new ValidationException("Bu amal tashkilot foydalanuvchisi uchun.");
 
@@ -289,6 +374,18 @@ public class OnlineStoreService : IOnlineStoreService
         DeliveryServiceMxikCode = s.DeliveryServiceMxikCode,
         BonusPayEnabled = s.BonusPayEnabled,
         BonusMaxPercent = s.BonusMaxPercent,
+        Slug = s.Slug,
+        AppName = s.AppName,
+        AppPackageId = s.AppPackageId,
+        BrandColor = s.BrandColor,
+        AndroidMinBuild = s.AndroidMinBuild,
+        AndroidLatestBuild = s.AndroidLatestBuild,
+        AndroidLatestVersion = s.AndroidLatestVersion,
+        AndroidStoreUrl = s.AndroidStoreUrl,
+        IosMinBuild = s.IosMinBuild,
+        IosLatestBuild = s.IosLatestBuild,
+        IosLatestVersion = s.IosLatestVersion,
+        IosStoreUrl = s.IosStoreUrl,
         IsVisible = org.IsActive && s.IsEnabled && !s.IsBlocked && (s.PaidUntil == null || s.PaidUntil >= DateTime.UtcNow)
     };
 

@@ -165,7 +165,7 @@ class _FreeDeliveryProgress extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (remaining <= 0)
           Text(t.cartFreeDeliveryReached,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary))
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary))
         else
           Text.rich(
             idx < 0
@@ -415,7 +415,7 @@ class _PromoSectionState extends ConsumerState<_PromoSection> {
               Text(error, style: const TextStyle(fontSize: 13, color: AppColors.danger))
             else if (ok)
               Text(t.cartPromoApplied(formatMoney(context, quote.promoDiscount)),
-                  style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                  style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
           ]),
         ),
         TextButton(

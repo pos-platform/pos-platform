@@ -56,6 +56,24 @@ public class ShopStoreDto
     public double? DeliveryRadiusKm { get; set; }
 }
 
+/// <summary>Alohida (white-label) do'kon ilovasi ochilganda oladigan ma'lumot: brend va ko'rinadigan filiallar.</summary>
+public class ShopStoreAppDto
+{
+    public Guid OrganizationId { get; set; }
+    public string Slug { get; set; } = string.Empty;
+
+    /// <summary>AppName; bo'sh bo'lsa DisplayName yoki tashkilot nomi.</summary>
+    public string AppName { get; set; } = string.Empty;
+    public string? BrandColor { get; set; }
+    public string? LogoUrl { get; set; }
+    public string? Description { get; set; }
+    public string? Phone { get; set; }
+    public IReadOnlyList<ShopStoreDto> Branches { get; set; } = Array.Empty<ShopStoreDto>();
+}
+
+/// <summary>Do'kon ilovasining bitta platforma uchun versiya qiymatlari (null — global qiymat ishlatiladi).</summary>
+public sealed record StoreAppPlatformInfo(int? MinBuild, int? LatestBuild, string? LatestVersion, string? StoreUrl);
+
 public class ShopCategoryDto
 {
     public Guid Id { get; set; }

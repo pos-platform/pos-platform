@@ -7,6 +7,7 @@ import 'core/app_update/app_update_gate.dart';
 import 'core/locale/locale_controller.dart';
 import 'core/push/push_service.dart';
 import 'core/router.dart';
+import 'core/store_app/store_app.dart';
 import 'core/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
 
@@ -27,8 +28,11 @@ class _PosCloudAppState extends ConsumerState<PosCloudApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Do'kon rejimi: brend rangi (AppColors.applyBrand allaqachon qo'llangan) o'zgarsa tema qayta quriladi.
+    ref.watch(storeAppProvider.select((s) => s.value?.brandColor));
+    final storeName = ref.watch(storeBrandingProvider).name;
     return MaterialApp.router(
-      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+      onGenerateTitle: (context) => storeName ?? AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       routerConfig: ref.watch(routerProvider),

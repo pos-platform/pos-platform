@@ -2695,6 +2695,30 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Do‘kon tanlash'**
   String get bonusChooseStore;
+
+  /// No description provided for @storeChooseBranch.
+  ///
+  /// In uz, this message translates to:
+  /// **'Filialni tanlang'**
+  String get storeChooseBranch;
+
+  /// No description provided for @storeUnavailableTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘kon vaqtincha ishlamayapti'**
+  String get storeUnavailableTitle;
+
+  /// No description provided for @storeUnavailableText.
+  ///
+  /// In uz, this message translates to:
+  /// **'Keyinroq qayta urinib ko‘ring.'**
+  String get storeUnavailableText;
+
+  /// No description provided for @navBonus.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bonus'**
+  String get navBonus;
 }
 
 class _AppLocalizationsDelegate

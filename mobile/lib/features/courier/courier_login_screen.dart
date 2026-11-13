@@ -88,7 +88,7 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen> {
                         color: AppColors.primarySoft,
                         borderRadius: BorderRadius.circular(AppTheme.radiusCard),
                       ),
-                      child: const Icon(Icons.delivery_dining, color: AppColors.primary, size: 34),
+                      child: Icon(Icons.delivery_dining, color: AppColors.primary, size: 34),
                     ),
                     const SizedBox(height: 20),
                     Text(t.courierLoginTitle, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),

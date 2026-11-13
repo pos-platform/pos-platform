@@ -22,12 +22,16 @@ public class ShopCatalogController : ControllerBase
         _service = service;
     }
 
-    /// <summary>Do'konlar ro'yxati. lat/lng berilsa — masofa hisoblanadi va yaqinlari oldinda.</summary>
+    /// <summary>
+    /// Do'konlar ro'yxati. lat/lng berilsa — masofa hisoblanadi va yaqinlari oldinda.
+    /// organizationId berilsa — faqat shu tashkilot filiallari (white-label ilova).
+    /// </summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ShopStoreDto>>> GetStores(
-        [FromQuery] double? lat, [FromQuery] double? lng, [FromQuery] string? search, CancellationToken ct)
+        [FromQuery] double? lat, [FromQuery] double? lng, [FromQuery] string? search,
+        [FromQuery] Guid? organizationId, CancellationToken ct)
     {
-        return Ok(await _service.GetStoresAsync(lat, lng, search, ct));
+        return Ok(await _service.GetStoresAsync(lat, lng, search, organizationId, ct));
     }
 
     [HttpGet("{branchId:guid}")]
@@ -56,4 +60,25 @@ public class ShopCatalogController : ControllerBase
     {
         return Ok(await _service.GetProductAsync(branchId, productId, ct));
     }
+}
+
+/// <summary>
+/// Alohida (white-label) do'kon ilovasi: GET /api/shop/store-app/{slug} (tokensiz).
+/// Do'kon ko'rinmasa — 404 {error:"Do'kon vaqtincha ishlamayapti"}.
+/// </summary>
+[ApiController]
+[AllowAnonymous]
+[Route("api/shop/store-app")]
+public class ShopStoreAppController : ControllerBase
+{
+    private readonly IShopCatalogService _service;
+
+    public ShopStoreAppController(IShopCatalogService service)
+    {
+        _service = service;
+    }
+
+    [HttpGet("{slug}")]
+    public async Task<ActionResult<ShopStoreAppDto>> Get(string slug, CancellationToken ct) =>
+        Ok(await _service.GetStoreAppAsync(slug, ct));
 }

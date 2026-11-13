@@ -65,7 +65,7 @@ class AppTheme {
         border: roundedInput,
         enabledBorder: roundedInput,
         focusedBorder: roundedInput.copyWith(
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
       ),
       cardTheme: CardThemeData(

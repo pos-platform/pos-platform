@@ -11,7 +11,12 @@ namespace PosCloud.Application.Features.ShopCatalog;
 
 public interface IShopCatalogService
 {
-    Task<IReadOnlyList<ShopStoreDto>> GetStoresAsync(double? lat, double? lng, string? search, CancellationToken ct = default);
+    Task<IReadOnlyList<ShopStoreDto>> GetStoresAsync(double? lat, double? lng, string? search, Guid? organizationId = null,
+        CancellationToken ct = default);
+    Task<ShopStoreAppDto> GetStoreAppAsync(string slug, CancellationToken ct = default);
+
+    /// <summary>/api/app/config uchun: slug bo'yicha do'kon ilovasining platforma qiymatlari. Topilmasa null.</summary>
+    Task<StoreAppPlatformInfo?> GetStoreAppPlatformAsync(string slug, bool isIos, CancellationToken ct = default);
     Task<ShopStoreDto> GetStoreAsync(Guid branchId, CancellationToken ct = default);
     Task<IReadOnlyList<ShopCategoryDto>> GetCategoriesAsync(Guid branchId, CancellationToken ct = default);
     Task<PagedResult<ShopProductDto>> GetProductsAsync(Guid branchId, ShopProductQuery query, CancellationToken ct = default);
@@ -38,9 +43,9 @@ public class ShopCatalogService : IShopCatalogService
     }
 
     public async Task<IReadOnlyList<ShopStoreDto>> GetStoresAsync(double? lat, double? lng, string? search,
-        CancellationToken ct = default)
+        Guid? organizationId = null, CancellationToken ct = default)
     {
-        var rows = await LoadVisibleStores(null, ct);
+        var rows = await LoadVisibleStoresAsync(_db, null, ct, organizationId);
 
         var term = search?.Trim();
         if (!string.IsNullOrEmpty(term))
@@ -57,6 +62,50 @@ public class ShopCatalogService : IShopCatalogService
             .ThenBy(x => x.Dto.Name)
             .Select(x => x.Dto)
             .ToList();
+    }
+
+    public async Task<ShopStoreAppDto> GetStoreAppAsync(string slug, CancellationToken ct = default)
+    {
+        const string unavailable = "Do'kon vaqtincha ishlamayapti";
+        var key = slug?.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(key)) throw new NotFoundException(unavailable);
+
+        // Slug kichik harfda saqlanadi — katta-kichik harf farqsiz qidiruv.
+        var settings = await _db.OnlineStoreSettings.IgnoreQueryFilters().AsNoTracking()
+                           .FirstOrDefaultAsync(s => s.Slug == key, ct)
+                       ?? throw new NotFoundException(unavailable);
+
+        // Katalog bilan bir xil ko'rinish qoidalari; birorta filial ko'rinmasa — do'kon ishlamayapti.
+        var rows = await LoadVisibleStoresAsync(_db, null, ct, settings.OrganizationId);
+        if (rows.Count == 0) throw new NotFoundException(unavailable);
+
+        var s = rows[0].Settings;
+        var name = !string.IsNullOrWhiteSpace(s.AppName) ? s.AppName : StoreName(rows[0]);
+
+        return new ShopStoreAppDto
+        {
+            OrganizationId = settings.OrganizationId!.Value,
+            Slug = s.Slug!,
+            AppName = name,
+            BrandColor = s.BrandColor,
+            LogoUrl = s.LogoUrl,
+            Description = s.Description,
+            Phone = s.Phone,
+            Branches = rows.Select(r => ToStoreDto(r, null, null)).OrderBy(d => d.BranchName).ToList()
+        };
+    }
+
+    public async Task<StoreAppPlatformInfo?> GetStoreAppPlatformAsync(string slug, bool isIos, CancellationToken ct = default)
+    {
+        var key = slug?.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(key)) return null;
+
+        var query = _db.OnlineStoreSettings.IgnoreQueryFilters().AsNoTracking().Where(s => s.Slug == key);
+        return isIos
+            ? await query.Select(s => new StoreAppPlatformInfo(s.IosMinBuild, s.IosLatestBuild, s.IosLatestVersion, s.IosStoreUrl))
+                .FirstOrDefaultAsync(ct)
+            : await query.Select(s => new StoreAppPlatformInfo(s.AndroidMinBuild, s.AndroidLatestBuild, s.AndroidLatestVersion, s.AndroidStoreUrl))
+                .FirstOrDefaultAsync(ct);
     }
 
     public async Task<ShopStoreDto> GetStoreAsync(Guid branchId, CancellationToken ct = default)
@@ -191,7 +240,7 @@ public class ShopCatalogService : IShopCatalogService
 
     /// <summary>Ilovada ko'rinadigan do'konlar: filial va tashkilot faol, Store, yoqilgan, bloklanmagan, tarif amal qiladi.</summary>
     internal static async Task<List<StoreRow>> LoadVisibleStoresAsync(IApplicationDbContext db, Guid? branchId,
-        CancellationToken ct)
+        CancellationToken ct, Guid? organizationId = null)
     {
         var now = DateTime.UtcNow;
 
@@ -207,6 +256,8 @@ public class ShopCatalogService : IShopCatalogService
 
         if (branchId is { } id)
             query = query.Where(x => x.Branch.Id == id);
+        if (organizationId is { } orgId)
+            query = query.Where(x => x.Settings.OrganizationId == orgId);
 
         var list = await query.ToListAsync(ct);
         return list.Select(x => new StoreRow(x.Branch, x.OrganizationName, x.Settings)).ToList();

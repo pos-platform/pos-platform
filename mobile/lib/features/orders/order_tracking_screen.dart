@@ -185,7 +185,7 @@ class _StatusCard extends StatelessWidget {
             scheduled != null && order.isActive
                 ? t.ordersScheduled(OrderFormat.dateTime(context, t, scheduled))
                 : t.ordersCardLabel,
-            style: const TextStyle(fontSize: 13, color: AppColors.onPrimarySoft, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 13, color: AppColors.onPrimarySoft, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
@@ -219,11 +219,11 @@ class _StatusCard extends StatelessWidget {
           if (eta != null) ...[
             const SizedBox(height: 6),
             Row(children: [
-              const Icon(Icons.schedule, size: 18, color: AppColors.onPrimarySoft),
+              Icon(Icons.schedule, size: 18, color: AppColors.onPrimarySoft),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(t.ordersEta(eta),
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onPrimarySoft)),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onPrimarySoft)),
               ),
             ]),
           ],
@@ -287,7 +287,7 @@ class _FailedCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(refund.$2,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
               ),
             ]),
           ],
@@ -473,7 +473,7 @@ class _StepRow extends StatelessWidget {
       _StepState.done => Container(
           width: 24,
           height: 24,
-          decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
           child: const Icon(Icons.check, size: 14, color: Colors.white),
         ),
       _StepState.current => Container(
@@ -488,7 +488,7 @@ class _StepRow extends StatelessWidget {
           child: Container(
             width: 8,
             height: 8,
-            decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
           ),
         ),
       _StepState.todo => Container(
@@ -594,7 +594,7 @@ class _SummaryCard extends StatelessWidget {
                       if (order.promoDiscount > 0) '${t.cartPromoDiscount}: −${OrderFormat.money(t, order.promoDiscount)}',
                       if (order.bonusUsed > 0) '${t.cartBonusUsed}: −${OrderFormat.money(t, order.bonusUsed)}',
                     ].join(' · '),
-                    style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
                   ),
               ],
             ),

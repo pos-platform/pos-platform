@@ -8,6 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/auth_controller.dart';
@@ -15,6 +16,7 @@ import '../catalog/store_selection.dart';
 import '../catalog/widgets/common.dart';
 import '../orders/widgets/order_format.dart';
 import '../profile/widgets/profile_widgets.dart';
+import 'data/bonus_card_cache.dart';
 import 'data/bonus_card_repository.dart';
 
 final _points = NumberFormat('#,##0', 'en_US');
@@ -40,7 +42,8 @@ class BonusCardScreen extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
-          ProfilePageHeader(title: t.bonusTitle),
+          // Pastki menyudagi "Bonus" tabida ildiz ekran — orqaga tugmasi yo'q.
+          ProfilePageHeader(title: t.bonusTitle, showBack: Navigator.of(context).canPop()),
           Expanded(child: signedIn ? _BonusBody(organizationId: organizationId) : const _GuestPrompt()),
         ]),
       ),
@@ -69,6 +72,7 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
   bool _storesReloaded = false;
 
   BonusCard? _card;
+  BonusCard? _preview; // keshdagi (muddati o'tgan bo'lishi mumkin) — nom va balans uchun
   DateTime? _fetchedAt;
   DateTime? _validUntil; // qurilma soati bo'yicha (server soati farqidan himoya)
   bool _loadingCard = false;
@@ -90,6 +94,7 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
         ref.read(bonusHistoryProvider(org).notifier).loadMore();
       }
     });
+    _restoreFromCache();
     ref.listenManual(bonusStoresProvider, (_, next) {
       final stores = next.value;
       // Provider yangilanishi build paytida kelishi mumkin — setState keyingi mikrovazifada.
@@ -153,6 +158,30 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
     }
   }
 
+  /// Keshdagi karta (oldindan yuklangan yoki oxirgi) — tanlangan do'konniki bo'lsa darhol ko'rsatiladi:
+  /// muddati o'tmagan bo'lsa QR bilan, aks holda faqat do'kon nomi/balans (QR yangilanguncha).
+  void _restoreFromCache() {
+    final cached = ref.read(bonusCardCacheProvider);
+    if (cached == null || widget.organizationId != null) return;
+    final selected = ref.read(storeSelectionProvider).value;
+    if (selected != null && selected != cached.branchId) return;
+    _branchId = cached.branchId;
+    _preview = cached.card;
+    if (cached.isFresh) {
+      _applyCard(cached);
+    } else {
+      // Do'konlar ro'yxatini kutmasdan yangi QR so'raladi (initState ichida setState chaqirilmaydi).
+      Future.microtask(() => mounted ? _loadCard() : null);
+    }
+  }
+
+  void _applyCard(CachedBonusCard c) {
+    _card = c.card;
+    _preview = c.card;
+    _fetchedAt = c.fetchedAt;
+    _validUntil = c.validUntil;
+  }
+
   /// Do'konlar ro'yxati keldi: birinchi marta — boshlang'ich do'kon tanlanadi.
   Future<void> _onStores(List<BonusStore> stores) async {
     if (_initialized) {
@@ -175,6 +204,8 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
       pick = stores.where((s) => s.organizationId == widget.organizationId).firstOrNull;
     }
     pick ??= selectedBranch == null ? null : stores.where((s) => s.branchId == selectedBranch).firstOrNull;
+    // Keshdan ko'rsatilgan karta do'koni.
+    pick ??= _branchId == null ? null : stores.where((s) => s.branchId == _branchId).firstOrNull;
 
     if (pick != null) {
       _select(pick.organizationId, pick.branchId);
@@ -189,16 +220,33 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
   }
 
   void _select(String? orgId, String? branchId) {
+    if (branchId != null && branchId == _branchId && _card != null) {
+      // Keshdan ko'rsatilgan karta shu do'konniki — faqat tashkilot aniqlanadi, QR rejaga ko'ra yangilanadi.
+      setState(() => _orgId = orgId);
+      _scheduleRefresh();
+      return;
+    }
     _generation++;
     _refreshTimer?.cancel();
     setState(() {
       _orgId = orgId;
       _branchId = branchId;
       _card = null;
+      _preview = null;
       _cardError = null;
       _loadingCard = false;
+      final cached = ref.read(bonusCardCacheProvider.notifier).forBranch(branchId);
+      if (cached != null) {
+        _preview = cached.card;
+        if (cached.isFresh) _applyCard(cached);
+      }
     });
-    if (branchId != null) _loadCard();
+    if (branchId == null) return;
+    if (_card != null) {
+      _scheduleRefresh();
+    } else {
+      _loadCard();
+    }
   }
 
   Future<void> _loadCard() async {
@@ -212,16 +260,10 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
     try {
       final card = await ref.read(bonusCardRepositoryProvider).card(branchId);
       if (!mounted || gen != _generation) return;
-      final now = DateTime.now();
-      var lifetime = card.expiresAt.difference(now);
-      // Qurilma soati serverdan farq qilsa — kelishuvdagi 90 s.
-      if (lifetime < const Duration(seconds: 20) || lifetime > const Duration(minutes: 10)) {
-        lifetime = const Duration(seconds: 90);
-      }
+      final cached = CachedBonusCard.fromServer(branchId, card);
+      ref.read(bonusCardCacheProvider.notifier).put(cached);
       setState(() {
-        _card = card;
-        _fetchedAt = now;
-        _validUntil = now.add(lifetime);
+        _applyCard(cached);
         _loadingCard = false;
       });
       _scheduleRefresh();
@@ -266,7 +308,7 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
     final storesAsync = ref.watch(bonusStoresProvider);
     final stores = storesAsync.value ?? const <BonusStore>[];
 
-    if (!_initialized) {
+    if (!_initialized && _preview == null) {
       if (storesAsync case AsyncError(:final error)) {
         return Center(
           child: ErrorRetry(
@@ -300,8 +342,8 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
             const SizedBox(height: 14),
           ],
           _CardPanel(
-            storeName: _card?.storeName ?? current?.storeName,
-            points: _card?.points ?? current?.points,
+            storeName: _card?.storeName ?? _preview?.storeName ?? current?.storeName,
+            points: _card?.points ?? _preview?.points ?? current?.points,
             card: _card,
             hasBranch: _branchId != null,
             loading: _loadingCard,
@@ -413,7 +455,7 @@ class _CardPanel extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(t.bonusBalance,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _onPrimarySoft)),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _onPrimarySoft)),
               const SizedBox(height: 2),
               Text(
                 points == null ? '…' : formatBonusPoints(t, points!),
@@ -447,7 +489,7 @@ class _CardPanel extends StatelessWidget {
         if (hasBranch) _status(t, expired),
         const SizedBox(height: 10),
         Text(t.bonusHint,
-            textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, height: 1.45, color: _onPrimarySoft)),
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 13, height: 1.45, color: _onPrimarySoft)),
       ]),
     );
   }
@@ -628,7 +670,7 @@ class _GuestPrompt extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 28,
               backgroundColor: AppColors.primarySoft,
               child: Icon(Icons.qr_code_2, color: AppColors.primary, size: 28),
@@ -669,7 +711,7 @@ class _NoStores extends StatelessWidget {
             Text(t.bonusNoStoresText,
                 textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
             const SizedBox(height: 18),
-            FilledButton(onPressed: () => context.go('/home/stores'), child: Text(t.bonusChooseStore)),
+            FilledButton(onPressed: () => context.go(AppConfig.isStoreMode ? '/home' : '/home/stores'), child: Text(t.bonusChooseStore)),
           ]),
         ),
       ),

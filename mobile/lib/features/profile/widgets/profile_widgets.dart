@@ -6,10 +6,13 @@ import '../../../l10n/app_localizations.dart';
 
 /// Ichki sahifa sarlavhasi: oq kvadrat "Orqaga" tugmasi + sarlavha (dizayn: PersonalInfo, Addresses).
 class ProfilePageHeader extends StatelessWidget {
-  const ProfilePageHeader({super.key, required this.title, this.trailing});
+  const ProfilePageHeader({super.key, required this.title, this.trailing, this.showBack = true});
 
   final String title;
   final Widget? trailing;
+
+  /// Orqaga tugmasi (tab ildizida — yo'q).
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +20,7 @@ class ProfilePageHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Row(
         children: [
+          if (showBack) ...[
           Semantics(
             button: true,
             label: MaterialLocalizations.of(context).backButtonTooltip,
@@ -36,6 +40,7 @@ class ProfilePageHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
+          ],
           Expanded(
             child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
           ),
@@ -121,7 +126,7 @@ InputDecoration profileInputDecoration({String? hint, Color? fillColor}) {
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     border: border,
     enabledBorder: border,
-    focusedBorder: border.copyWith(borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+    focusedBorder: border.copyWith(borderSide: BorderSide(color: AppColors.primary, width: 2)),
   );
 }
 

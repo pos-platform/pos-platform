@@ -332,3 +332,37 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
   Payme/Click tanlovi va kuzatishda to'lov tugmalari (ilovaga qaytganda yangilanadi), xaritada "Joylashuvimni aniqlash", Nominatim reverse/qidiruv (User-Agent, ≥1.1 s).
   Tekshiruv: backend 0 xato + pending model yo'q; desktop 0 xato; `npm run build` OK; `flutter analyze` 0; `flutter test` 1/1. **Runtime sinalmagan.**
   Egasidan: Payme/Click merchant sozlamalari (mavjud to'lov konfiguratsiyasi), `dotnet ef database update` (OnlineShopPhase6).
+
+## Bosqich 7 — Cashback va bonus karta (kelishuv: `docs/mobile/CONTRACT-7.md`)
+
+- [x] 7.1 Cashback sozlamalari (foiz, kategoriya foizi, minimal summa, maks. ball bilan to'lash, muddat, ro'yxatdan o'tish bonusi), yagona `LoyaltyRules`.
+- [x] 7.2 Dinamik QR bonus karta (90 s, HMAC), kassada skanerlash, ball bilan to'lash, chekda ball.
+- [x] 7.3 Ilovada "Bonus" tabi (pastki menyu, o'rtada), balans va tarix; admin panelda sozlamalar, hisobot, mijoz tarixi.
+- [x] 7.4 Online buyurtma cashback'i faqat "Yetkazildi"da (xodim yoki kuryer), push "+N ball cashback".
+
+- 2026-11-13 — 7.1–7.4 — Backend: migratsiya `LoyaltyCashback` (`LoyaltySettings`, `LoyaltyCategoryRates`, `LoyaltyTransaction.Type/Source`, `Customer.LastActivityAt`,
+  `Sale.LoyaltyPointsRedeemed`, eski yozuvlar backfill), `LoyaltyRules` (SaleService create/pay/refund, online, adjust), `LoyaltyExpiryService` (kunlik, faolsizlik bo'yicha),
+  `LoyaltyQrSigner` (`Loyalty:QrSigningKey`, bo'sh bo'lsa JWT kalitidan), `ShopCustomerLinker`, `/api/loyalty/{settings,resolve,report}`, `/api/me/{bonus-card,bonus/stores,bonus/history}`,
+  `/api/customers/{id}/loyalty-history`, `CreateSaleRequest.RedeemPoints` (oflayn kech kelsa qisqartiriladi, rad etilmaydi); online Earn faqat Delivered'da
+  (`OnlineOrderCashback`, idempotent), `ShopOrderDto.cashbackEarned`. Farqlar: online ball bilan to'lash chegarasi `OnlineStoreSettings.BonusMaxPercent`; `enabled=false` faqat yozishni to'xtatadi.
+  Desktop: "PCB1." skanerlash → mijoz chipi (har savdo tabida), "Ball bilan to'lash" (Hammasi), chekda ball qatorlari (FlowDocument + ESC/POS), oflayn navbatda ham.
+  Admin panel: `LoyaltyView` (`/loyalty`), mijozlarda 📱 belgisi va "Bonus tarixi". Mobil: `features/bonus/` (QR avto-yangilanish, yorqinlik, tarix), pastki menyuda "Bonus" tabi,
+  QR kesh + oldindan yuklash (tez ochilishi uchun).
+  Tekshiruv: hammasi build/analyze/test toza. **Runtime sinalmagan.** Egasidan: `dotnet ef database update` (LoyaltyCashback).
+
+## Bosqich 8 — Har do'konga alohida ilova (white-label) (kelishuv: `docs/mobile/CONTRACT-8.md`)
+
+- [x] 8.1 Backend: do'kon ilova sozlamalari (slug, nom, paket ID, rang, build/store), `GET /api/shop/store-app/{slug}`, do'konga xos `app/config`.
+- [x] 8.2 Mobil: `STORE_SLUG` do'kon rejimi (faqat shu do'kon filiallari, brend rangi/logo/nom, kesh), `tool/store.ps1`, `stores/<slug>/`, `docs/WHITE_LABEL.md`.
+- [x] 8.3 Admin panel: SuperAdmin "Mobil ilova" bo'limi (ikonka ko'rinishi, build buyrug'i).
+
+- 2026-11-13 — 8.1–8.3 — Qaror (foydalanuvchi): har do'konga alohida ilova (do'konlar mijozni boshqa do'konga ketib qolishidan xavotirda).
+  Backend: migratsiya `StoreWhiteLabel` (12 maydon, Slug/AppPackageId unik), `PUT /api/admin/online-stores/{orgId}/app`, `store-app/{slug}` (404 — "Do'kon vaqtincha ishlamayapti"),
+  `stores?organizationId=`, `app/config?store=` (har qiymat alohida almashadi).
+  Mobil: `AppConfig.storeSlug/isStoreMode` (+ BRAND_COLOR, APP_NAME dart-define), `core/store_app/` (kesh, avtomatik filial, unavailable ekran), brend rangi (kontrast ≥4.5),
+  Android `store.properties` → applicationId + `${appLabel}`, iOS `Store.xcconfig` → `$(STORE_BUNDLE_ID)`, `$(APP_DISPLAY_NAME)`; `tool/store.ps1` (example/default sinaldi, default asl holatga qaytaradi);
+  `stores/example/`. Admin panel: "Mobil ilova" bo'limi (slug/paket taklifi, rang, Android/iOS build va havolalar, ikonka preview, buyruq nusxasi).
+  Tekshiruv: backend 0 xato + pending yo'q; desktop 0; `npm run build` OK; `flutter analyze` 0; `flutter test` 2/2. **Runtime sinalmagan, Android/iOS build qilinmagan.**
+  Egasidan har yangi do'kon uchun: admin panel maydonlari, `stores/<slug>/` (store.json, icon 1024), Firebase'ga Android/iOS app qo'shish (google-services.json yangilash,
+  GoogleService-Info.plist), `tool\store.ps1 -Slug <slug> -Build appbundle`, Play'da noyob listing; iOS — do'konning o'z Apple akkaunti. Commitdan oldin `-Slug default`.
+  Bir martalik: Android SDK'da oddiy va do'kon buildini tekshirish; `dotnet ef database update` (StoreWhiteLabel).

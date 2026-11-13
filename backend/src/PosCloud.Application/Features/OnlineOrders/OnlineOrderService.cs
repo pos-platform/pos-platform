@@ -583,6 +583,9 @@ public class OnlineOrderService : IOnlineOrderService
         order.Status = OnlineOrderStatus.Delivered;
         order.DeliveredAt = DateTime.UtcNow;
 
+        // Cashback — mijoz qabul qilgandan keyin (shu tranzaksiyada saqlanadi).
+        await OnlineOrderCashback.EarnOnDeliveredAsync(_db, order, ct);
+
         await SaveAndNotify(order, ct);
         return await GetAsync(id, ct);
     }

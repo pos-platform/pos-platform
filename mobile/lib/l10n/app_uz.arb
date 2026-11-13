@@ -836,5 +836,9 @@
   "bonusGuestText": "Telefon raqamingiz bilan kiring — har xariddan cashback yig‘ing va ball bilan to‘lang",
   "bonusNoStoresTitle": "Hali bonus kartangiz yo‘q",
   "bonusNoStoresText": "Do‘kon tanlang — karta avtomatik ochiladi",
-  "bonusChooseStore": "Do‘kon tanlash"
+  "bonusChooseStore": "Do‘kon tanlash",
+  "storeChooseBranch": "Filialni tanlang",
+  "storeUnavailableTitle": "Do‘kon vaqtincha ishlamayapti",
+  "storeUnavailableText": "Keyinroq qayta urinib ko‘ring.",
+  "navBonus": "Bonus"
 }

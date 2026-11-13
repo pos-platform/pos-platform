@@ -159,6 +159,8 @@ public static class OrderPushTexts
         var n = p.Number;
         var pickup = p.FulfillmentType == FulfillmentType.Pickup;
         var reason = string.IsNullOrWhiteSpace(p.Reason) ? null : p.Reason.Trim();
+        // Delivered: yozilgan cashback (butun ball).
+        var cashback = Math.Floor(p.Cashback ?? 0);
         // Kuryer: "Ali, +998901234567" (bor qismi bilan).
         var courier = string.Join(", ", new[] { p.CourierName, p.CourierPhone }
             .Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim()));
@@ -188,8 +190,10 @@ public static class OrderPushTexts
                     ? $"Kuryer buyurtmangizni olib kelmoqda. Kuryer: {courier}."
                     : "Kuryer buyurtmangizni olib kelmoqda."),
             OnlineOrderStatus.Delivered => ru
-                ? (pickup ? $"Заказ #{n} выдан" : $"Заказ #{n} доставлен", "Спасибо за покупку!")
-                : (pickup ? $"Buyurtma #{n} topshirildi" : $"Buyurtma #{n} yetkazildi", "Xaridingiz uchun rahmat!"),
+                ? (pickup ? $"Заказ #{n} выдан" : $"Заказ #{n} доставлен",
+                    cashback > 0 ? $"Спасибо за покупку! +{cashback:0} баллов кэшбэка." : "Спасибо за покупку!")
+                : (pickup ? $"Buyurtma #{n} topshirildi" : $"Buyurtma #{n} yetkazildi",
+                    cashback > 0 ? $"Xaridingiz uchun rahmat! +{cashback:0} ball cashback." : "Xaridingiz uchun rahmat!"),
             OnlineOrderStatus.Rejected => ru
                 ? ($"Заказ #{n} отклонён", reason ?? "Подробности в приложении.")
                 : ($"Buyurtma #{n} rad etildi", reason ?? "Batafsil ma'lumot ilovada."),

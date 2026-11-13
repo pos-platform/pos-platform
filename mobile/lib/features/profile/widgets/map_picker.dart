@@ -244,7 +244,7 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
             children: [osmTileLayer(), osmAttribution()],
           ),
           // Pin uchi aynan xarita markaziga tushishi uchun ikona yuqoriga suriladi.
-          const IgnorePointer(
+          IgnorePointer(
             child: Center(
               child: Padding(
                 padding: EdgeInsets.only(bottom: 44),
@@ -341,7 +341,7 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
                     for (final p in results)
                       ListTile(
                         dense: true,
-                        leading: const Icon(Icons.place_outlined, color: AppColors.primary),
+                        leading: Icon(Icons.place_outlined, color: AppColors.primary),
                         title: Text(p.label, style: const TextStyle(fontWeight: FontWeight.w700)),
                         subtitle: p.fullName == null
                             ? null
@@ -383,7 +383,7 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(children: [
-                const Icon(Icons.location_on_outlined, color: AppColors.primary),
+                Icon(Icons.location_on_outlined, color: AppColors.primary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(text,
@@ -437,7 +437,7 @@ class MapPreview extends StatelessWidget {
                     width: 36,
                     height: 36,
                     alignment: Alignment.topCenter,
-                    child: const Icon(Icons.location_on, size: 36, color: AppColors.primary),
+                    child: Icon(Icons.location_on, size: 36, color: AppColors.primary),
                   ),
                 ]),
                 const SimpleAttributionWidget(source: Text('OpenStreetMap contributors')),

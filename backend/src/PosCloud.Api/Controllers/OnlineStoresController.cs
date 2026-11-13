@@ -34,6 +34,12 @@ public class AdminOnlineStoresController : ControllerBase
     public async Task<ActionResult<OnlineStoreSettingsDto>> Update(Guid organizationId, UpdateOnlineStoreAdminRequest request,
         CancellationToken ct) =>
         Ok(await _service.UpdateAdminAsync(organizationId, request, ct));
+
+    /// <summary>Alohida (white-label) mobil ilova: slug, nom, paket ID, rang, build/store qiymatlari.</summary>
+    [HttpPut("{organizationId:guid}/app")]
+    public async Task<ActionResult<OnlineStoreSettingsDto>> UpdateApp(Guid organizationId, UpdateStoreAppRequest request,
+        CancellationToken ct) =>
+        Ok(await _service.UpdateAppAsync(organizationId, request, ct));
 }
 
 /// <summary>Do'kon admini: o'z online do'koni sozlamalari. Kassa: buyurtma qabul qilishni yoqish/o'chirish.</summary>

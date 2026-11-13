@@ -309,10 +309,10 @@ class _PhoneField extends StatelessWidget {
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
             ),
             if (verified) ...[
-              const Icon(Icons.check, size: 14, color: AppColors.primary),
+              Icon(Icons.check, size: 14, color: AppColors.primary),
               const SizedBox(width: 4),
               Text(t.profilePhoneVerified,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary)),
             ],
           ],
         ),

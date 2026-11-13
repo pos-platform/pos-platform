@@ -1448,4 +1448,16 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get bonusChooseStore => 'Do‘kon tanlash';
+
+  @override
+  String get storeChooseBranch => 'Filialni tanlang';
+
+  @override
+  String get storeUnavailableTitle => 'Do‘kon vaqtincha ishlamayapti';
+
+  @override
+  String get storeUnavailableText => 'Keyinroq qayta urinib ko‘ring.';
+
+  @override
+  String get navBonus => 'Bonus';
 }

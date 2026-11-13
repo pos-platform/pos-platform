@@ -208,6 +208,9 @@ public class ShopOrderDto : ShopOrderSummaryDto
     public decimal PromoDiscount { get; set; }
     public decimal BonusUsed { get; set; }
 
+    /// <summary>Shu buyurtma uchun yozilgan cashback (ball). Faqat Delivered'dan keyin; null — hali yozilmagan.</summary>
+    public decimal? CashbackEarned { get; set; }
+
     /// <summary>Transfer + Payme/Click tanlangan bo'lsa — provayder.</summary>
     public PaymentProvider? OnlinePaymentProvider { get; set; }
 

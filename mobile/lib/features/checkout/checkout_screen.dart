@@ -154,7 +154,7 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
                   for (final s in slots)
                     ListTile(
                       title: Text(_slotText(t, s)),
-                      trailing: s == _slotUtc ? const Icon(Icons.check, color: AppColors.primary) : null,
+                      trailing: s == _slotUtc ? Icon(Icons.check, color: AppColors.primary) : null,
                       onTap: () => Navigator.pop(ctx, s),
                     ),
                 ]),
@@ -193,9 +193,9 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
                 onTap: () => Navigator.pop(ctx, a.id),
               ),
             ListTile(
-              leading: const Icon(Icons.add, color: AppColors.primary),
+              leading: Icon(Icons.add, color: AppColors.primary),
               title: Text(t.checkoutAddAddress,
-                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
               onTap: () => Navigator.pop(ctx, ''),
             ),
           ]),
@@ -742,7 +742,7 @@ class _MiniRow extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 2),
         child: Row(children: [
           Expanded(child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary))),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
         ]),
       );
 }
@@ -819,7 +819,7 @@ class _BonusCard extends StatelessWidget {
         value: value,
         onChanged: onChanged,
         activeThumbColor: AppColors.primary,
-        secondary: const Icon(Icons.stars_outlined, color: AppColors.primary),
+        secondary: Icon(Icons.stars_outlined, color: AppColors.primary),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(t.checkoutBonusTitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         subtitle: Text(sub.join(' · '), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),

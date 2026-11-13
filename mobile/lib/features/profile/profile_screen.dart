@@ -58,7 +58,7 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.qr_code_2,
                   label: t.bonusTitle,
                   value: bonus == null ? null : formatBonusPoints(t, bonus),
-                  onTap: () => context.push('/profile/bonus'),
+                  onTap: () => context.go('/bonus'),
                 ),
                 _MenuRow(
                   icon: Icons.person_outline,
@@ -196,20 +196,20 @@ class _NameBanner extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              const Icon(Icons.badge_outlined, color: AppColors.primary),
+              Icon(Icons.badge_outlined, color: AppColors.primary),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(t.profileNameBannerTitle,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.primary)),
                     const SizedBox(height: 2),
                     Text(t.profileNameBannerText, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.primary),
+              Icon(Icons.chevron_right, color: AppColors.primary),
             ],
           ),
         ),
@@ -393,7 +393,7 @@ class _GuestProfile extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 28,
                     backgroundColor: AppColors.primarySoft,
                     child: Icon(Icons.person_outline, color: AppColors.primary, size: 28),
@@ -431,7 +431,7 @@ Future<void> showLanguageSheet(BuildContext context, WidgetRef ref) async {
     builder: (ctx) {
       Widget option(String? code, String label) => ListTile(
             title: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            trailing: current == code ? const Icon(Icons.check, color: AppColors.primary) : null,
+            trailing: current == code ? Icon(Icons.check, color: AppColors.primary) : null,
             onTap: () => Navigator.pop(ctx, code ?? ''),
           );
       return SafeArea(

@@ -189,7 +189,7 @@ class _OrderCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(color: AppColors.chipSurface, borderRadius: BorderRadius.circular(10)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.near_me_outlined, size: 16, color: AppColors.primary),
+                    Icon(Icons.near_me_outlined, size: 16, color: AppColors.primary),
                     const SizedBox(width: 4),
                     Text(CourierFormat.distance(t, distance!), style: const TextStyle(fontWeight: FontWeight.w700)),
                   ]),
