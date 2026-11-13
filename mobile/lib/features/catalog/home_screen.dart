@@ -427,7 +427,8 @@ class _StoreHeader extends ConsumerWidget {
     // Do'kon rejimida filial bitta bo'lsa — almashtirish yo'q (marketplace do'konlari ko'rsatilmaydi).
     final canSwitch = !(ref.watch(storeAppProvider).value?.singleBranch ?? false);
     final status = [
-      store.isOpenNow ? t.catOpenNow : t.catClosedNow,
+      // "Ochiq" ko'rsatilmaydi (ortiqcha) — faqat yopiq bo'lsa ogohlantiriladi.
+      if (!store.isOpenNow) t.catClosedNow,
       ?store.hoursText,
       ?deliveryTimeText(t, store),
     ].join(' · ');
@@ -454,11 +455,12 @@ class _StoreHeader extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(status,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: store.isOpenNow ? AppColors.primary : AppColors.textSecondary)),
+                if (status.isNotEmpty)
+                  Text(status,
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: store.isOpenNow ? AppColors.primary : AppColors.textSecondary)),
                 Row(children: [
                   Flexible(
                     // Do'kon rejimida filial nomi o'rniga brend yozuvi (Xo‘ja market).
