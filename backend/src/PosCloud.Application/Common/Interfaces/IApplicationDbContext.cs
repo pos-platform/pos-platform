@@ -67,6 +67,19 @@ public interface IApplicationDbContext
     DbSet<OnlineStoreSettings> OnlineStoreSettings { get; }
     DbSet<PromoCode> PromoCodes { get; }
 
+    // Bosqich 9: marketing
+    DbSet<ShopBanner> ShopBanners { get; }
+    DbSet<ShopCollection> ShopCollections { get; }
+    DbSet<ShopCollectionItem> ShopCollectionItems { get; }
+    DbSet<ShopStory> ShopStories { get; }
+    DbSet<ShopStorySlide> ShopStorySlides { get; }
+    DbSet<ShopFavorite> ShopFavorites { get; }
+    DbSet<ShopStockSubscription> ShopStockSubscriptions { get; }
+    DbSet<ShopCartSnapshot> ShopCartSnapshots { get; }
+    DbSet<ShopReferral> ShopReferrals { get; }
+    DbSet<ShopPushCampaign> ShopPushCampaigns { get; }
+    DbSet<LoyaltyTier> LoyaltyTiers { get; }
+
     // Task 6: Label printing
     DbSet<LabelPrintJob> LabelPrintJobs { get; }
     DbSet<LabelPrintJobItem> LabelPrintJobItems { get; }

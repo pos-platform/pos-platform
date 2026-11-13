@@ -2,6 +2,14 @@
 
 double _d(Object? v) => v is num ? v.toDouble() : double.tryParse('$v') ?? 0;
 double? _dn(Object? v) => v == null ? null : _d(v);
+String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
+
+/// Server UTC vaqti (zonasiz bo'lsa ham UTC deb olinadi) → mahalliy vaqt.
+DateTime? parseUtc(Object? v) {
+  if (v is! String || v.isEmpty) return null;
+  final hasZone = v.endsWith('Z') || RegExp(r'[+-]\d\d:?\d\d$').hasMatch(v);
+  return DateTime.tryParse(hasZone ? v : '${v}Z')?.toLocal();
+}
 
 /// "HH:mm:ss" → daqiqa (kun boshidan). Null — ish vaqti berilmagan.
 int? _minutes(Object? v) {
@@ -43,6 +51,9 @@ class ShopStore {
     this.bonusPayEnabled = false,
     this.bonusMaxPercent,
     this.deliveryRadiusKm,
+    this.supportPhone,
+    this.supportTelegram,
+    this.organizationId,
   });
 
   final String id;
@@ -83,6 +94,13 @@ class ShopStore {
 
   /// Yetkazish radiusi (km). Null — cheklovsiz.
   final double? deliveryRadiusKm;
+
+  /// "Yordam": qo'ng'iroq raqami va Telegram username (`@` siz) — kelishuv 9.3.
+  final String? supportPhone;
+  final String? supportTelegram;
+
+  /// Kelishuvda yo'q — server bersa ishlatiladi ("Do'stni taklif qilish" uchun tashkilot).
+  final String? organizationId;
 
   bool get hasHours => opensAtMinutes != null && closesAtMinutes != null && opensAtMinutes != closesAtMinutes;
 
@@ -127,6 +145,9 @@ class ShopStore {
         bonusPayEnabled: j['bonusPayEnabled'] == true,
         bonusMaxPercent: _dn(j['bonusMaxPercent']),
         deliveryRadiusKm: _dn(j['deliveryRadiusKm']),
+        supportPhone: _text(j['supportPhone']),
+        supportTelegram: _text(j['supportTelegram'])?.replaceFirst('@', ''),
+        organizationId: _text(j['organizationId']),
       );
 }
 
@@ -157,6 +178,9 @@ class ShopProduct {
     this.discountPercent,
     required this.available,
     required this.inStock,
+    this.rank,
+    this.discountEndsAt,
+    this.isFavorite,
   });
 
   final String id;
@@ -177,6 +201,15 @@ class ShopProduct {
   final double available;
   final bool inStock;
 
+  /// Top 10 javobida o'rni (1..10).
+  final int? rank;
+
+  /// Aksiya tugash vaqti (ortga sanash uchun), mahalliy vaqtda.
+  final DateTime? discountEndsAt;
+
+  /// Token bo'lsa server beradi; null — noma'lum (sevimlilar keshidan olinadi).
+  final bool? isFavorite;
+
   bool get isKg => isWeighed || unit == 'Kilogram';
 
   factory ShopProduct.fromJson(Map<String, dynamic> j) => ShopProduct(
@@ -191,22 +224,41 @@ class ShopProduct {
         discountPercent: _dn(j['discountPercent']),
         available: _d(j['available']),
         inStock: j['inStock'] == true,
+        rank: (j['rank'] as num?)?.toInt(),
+        discountEndsAt: parseUtc(j['discountEndsAt']),
+        isFavorite: j['isFavorite'] is bool ? j['isFavorite'] as bool : null,
       );
+
+  /// Ro'yxat JSON'i (noto'g'ri elementlar tashlab yuboriladi).
+  static List<ShopProduct> listFrom(Object? raw) => [
+        for (final e in raw is List ? raw : const [])
+          if (e is Map && e['id'] is String) ShopProduct.fromJson(Map<String, dynamic>.from(e)),
+      ];
 }
 
 class ShopProductDetail {
-  const ShopProductDetail({required this.product, this.description, this.barcode, this.categoryName});
+  const ShopProductDetail({
+    required this.product,
+    this.description,
+    this.barcode,
+    this.categoryName,
+    this.isSubscribed,
+  });
 
   final ShopProduct product;
   final String? description;
   final String? barcode;
   final String? categoryName;
 
+  /// "Kelganda xabar berish" obunasi (token bo'lsa).
+  final bool? isSubscribed;
+
   factory ShopProductDetail.fromJson(Map<String, dynamic> j) => ShopProductDetail(
         product: ShopProduct.fromJson(j),
         description: j['description'] as String?,
         barcode: j['barcode'] as String?,
         categoryName: j['categoryName'] as String?,
+        isSubscribed: j['isSubscribed'] is bool ? j['isSubscribed'] as bool : null,
       );
 }
 

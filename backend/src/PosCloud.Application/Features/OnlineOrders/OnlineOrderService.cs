@@ -37,6 +37,9 @@ public interface IOnlineOrderService
 
     /// <summary>Kuryerda turgan (topshirilmagan) naqdlar.</summary>
     Task<IReadOnlyList<CourierCashItemDto>> GetCourierCashAsync(Guid? branchId, CancellationToken ct = default);
+
+    /// <summary>Mijoz baholari: o'rtacha, taqsimot, teglar, izohlar (ratedAt bo'yicha; standart — oxirgi 30 kun).</summary>
+    Task<OnlineOrderRatingsDto> GetRatingsAsync(DateTime? from, DateTime? to, Guid? branchId, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -50,14 +53,16 @@ public class OnlineOrderService : IOnlineOrderService
     private readonly ICurrentUser _currentUser;
     private readonly ISaleService _sales;
     private readonly IOnlineOrderNotifier _notifier;
+    private readonly IShopPushQueue _pushQueue;
 
     public OnlineOrderService(IApplicationDbContext db, ICurrentUser currentUser, ISaleService sales,
-        IOnlineOrderNotifier notifier)
+        IOnlineOrderNotifier notifier, IShopPushQueue pushQueue)
     {
         _db = db;
         _currentUser = currentUser;
         _sales = sales;
         _notifier = notifier;
+        _pushQueue = pushQueue;
     }
 
     public async Task<IReadOnlyList<OnlineOrderDto>> GetListAsync(Guid? branchId, bool activeOnly, DateTime? from,
@@ -585,8 +590,11 @@ public class OnlineOrderService : IOnlineOrderService
 
         // Cashback — mijoz qabul qilgandan keyin (shu tranzaksiyada saqlanadi).
         await OnlineOrderCashback.EarnOnDeliveredAsync(_db, order, ct);
+        // Do'stni taklif qilish mukofoti (birinchi yetkazilgan buyurtma, idempotent).
+        var referralPushes = await ShopMarketing.ShopReferralRewards.RewardOnDeliveredAsync(_db, order, ct);
 
         await SaveAndNotify(order, ct);
+        foreach (var push in referralPushes) _pushQueue.Enqueue(push);
         return await GetAsync(id, ct);
     }
 
@@ -601,6 +609,58 @@ public class OnlineOrderService : IOnlineOrderService
     }
 
     /// <summary>Tenant filtri ostidagi buyurtmalar; filialga biriktirilgan xodim — faqat o'z filiali.</summary>
+    public const int MaxRatingItems = 500;
+
+    public async Task<OnlineOrderRatingsDto> GetRatingsAsync(DateTime? from, DateTime? to, Guid? branchId,
+        CancellationToken ct = default)
+    {
+        var query = Scope().AsNoTracking().Where(o => o.Rating != null && o.RatedAt != null);
+
+        var effectiveBranch = _currentUser.BranchId ?? branchId;
+        if (effectiveBranch is { } b)
+            query = query.Where(o => o.BranchId == b);
+
+        // Sana chegaralari UTC kalendar kuni; "to" kuni ham kiradi.
+        var since = DateTime.SpecifyKind((from ?? DateTime.UtcNow.AddDays(-30)).Date, DateTimeKind.Utc);
+        query = query.Where(o => o.RatedAt >= since);
+        if (to is { } toDate)
+        {
+            var until = DateTime.SpecifyKind(toDate.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(o => o.RatedAt < until);
+        }
+
+        var all = await query
+            .Select(o => new { o.Rating, o.RatingTags })
+            .ToListAsync(ct);
+        var items = await query
+            .OrderByDescending(o => o.RatedAt)
+            .Take(MaxRatingItems)
+            .Select(o => new { o.Id, o.Number, o.Rating, o.RatingComment, o.RatingTags, o.RatedAt, o.CustomerName })
+            .ToListAsync(ct);
+
+        var dto = new OnlineOrderRatingsDto
+        {
+            Count = all.Count,
+            Average = all.Count > 0 ? Math.Round((decimal)all.Average(x => x.Rating!.Value), 2) : 0,
+            Distribution = Enumerable.Range(1, 5).ToDictionary(i => i, i => all.Count(x => x.Rating == i)),
+            TagCounts = all.SelectMany(x => OnlineOrderRating.SplitTags(x.RatingTags))
+                .GroupBy(t => t)
+                .OrderByDescending(g => g.Count())
+                .ToDictionary(g => g.Key, g => g.Count()),
+            Items = items.Select(x => new OnlineOrderRatingItemDto
+            {
+                OrderId = x.Id,
+                Number = x.Number,
+                Rating = x.Rating!.Value,
+                Comment = x.RatingComment,
+                Tags = OnlineOrderRating.SplitTags(x.RatingTags),
+                RatedAt = x.RatedAt!.Value,
+                CustomerName = x.CustomerName
+            }).ToList()
+        };
+        return dto;
+    }
+
     private IQueryable<OnlineOrder> Scope()
     {
         var query = _db.OnlineOrders.AsQueryable();

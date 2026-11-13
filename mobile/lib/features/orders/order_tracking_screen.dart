@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../marketing/rating.dart';
+import '../marketing/support.dart';
 import 'data/order_models.dart';
 import 'data/orders_repository.dart';
 import 'order_updates.dart';
@@ -58,12 +60,24 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen> with 
 
   void _back() => context.canPop() ? context.pop() : context.go('/orders');
 
+  bool _ratingChecked = false;
+
+  /// `canRate` bo'lsa baho oynasi bir marta taklif qilinadi (kelishuv 9.3).
+  void _maybeRate(OrderDetail order) {
+    if (_ratingChecked || !order.canRate) return;
+    _ratingChecked = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybePromptRating(context, ref, order);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     ref.watch(orderUpdatesProvider); // jonli yangilanish (SignalR)
     final async = ref.watch(orderDetailProvider(widget.orderId));
     final order = async.value;
+    if (order != null) _maybeRate(order);
 
     return Scaffold(
       body: SafeArea(
@@ -135,6 +149,10 @@ class _Body extends ConsumerWidget {
               children: [
                 if (failed) _FailedCard(order: o) else _StatusCard(order: o),
                 const SizedBox(height: 16),
+                if (o.status == OrderStatus.delivered && OrderRatingCard.visibleFor(o)) ...[
+                  OrderRatingCard(order: o),
+                  const SizedBox(height: 16),
+                ],
                 if (!failed) ...[
                   _Timeline(order: o),
                   const SizedBox(height: 16),
@@ -148,6 +166,8 @@ class _Body extends ConsumerWidget {
                   const SizedBox(height: 16),
                 ],
                 _SummaryCard(order: o),
+                const SizedBox(height: 16),
+                SupportCard(branchId: o.branchId),
               ],
             ),
           ),

@@ -2719,6 +2719,456 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Bonus'**
   String get navBonus;
+
+  /// No description provided for @favTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sevimlilar'**
+  String get favTitle;
+
+  /// No description provided for @favAdd.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sevimlilarga qo‘shish'**
+  String get favAdd;
+
+  /// No description provided for @favRemove.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sevimlilardan olib tashlash'**
+  String get favRemove;
+
+  /// No description provided for @favLoginTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sevimlilarga qo‘shish'**
+  String get favLoginTitle;
+
+  /// No description provided for @favLoginText.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sevimli mahsulotlarni saqlash uchun telefon raqamingiz bilan kiring.'**
+  String get favLoginText;
+
+  /// No description provided for @favEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sevimlilar hozircha bo‘sh'**
+  String get favEmpty;
+
+  /// No description provided for @favEmptyHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotdagi ♥ belgisini bosing — u shu yerda saqlanadi'**
+  String get favEmptyHint;
+
+  /// No description provided for @mkAll.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasi'**
+  String get mkAll;
+
+  /// No description provided for @mkClose.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yopish'**
+  String get mkClose;
+
+  /// No description provided for @mkStoryOpen.
+  ///
+  /// In uz, this message translates to:
+  /// **'Batafsil'**
+  String get mkStoryOpen;
+
+  /// No description provided for @mkEndsIn.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tugashiga {time}'**
+  String mkEndsIn(String time);
+
+  /// No description provided for @mkDiscountEndsIn.
+  ///
+  /// In uz, this message translates to:
+  /// **'Aksiya tugashiga {time}'**
+  String mkDiscountEndsIn(String time);
+
+  /// No description provided for @mkDiscountsTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Aksiyalar'**
+  String get mkDiscountsTitle;
+
+  /// No description provided for @mkDiscountsEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha aksiyadagi mahsulotlar yo‘q'**
+  String get mkDiscountsEmpty;
+
+  /// No description provided for @mkDiscountsEntry.
+  ///
+  /// In uz, this message translates to:
+  /// **'Aksiyalar ({count})'**
+  String mkDiscountsEntry(int count);
+
+  /// No description provided for @mkDiscountsEntryHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Chegirmadagi barcha mahsulotlar'**
+  String get mkDiscountsEntryHint;
+
+  /// No description provided for @mkBuyAgain.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yana olasizmi?'**
+  String get mkBuyAgain;
+
+  /// No description provided for @mkTop10.
+  ///
+  /// In uz, this message translates to:
+  /// **'Top 10'**
+  String get mkTop10;
+
+  /// No description provided for @mkRelated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bular bilan birga olishadi'**
+  String get mkRelated;
+
+  /// No description provided for @mkCartSuggestions.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qo‘shib qo‘ying'**
+  String get mkCartSuggestions;
+
+  /// No description provided for @mkReorderTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oxirgi buyurtmani takrorlash'**
+  String get mkReorderTitle;
+
+  /// No description provided for @mkReorderSubtitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'№{number} · {sum}'**
+  String mkReorderSubtitle(String number, String sum);
+
+  /// No description provided for @mkReorderButton.
+  ///
+  /// In uz, this message translates to:
+  /// **'Takrorlash'**
+  String get mkReorderButton;
+
+  /// No description provided for @mkNotifyMe.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kelganda xabar berish'**
+  String get mkNotifyMe;
+
+  /// No description provided for @mkNotifySubscribed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kelganda xabar beramiz'**
+  String get mkNotifySubscribed;
+
+  /// No description provided for @mkNotifyOn.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot sotuvga chiqqanda xabar beramiz'**
+  String get mkNotifyOn;
+
+  /// No description provided for @mkNotifyOff.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xabarnoma bekor qilindi'**
+  String get mkNotifyOff;
+
+  /// No description provided for @cdDaysHours.
+  ///
+  /// In uz, this message translates to:
+  /// **'{days} kun {hours} soat'**
+  String cdDaysHours(int days, int hours);
+
+  /// No description provided for @cdHoursMinutes.
+  ///
+  /// In uz, this message translates to:
+  /// **'{hours} soat {minutes} daq'**
+  String cdHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @cdMinutes.
+  ///
+  /// In uz, this message translates to:
+  /// **'{minutes} daq'**
+  String cdMinutes(int minutes);
+
+  /// No description provided for @searchHistory.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qidiruv tarixi'**
+  String get searchHistory;
+
+  /// No description provided for @searchHistoryClear.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tozalash'**
+  String get searchHistoryClear;
+
+  /// No description provided for @scanTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shtrix-kodni skanerlash'**
+  String get scanTitle;
+
+  /// No description provided for @scanTorch.
+  ///
+  /// In uz, this message translates to:
+  /// **'Chiroq'**
+  String get scanTorch;
+
+  /// No description provided for @scanHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shtrix-kodni ramka ichiga joylashtiring'**
+  String get scanHint;
+
+  /// No description provided for @scanError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kamerani ochib bo‘lmadi. Sozlamalarda kameraga ruxsat bering.'**
+  String get scanError;
+
+  /// No description provided for @rateTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Buyurtmani baholang'**
+  String get rateTitle;
+
+  /// No description provided for @rateSubtitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Fikringiz xizmatni yaxshilashga yordam beradi'**
+  String get rateSubtitle;
+
+  /// No description provided for @rateYourRating.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sizning bahoingiz'**
+  String get rateYourRating;
+
+  /// No description provided for @rateCommentHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Izoh (ixtiyoriy)'**
+  String get rateCommentHint;
+
+  /// No description provided for @rateSubmit.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yuborish'**
+  String get rateSubmit;
+
+  /// No description provided for @rateThanks.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rahmat! Bahoingiz qabul qilindi'**
+  String get rateThanks;
+
+  /// No description provided for @rateStars.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} yulduz'**
+  String rateStars(int count);
+
+  /// No description provided for @rateTagFast.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tez yetkazildi'**
+  String get rateTagFast;
+
+  /// No description provided for @rateTagFresh.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotlar yangi'**
+  String get rateTagFresh;
+
+  /// No description provided for @rateTagPolite.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xushmuomala kuryer'**
+  String get rateTagPolite;
+
+  /// No description provided for @rateTagAccurate.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasi to‘g‘ri'**
+  String get rateTagAccurate;
+
+  /// No description provided for @rateTagLate.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kechikdi'**
+  String get rateTagLate;
+
+  /// No description provided for @rateTagDamaged.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shikastlangan'**
+  String get rateTagDamaged;
+
+  /// No description provided for @rateTagMissing.
+  ///
+  /// In uz, this message translates to:
+  /// **'Nimadir yetishmadi'**
+  String get rateTagMissing;
+
+  /// No description provided for @rateTagWrongItem.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshqa mahsulot keldi'**
+  String get rateTagWrongItem;
+
+  /// No description provided for @supportTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yordam'**
+  String get supportTitle;
+
+  /// No description provided for @supportText.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savolingiz bormi? Biz bilan bog‘laning'**
+  String get supportText;
+
+  /// No description provided for @supportCall.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qo‘ng‘iroq qilish'**
+  String get supportCall;
+
+  /// No description provided for @supportTelegram.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telegram’da yozish'**
+  String get supportTelegram;
+
+  /// No description provided for @supportNone.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘kon aloqa ma’lumotlarini hali kiritmagan'**
+  String get supportNone;
+
+  /// No description provided for @refTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘stni taklif qilish'**
+  String get refTitle;
+
+  /// No description provided for @refUnavailable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu do‘konda do‘stni taklif qilish hozircha mavjud emas'**
+  String get refUnavailable;
+
+  /// No description provided for @refHeadline.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘stingizni taklif qiling — {bonus} oling'**
+  String refHeadline(String bonus);
+
+  /// No description provided for @refExplain.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘stingiz ham {bonus} oladi — birinchi buyurtmasi yetkazilganda'**
+  String refExplain(String bonus);
+
+  /// No description provided for @refShareFallback.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mening kodim: {code}. Ilovada kiriting va {bonus} oling!'**
+  String refShareFallback(String code, String bonus);
+
+  /// No description provided for @refYourCode.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sizning kodingiz'**
+  String get refYourCode;
+
+  /// No description provided for @refCopy.
+  ///
+  /// In uz, this message translates to:
+  /// **'Nusxa olish'**
+  String get refCopy;
+
+  /// No description provided for @refCopied.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kod nusxalandi'**
+  String get refCopied;
+
+  /// No description provided for @refShare.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ulashish'**
+  String get refShare;
+
+  /// No description provided for @refInvited.
+  ///
+  /// In uz, this message translates to:
+  /// **'Taklif qilinganlar'**
+  String get refInvited;
+
+  /// No description provided for @refRewarded.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bonus olinganlar'**
+  String get refRewarded;
+
+  /// No description provided for @refHaveCode.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘stingiz kodi bormi?'**
+  String get refHaveCode;
+
+  /// No description provided for @refHaveCodeHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Birinchi buyurtmangizgacha kiriting'**
+  String get refHaveCodeHint;
+
+  /// No description provided for @refCodeHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kod'**
+  String get refCodeHint;
+
+  /// No description provided for @refApplied.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kod qabul qilindi'**
+  String get refApplied;
+
+  /// No description provided for @tierNone.
+  ///
+  /// In uz, this message translates to:
+  /// **'Daraja hali yo‘q'**
+  String get tierNone;
+
+  /// No description provided for @tierCurrent.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} · {percent}% cashback'**
+  String tierCurrent(String name, String percent);
+
+  /// No description provided for @tierNextLeft.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} darajasigacha {sum}'**
+  String tierNextLeft(String name, String sum);
+
+  /// No description provided for @tierTop.
+  ///
+  /// In uz, this message translates to:
+  /// **'Siz eng yuqori darajadasiz'**
+  String get tierTop;
 }
 
 class _AppLocalizationsDelegate

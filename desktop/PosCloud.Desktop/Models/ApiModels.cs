@@ -519,4 +519,6 @@ public class LoyaltyCustomerDto
     public string? MaskedPhone { get; set; }
     public decimal Points { get; set; }
     public decimal MaxRedeemPercent { get; set; }
+    /// <summary>Loyalty darajasi nomi (CONTRACT-9 §9.4); daraja yo'q yoki eski backend — null.</summary>
+    public string? TierName { get; set; }
 }

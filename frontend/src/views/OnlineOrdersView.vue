@@ -44,6 +44,15 @@ const PAY = { Cash: 'Naqd', Card: 'Terminal', Transfer: 'O\'tkazma' }
 const PAY_STATUS = { Paid: 'to\'langan', Pending: 'kutilmoqda', Unpaid: 'to\'lanmagan', Refunded: 'qaytarilgan' }
 const POLICY = { ReplaceSimilar: 'O\'xshashiga almashtirish', Remove: 'Olib tashlash', CallMe: 'Mijozga qo\'ng\'iroq' }
 
+// Bosqich 9.3: mijoz bahosi teglari
+const TAGS = {
+  fast: 'Tez yetkazildi', fresh: 'Yangi mahsulotlar', polite: 'Xushmuomala', accurate: 'Aniq yig\'ildi',
+  late: 'Kechikdi', damaged: 'Shikastlangan', missing: 'Yetishmadi', wrong_item: 'Noto\'g\'ri mahsulot'
+}
+const NEGATIVE_TAGS = new Set(['late', 'damaged', 'missing', 'wrong_item'])
+const tagText = (t) => TAGS[t] || t
+const stars = (n) => '★'.repeat(n || 0) + '☆'.repeat(5 - (n || 0))
+
 const statusOf = (s) => STATUS[s] || { text: s, cls: 'st-work' }
 const typeText = (o) => (o.fulfillmentType === 'Delivery' ? 'Yetkazish' : 'Olib ketish')
 const payText = (o) => `${PAY[o.paymentMethod] || o.paymentMethod} · ${PAY_STATUS[o.paymentStatus] || o.paymentStatus}`
@@ -99,6 +108,44 @@ async function load() {
     loading.value = false
   }
 }
+
+// "Baholar" tabi
+const tab = ref('orders')
+const ratings = ref(null)
+const ratingsLoading = ref(false)
+
+async function loadRatings() {
+  if (!dateFrom.value || !dateTo.value) return
+  ratingsLoading.value = true
+  err.value = ''
+  try {
+    const params = { from: dateFrom.value, to: dateTo.value }
+    if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
+    ratings.value = await onlineOrdersApi.ratings(params)
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    ratingsLoading.value = false
+  }
+}
+
+function reload() {
+  if (tab.value === 'ratings') loadRatings()
+  else load()
+}
+
+// Taqsimot: { "1": n, ..., "5": n } (yoki massiv) → 5..1 qatorlar
+const distRows = computed(() => {
+  const d = ratings.value?.distribution || {}
+  const get = (k) => Number(Array.isArray(d) ? d[k - 1] : d[k] ?? d[String(k)]) || 0
+  const total = [1, 2, 3, 4, 5].reduce((a, k) => a + get(k), 0)
+  return [5, 4, 3, 2, 1].map((k) => ({ k, n: get(k), pct: total ? Math.round((get(k) / total) * 100) : 0 }))
+})
+const tagRows = computed(() =>
+  Object.entries(ratings.value?.tagCounts || {})
+    .map(([t, n]) => ({ t, n: Number(n) || 0 }))
+    .sort((a, b) => b.n - a.n)
+)
 
 async function open(o) {
   selected.value = o
@@ -173,8 +220,9 @@ const timeline = computed(() => {
   ].filter((t) => t[1])
 })
 
-watch([dateFrom, dateTo, status], () => load())
-watch(() => storeFilter.selectedBranchId, () => load())
+watch([dateFrom, dateTo, status], () => reload())
+watch(() => storeFilter.selectedBranchId, () => reload())
+watch(tab, () => reload())
 
 onMounted(async () => {
   await storeFilter.ensureLoaded()
@@ -188,7 +236,12 @@ onMounted(async () => {
       <h1>Online buyurtmalar</h1>
       <div class="muted small">Mobil ilovadan kelgan buyurtmalar. Buyurtma bilan ishlash — kassadagi "Online" oynasida.</div>
     </div>
-    <button class="btn btn-ghost btn-sm" :disabled="loading" @click="load">↻ Yangilash</button>
+    <button class="btn btn-ghost btn-sm" :disabled="loading || ratingsLoading" @click="reload">↻ Yangilash</button>
+  </div>
+
+  <div class="row" style="gap:8px; margin-bottom:12px">
+    <button class="btn btn-ghost btn-sm" :class="{ 'btn-active': tab === 'orders' }" @click="tab = 'orders'">Buyurtmalar</button>
+    <button class="btn btn-ghost btn-sm" :class="{ 'btn-active': tab === 'ratings' }" @click="tab = 'ratings'">Baholar</button>
   </div>
 
   <div v-if="err" class="alert alert-error">{{ err }}</div>
@@ -200,13 +253,64 @@ onMounted(async () => {
       <span class="muted">—</span>
       <input v-model="dateTo" type="date" class="input date-in" :min="dateFrom" />
     </div>
-    <select v-model="status" class="select" style="width:200px">
+    <select v-if="tab === 'orders'" v-model="status" class="select" style="width:200px">
       <option value="">Barcha holatlar</option>
       <option v-for="(v, k) in STATUS" :key="k" :value="k">{{ v.text }}</option>
     </select>
     <span v-if="storeFilter.selectedStore" class="muted small">Do'kon: {{ storeFilter.selectedStore.name }}</span>
   </div>
 
+  <!-- Baholar (9.3) -->
+  <template v-if="tab === 'ratings'">
+    <div v-if="ratingsLoading && !ratings" class="muted">Yuklanmoqda...</div>
+    <template v-if="ratings">
+      <div class="summary">
+        <div class="card stat">
+          <div class="stat-label">O'rtacha baho</div>
+          <div class="stat-value">{{ ratings.count ? Number(ratings.average || 0).toFixed(2) : '—' }} <span class="star">★</span></div>
+          <div class="muted small">{{ ratings.count || 0 }} ta baho</div>
+        </div>
+        <div class="card stat">
+          <div class="stat-label">Taqsimot</div>
+          <div v-for="r in distRows" :key="r.k" class="dist">
+            <span class="dist-k">{{ r.k }} ★</span>
+            <span class="dist-bar"><span :style="{ width: r.pct + '%' }"></span></span>
+            <span class="dist-n muted">{{ r.n }}</span>
+          </div>
+        </div>
+        <div class="card stat">
+          <div class="stat-label">Teglar</div>
+          <div class="tags">
+            <span v-for="t in tagRows" :key="t.t" class="tag" :class="{ neg: NEGATIVE_TAGS.has(t.t) }">{{ tagText(t.t) }} · {{ t.n }}</span>
+            <span v-if="!tagRows.length" class="muted small">Teg yo'q</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="overflow:auto">
+        <table class="table">
+          <thead>
+            <tr><th>#</th><th>Sana</th><th>Mijoz</th><th>Baho</th><th>Teglar</th><th>Izoh</th></tr>
+          </thead>
+          <tbody>
+            <tr v-if="!(ratings.items || []).length"><td colspan="6" class="muted" style="text-align:center; padding:24px">Baho yo'q</td></tr>
+            <tr v-for="r in ratings.items || []" :key="r.orderId">
+              <td style="font-weight:700">{{ r.number }}</td>
+              <td class="nowrap">{{ fmtDateTime(r.ratedAt) }}</td>
+              <td>{{ r.customerName }}</td>
+              <td class="nowrap star" :class="{ low: r.rating <= 3 }">{{ stars(r.rating) }}</td>
+              <td>
+                <span v-for="t in r.tags || []" :key="t" class="tag" :class="{ neg: NEGATIVE_TAGS.has(t) }">{{ tagText(t) }}</span>
+              </td>
+              <td class="small">{{ r.comment || '' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
+  </template>
+
+  <template v-else>
   <div class="summary">
     <div class="card stat">
       <div class="stat-label">Buyurtmalar</div>
@@ -236,11 +340,12 @@ onMounted(async () => {
             <th>To'lov</th>
             <th class="text-right">Summa</th>
             <th>Holat</th>
+            <th>Baho</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="8" class="muted" style="text-align:center; padding:24px">Yuklanmoqda...</td></tr>
-          <tr v-else-if="!orders.length"><td colspan="8" class="muted" style="text-align:center; padding:24px">Buyurtma yo'q</td></tr>
+          <tr v-if="loading"><td colspan="9" class="muted" style="text-align:center; padding:24px">Yuklanmoqda...</td></tr>
+          <tr v-else-if="!orders.length"><td colspan="9" class="muted" style="text-align:center; padding:24px">Buyurtma yo'q</td></tr>
           <tr v-for="o in orders" :key="o.id" class="clickable" :class="{ sel: selected?.id === o.id }" @click="open(o)">
             <td style="font-weight:700">{{ o.number }}</td>
             <td class="nowrap">{{ fmtDateTime(o.createdAt) }}</td>
@@ -250,6 +355,7 @@ onMounted(async () => {
             <td class="small">{{ payText(o) }}</td>
             <td class="text-right" style="font-weight:600">{{ fmtNum(o.totalAmount) }}</td>
             <td><span class="st" :class="statusOf(o.status).cls">{{ statusOf(o.status).text }}</span></td>
+            <td class="nowrap"><span v-if="o.rating" class="star" :class="{ low: o.rating <= 3 }" :title="o.ratingComment || ''">★ {{ o.rating }}</span></td>
           </tr>
         </tbody>
       </table>
@@ -270,7 +376,7 @@ onMounted(async () => {
         <div>{{ typeText(selected) }}: {{ addressText(selected) }}<span v-if="selected.contactless"> · kontaktsiz</span></div>
         <div v-if="selected.scheduledFor">Vaqt: {{ fmtDateTime(selected.scheduledFor) }} ga</div>
         <div v-if="selected.comment" class="comment">Izoh: {{ selected.comment }}</div>
-        <div class="muted small">Tugasa: {{ POLICY[selected.outOfStockPolicy] || selected.outOfStockPolicy }}</div>
+        <div v-if="selected.outOfStockPolicy" class="muted small">Mahsulot bo'lmasa: {{ POLICY[selected.outOfStockPolicy] || selected.outOfStockPolicy }}</div>
       </div>
 
       <div v-if="selected.courierName || selected.courierPhone || selected.courierUserId" class="info">
@@ -284,6 +390,14 @@ onMounted(async () => {
           <span v-if="selected.courierCashHandedOverAt" style="color:#166534">kassaga topshirildi {{ fmtDateTime(selected.courierCashHandedOverAt) }}</span>
           <span v-else style="color:#b45309">kassaga hali topshirilmagan</span>
         </div>
+      </div>
+
+      <div v-if="selected.rating" class="info" :class="{ 'info-bad': selected.rating <= 3 }">
+        <div><span class="star">{{ stars(selected.rating) }}</span> <span class="muted small">{{ fmtDateTime(selected.ratedAt) }}</span></div>
+        <div v-if="(selected.ratingTags || []).length">
+          <span v-for="t in selected.ratingTags" :key="t" class="tag" :class="{ neg: NEGATIVE_TAGS.has(t) }">{{ tagText(t) }}</span>
+        </div>
+        <div v-if="selected.ratingComment">“{{ selected.ratingComment }}”</div>
       </div>
 
       <div v-if="selected.cancelReason" class="info info-bad">Sabab: {{ selected.cancelReason }}</div>
@@ -320,6 +434,7 @@ onMounted(async () => {
       </div>
     </div>
   </div>
+  </template>
 </template>
 
 <style scoped>
@@ -358,6 +473,17 @@ onMounted(async () => {
 .totals .grand { font-weight: 700; font-size: 16px; }
 .totals .disc { color: #166534; }
 .code { font-family: ui-monospace, Consolas, monospace; }
+.btn-active { background: var(--primary); color: #fff; }
+.star { color: #f59e0b; letter-spacing: 1px; }
+.star.low { color: #dc2626; }
+.dist { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-top: 4px; }
+.dist-k { width: 30px; font-weight: 600; }
+.dist-bar { flex: 1; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+.dist-bar span { display: block; height: 100%; background: #f59e0b; }
+.dist-n { width: 32px; text-align: right; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #dcfce7; color: #166534; margin: 1px 4px 1px 0; }
+.tag.neg { background: #fee2e2; color: #991b1b; }
 @media (max-width: 1000px) {
   .layout { grid-template-columns: 1fr; }
   .summary { grid-template-columns: 1fr; }

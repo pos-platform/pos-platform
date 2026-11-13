@@ -31,6 +31,22 @@ public static class PromotionCalculator
         return best;
     }
 
+    /// <summary>Qo'llanadigan (eng katta foizli) aksiya — <see cref="GetDiscountPercent"/> bilan bir xil tanlov. Yo'q bo'lsa null.</summary>
+    public static Promotion? GetBestPromotion(IEnumerable<Promotion> activePromotions, Guid productId, Guid categoryId)
+    {
+        Promotion? best = null;
+        foreach (var promo in activePromotions)
+        {
+            var applies =
+                promo.ProductId == productId ||
+                promo.CategoryId == categoryId ||
+                (promo.ProductId is null && promo.CategoryId is null);
+            if (applies && promo.DiscountPercent > (best?.DiscountPercent ?? 0m))
+                best = promo;
+        }
+        return best;
+    }
+
     public static bool IsActiveAt(Promotion p, DateTime nowUtc) =>
         p.IsActive && p.StartDate <= nowUtc && p.EndDate >= nowUtc;
 }

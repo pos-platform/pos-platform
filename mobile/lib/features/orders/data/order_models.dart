@@ -220,6 +220,11 @@ class OrderDetail extends OrderSummary {
     this.canPayOnline = false,
     this.onlineProviders = const [],
     this.onlinePaymentProvider,
+    this.canRate = false,
+    this.rating,
+    this.ratingComment,
+    this.ratingTags = const [],
+    this.ratedAt,
   });
 
   final String? branchName;
@@ -266,6 +271,15 @@ class OrderDetail extends OrderSummary {
 
   /// Checkout'da tanlangan online provayder (Payme/Click) — bunda karta raqami ko'rsatilmaydi, faqat to'lov tugmasi.
   final String? onlinePaymentProvider;
+
+  /// Baho (kelishuv 9.3): Delivered, baholanmagan va 14 kun ichida bo'lsa [canRate].
+  final bool canRate;
+  final int? rating;
+  final String? ratingComment;
+
+  /// `fast|fresh|polite|accurate|late|damaged|missing|wrong_item`.
+  final List<String> ratingTags;
+  final DateTime? ratedAt;
 
   bool get isOnlinePayment => onlinePaymentProvider != null;
 
@@ -321,6 +335,16 @@ class OrderDetail extends OrderSummary {
       canPayOnline: j['canPayOnline'] as bool? ?? false,
       onlineProviders: [for (final p in (j['onlineProviders'] as List? ?? const [])) ?_str(p)],
       onlinePaymentProvider: _str(j['onlinePaymentProvider']),
+      canRate: j['canRate'] == true,
+      rating: (j['rating'] as num?)?.toInt(),
+      ratingComment: _str(j['ratingComment']),
+      ratingTags: switch (j['ratingTags']) {
+        final List l => [for (final e in l) ?_str(e)],
+        // Ehtiyot: vergulli matn ko'rinishida kelsa ham.
+        final String s => [for (final e in s.split(',')) ?_str(e.trim())],
+        _ => const [],
+      },
+      ratedAt: _date(j['ratedAt']),
     );
   }
 }

@@ -84,6 +84,8 @@ public static class DependencyInjection
         services.AddScoped<IShopProfileService, ShopProfileService>();
         services.AddScoped<IShopOrderService, ShopOrderService>();
         services.AddScoped<IShopPushService, ShopPushService>();
+        services.AddScoped<PosCloud.Application.Features.ShopMarketing.IShopMarketingService, PosCloud.Application.Features.ShopMarketing.ShopMarketingService>();
+        services.AddScoped<PosCloud.Application.Features.OnlineMarketing.IOnlineMarketingService, PosCloud.Application.Features.OnlineMarketing.OnlineMarketingService>();
         services.AddScoped<IOnlineOrderService, OnlineOrderService>();
         services.AddScoped<IOnlineStoreService, OnlineStoreService>();
         services.AddScoped<PosCloud.Application.Features.Courier.ICourierService, PosCloud.Application.Features.Courier.CourierService>();

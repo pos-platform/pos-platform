@@ -112,6 +112,12 @@ public class OnlineOrder : BaseEntity
     /// <summary>Transfer usulida online to'lov tizimi (Payme/Click) tanlangan — karta raqami o'rniga to'lov tugmasi.</summary>
     public PaymentProvider? OnlinePaymentProvider { get; set; }
 
+    /// <summary>Mijoz bahosi (1–5), izoh, teglar (vergul bilan) va vaqti — faqat Delivered'dan keyin.</summary>
+    public int? Rating { get; set; }
+    public string? RatingComment { get; set; }
+    public string? RatingTags { get; set; }
+    public DateTime? RatedAt { get; set; }
+
     public ICollection<OnlineOrderItem> Items { get; set; } = new List<OnlineOrderItem>();
 }
 

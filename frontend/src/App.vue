@@ -91,6 +91,7 @@ const navItems = [
   { name: 'online-orders', key: 'nav.onlineOrders', icon: '📦', admin: true, perm: 'sales.view', storeOnly: true, group: 'sales' },
   { name: 'promo-codes', key: 'nav.promoCodes', icon: '🎟️', admin: true, perm: 'settings.manage', storeOnly: true, group: 'sales' },
   { name: 'online-store', key: 'nav.onlineStore', icon: '📱', admin: true, perm: 'settings.manage', storeOnly: true, group: 'sales' },
+  { name: 'online-marketing', key: 'nav.onlineMarketing', icon: '📣', admin: true, perm: 'settings.manage', storeOnly: true, group: 'sales' },
 
   // 2) Katalog va ombor
   { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view', group: 'catalog' },

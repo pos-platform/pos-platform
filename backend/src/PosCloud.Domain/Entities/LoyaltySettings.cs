@@ -28,6 +28,18 @@ public class LoyaltySettings : BaseEntity
     public bool EarnOnDiscountedItems { get; set; } = true;
 }
 
+/// <summary>
+/// Loyalty darajasi (Silver, Gold...). Mijozning oxirgi 365 kundagi xaridi MinSpend'dan oshsa — shu foiz
+/// (bazaviy/kategoriya foizidan katta bo'lsa) qo'llanadi.
+/// </summary>
+public class LoyaltyTier : BaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal MinSpend { get; set; }
+    public decimal CashbackPercent { get; set; }
+    public int SortOrder { get; set; }
+}
+
 /// <summary>Kategoriya bo'yicha alohida cashback foizi (tashkilot bo'yicha).</summary>
 public class LoyaltyCategoryRate : BaseEntity
 {

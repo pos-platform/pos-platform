@@ -39,6 +39,7 @@ class CatalogRepository {
     ProductSort sort = ProductSort.popular,
     int page = 1,
     int pageSize = 30,
+    bool discounted = false,
     CancelToken? cancelToken,
   }) =>
       apiCall(() async {
@@ -47,6 +48,8 @@ class CatalogRepository {
           queryParameters: {
             if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
             'categoryId': ?categoryId,
+            // Aksiya sahifasi (kelishuv 9.1): faqat chegirmadagi mahsulotlar.
+            if (discounted) 'discounted': true,
             'sort': sort.api,
             'page': page,
             'pageSize': pageSize,

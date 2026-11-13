@@ -20,6 +20,21 @@ const form = reactive({
   earnOnDiscountedItems: true
 })
 const rates = ref([]) // [{ categoryId, categoryName, percent }]
+// Bosqich 9.4: mijoz darajalari (oxirgi 365 kunlik xarid bo'yicha)
+const tiers = ref([]) // [{ id?, name, minSpend, cashbackPercent }]
+
+function addTier() {
+  const last = tiers.value[tiers.value.length - 1]
+  tiers.value.push({
+    id: null,
+    name: '',
+    minSpend: last ? Number(last.minSpend) * 2 || 1000000 : 1000000,
+    cashbackPercent: last ? Number(last.cashbackPercent) + 1 : Number(form.cashbackPercent) + 1
+  })
+}
+function removeTier(i) {
+  tiers.value.splice(i, 1)
+}
 
 const categories = ref([])
 const newCategoryId = ref('')
@@ -56,6 +71,9 @@ function applySettings(s) {
     categoryName: r.categoryName,
     percent: Number(r.percent)
   }))
+  tiers.value = [...(s.tiers || [])]
+    .sort((a, b) => Number(a.minSpend) - Number(b.minSpend))
+    .map((t) => ({ id: t.id || null, name: t.name || '', minSpend: Number(t.minSpend), cashbackPercent: Number(t.cashbackPercent) }))
 }
 
 async function load() {
@@ -97,6 +115,15 @@ function validate() {
   for (const r of rates.value) {
     if (!inRange(Number(r.percent), 0, 100)) return `"${r.categoryName}" foizi 0..100 oralig'ida bo'lishi kerak`
   }
+  const seen = new Set()
+  for (const t of tiers.value) {
+    const name = (t.name || '').trim()
+    if (!name || name.length > 30) return 'Daraja nomi 1–30 belgi bo\'lishi kerak'
+    if (!(Number(t.minSpend) >= 0)) return `"${name}" minimal xaridi manfiy bo'lmasin`
+    if (!inRange(Number(t.cashbackPercent), 0, 100)) return `"${name}" foizi 0..100 oralig'ida bo'lishi kerak`
+    if (seen.has(Number(t.minSpend))) return 'Ikki darajaning minimal xaridi bir xil bo\'lmasin'
+    seen.add(Number(t.minSpend))
+  }
   return ''
 }
 
@@ -115,7 +142,15 @@ async function save() {
       pointsExpireDays: form.pointsExpireDays === '' || form.pointsExpireDays === null ? null : Number(form.pointsExpireDays),
       signupBonus: Number(form.signupBonus),
       earnOnDiscountedItems: form.earnOnDiscountedItems,
-      categoryRates: rates.value.map((r) => ({ categoryId: r.categoryId, percent: Number(r.percent) }))
+      categoryRates: rates.value.map((r) => ({ categoryId: r.categoryId, percent: Number(r.percent) })),
+      tiers: [...tiers.value]
+        .sort((a, b) => Number(a.minSpend) - Number(b.minSpend))
+        .map((t) => ({
+          ...(t.id ? { id: t.id } : {}),
+          name: t.name.trim(),
+          minSpend: Number(t.minSpend),
+          cashbackPercent: Number(t.cashbackPercent)
+        }))
     }
     const saved = await loyaltyApi.saveSettings(payload)
     if (saved && typeof saved === 'object') applySettings(saved)
@@ -275,6 +310,36 @@ onMounted(() => {
         </div>
         <button class="btn btn-ghost" :disabled="!newCategoryId" @click="addRate">+ Qo'shish</button>
       </div>
+
+      <!-- Darajalar (9.4) -->
+      <h4 style="margin:12px 0 6px">Darajalar</h4>
+      <div class="muted small" style="margin-bottom:10px">
+        Mijozning oxirgi 365 kundagi xaridi minimal summadan oshsa, shu daraja foizi qo'llanadi
+        (umumiy yoki kategoriya foizidan qaysi biri katta bo'lsa — o'shasi). Masalan: Silver, Gold, Platinum.
+      </div>
+      <table class="table" style="margin-bottom:12px">
+        <thead>
+          <tr>
+            <th>Nomi</th>
+            <th class="text-right" style="width:220px">Minimal xarid, 365 kun (so'm)</th>
+            <th class="text-right" style="width:160px">Cashback (%)</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(t, i) in tiers" :key="i">
+            <td><input v-model="t.name" class="input" maxlength="30" placeholder="Gold" /></td>
+            <td class="text-right"><input v-model="t.minSpend" type="number" min="0" step="1000" class="input" style="width:180px; text-align:right" /></td>
+            <td class="text-right"><input v-model="t.cashbackPercent" type="number" min="0" max="100" step="0.1" class="input" style="width:110px; text-align:right" /></td>
+            <td class="text-right"><button class="btn btn-ghost btn-sm" @click="removeTier(i)">✕</button></td>
+          </tr>
+          <tr v-if="!tiers.length">
+            <td colspan="4" class="muted" style="text-align:center; padding:16px">Darajalar yo'q — barcha mijozlarga bir xil foiz</td>
+          </tr>
+        </tbody>
+      </table>
+      <button class="btn btn-ghost" style="margin-bottom:16px" @click="addTier">+ Daraja qo'shish</button>
+      <br />
 
       <button class="btn" :disabled="saving" @click="save">{{ saving ? 'Saqlanmoqda...' : 'Saqlash' }}</button>
     </template>

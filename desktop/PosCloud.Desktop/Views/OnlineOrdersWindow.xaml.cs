@@ -205,7 +205,11 @@ public partial class OnlineOrdersWindow : Window
             courierText += (courierText.Length > 0 ? " · " : "") + $"naqd kassaga topshirildi {h2.ToLocalTime():dd.MM HH:mm}";
         DetailCourier.Text = courierText;
         DetailCourier.Visibility = courierText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-        DetailPolicy.Text = o.PolicyText;
+        DetailPolicy.Text = o.SubstitutionText;
+        DetailPolicy.Foreground = o.SubstitutionForeground;
+        DetailPolicyBadge.Background = o.SubstitutionBackground;
+        DetailRating.Text = o.RatingText;
+        DetailRatingBox.Visibility = o.HasRating ? Visibility.Visible : Visibility.Collapsed;
         DetailPayment.Text = o.PaymentText + (o.DeliveryFee > 0 ? $" · yetkazish {o.DeliveryFee:N0}" : "");
         DetailTotal.Text = $"{o.TotalAmount:N0} so'm";
 
@@ -748,8 +752,16 @@ public partial class OnlineOrdersWindow : Window
         };
         doc.Blocks.Add(new Paragraph(new Bold(new Run($"Yig'ish varag'i — #{o.Number}"))) { FontSize = 16 });
         doc.Blocks.Add(new Paragraph(new Run(
-            $"{o.CustomerName} · {o.CustomerPhone}\n{o.TypeText}: {o.AddressText}\n{o.PaymentText} · {o.PolicyText}" +
+            $"{o.CustomerName} · {o.CustomerPhone}\n{o.TypeText}: {o.AddressText}\n{o.PaymentText}" +
             (string.IsNullOrWhiteSpace(o.Comment) ? "" : $"\nIzoh: {o.Comment}"))));
+        // Mahsulot bo'lmasa nima qilish — yig'uvchi uchun ko'zga tashlanadigan qator.
+        doc.Blocks.Add(new Paragraph(new Bold(new Run(o.SubstitutionText.ToUpperInvariant())))
+        {
+            FontSize = 14,
+            BorderBrush = Brushes.Black,
+            BorderThickness = new Thickness(1.5),
+            Padding = new Thickness(6, 3, 6, 3)
+        });
 
         var table = new Table { CellSpacing = 0 };
         table.Columns.Add(new TableColumn { Width = new GridLength(30) });

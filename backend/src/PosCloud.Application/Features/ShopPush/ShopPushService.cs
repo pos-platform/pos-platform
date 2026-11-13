@@ -18,6 +18,13 @@ public interface IShopPushService
 
     /// <summary>Buyurtma holati haqida mijozning barcha qurilmalariga push. Yaroqsiz tokenlar o'chiriladi.</summary>
     Task SendOrderStatusAsync(OrderStatusPush push, CancellationToken ct = default);
+
+    /// <summary>Bitta mijozning barcha qurilmalariga (locale bo'yicha uz/ru matn). Yuborilgan qurilmalar soni.</summary>
+    Task<int> SendToUserAsync(ShopUserPush push, CancellationToken ct = default);
+
+    /// <summary>Ko'p mijozga bir xil matn (push kampaniya). Yaroqsiz tokenlar o'chiriladi. Yuborilgan qurilmalar soni.</summary>
+    Task<int> SendToUsersAsync(IReadOnlyCollection<Guid> shopUserIds, string title, string body,
+        IReadOnlyDictionary<string, string> data, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -143,6 +150,63 @@ public class ShopPushService : IShopPushService
             await _db.SaveChangesAsync(ct);
             _logger.LogInformation("Yaroqsiz push tokenlar o'chirildi: {Count}", invalid.Count);
         }
+    }
+
+    public async Task<int> SendToUserAsync(ShopUserPush push, CancellationToken ct = default)
+    {
+        var devices = await _db.ShopDeviceTokens.IgnoreQueryFilters().AsNoTracking()
+            .Where(d => d.ShopUserId == push.ShopUserId)
+            .Select(d => new { d.Id, d.Token, d.Locale })
+            .ToListAsync(ct);
+
+        var sent = 0;
+        var invalid = new List<Guid>();
+        foreach (var device in devices)
+        {
+            var ru = NormalizeLocale(device.Locale) == "ru";
+            var result = await _sender.SendAsync(device.Token, ru ? push.TitleRu : push.TitleUz,
+                ru ? push.BodyRu : push.BodyUz, push.Data, ct);
+            if (result == PushSendResult.Sent) sent++;
+            else if (result == PushSendResult.InvalidToken) invalid.Add(device.Id);
+        }
+
+        await RemoveInvalidAsync(invalid, ct);
+        return sent;
+    }
+
+    public async Task<int> SendToUsersAsync(IReadOnlyCollection<Guid> shopUserIds, string title, string body,
+        IReadOnlyDictionary<string, string> data, CancellationToken ct = default)
+    {
+        var sent = 0;
+        // Katta ro'yxat bo'laklab o'qiladi (IN ro'yxati juda uzun bo'lmasin).
+        foreach (var chunk in shopUserIds.Distinct().Chunk(500))
+        {
+            var devices = await _db.ShopDeviceTokens.IgnoreQueryFilters().AsNoTracking()
+                .Where(d => chunk.Contains(d.ShopUserId))
+                .Select(d => new { d.Id, d.Token })
+                .ToListAsync(ct);
+
+            var invalid = new List<Guid>();
+            foreach (var device in devices)
+            {
+                var result = await _sender.SendAsync(device.Token, title, body, data, ct);
+                if (result == PushSendResult.Sent) sent++;
+                else if (result == PushSendResult.InvalidToken) invalid.Add(device.Id);
+            }
+            await RemoveInvalidAsync(invalid, ct);
+        }
+        return sent;
+    }
+
+    private async Task RemoveInvalidAsync(List<Guid> invalid, CancellationToken ct)
+    {
+        if (invalid.Count == 0) return;
+        var stale = await _db.ShopDeviceTokens.IgnoreQueryFilters()
+            .Where(d => invalid.Contains(d.Id))
+            .ToListAsync(ct);
+        _db.ShopDeviceTokens.RemoveRange(stale);
+        await _db.SaveChangesAsync(ct);
+        _logger.LogInformation("Yaroqsiz push tokenlar o'chirildi: {Count}", stale.Count);
     }
 
     public static string NormalizeLocale(string? locale) =>

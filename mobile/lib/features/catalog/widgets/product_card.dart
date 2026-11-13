@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../cart/cart_controller.dart';
+import '../../marketing/favorites.dart';
 import '../data/catalog_models.dart';
 import 'common.dart';
 
@@ -41,6 +42,7 @@ class ProductCard extends ConsumerWidget {
               ),
               if (product.discountPercent != null && product.discountPercent! > 0)
                 Positioned(left: 6, top: 6, child: DiscountBadge(percent: product.discountPercent!)),
+              Positioned(right: 4, top: 4, child: FavoriteButton(product: product, size: 18)),
             ]),
           ),
         ),

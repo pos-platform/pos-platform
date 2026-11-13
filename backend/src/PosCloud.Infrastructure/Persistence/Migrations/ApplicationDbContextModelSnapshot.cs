@@ -970,6 +970,42 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("LoyaltySettings", (string)null);
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.LoyaltyTier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CashbackPercent")
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("MinSpend")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.ToTable("LoyaltyTiers", (string)null);
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.LoyaltyTransaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1177,6 +1213,20 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("PromoDiscount")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<DateTime?>("RatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RatingComment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("RatingTags")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<DateTime?>("ReadyAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1216,6 +1266,8 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OrganizationId", "Number")
                         .IsUnique();
+
+                    b.HasIndex("OrganizationId", "RatedAt");
 
                     b.HasIndex("ShopUserId", "ClientRequestId")
                         .IsUnique()
@@ -1476,6 +1528,15 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<bool>("PickupEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<decimal>("RefereeBonus")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<bool>("ReferralEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("ReferrerBonus")
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<bool>("RequireTransferBeforeDispatch")
                         .HasColumnType("boolean");
 
@@ -1485,6 +1546,14 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
+
+                    b.Property<string>("SupportPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("SupportTelegram")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.Property<string>("TransferCardHolder")
                         .HasMaxLength(200)
@@ -2190,6 +2259,204 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("SaleItems");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopBanner", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BackgroundColor")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LinkType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LinkValue")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Subtitle")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("OrganizationId", "SortOrder");
+
+                    b.ToTable("ShopBanners");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopCartSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ItemCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ItemsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("RemindedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ShopUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ChangedAt");
+
+                    b.HasIndex("ShopUserId", "BranchId")
+                        .IsUnique();
+
+                    b.ToTable("ShopCartSnapshots");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopCollection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("ShowOnHome")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("OrganizationId", "SortOrder");
+
+                    b.ToTable("ShopCollections");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopCollectionItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("CollectionId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ShopCollectionItems");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.ShopDeviceToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2236,6 +2503,37 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ShopDeviceTokens");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopFavorite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ShopUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ShopUserId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ShopFavorites");
                 });
 
             modelBuilder.Entity("PosCloud.Domain.Entities.ShopOtpCode", b =>
@@ -2290,6 +2588,111 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("ShopOtpCodes");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopPushCampaign", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("LinkType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LinkValue")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("SentCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("OrganizationId", "CreatedAt");
+
+                    b.HasIndex("Status", "ScheduledAt");
+
+                    b.ToTable("ShopPushCampaigns");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopReferral", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("RefereeBonus")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("RefereeShopUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("ReferrerBonus")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("ReferrerShopUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("RewardedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RefereeShopUserId");
+
+                    b.HasIndex("ReferrerShopUserId");
+
+                    b.HasIndex("OrganizationId", "RefereeShopUserId")
+                        .IsUnique();
+
+                    b.HasIndex("OrganizationId", "ReferrerShopUserId");
+
+                    b.ToTable("ShopReferrals");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.ShopRefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2329,6 +2732,143 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ShopRefreshTokens");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopStockSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ShopUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("NotifiedAt");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ShopUserId", "ProductId", "BranchId")
+                        .IsUnique();
+
+                    b.ToTable("ShopStockSubscriptions");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopStory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CoverImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("OrganizationId", "SortOrder");
+
+                    b.ToTable("ShopStories");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopStorySlide", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DurationSec")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("LinkType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LinkValue")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("StoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("ShopStorySlides");
                 });
 
             modelBuilder.Entity("PosCloud.Domain.Entities.ShopUser", b =>
@@ -2375,6 +2915,10 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("PhoneVerifiedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2382,6 +2926,10 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Phone")
                         .IsUnique();
+
+                    b.HasIndex("ReferralCode")
+                        .IsUnique()
+                        .HasFilter("\"ReferralCode\" IS NOT NULL");
 
                     b.ToTable("ShopUsers");
                 });
@@ -3362,6 +3910,64 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopBanner", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopCartSnapshot", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosCloud.Domain.Entities.ShopUser", "ShopUser")
+                        .WithMany()
+                        .HasForeignKey("ShopUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("ShopUser");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopCollection", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopCollectionItem", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.ShopCollection", "Collection")
+                        .WithMany("Items")
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosCloud.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.ShopDeviceToken", b =>
                 {
                     b.HasOne("PosCloud.Domain.Entities.ShopUser", "ShopUser")
@@ -3373,6 +3979,50 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Navigation("ShopUser");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopFavorite", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosCloud.Domain.Entities.ShopUser", "ShopUser")
+                        .WithMany()
+                        .HasForeignKey("ShopUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ShopUser");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopPushCampaign", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopReferral", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.ShopUser", null)
+                        .WithMany()
+                        .HasForeignKey("RefereeShopUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PosCloud.Domain.Entities.ShopUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReferrerShopUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.ShopRefreshToken", b =>
                 {
                     b.HasOne("PosCloud.Domain.Entities.ShopUser", "ShopUser")
@@ -3382,6 +4032,54 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("ShopUser");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopStockSubscription", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosCloud.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosCloud.Domain.Entities.ShopUser", "ShopUser")
+                        .WithMany()
+                        .HasForeignKey("ShopUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ShopUser");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopStory", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopStorySlide", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.ShopStory", "Story")
+                        .WithMany("Slides")
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Story");
                 });
 
             modelBuilder.Entity("PosCloud.Domain.Entities.ShopUserAddress", b =>
@@ -3619,6 +4317,16 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("Receipt");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopCollection", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.ShopStory", b =>
+                {
+                    b.Navigation("Slides");
                 });
 
             modelBuilder.Entity("PosCloud.Domain.Entities.ShopUser", b =>

@@ -1460,4 +1460,259 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get navBonus => 'Bonus';
+
+  @override
+  String get favTitle => 'Sevimlilar';
+
+  @override
+  String get favAdd => 'Sevimlilarga qo‘shish';
+
+  @override
+  String get favRemove => 'Sevimlilardan olib tashlash';
+
+  @override
+  String get favLoginTitle => 'Sevimlilarga qo‘shish';
+
+  @override
+  String get favLoginText =>
+      'Sevimli mahsulotlarni saqlash uchun telefon raqamingiz bilan kiring.';
+
+  @override
+  String get favEmpty => 'Sevimlilar hozircha bo‘sh';
+
+  @override
+  String get favEmptyHint =>
+      'Mahsulotdagi ♥ belgisini bosing — u shu yerda saqlanadi';
+
+  @override
+  String get mkAll => 'Hammasi';
+
+  @override
+  String get mkClose => 'Yopish';
+
+  @override
+  String get mkStoryOpen => 'Batafsil';
+
+  @override
+  String mkEndsIn(String time) {
+    return 'Tugashiga $time';
+  }
+
+  @override
+  String mkDiscountEndsIn(String time) {
+    return 'Aksiya tugashiga $time';
+  }
+
+  @override
+  String get mkDiscountsTitle => 'Aksiyalar';
+
+  @override
+  String get mkDiscountsEmpty => 'Hozircha aksiyadagi mahsulotlar yo‘q';
+
+  @override
+  String mkDiscountsEntry(int count) {
+    return 'Aksiyalar ($count)';
+  }
+
+  @override
+  String get mkDiscountsEntryHint => 'Chegirmadagi barcha mahsulotlar';
+
+  @override
+  String get mkBuyAgain => 'Yana olasizmi?';
+
+  @override
+  String get mkTop10 => 'Top 10';
+
+  @override
+  String get mkRelated => 'Bular bilan birga olishadi';
+
+  @override
+  String get mkCartSuggestions => 'Qo‘shib qo‘ying';
+
+  @override
+  String get mkReorderTitle => 'Oxirgi buyurtmani takrorlash';
+
+  @override
+  String mkReorderSubtitle(String number, String sum) {
+    return '№$number · $sum';
+  }
+
+  @override
+  String get mkReorderButton => 'Takrorlash';
+
+  @override
+  String get mkNotifyMe => 'Kelganda xabar berish';
+
+  @override
+  String get mkNotifySubscribed => 'Kelganda xabar beramiz';
+
+  @override
+  String get mkNotifyOn => 'Mahsulot sotuvga chiqqanda xabar beramiz';
+
+  @override
+  String get mkNotifyOff => 'Xabarnoma bekor qilindi';
+
+  @override
+  String cdDaysHours(int days, int hours) {
+    return '$days kun $hours soat';
+  }
+
+  @override
+  String cdHoursMinutes(int hours, int minutes) {
+    return '$hours soat $minutes daq';
+  }
+
+  @override
+  String cdMinutes(int minutes) {
+    return '$minutes daq';
+  }
+
+  @override
+  String get searchHistory => 'Qidiruv tarixi';
+
+  @override
+  String get searchHistoryClear => 'Tozalash';
+
+  @override
+  String get scanTitle => 'Shtrix-kodni skanerlash';
+
+  @override
+  String get scanTorch => 'Chiroq';
+
+  @override
+  String get scanHint => 'Shtrix-kodni ramka ichiga joylashtiring';
+
+  @override
+  String get scanError =>
+      'Kamerani ochib bo‘lmadi. Sozlamalarda kameraga ruxsat bering.';
+
+  @override
+  String get rateTitle => 'Buyurtmani baholang';
+
+  @override
+  String get rateSubtitle => 'Fikringiz xizmatni yaxshilashga yordam beradi';
+
+  @override
+  String get rateYourRating => 'Sizning bahoingiz';
+
+  @override
+  String get rateCommentHint => 'Izoh (ixtiyoriy)';
+
+  @override
+  String get rateSubmit => 'Yuborish';
+
+  @override
+  String get rateThanks => 'Rahmat! Bahoingiz qabul qilindi';
+
+  @override
+  String rateStars(int count) {
+    return '$count yulduz';
+  }
+
+  @override
+  String get rateTagFast => 'Tez yetkazildi';
+
+  @override
+  String get rateTagFresh => 'Mahsulotlar yangi';
+
+  @override
+  String get rateTagPolite => 'Xushmuomala kuryer';
+
+  @override
+  String get rateTagAccurate => 'Hammasi to‘g‘ri';
+
+  @override
+  String get rateTagLate => 'Kechikdi';
+
+  @override
+  String get rateTagDamaged => 'Shikastlangan';
+
+  @override
+  String get rateTagMissing => 'Nimadir yetishmadi';
+
+  @override
+  String get rateTagWrongItem => 'Boshqa mahsulot keldi';
+
+  @override
+  String get supportTitle => 'Yordam';
+
+  @override
+  String get supportText => 'Savolingiz bormi? Biz bilan bog‘laning';
+
+  @override
+  String get supportCall => 'Qo‘ng‘iroq qilish';
+
+  @override
+  String get supportTelegram => 'Telegram’da yozish';
+
+  @override
+  String get supportNone => 'Do‘kon aloqa ma’lumotlarini hali kiritmagan';
+
+  @override
+  String get refTitle => 'Do‘stni taklif qilish';
+
+  @override
+  String get refUnavailable =>
+      'Bu do‘konda do‘stni taklif qilish hozircha mavjud emas';
+
+  @override
+  String refHeadline(String bonus) {
+    return 'Do‘stingizni taklif qiling — $bonus oling';
+  }
+
+  @override
+  String refExplain(String bonus) {
+    return 'Do‘stingiz ham $bonus oladi — birinchi buyurtmasi yetkazilganda';
+  }
+
+  @override
+  String refShareFallback(String code, String bonus) {
+    return 'Mening kodim: $code. Ilovada kiriting va $bonus oling!';
+  }
+
+  @override
+  String get refYourCode => 'Sizning kodingiz';
+
+  @override
+  String get refCopy => 'Nusxa olish';
+
+  @override
+  String get refCopied => 'Kod nusxalandi';
+
+  @override
+  String get refShare => 'Ulashish';
+
+  @override
+  String get refInvited => 'Taklif qilinganlar';
+
+  @override
+  String get refRewarded => 'Bonus olinganlar';
+
+  @override
+  String get refHaveCode => 'Do‘stingiz kodi bormi?';
+
+  @override
+  String get refHaveCodeHint => 'Birinchi buyurtmangizgacha kiriting';
+
+  @override
+  String get refCodeHint => 'Kod';
+
+  @override
+  String get refApplied => 'Kod qabul qilindi';
+
+  @override
+  String get tierNone => 'Daraja hali yo‘q';
+
+  @override
+  String tierCurrent(String name, String percent) {
+    return '$name · $percent% cashback';
+  }
+
+  @override
+  String tierNextLeft(String name, String sum) {
+    return '$name darajasigacha $sum';
+  }
+
+  @override
+  String get tierTop => 'Siz eng yuqori darajadasiz';
 }

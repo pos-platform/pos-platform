@@ -48,9 +48,74 @@ public class OnlineOrderDto
     public decimal PromoDiscount { get; set; }
     public decimal BonusUsed { get; set; }
 
+    // ---- Bosqich 9.3: almashtirish siyosati va baho (eski backend'da yo'q — null) ----
+    /// <summary>Replace | Call | Remove (std Call). Eski backend'da null — <see cref="OutOfStockPolicy"/> ishlatiladi.</summary>
+    public string? SubstitutionPolicy { get; set; }
+    public int? Rating { get; set; }
+    public string? RatingComment { get; set; }
+    public List<string>? RatingTags { get; set; }
+    public DateTime? RatedAt { get; set; }
+
     public List<OnlineOrderItemDto> Items { get; set; } = new();
 
     // ---- ko'rinish uchun ----
+
+    /// <summary>Normallashtirilgan siyosat: Replace | Call | Remove.</summary>
+    public string SubstitutionKind
+    {
+        get
+        {
+            var p = string.IsNullOrWhiteSpace(SubstitutionPolicy) ? OutOfStockPolicy : SubstitutionPolicy;
+            return p switch
+            {
+                "Replace" or "ReplaceSimilar" => "Replace",
+                "Remove" => "Remove",
+                _ => "Call"
+            };
+        }
+    }
+
+    /// <summary>"Bo'lmasa: almashtiring / qo'ng'iroq qiling / olib tashlang".</summary>
+    public string SubstitutionText => SubstitutionKind switch
+    {
+        "Replace" => "Bo'lmasa: almashtiring",
+        "Remove" => "Bo'lmasa: olib tashlang",
+        _ => "Bo'lmasa: qo'ng'iroq qiling"
+    };
+
+    public System.Windows.Media.Brush SubstitutionBackground => new System.Windows.Media.SolidColorBrush(SubstitutionKind switch
+    {
+        "Replace" => System.Windows.Media.Color.FromRgb(0xE1, 0xF2, 0xE8),
+        "Remove" => System.Windows.Media.Color.FromRgb(0xFB, 0xE4, 0xE4),
+        _ => System.Windows.Media.Color.FromRgb(0xE3, 0xEB, 0xFB)
+    });
+
+    public System.Windows.Media.Brush SubstitutionForeground => new System.Windows.Media.SolidColorBrush(SubstitutionKind switch
+    {
+        "Replace" => System.Windows.Media.Color.FromRgb(0x0B, 0x6B, 0x45),
+        "Remove" => System.Windows.Media.Color.FromRgb(0xB4, 0x23, 0x18),
+        _ => System.Windows.Media.Color.FromRgb(0x2D, 0x5B, 0xD0)
+    });
+
+    public bool HasRating => Rating is >= 1 and <= 5;
+
+    /// <summary>"⭐⭐⭐⭐☆ 4/5 · Tez, Yangi · «izoh»" yoki bo'sh.</summary>
+    public string RatingText
+    {
+        get
+        {
+            if (!HasRating) return "";
+            var r = Rating!.Value;
+            var text = "Baho: " + new string('★', r) + new string('☆', 5 - r) + $" {r}/5";
+            var tags = (RatingTags ?? new List<string>())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Select(OnlineOrderTexts.RatingTag).ToList();
+            if (tags.Count > 0) text += " · " + string.Join(", ", tags);
+            if (!string.IsNullOrWhiteSpace(RatingComment)) text += $"\n«{RatingComment!.Trim()}»";
+            if (RatedAt is { } at) text += $"\n{at.ToLocalTime():dd.MM.yyyy HH:mm}";
+            return text;
+        }
+    }
     public bool IsDelivery => FulfillmentType == "Delivery";
     public bool IsPaid => PaymentStatus == "Paid";
     public int ActiveItemCount => Items.Count(i => !i.IsRemoved);
@@ -119,12 +184,8 @@ public class OnlineOrderDto
         }
     }
 
-    public string PolicyText => OutOfStockPolicy switch
-    {
-        "ReplaceSimilar" => "Tugasa: o'xshashiga almashtirish",
-        "Remove" => "Tugasa: olib tashlash",
-        _ => "Tugasa: mijozga qo'ng'iroq"
-    };
+    /// <summary>Mahsulot bo'lmasa nima qilish — 9.3 dan <see cref="SubstitutionPolicy"/>, eski backend'da OutOfStockPolicy.</summary>
+    public string PolicyText => SubstitutionText;
 }
 
 public class OnlineOrderItemDto
@@ -211,6 +272,20 @@ public static class OnlineOrderTexts
         if (digits.Length <= 2) return new string('*', digits.Length);
         return new string('*', digits.Length - 2) + digits[^2..];
     }
+
+    /// <summary>Baho tegi: fast|fresh|polite|accurate|late|damaged|missing|wrong_item → o'zbekcha.</summary>
+    public static string RatingTag(string tag) => tag.Trim().ToLowerInvariant() switch
+    {
+        "fast" => "Tez",
+        "fresh" => "Yangi mahsulot",
+        "polite" => "Xushmuomala",
+        "accurate" => "Aniq yig'ilgan",
+        "late" => "Kechikdi",
+        "damaged" => "Shikastlangan",
+        "missing" => "Yetishmadi",
+        "wrong_item" => "Noto'g'ri mahsulot",
+        _ => tag
+    };
 
     public static string Status(string s) => s switch
     {

@@ -15,6 +15,8 @@ import '../features/courier/courier_login_screen.dart';
 import '../features/courier/courier_order_screen.dart';
 import '../features/courier/courier_orders_screen.dart';
 import '../features/courier/data/courier_session.dart';
+import '../features/marketing/product_lists_screens.dart';
+import '../features/marketing/referral_screen.dart';
 import '../features/orders/order_tracking_screen.dart';
 import '../features/orders/orders_screen.dart';
 import '../features/profile/address_edit_screen.dart';
@@ -127,6 +129,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               routes: [
                 GoRoute(path: 'stores', builder: (_, _) => const StoresScreen()),
                 GoRoute(path: 'product/:id', builder: (_, s) => ProductScreen(productId: s.pathParameters['id']!)),
+                GoRoute(path: 'collection/:id', builder: (_, s) => CollectionScreen(collectionId: s.pathParameters['id']!)),
+                GoRoute(path: 'discounts', builder: (_, _) => const DiscountsScreen()),
               ],
             ),
           ]),
@@ -173,6 +177,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   path: 'personal',
                   builder: (_, s) => PersonalInfoScreen(fromPrompt: s.uri.queryParameters['prompt'] == '1'),
                 ),
+                GoRoute(path: 'favorites', builder: (_, _) => const FavoritesScreen()),
+                GoRoute(path: 'referral', builder: (_, _) => const ReferralScreen()),
                 GoRoute(
                   path: 'addresses',
                   builder: (_, _) => const AddressesScreen(),

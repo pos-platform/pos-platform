@@ -184,6 +184,12 @@ const routes = [
     meta: { adminOnly: true, perm: 'settings.manage' }
   },
   {
+    path: '/online-marketing',
+    name: 'online-marketing',
+    component: () => import('../views/OnlineMarketingView.vue'),
+    meta: { adminOnly: true, perm: 'settings.manage' }
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),

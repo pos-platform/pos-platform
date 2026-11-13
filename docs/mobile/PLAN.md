@@ -371,3 +371,25 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
 - 2026-11-13 — Xo‘ja Market brendi — standart build bitta do'kon rejimida (`STORE_SLUG` standarti `xoja-market`, `APP_NAME`, `BRAND_COLOR=#D81F26`), ilova nomi "Xo‘ja Market" (arb, gradle, Store.xcconfig),
   ranglar (qizil + to'q ko'k matn), ikonka/splash/`logo.png` logodan; `StoreLogo` endi ichki asset. Paket ID o'zgarmadi. `flutter analyze` 0, emulyatorda ko'rildi.
   Qoldi: admin panelda do'konga slug `xoja-market` berish, backend ishga tushirish.
+
+## Bosqich 9 — Marketing va qulayliklar (kelishuv: `docs/mobile/CONTRACT-9.md`)
+
+- [x] 9.1 Reklama va aksiyalar: banner karuseli, Top 10, kolleksiyalar, aksiya sahifasi (ortga sanash), bepul yetkazish progressi; admin "Ilova reklamasi".
+- [x] 9.2 Sotuvni oshirish: sevimlilar, "kelganda xabar ber", "birga olishadi", savat takliflari, "Yana olasizmi?", qidiruv takliflari/transliteratsiya/tarix, shtrix-kod skaneri.
+- [x] 9.3 Ishonch va servis: stories, buyurtmaga baho va teglar, "mahsulot bo'lmasa" tanlovi (desktop yig'ishda), yordam (telefon/Telegram), admin baholar hisoboti.
+- [x] 9.4 Mijozni qaytarish: do'stni taklif qilish, loyalty darajalari, tashlab ketilgan savat eslatmasi, push kampaniyalar, "oxirgi buyurtmani takrorlash".
+
+- 2026-11-14 — 9.1–9.4 — 4 agent parallel (backend, admin panel, desktop, mobil), kelishuv `CONTRACT-9.md`.
+  Backend: migratsiya `AddMarketing` (faqat qo'shish), `ShopMarketing.cs` (banner, kolleksiya, story, sevimli, obuna, savat, referral, push kampaniya),
+  `ShopCatalogService.Marketing.cs` + `ShopSearch.cs` (lotin↔kirill), `OnlineMarketingController`, fon xizmatlari (kampaniya 30 s, qayta sotuvda 10 daq,
+  savat eslatmasi 15 daq, 09–21), loyalty darajalari `LoyaltyRules` da (POS va online; max(kategoriya/asosiy, daraja)), referral mukofoti Delivered'da.
+  Farqlar: "mahsulot bo'lmasa" — mavjud `OutOfStockPolicy` (yangi maydon yo'q); `ShopStoreDto.organizationId` qo'shildi; `push-campaigns/{id}/send` navbatga
+  qo'yadi (~30 s); `ShopCartSnapshot.ChangedAt/ItemCount`; Top/related — POS savdo (`online:` siz) + Delivered online.
+  Admin panel: `/online-marketing` (Bannerlar, Kolleksiyalar, Stories, Push), OnlineOrders "Baholar", sozlamalarda yordam + referral, Loyalty darajalari.
+  Desktop: `OutOfStockPolicy` belgisi (karta, yig'ish paneli, varaq), baho bloki, mijoz chipida daraja.
+  Mobil: `lib/features/marketing/` (banner karusel, Top 10, kolleksiya/aksiya/sevimlilar ekranlari, stories, qidiruv takliflari+tarix+skaner, baho, yordam,
+  referral, savat sinxroni), push turlari; paketlar `mobile_scanner`, `share_plus`; Android CAMERA.
+  Tekshiruv: backend build 0 xato (Api ishlab turgani uchun vaqtinchalik papkaga), pending model o'zgarishi yo'q, LINQ tarjimasi tekshirildi;
+  `npm run build` OK; desktop build 0; `flutter analyze` 0, yangi testlar o'tdi, `flutter build apk --debug` OK. Klient↔backend yo'llari va enum nomlari solishtirildi.
+  **Runtime sinalmagan.** `widget_test.dart` dagi 2 eski test (brend rangi, mehmon kirishi) oldindan yiqilgan — tuzatish kerak.
+  Egasidan: Api'ni to'xtatib qayta ishga tushirish (migratsiya startda qo'llanadi), FCM sozlash. Qoldi: mehmon profilida "Yordam".

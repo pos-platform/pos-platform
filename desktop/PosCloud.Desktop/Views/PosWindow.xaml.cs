@@ -743,6 +743,7 @@ public partial class PosWindow : Window
         else
         {
             var parts = new List<string> { "👤 " + CustomerDisplayName(c) };
+            if (!string.IsNullOrWhiteSpace(c.TierName)) parts.Add("🏅 " + c.TierName!.Trim());
             if (!string.IsNullOrWhiteSpace(c.MaskedPhone)) parts.Add(c.MaskedPhone!);
             parts.Add($"{c.Points:N0} ball");
             CustomerChipText.Text = string.Join(" · ", parts);

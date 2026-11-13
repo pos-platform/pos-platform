@@ -42,7 +42,9 @@ public static class OnlineOrderCashback
             .Select(i => new LoyaltyEarnLine(i.Product!.CategoryId, i.Product.ProductType, i.LineTotal,
                 i.DiscountAmount > 0 || i.UnitPrice < i.Product.Price));
 
-        var points = LoyaltyRules.ComputeEarn(loyalty, sale.TotalAmount, lines);
+        // Daraja (Silver/Gold...) foizi — kassadagi savdo bilan bir xil.
+        var tier = await LoyaltyRules.TierStatusAsync(db, loyalty, customer.Id, ct);
+        var points = LoyaltyRules.ComputeEarn(loyalty, sale.TotalAmount, lines, tier.Tier?.CashbackPercent ?? 0);
         if (points <= 0) return 0;
 
         var earned = LoyaltyRules.Apply(db, customer, points, LoyaltyTransactionType.Earn, LoyaltySource.Online,

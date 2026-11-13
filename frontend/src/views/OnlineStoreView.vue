@@ -33,7 +33,13 @@ const form = reactive({
   deliveryRadiusKm: '',
   deliveryServiceMxikCode: '',
   bonusPayEnabled: false,
-  bonusMaxPercent: 0
+  bonusMaxPercent: 0,
+  // Bosqich 9.3 / 9.4
+  supportPhone: '',
+  supportTelegram: '',
+  referralEnabled: false,
+  referrerBonus: 0,
+  refereeBonus: 0
 })
 
 const statusText = computed(() => {
@@ -70,7 +76,12 @@ function fill(v) {
     deliveryRadiusKm: v.deliveryRadiusKm ?? '',
     deliveryServiceMxikCode: v.deliveryServiceMxikCode || '',
     bonusPayEnabled: !!v.bonusPayEnabled,
-    bonusMaxPercent: v.bonusMaxPercent ?? 0
+    bonusMaxPercent: v.bonusMaxPercent ?? 0,
+    supportPhone: v.supportPhone || '',
+    supportTelegram: v.supportTelegram || '',
+    referralEnabled: !!v.referralEnabled,
+    referrerBonus: v.referrerBonus ?? 0,
+    refereeBonus: v.refereeBonus ?? 0
   })
 }
 
@@ -125,6 +136,22 @@ async function save() {
     err.value = 'Bonus bilan to\'lash ulushi 0–100% bo\'lishi kerak.'
     return
   }
+  // Telegram: username, "@" va t.me havolasisiz
+  const tg = form.supportTelegram.trim().replace(/^https?:\/\/(t\.me|telegram\.me)\//i, '').replace(/^@/, '')
+  if (tg && !/^[A-Za-z0-9_]{4,32}$/.test(tg)) {
+    err.value = 'Telegram username 4–32 belgi: lotin harflari, raqam va "_" ("@" siz).'
+    return
+  }
+  const refBonus = Number(form.referrerBonus) || 0
+  const refeeBonus = Number(form.refereeBonus) || 0
+  if (refBonus < 0 || refeeBonus < 0) {
+    err.value = 'Taklif bonuslari manfiy bo\'lmasin.'
+    return
+  }
+  if (form.referralEnabled && refBonus === 0 && refeeBonus === 0) {
+    err.value = '"Do\'stni taklif qilish" yoqilgan — kamida bitta bonusni kiriting.'
+    return
+  }
   busy.value = true
   try {
     fill(await onlineStoreApi.update({
@@ -149,7 +176,12 @@ async function save() {
       deliveryRadiusKm: radius,
       deliveryServiceMxikCode: mxik || null,
       bonusPayEnabled: form.bonusPayEnabled,
-      bonusMaxPercent: bonusPct
+      bonusMaxPercent: bonusPct,
+      supportPhone: form.supportPhone.trim() || null,
+      supportTelegram: tg || null,
+      referralEnabled: form.referralEnabled,
+      referrerBonus: refBonus,
+      refereeBonus: refeeBonus
     }))
     ok.value = 'Saqlandi.'
   } catch (e) {
@@ -303,6 +335,34 @@ onMounted(load)
           <input v-model="form.bonusMaxPercent" type="number" min="0" max="100" class="input" />
         </div>
       </div>
+
+      <h3>Yordam (ilovadagi "Yordam" tugmasi)</h3>
+      <div class="grid2">
+        <div class="field">
+          <label>Yordam telefoni</label>
+          <input v-model="form.supportPhone" class="input" maxlength="20" placeholder="+998 90 123 45 67" />
+        </div>
+        <div class="field">
+          <label>Telegram (username, "@" siz)</label>
+          <input v-model="form.supportTelegram" class="input" maxlength="64" placeholder="mening_dokonim" />
+        </div>
+      </div>
+
+      <h3>Do'stni taklif qilish</h3>
+      <label class="row"><input v-model="form.referralEnabled" type="checkbox" /> Mijoz do'stini taklif qilsa, ikkalasiga bonus ball beriladi</label>
+      <div v-if="form.referralEnabled" class="grid3">
+        <div class="field">
+          <label>Taklif qilganga, ball</label>
+          <input v-model="form.referrerBonus" type="number" min="0" class="input" />
+        </div>
+        <div class="field">
+          <label>Taklif qilinganga (yangi mijoz), ball</label>
+          <input v-model="form.refereeBonus" type="number" min="0" class="input" />
+        </div>
+      </div>
+      <p v-if="form.referralEnabled" class="muted small" style="margin:0">
+        Bonus yangi mijozning birinchi buyurtmasi yetkazilganda yoziladi (1 ball = 1 so'm, "Cashback va bonus" tizimi orqali).
+      </p>
 
       <h3>Kartaga o'tkazma</h3>
       <p class="muted small" style="margin:0">Karta raqami mijozga buyurtma yig'ilgandan keyin ko'rsatiladi. Raqam bo'lmasa o'tkazma ilovada chiqmaydi.</p>

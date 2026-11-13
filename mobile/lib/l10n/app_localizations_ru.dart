@@ -1452,4 +1452,258 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get navBonus => 'Бонусы';
+
+  @override
+  String get favTitle => 'Избранное';
+
+  @override
+  String get favAdd => 'Добавить в избранное';
+
+  @override
+  String get favRemove => 'Убрать из избранного';
+
+  @override
+  String get favLoginTitle => 'Добавить в избранное';
+
+  @override
+  String get favLoginText =>
+      'Чтобы сохранять избранные товары, войдите по номеру телефона.';
+
+  @override
+  String get favEmpty => 'В избранном пока пусто';
+
+  @override
+  String get favEmptyHint => 'Нажмите ♥ на товаре — он сохранится здесь';
+
+  @override
+  String get mkAll => 'Все';
+
+  @override
+  String get mkClose => 'Закрыть';
+
+  @override
+  String get mkStoryOpen => 'Подробнее';
+
+  @override
+  String mkEndsIn(String time) {
+    return 'До конца $time';
+  }
+
+  @override
+  String mkDiscountEndsIn(String time) {
+    return 'До конца акции $time';
+  }
+
+  @override
+  String get mkDiscountsTitle => 'Акции';
+
+  @override
+  String get mkDiscountsEmpty => 'Сейчас нет товаров по акции';
+
+  @override
+  String mkDiscountsEntry(int count) {
+    return 'Акции ($count)';
+  }
+
+  @override
+  String get mkDiscountsEntryHint => 'Все товары со скидкой';
+
+  @override
+  String get mkBuyAgain => 'Купите снова?';
+
+  @override
+  String get mkTop10 => 'Топ 10';
+
+  @override
+  String get mkRelated => 'С этим покупают';
+
+  @override
+  String get mkCartSuggestions => 'Добавьте к заказу';
+
+  @override
+  String get mkReorderTitle => 'Повторить последний заказ';
+
+  @override
+  String mkReorderSubtitle(String number, String sum) {
+    return '№$number · $sum';
+  }
+
+  @override
+  String get mkReorderButton => 'Повторить';
+
+  @override
+  String get mkNotifyMe => 'Сообщить о поступлении';
+
+  @override
+  String get mkNotifySubscribed => 'Сообщим о поступлении';
+
+  @override
+  String get mkNotifyOn => 'Сообщим, когда товар появится';
+
+  @override
+  String get mkNotifyOff => 'Уведомление отменено';
+
+  @override
+  String cdDaysHours(int days, int hours) {
+    return '$days дн $hours ч';
+  }
+
+  @override
+  String cdHoursMinutes(int hours, int minutes) {
+    return '$hours ч $minutes мин';
+  }
+
+  @override
+  String cdMinutes(int minutes) {
+    return '$minutes мин';
+  }
+
+  @override
+  String get searchHistory => 'История поиска';
+
+  @override
+  String get searchHistoryClear => 'Очистить';
+
+  @override
+  String get scanTitle => 'Сканировать штрихкод';
+
+  @override
+  String get scanTorch => 'Фонарик';
+
+  @override
+  String get scanHint => 'Наведите рамку на штрихкод';
+
+  @override
+  String get scanError =>
+      'Не удалось открыть камеру. Разрешите доступ к камере в настройках.';
+
+  @override
+  String get rateTitle => 'Оцените заказ';
+
+  @override
+  String get rateSubtitle => 'Ваш отзыв поможет нам стать лучше';
+
+  @override
+  String get rateYourRating => 'Ваша оценка';
+
+  @override
+  String get rateCommentHint => 'Комментарий (необязательно)';
+
+  @override
+  String get rateSubmit => 'Отправить';
+
+  @override
+  String get rateThanks => 'Спасибо! Оценка принята';
+
+  @override
+  String rateStars(int count) {
+    return '$count из 5';
+  }
+
+  @override
+  String get rateTagFast => 'Быстрая доставка';
+
+  @override
+  String get rateTagFresh => 'Свежие продукты';
+
+  @override
+  String get rateTagPolite => 'Вежливый курьер';
+
+  @override
+  String get rateTagAccurate => 'Всё точно';
+
+  @override
+  String get rateTagLate => 'Опоздание';
+
+  @override
+  String get rateTagDamaged => 'Повреждено';
+
+  @override
+  String get rateTagMissing => 'Чего-то не хватило';
+
+  @override
+  String get rateTagWrongItem => 'Привезли не тот товар';
+
+  @override
+  String get supportTitle => 'Помощь';
+
+  @override
+  String get supportText => 'Есть вопрос? Свяжитесь с нами';
+
+  @override
+  String get supportCall => 'Позвонить';
+
+  @override
+  String get supportTelegram => 'Написать в Telegram';
+
+  @override
+  String get supportNone => 'Магазин пока не указал контакты';
+
+  @override
+  String get refTitle => 'Пригласить друга';
+
+  @override
+  String get refUnavailable =>
+      'В этом магазине приглашение друзей пока недоступно';
+
+  @override
+  String refHeadline(String bonus) {
+    return 'Пригласите друга — получите $bonus';
+  }
+
+  @override
+  String refExplain(String bonus) {
+    return 'Друг тоже получит $bonus — когда его первый заказ будет доставлен';
+  }
+
+  @override
+  String refShareFallback(String code, String bonus) {
+    return 'Мой код: $code. Введите его в приложении и получите $bonus!';
+  }
+
+  @override
+  String get refYourCode => 'Ваш код';
+
+  @override
+  String get refCopy => 'Копировать';
+
+  @override
+  String get refCopied => 'Код скопирован';
+
+  @override
+  String get refShare => 'Поделиться';
+
+  @override
+  String get refInvited => 'Приглашено';
+
+  @override
+  String get refRewarded => 'Получено бонусов';
+
+  @override
+  String get refHaveCode => 'Есть код друга?';
+
+  @override
+  String get refHaveCodeHint => 'Введите до первого заказа';
+
+  @override
+  String get refCodeHint => 'Код';
+
+  @override
+  String get refApplied => 'Код принят';
+
+  @override
+  String get tierNone => 'Уровня пока нет';
+
+  @override
+  String tierCurrent(String name, String percent) {
+    return '$name · кешбэк $percent%';
+  }
+
+  @override
+  String tierNextLeft(String name, String sum) {
+    return 'До уровня $name: $sum';
+  }
+
+  @override
+  String get tierTop => 'У вас максимальный уровень';
 }

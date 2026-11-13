@@ -4,6 +4,10 @@ using PosCloud.Api.Authentication;
 using PosCloud.Application.Common.Models;
 using PosCloud.Application.Features.Loyalty;
 using PosCloud.Application.Features.Loyalty.Dtos;
+using PosCloud.Application.Features.ShopCatalog;
+using PosCloud.Application.Features.ShopCatalog.Dtos;
+using PosCloud.Application.Features.ShopMarketing;
+using PosCloud.Application.Features.ShopMarketing.Dtos;
 using PosCloud.Application.Features.ShopOrders;
 using PosCloud.Application.Features.ShopOrders.Dtos;
 using PosCloud.Application.Features.ShopProfile;
@@ -96,6 +100,77 @@ public class ShopMeController : ControllerBase
     public async Task<IActionResult> RegisterDevice(RegisterShopDeviceRequest request, CancellationToken ct)
     {
         await _push.RegisterDeviceAsync(User.GetShopUserId(), request, ct);
+        return NoContent();
+    }
+
+    // ---------------- Bosqich 9: sevimlilar, obuna, savatcha, taklif ----------------
+
+    /// <summary>Sevimlilar — shu filial narxi/qoldig'i bilan (boshqa tashkilot mahsuloti chiqmaydi).</summary>
+    [HttpGet("favorites")]
+    public async Task<ActionResult<IReadOnlyList<ShopProductDto>>> GetFavorites([FromQuery] Guid branchId,
+        [FromServices] IShopCatalogService catalog, CancellationToken ct) =>
+        Ok(await catalog.GetFavoritesAsync(User.GetShopUserId(), branchId, ct));
+
+    /// <summary>Sevimli mahsulot ID'lari (yurakchalarni tez bo'yash uchun).</summary>
+    [HttpGet("favorites/ids")]
+    public async Task<ActionResult<IReadOnlyList<Guid>>> GetFavoriteIds([FromServices] IShopMarketingService marketing,
+        CancellationToken ct) =>
+        Ok(await marketing.GetFavoriteIdsAsync(User.GetShopUserId(), ct));
+
+    [HttpPut("favorites/{productId:guid}")]
+    public async Task<IActionResult> AddFavorite(Guid productId, [FromServices] IShopMarketingService marketing,
+        CancellationToken ct)
+    {
+        await marketing.AddFavoriteAsync(User.GetShopUserId(), productId, ct);
+        return NoContent();
+    }
+
+    [HttpDelete("favorites/{productId:guid}")]
+    public async Task<IActionResult> RemoveFavorite(Guid productId, [FromServices] IShopMarketingService marketing,
+        CancellationToken ct)
+    {
+        await marketing.RemoveFavoriteAsync(User.GetShopUserId(), productId, ct);
+        return NoContent();
+    }
+
+    /// <summary>"Kelganda xabar berish" obunasi.</summary>
+    [HttpPut("stock-subscriptions")]
+    public async Task<IActionResult> Subscribe(StockSubscriptionRequest request, [FromServices] IShopMarketingService marketing,
+        CancellationToken ct)
+    {
+        await marketing.SubscribeStockAsync(User.GetShopUserId(), request, ct);
+        return NoContent();
+    }
+
+    [HttpDelete("stock-subscriptions/{productId:guid}")]
+    public async Task<IActionResult> Unsubscribe(Guid productId, [FromQuery] Guid branchId,
+        [FromServices] IShopMarketingService marketing, CancellationToken ct)
+    {
+        await marketing.UnsubscribeStockAsync(User.GetShopUserId(), productId, branchId, ct);
+        return NoContent();
+    }
+
+    /// <summary>Savatcha nusxasi (eslatma push uchun). Bo'sh items — o'chiriladi.</summary>
+    [HttpPut("cart")]
+    public async Task<IActionResult> SaveCart(SaveShopCartRequest request, [FromServices] IShopMarketingService marketing,
+        CancellationToken ct)
+    {
+        await marketing.SaveCartAsync(User.GetShopUserId(), request, ct);
+        return NoContent();
+    }
+
+    /// <summary>Do'stni taklif qilish: kod (birinchi so'rovda yaratiladi), bonuslar va statistika.</summary>
+    [HttpGet("referral")]
+    public async Task<ActionResult<ShopReferralDto>> GetReferral([FromQuery] Guid organizationId,
+        [FromServices] IShopMarketingService marketing, CancellationToken ct) =>
+        Ok(await marketing.GetReferralAsync(User.GetShopUserId(), organizationId, ct));
+
+    /// <summary>Taklif kodini kiritish (faqat shu do'konda hali yetkazilgan buyurtmasi yo'q mijoz).</summary>
+    [HttpPost("referral/apply")]
+    public async Task<IActionResult> ApplyReferral(ApplyReferralRequest request, [FromServices] IShopMarketingService marketing,
+        CancellationToken ct)
+    {
+        await marketing.ApplyReferralAsync(User.GetShopUserId(), request, ct);
         return NoContent();
     }
 

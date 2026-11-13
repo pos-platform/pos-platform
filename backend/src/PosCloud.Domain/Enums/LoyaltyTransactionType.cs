@@ -19,5 +19,8 @@ public enum LoyaltyTransactionType
     Signup = 4,
 
     /// <summary>Savdo qaytarilganda ball qaytarib olinishi yoki sarflangan ball qaytarilishi.</summary>
-    Refund = 5
+    Refund = 5,
+
+    /// <summary>Do'stni taklif qilish mukofoti (taklif qilgan va taklif qilingan mijozga).</summary>
+    Referral = 6
 }

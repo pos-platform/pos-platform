@@ -28,7 +28,7 @@ String formatBonusPoints(AppLocalizations t, double points) =>
 /// Bonus karta (dizayn: BonusCard.dc.html; kelishuv 7, §3): do'kon tanlash, dinamik QR (~90 s, muddatidan
 /// ~10 s oldin avtomatik yangilanadi), balans va ball tarixi.
 ///
-/// Keyinga (dizaynda bor, kelishuvda yo'q): daraja ("Kumush · 3%") va keyingi darajagacha progress.
+/// Daraja ("Kumush · 3%") va keyingi darajagacha progress — bosqich 9.4 (`tier`/`nextTier`).
 class BonusCardScreen extends ConsumerWidget {
   const BonusCardScreen({super.key, this.organizationId});
 
@@ -352,6 +352,10 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
             progress: _progress(),
             onRetry: _loadCard,
           ),
+          if (_card?.tier != null || _card?.nextTier != null) ...[
+            const SizedBox(height: 12),
+            _TierProgress(card: _card!),
+          ],
           const SizedBox(height: 20),
           Text(t.bonusHistory, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
@@ -378,6 +382,61 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
     final total = until.difference(from).inMilliseconds;
     if (total <= 0) return 0;
     return (until.difference(DateTime.now()).inMilliseconds / total).clamp(0.0, 1.0);
+  }
+}
+
+/// Loyalty darajasi ("Kumush · 3%") va keyingi darajagacha progress ("Gold'gacha 350 000 so'm").
+class _TierProgress extends StatelessWidget {
+  const _TierProgress({required this.card});
+
+  final BonusCard card;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final tier = card.tier, next = card.nextTier;
+    final progress = next == null || next.minSpend <= 0
+        ? 1.0
+        : ((next.minSpend - next.remaining) / next.minSpend).clamp(0.0, 1.0);
+    final pct = NumberFormat('0.#', 'en_US');
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderSoft),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.workspace_premium_outlined, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              tier == null ? t.tierNone : t.tierCurrent(tier.name, pct.format(tier.cashbackPercent)),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ]),
+        if (next != null) ...[
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              color: AppColors.primary,
+              backgroundColor: AppColors.primarySoft,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(t.tierNextLeft(next.name, formatMoney(context, next.remaining)),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        ] else if (tier != null) ...[
+          const SizedBox(height: 6),
+          Text(t.tierTop, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        ],
+      ]),
+    );
   }
 }
 

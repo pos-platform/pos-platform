@@ -109,6 +109,14 @@ public class ShopProfileService : IShopProfileService
             .Where(d => d.ShopUserId == shopUserId).ToListAsync(ct);
         _db.ShopDeviceTokens.RemoveRange(devices);
 
+        // Sevimlilar, obunalar va savatcha nusxalari (Bosqich 9) — shaxsiy ma'lumot, o'chiriladi.
+        _db.ShopFavorites.RemoveRange(await _db.ShopFavorites.IgnoreQueryFilters()
+            .Where(f => f.ShopUserId == shopUserId).ToListAsync(ct));
+        _db.ShopStockSubscriptions.RemoveRange(await _db.ShopStockSubscriptions.IgnoreQueryFilters()
+            .Where(s => s.ShopUserId == shopUserId).ToListAsync(ct));
+        _db.ShopCartSnapshots.RemoveRange(await _db.ShopCartSnapshots.IgnoreQueryFilters()
+            .Where(s => s.ShopUserId == shopUserId).ToListAsync(ct));
+
         // Do'konlardagi mijoz kartochkalari do'konniki — faqat bog'lanishni uzamiz.
         var customers = await _db.Customers.IgnoreQueryFilters()
             .Where(c => c.ShopUserId == shopUserId).ToListAsync(ct);

@@ -840,5 +840,189 @@
   "storeChooseBranch": "Filialni tanlang",
   "storeUnavailableTitle": "Do‘kon vaqtincha ishlamayapti",
   "storeUnavailableText": "Keyinroq qayta urinib ko‘ring.",
-  "navBonus": "Bonus"
+  "navBonus": "Bonus",
+  "favTitle": "Sevimlilar",
+  "favAdd": "Sevimlilarga qo‘shish",
+  "favRemove": "Sevimlilardan olib tashlash",
+  "favLoginTitle": "Sevimlilarga qo‘shish",
+  "favLoginText": "Sevimli mahsulotlarni saqlash uchun telefon raqamingiz bilan kiring.",
+  "favEmpty": "Sevimlilar hozircha bo‘sh",
+  "favEmptyHint": "Mahsulotdagi ♥ belgisini bosing — u shu yerda saqlanadi",
+  "mkAll": "Hammasi",
+  "mkClose": "Yopish",
+  "mkStoryOpen": "Batafsil",
+  "mkEndsIn": "Tugashiga {time}",
+  "@mkEndsIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mkDiscountEndsIn": "Aksiya tugashiga {time}",
+  "@mkDiscountEndsIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mkDiscountsTitle": "Aksiyalar",
+  "mkDiscountsEmpty": "Hozircha aksiyadagi mahsulotlar yo‘q",
+  "mkDiscountsEntry": "Aksiyalar ({count})",
+  "@mkDiscountsEntry": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mkDiscountsEntryHint": "Chegirmadagi barcha mahsulotlar",
+  "mkBuyAgain": "Yana olasizmi?",
+  "mkTop10": "Top 10",
+  "mkRelated": "Bular bilan birga olishadi",
+  "mkCartSuggestions": "Qo‘shib qo‘ying",
+  "mkReorderTitle": "Oxirgi buyurtmani takrorlash",
+  "mkReorderSubtitle": "№{number} · {sum}",
+  "@mkReorderSubtitle": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "sum": {
+        "type": "String"
+      }
+    }
+  },
+  "mkReorderButton": "Takrorlash",
+  "mkNotifyMe": "Kelganda xabar berish",
+  "mkNotifySubscribed": "Kelganda xabar beramiz",
+  "mkNotifyOn": "Mahsulot sotuvga chiqqanda xabar beramiz",
+  "mkNotifyOff": "Xabarnoma bekor qilindi",
+  "cdDaysHours": "{days} kun {hours} soat",
+  "@cdDaysHours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "cdHoursMinutes": "{hours} soat {minutes} daq",
+  "@cdHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "cdMinutes": "{minutes} daq",
+  "@cdMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "searchHistory": "Qidiruv tarixi",
+  "searchHistoryClear": "Tozalash",
+  "scanTitle": "Shtrix-kodni skanerlash",
+  "scanTorch": "Chiroq",
+  "scanHint": "Shtrix-kodni ramka ichiga joylashtiring",
+  "scanError": "Kamerani ochib bo‘lmadi. Sozlamalarda kameraga ruxsat bering.",
+  "rateTitle": "Buyurtmani baholang",
+  "rateSubtitle": "Fikringiz xizmatni yaxshilashga yordam beradi",
+  "rateYourRating": "Sizning bahoingiz",
+  "rateCommentHint": "Izoh (ixtiyoriy)",
+  "rateSubmit": "Yuborish",
+  "rateThanks": "Rahmat! Bahoingiz qabul qilindi",
+  "rateStars": "{count} yulduz",
+  "@rateStars": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rateTagFast": "Tez yetkazildi",
+  "rateTagFresh": "Mahsulotlar yangi",
+  "rateTagPolite": "Xushmuomala kuryer",
+  "rateTagAccurate": "Hammasi to‘g‘ri",
+  "rateTagLate": "Kechikdi",
+  "rateTagDamaged": "Shikastlangan",
+  "rateTagMissing": "Nimadir yetishmadi",
+  "rateTagWrongItem": "Boshqa mahsulot keldi",
+  "supportTitle": "Yordam",
+  "supportText": "Savolingiz bormi? Biz bilan bog‘laning",
+  "supportCall": "Qo‘ng‘iroq qilish",
+  "supportTelegram": "Telegram’da yozish",
+  "supportNone": "Do‘kon aloqa ma’lumotlarini hali kiritmagan",
+  "refTitle": "Do‘stni taklif qilish",
+  "refUnavailable": "Bu do‘konda do‘stni taklif qilish hozircha mavjud emas",
+  "refHeadline": "Do‘stingizni taklif qiling — {bonus} oling",
+  "@refHeadline": {
+    "placeholders": {
+      "bonus": {
+        "type": "String"
+      }
+    }
+  },
+  "refExplain": "Do‘stingiz ham {bonus} oladi — birinchi buyurtmasi yetkazilganda",
+  "@refExplain": {
+    "placeholders": {
+      "bonus": {
+        "type": "String"
+      }
+    }
+  },
+  "refShareFallback": "Mening kodim: {code}. Ilovada kiriting va {bonus} oling!",
+  "@refShareFallback": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "bonus": {
+        "type": "String"
+      }
+    }
+  },
+  "refYourCode": "Sizning kodingiz",
+  "refCopy": "Nusxa olish",
+  "refCopied": "Kod nusxalandi",
+  "refShare": "Ulashish",
+  "refInvited": "Taklif qilinganlar",
+  "refRewarded": "Bonus olinganlar",
+  "refHaveCode": "Do‘stingiz kodi bormi?",
+  "refHaveCodeHint": "Birinchi buyurtmangizgacha kiriting",
+  "refCodeHint": "Kod",
+  "refApplied": "Kod qabul qilindi",
+  "tierNone": "Daraja hali yo‘q",
+  "tierCurrent": "{name} · {percent}% cashback",
+  "@tierCurrent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "tierNextLeft": "{name} darajasigacha {sum}",
+  "@tierNextLeft": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "sum": {
+        "type": "String"
+      }
+    }
+  },
+  "tierTop": "Siz eng yuqori darajadasiz"
 }

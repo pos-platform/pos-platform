@@ -10,7 +10,14 @@ double _num(Object? v) => v is num ? v.toDouble() : double.tryParse('$v') ?? 0;
 
 /// Dinamik QR bonus karta: `GET /api/me/bonus-card?branchId=` (kelishuv 7, §3).
 class BonusCard {
-  const BonusCard({required this.storeName, required this.points, required this.qrPayload, required this.expiresAt});
+  const BonusCard({
+    required this.storeName,
+    required this.points,
+    required this.qrPayload,
+    required this.expiresAt,
+    this.tier,
+    this.nextTier,
+  });
 
   final String storeName;
   final double points;
@@ -19,6 +26,12 @@ class BonusCard {
   final String qrPayload;
   final DateTime expiresAt;
 
+  /// Loyalty darajasi (kelishuv 9.4). Null — daraja yo'q.
+  final ({String name, double cashbackPercent})? tier;
+
+  /// Keyingi daraja va unga qolgan xarid summasi (oxirgi 365 kun). Null — eng yuqori daraja yoki darajalar yo'q.
+  final ({String name, double minSpend, double remaining})? nextTier;
+
   factory BonusCard.fromJson(Map<String, dynamic> j) => BonusCard(
         storeName: j['storeName'] as String? ?? '',
         points: _num(j['points']),
@@ -26,6 +39,16 @@ class BonusCard {
         // Server UTC beradi; mahalliy vaqtga o'tkaziladi (faqat farq hisoblanadi).
         expiresAt: DateTime.tryParse(j['expiresAt'] as String? ?? '')?.toLocal() ??
             DateTime.now().add(const Duration(seconds: 90)),
+        tier: switch (j['tier']) {
+          final Map m when m['name'] is String =>
+            (name: m['name'] as String, cashbackPercent: _num(m['cashbackPercent'])),
+          _ => null,
+        },
+        nextTier: switch (j['nextTier']) {
+          final Map m when m['name'] is String =>
+            (name: m['name'] as String, minSpend: _num(m['minSpend']), remaining: _num(m['remaining'])),
+          _ => null,
+        },
       );
 }
 

@@ -64,6 +64,19 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<OnlineOrderItem> OnlineOrderItems => Set<OnlineOrderItem>();
     public DbSet<OnlineStoreSettings> OnlineStoreSettings => Set<OnlineStoreSettings>();
     public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
+
+    // Bosqich 9: marketing
+    public DbSet<ShopBanner> ShopBanners => Set<ShopBanner>();
+    public DbSet<ShopCollection> ShopCollections => Set<ShopCollection>();
+    public DbSet<ShopCollectionItem> ShopCollectionItems => Set<ShopCollectionItem>();
+    public DbSet<ShopStory> ShopStories => Set<ShopStory>();
+    public DbSet<ShopStorySlide> ShopStorySlides => Set<ShopStorySlide>();
+    public DbSet<ShopFavorite> ShopFavorites => Set<ShopFavorite>();
+    public DbSet<ShopStockSubscription> ShopStockSubscriptions => Set<ShopStockSubscription>();
+    public DbSet<ShopCartSnapshot> ShopCartSnapshots => Set<ShopCartSnapshot>();
+    public DbSet<ShopReferral> ShopReferrals => Set<ShopReferral>();
+    public DbSet<ShopPushCampaign> ShopPushCampaigns => Set<ShopPushCampaign>();
+    public DbSet<LoyaltyTier> LoyaltyTiers => Set<LoyaltyTier>();
     public DbSet<LabelPrintJob> LabelPrintJobs => Set<LabelPrintJob>();
     public DbSet<LabelPrintJobItem> LabelPrintJobItems => Set<LabelPrintJobItem>();
     public DbSet<RoleTemplate> RoleTemplates => Set<RoleTemplate>();

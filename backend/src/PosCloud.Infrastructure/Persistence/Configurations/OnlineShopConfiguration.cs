@@ -15,6 +15,8 @@ public class ShopUserConfiguration : IEntityTypeConfiguration<ShopUser>
         builder.Property(u => u.FirstName).HasMaxLength(100);
         builder.Property(u => u.LastName).HasMaxLength(100);
         builder.Property(u => u.Email).HasMaxLength(256);
+        builder.Property(u => u.ReferralCode).HasMaxLength(8);
+        builder.HasIndex(u => u.ReferralCode).IsUnique().HasFilter("\"ReferralCode\" IS NOT NULL");
     }
 }
 
@@ -111,6 +113,11 @@ public class OnlineOrderConfiguration : IEntityTypeConfiguration<OnlineOrder>
         builder.HasIndex(o => new { o.CourierUserId, o.Status });
         builder.HasIndex(o => o.PromoCodeId);
 
+        // Bosqich 9: mijoz bahosi.
+        builder.Property(o => o.RatingComment).HasMaxLength(500);
+        builder.Property(o => o.RatingTags).HasMaxLength(200);
+        builder.HasIndex(o => new { o.OrganizationId, o.RatedAt });
+
         builder.HasOne(o => o.CourierUser).WithMany().HasForeignKey(o => o.CourierUserId).OnDelete(DeleteBehavior.SetNull);
         builder.HasOne<PromoCode>().WithMany().HasForeignKey(o => o.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
     }
@@ -180,6 +187,12 @@ public class OnlineStoreSettingsConfiguration : IEntityTypeConfiguration<OnlineS
         builder.Property(s => s.AndroidStoreUrl).HasMaxLength(500);
         builder.Property(s => s.IosLatestVersion).HasMaxLength(30);
         builder.Property(s => s.IosStoreUrl).HasMaxLength(500);
+
+        // Bosqich 9: yordam va do'stni taklif.
+        builder.Property(s => s.SupportPhone).HasMaxLength(20);
+        builder.Property(s => s.SupportTelegram).HasMaxLength(32);
+        builder.Property(s => s.ReferrerBonus).HasColumnType("numeric(18,2)");
+        builder.Property(s => s.RefereeBonus).HasColumnType("numeric(18,2)");
     }
 }
 

@@ -92,6 +92,13 @@ public class OnlineStoreSettingsDto
 
     /// <summary>Ilovada hozir ko'rinadimi (yoqilgan, bloklanmagan, tarif amal qiladi, tashkilot faol).</summary>
     public bool IsVisible { get; set; }
+
+    // Bosqich 9: yordam va do'stni taklif
+    public string? SupportPhone { get; set; }
+    public string? SupportTelegram { get; set; }
+    public bool ReferralEnabled { get; set; }
+    public decimal ReferrerBonus { get; set; }
+    public decimal RefereeBonus { get; set; }
 }
 
 /// <summary>SuperAdmin o'zgartiradigan qism.</summary>
@@ -207,6 +214,23 @@ public class UpdateOnlineStoreSettingsRequest
 
     [Range(0, 100)]
     public int BonusMaxPercent { get; set; }
+
+    /// <summary>Mijozlar uchun yordam telefoni.</summary>
+    [MaxLength(20)]
+    public string? SupportPhone { get; set; }
+
+    /// <summary>Telegram username (@ siz; @ bilan kelsa olib tashlanadi).</summary>
+    [MaxLength(33)]
+    public string? SupportTelegram { get; set; }
+
+    /// <summary>Do'stni taklif qilish dasturi va bonuslari (ball).</summary>
+    public bool ReferralEnabled { get; set; }
+
+    [Range(0, 1_000_000)]
+    public decimal ReferrerBonus { get; set; }
+
+    [Range(0, 1_000_000)]
+    public decimal RefereeBonus { get; set; }
 }
 
 public class SetAcceptingOrdersRequest

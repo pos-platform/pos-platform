@@ -61,6 +61,9 @@ public class LoyaltyService : ILoyaltyService
                     Percent = r.Value
                 })
                 .OrderBy(r => r.CategoryName)
+                .ToList(),
+            Tiers = s.Tiers
+                .Select(t => new LoyaltyTierDto { Id = t.Id, Name = t.Name, MinSpend = t.MinSpend, CashbackPercent = t.CashbackPercent })
                 .ToList()
         };
     }
@@ -81,6 +84,24 @@ public class LoyaltyService : ILoyaltyService
             throw new ValidationException("Kategoriya foizi 0..100 oralig'ida bo'lishi kerak.");
         if (rates.Select(x => x.CategoryId).Distinct().Count() != rates.Count)
             throw new ValidationException("Kategoriya ro'yxatda takrorlangan.");
+
+        var tiers = r.Tiers?
+            .Select(t => new LoyaltyTierDto { Name = (t.Name ?? string.Empty).Trim(), MinSpend = t.MinSpend, CashbackPercent = t.CashbackPercent })
+            .OrderBy(t => t.MinSpend)
+            .ToList();
+        if (tiers is not null)
+        {
+            if (tiers.Count > 10) throw new ValidationException("Ko'pi bilan 10 ta daraja bo'lishi mumkin.");
+            if (tiers.Any(t => t.Name.Length is 0 or > 30))
+                throw new ValidationException("Daraja nomi 1..30 belgi bo'lishi kerak.");
+            if (tiers.Any(t => t.MinSpend < 0)) throw new ValidationException("Minimal xarid summasi manfiy bo'lmasligi kerak.");
+            if (tiers.Any(t => t.CashbackPercent is < 0 or > 100))
+                throw new ValidationException("Daraja foizi 0..100 oralig'ida bo'lishi kerak.");
+            if (tiers.Select(t => t.MinSpend).Distinct().Count() != tiers.Count)
+                throw new ValidationException("Darajalarning minimal xarid summasi takrorlanmasligi kerak.");
+            if (tiers.Select(t => t.Name.ToLowerInvariant()).Distinct().Count() != tiers.Count)
+                throw new ValidationException("Daraja nomi takrorlangan.");
+        }
 
         var categoryIds = rates.Select(x => x.CategoryId).ToList();
         var known = await _db.Categories.Where(c => c.OrganizationId == orgId && categoryIds.Contains(c.Id))
@@ -121,6 +142,22 @@ public class LoyaltyService : ILoyaltyService
                 row.Percent = rate.Percent;
         }
 
+        // Darajalar — berilgan bo'lsa to'liq almashtiriladi.
+        if (tiers is not null)
+        {
+            var oldTiers = await _db.LoyaltyTiers.Where(x => x.OrganizationId == orgId).ToListAsync(ct);
+            _db.LoyaltyTiers.RemoveRange(oldTiers);
+            for (var i = 0; i < tiers.Count; i++)
+                _db.LoyaltyTiers.Add(new LoyaltyTier
+                {
+                    OrganizationId = orgId,
+                    Name = tiers[i].Name,
+                    MinSpend = tiers[i].MinSpend,
+                    CashbackPercent = tiers[i].CashbackPercent,
+                    SortOrder = i
+                });
+        }
+
         await _db.SaveChangesAsync(ct);
         return await GetSettingsAsync(ct);
     }
@@ -147,13 +184,15 @@ public class LoyaltyService : ILoyaltyService
         await _db.SaveChangesAsync(ct);
 
         var settings = await LoyaltyRules.LoadAsync(_db, orgId, ct);
+        var tier = await LoyaltyRules.TierStatusAsync(_db, settings, customer.Id, ct);
         return new ResolveBonusCardResponse
         {
             CustomerId = customer.Id,
             Name = customer.Name,
             MaskedPhone = LoyaltyRules.MaskPhone(customer.Phone),
             Points = Math.Floor(customer.LoyaltyPoints),
-            MaxRedeemPercent = settings.MaxRedeemPercent
+            MaxRedeemPercent = settings.MaxRedeemPercent,
+            TierName = tier.Tier?.Name
         };
     }
 
@@ -197,7 +236,7 @@ public class LoyaltyService : ILoyaltyService
         return new LoyaltyReportDto
         {
             // Topilgan: xarid cashback'i + ro'yxatdan o'tish bonusi.
-            Earned = Sum(LoyaltyTransactionType.Earn) + Sum(LoyaltyTransactionType.Signup),
+            Earned = Sum(LoyaltyTransactionType.Earn) + Sum(LoyaltyTransactionType.Signup) + Sum(LoyaltyTransactionType.Referral),
             Redeemed = -Sum(LoyaltyTransactionType.Redeem),
             Expired = -Sum(LoyaltyTransactionType.Expire),
             ActiveCustomers = active,

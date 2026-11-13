@@ -84,6 +84,12 @@ public class OnlineOrderDto
     public decimal BonusUsed { get; set; }
     public PaymentProvider? OnlinePaymentProvider { get; set; }
 
+    /// <summary>Mijoz bahosi (1–5), izoh, teglar va vaqti.</summary>
+    public int? Rating { get; set; }
+    public string? RatingComment { get; set; }
+    public List<string> RatingTags { get; set; } = [];
+    public DateTime? RatedAt { get; set; }
+
     public List<OnlineOrderItemDto> Items { get; set; } = [];
 
     public static OnlineOrderDto FromEntity(OnlineOrder o, IReadOnlyDictionary<Guid, decimal>? stock = null) => new()
@@ -135,7 +141,11 @@ public class OnlineOrderDto
         PromoDiscount = o.PromoDiscount,
         BonusUsed = o.BonusUsed,
         OnlinePaymentProvider = o.OnlinePaymentProvider,
-        Items = o.Items.OrderBy(i => i.CreatedAt).Select(i => new OnlineOrderItemDto
+        Rating = o.Rating,
+        RatingComment = o.RatingComment,
+        RatingTags = OnlineOrderRating.SplitTags(o.RatingTags),
+        RatedAt = o.RatedAt,
+        Items =o.Items.OrderBy(i => i.CreatedAt).Select(i => new OnlineOrderItemDto
         {
             Id = i.Id,
             ProductId = i.ProductId,
@@ -155,6 +165,30 @@ public class OnlineOrderDto
             MarkingCodes = i.MarkingCodes.ToList()
         }).ToList()
     };
+}
+
+/// <summary>GET /api/online-orders/ratings javobi.</summary>
+public class OnlineOrderRatingsDto
+{
+    public decimal Average { get; set; }
+    public int Count { get; set; }
+
+    /// <summary>{ "1": n, ... "5": n }.</summary>
+    public Dictionary<int, int> Distribution { get; set; } = new();
+
+    public Dictionary<string, int> TagCounts { get; set; } = new();
+    public List<OnlineOrderRatingItemDto> Items { get; set; } = [];
+}
+
+public class OnlineOrderRatingItemDto
+{
+    public Guid OrderId { get; set; }
+    public int Number { get; set; }
+    public int Rating { get; set; }
+    public string? Comment { get; set; }
+    public List<string> Tags { get; set; } = [];
+    public DateTime RatedAt { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
 }
 
 public class RejectOnlineOrderRequest

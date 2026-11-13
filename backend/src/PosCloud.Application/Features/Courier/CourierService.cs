@@ -29,12 +29,15 @@ public class CourierService : ICourierService
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
     private readonly IOnlineOrderNotifier _notifier;
+    private readonly IShopPushQueue _pushQueue;
 
-    public CourierService(IApplicationDbContext db, ICurrentUser currentUser, IOnlineOrderNotifier notifier)
+    public CourierService(IApplicationDbContext db, ICurrentUser currentUser, IOnlineOrderNotifier notifier,
+        IShopPushQueue pushQueue)
     {
         _db = db;
         _currentUser = currentUser;
         _notifier = notifier;
+        _pushQueue = pushQueue;
     }
 
     public async Task<CourierMeDto> GetMeAsync(CancellationToken ct = default)
@@ -126,9 +129,12 @@ public class CourierService : ICourierService
 
         // Cashback — mijoz qabul qilgandan keyin (shu tranzaksiyada saqlanadi).
         await OnlineOrderCashback.EarnOnDeliveredAsync(_db, order, ct);
+        // Do'stni taklif qilish mukofoti (birinchi yetkazilgan buyurtma, idempotent).
+        var referralPushes = await ShopMarketing.ShopReferralRewards.RewardOnDeliveredAsync(_db, order, ct);
 
         await _db.SaveChangesAsync(ct);
         await _notifier.OrderChangedAsync(order, isNew: false, pushToCustomer: true, ct);
+        foreach (var push in referralPushes) _pushQueue.Enqueue(push);
         return Fill(new CourierOrderDto(), order, await StoreNameAsync(me.OrganizationId, ct));
     }
 

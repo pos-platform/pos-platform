@@ -30,6 +30,9 @@ public interface IShopOrderService
     Task<ShopOrderDto> CancelAsync(Guid shopUserId, Guid orderId, string? reason, CancellationToken ct = default);
     Task<ShopOrderDto> SetTransferProofAsync(Guid shopUserId, Guid orderId, string url, CancellationToken ct = default);
 
+    /// <summary>Yetkazilgan buyurtmani baholash (faqat canRate).</summary>
+    Task<ShopOrderDto> RateAsync(Guid shopUserId, Guid orderId, RateShopOrderRequest request, CancellationToken ct = default);
+
     /// <summary>Chek yuklashdan oldin tekshiruv (fayl saqlanmasidan avval).</summary>
     Task EnsureCanUploadTransferProofAsync(Guid shopUserId, Guid orderId, CancellationToken ct = default);
 }
@@ -332,8 +335,50 @@ public class ShopOrderService : IShopOrderService
         dto.OnlinePaymentProvider = order.OnlinePaymentProvider;
         dto.OnlineProviders = OnlineProviders(settings);
         dto.CanPayOnline = CanPayOnline(order, settings);
+        dto.Rating = order.Rating;
+        dto.RatingComment = order.RatingComment;
+        dto.RatingTags = OnlineOrderRating.SplitTags(order.RatingTags);
+        dto.RatedAt = order.RatedAt;
+        dto.CanRate = OnlineOrderRating.CanRate(order);
 
         return dto;
+    }
+
+    public async Task<ShopOrderDto> RateAsync(Guid shopUserId, Guid orderId, RateShopOrderRequest request,
+        CancellationToken ct = default)
+    {
+        await RequireUser(shopUserId, ct);
+        var order = await Orders(shopUserId).FirstOrDefaultAsync(o => o.Id == orderId, ct)
+                    ?? throw new NotFoundException("Buyurtma topilmadi.");
+
+        if (!OnlineOrderRating.CanRate(order))
+            throw new ValidationException(order.Rating is not null
+                ? "Buyurtma allaqachon baholangan."
+                : "Faqat yetkazilgan buyurtmani 14 kun ichida baholash mumkin.");
+        if (request.Rating is < 1 or > 5)
+            throw new ValidationException("Baho 1 dan 5 gacha bo'lishi kerak.");
+
+        var tags = (request.Tags ?? [])
+            .Select(t => (t ?? string.Empty).Trim().ToLowerInvariant())
+            .Where(t => t.Length > 0)
+            .Distinct()
+            .ToList();
+        if (tags.Any(t => !OnlineOrderRating.AllowedTags.Contains(t)))
+            throw new ValidationException("Noma'lum teg.");
+
+        var comment = NullIfEmpty(request.Comment);
+        if (comment is { Length: > 500 })
+            throw new ValidationException("Izoh 500 belgidan oshmasligi kerak.");
+
+        order.Rating = request.Rating;
+        order.RatingComment = comment;
+        order.RatingTags = tags.Count > 0 ? string.Join(",", tags) : null;
+        order.RatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+        // Xodimlarga SignalR OrderUpdated (push yo'q).
+        await _notifier.OrderChangedAsync(order, isNew: false, pushToCustomer: false, ct);
+        return await GetAsync(shopUserId, orderId, ct);
     }
 
     public async Task<ShopOrderDto> CancelAsync(Guid shopUserId, Guid orderId, string? reason, CancellationToken ct = default)

@@ -104,4 +104,13 @@ public class OnlineStoreSettings : BaseEntity
     /// <summary>Bonus (ball) bilan to'lash yoqilganmi va mahsulotlar summasining ko'pi bilan necha foizi.</summary>
     public bool BonusPayEnabled { get; set; }
     public int BonusMaxPercent { get; set; }
+
+    /// <summary>Mijozlar uchun yordam: telefon va Telegram username (@ siz).</summary>
+    public string? SupportPhone { get; set; }
+    public string? SupportTelegram { get; set; }
+
+    /// <summary>Do'stni taklif qilish dasturi va bonuslari (ball).</summary>
+    public bool ReferralEnabled { get; set; }
+    public decimal ReferrerBonus { get; set; }
+    public decimal RefereeBonus { get; set; }
 }

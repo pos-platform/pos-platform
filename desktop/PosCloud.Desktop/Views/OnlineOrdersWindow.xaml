@@ -32,8 +32,11 @@
                         <Border Background="#F1EFEA" CornerRadius="5" Padding="6,2" Margin="0,0,4,0">
                             <TextBlock Text="{Binding TypeText}" FontSize="11" FontWeight="SemiBold" />
                         </Border>
-                        <Border Background="#FDEBDD" CornerRadius="5" Padding="6,2">
+                        <Border Background="#FDEBDD" CornerRadius="5" Padding="6,2" Margin="0,0,4,0">
                             <TextBlock Text="{Binding PaymentText}" FontSize="11" FontWeight="SemiBold" Foreground="#9A3412" />
+                        </Border>
+                        <Border Background="{Binding SubstitutionBackground}" CornerRadius="5" Padding="6,2" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding SubstitutionText}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding SubstitutionForeground}" />
                         </Border>
                     </WrapPanel>
                     <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="#5B6660" Margin="0,4,0,0" />
@@ -132,7 +135,13 @@
                             <TextBlock x:Name="DetailAddress" FontSize="13" Foreground="#3A4540" Margin="0,2,0,0" TextWrapping="Wrap" />
                             <TextBlock x:Name="DetailComment" FontSize="13" Foreground="#9A3412" Margin="0,2,0,0" TextWrapping="Wrap" />
                             <TextBlock x:Name="DetailCourier" FontSize="13" FontWeight="SemiBold" Foreground="#0B6B45" Margin="0,2,0,0" TextWrapping="Wrap" />
-                            <TextBlock x:Name="DetailPolicy" FontSize="12" Foreground="#5B6660" Margin="0,2,0,0" />
+                            <Border x:Name="DetailPolicyBadge" CornerRadius="8" Padding="10,4" Margin="0,6,0,0" HorizontalAlignment="Left">
+                                <TextBlock x:Name="DetailPolicy" FontSize="14" FontWeight="Bold" />
+                            </Border>
+                            <Border x:Name="DetailRatingBox" Background="#FFF7E0" CornerRadius="8" Padding="10,6" Margin="0,6,0,0"
+                                    Visibility="Collapsed">
+                                <TextBlock x:Name="DetailRating" FontSize="13" Foreground="#7A5200" TextWrapping="Wrap" />
+                            </Border>
 
                             <Border x:Name="ScanBox" BorderBrush="#0B6B45" BorderThickness="2" CornerRadius="10" Background="#F6FBF8"
                                     Margin="0,10,0,0" Padding="10,0" Height="44">

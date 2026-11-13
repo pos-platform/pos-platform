@@ -9,6 +9,7 @@ import 'core/push/push_service.dart';
 import 'core/router.dart';
 import 'core/store_app/store_app.dart';
 import 'core/theme/app_theme.dart';
+import 'features/marketing/cart_sync.dart';
 import 'l10n/app_localizations.dart';
 
 class PosCloudApp extends ConsumerStatefulWidget {
@@ -24,6 +25,8 @@ class _PosCloudAppState extends ConsumerState<PosCloudApp> {
     super.initState();
     // Push (FCM): Firebase sozlanmagan bo'lsa o'zi jimgina o'chadi.
     ref.read(pushServiceProvider).start();
+    // Savatcha nusxasi serverga (eslatma push uchun, faqat kirgan foydalanuvchi).
+    ref.read(cartSyncProvider);
   }
 
   @override

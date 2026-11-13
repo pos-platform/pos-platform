@@ -60,6 +60,11 @@ public class ShopOrdersController : ControllerBase
     public async Task<ActionResult<ShopOrderDto>> Cancel(Guid id, CancelShopOrderRequest? request, CancellationToken ct) =>
         Ok(await _service.CancelAsync(User.GetShopUserId(), id, request?.Reason, ct));
 
+    /// <summary>Yetkazilgan buyurtmani baholash: { rating 1–5, comment?, tags? }. Faqat canRate bo'lsa.</summary>
+    [HttpPost("{id:guid}/rate")]
+    public async Task<ActionResult<ShopOrderDto>> Rate(Guid id, RateShopOrderRequest request, CancellationToken ct) =>
+        Ok(await _service.RateAsync(User.GetShopUserId(), id, request, ct));
+
     /// <summary>O'tkazma cheki rasmi (multipart, "file", 5 MB gacha).</summary>
     [HttpPost("{id:guid}/transfer-proof")]
     [RequestSizeLimit(5 * 1024 * 1024)]

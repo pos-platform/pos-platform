@@ -352,9 +352,9 @@ public class SaleService : ISaleService
             // Online buyurtma savdosida cashback "Tayyor"da emas — mijoz qabul qilganda (Delivered) yoziladi
             // (OnlineOrderCashback). Bekor qilinsa ball umuman yozilmaydi.
             if (source != LoyaltySource.Online)
-                sale.LoyaltyPointsEarned = EarnPoints(loyalty, sale, earnSource
+                sale.LoyaltyPointsEarned = await EarnPointsAsync(loyalty, sale, earnSource
                     .Select(e => new LoyaltyEarnLine(e.Product.CategoryId, e.Product.ProductType, e.Item.LineTotal,
-                        e.Item.DiscountAmount > 0 || e.PriceReduced)), customer, source);
+                        e.Item.DiscountAmount > 0 || e.PriceReduced)), customer, source, cancellationToken);
         }
 
         // Nasiya — qarzdor balansiga qo'shamiz va harakat yozamiz.
@@ -874,11 +874,11 @@ public class SaleService : ISaleService
                 .Select(p => new { p.Id, p.CategoryId, p.ProductType })
                 .ToDictionaryAsync(p => p.Id, cancellationToken);
 
-            sale.LoyaltyPointsEarned = EarnPoints(loyalty, sale, sale.Items.Select(i =>
+            sale.LoyaltyPointsEarned = await EarnPointsAsync(loyalty, sale, sale.Items.Select(i =>
                 itemProducts.TryGetValue(i.ProductId, out var p)
                     ? new LoyaltyEarnLine(p.CategoryId, p.ProductType, i.LineTotal, i.DiscountAmount > 0)
                     : new LoyaltyEarnLine(Guid.Empty, ProductType.Good, i.LineTotal, i.DiscountAmount > 0)),
-                customer, LoyaltySource.Store);
+                customer, LoyaltySource.Store, cancellationToken);
         }
 
         if (debtor is not null)
@@ -950,10 +950,12 @@ public class SaleService : ISaleService
     private static decimal Round2(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 
     /// <summary>Cashback ballini hisoblab yozadi (Earn). Yozilgan ballni qaytaradi.</summary>
-    private decimal EarnPoints(EffectiveLoyaltySettings loyalty, Sale sale, IEnumerable<LoyaltyEarnLine> lines,
-        Customer customer, LoyaltySource source)
+    private async Task<decimal> EarnPointsAsync(EffectiveLoyaltySettings loyalty, Sale sale, IEnumerable<LoyaltyEarnLine> lines,
+        Customer customer, LoyaltySource source, CancellationToken ct)
     {
-        var points = LoyaltyRules.ComputeEarn(loyalty, sale.TotalAmount, lines);
+        // Mijoz darajasi (oxirgi 365 kun xaridi) — foiz bazaviy/kategoriya foizidan katta bo'lsa qo'llanadi.
+        var tier = await LoyaltyRules.TierStatusAsync(_db, loyalty, customer.Id, ct);
+        var points = LoyaltyRules.ComputeEarn(loyalty, sale.TotalAmount, lines, tier.Tier?.CashbackPercent ?? 0);
         if (points <= 0) return 0;
         return LoyaltyRules.Apply(_db, customer, points, LoyaltyTransactionType.Earn, source, sale.TotalAmount,
             $"Savdo {sale.ReceiptNumber}", sale);

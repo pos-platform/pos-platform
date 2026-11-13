@@ -18,6 +18,10 @@ import '../cart/cart_controller.dart';
 import '../profile/data/bonus_repository.dart';
 import '../profile/profile_screen.dart' show showLanguageSheet;
 import '../cart/delivery_time.dart';
+import '../marketing/data/marketing_repository.dart';
+import '../marketing/home_sections.dart';
+import '../marketing/search.dart';
+import '../marketing/shop_link.dart';
 import 'data/catalog_models.dart';
 import 'data/catalog_repository.dart';
 import 'store_selection.dart';
@@ -81,6 +85,7 @@ class _CatalogState extends ConsumerState<_Catalog> {
 
   final _scroll = ScrollController();
   final _search = TextEditingController();
+  final _searchFocus = FocusNode();
   Timer? _debounce;
 
   String? _categoryId;
@@ -101,6 +106,19 @@ class _CatalogState extends ConsumerState<_Catalog> {
       if (_scroll.position.extentAfter < 600) _loadMore();
     });
     Future.microtask(_loadMore); // initState ichida setState chaqirmaslik uchun
+    _searchFocus.addListener(() => setState(() {}));
+    // Banner / story / push havolasi "kategoriyani och" desa — filtr qo'llanadi.
+    ref.listenManual(homeCategoryRequestProvider, (_, id) {
+      if (id == null) return;
+      Future.microtask(() {
+        ref.read(homeCategoryRequestProvider.notifier).clear();
+        if (!mounted) return;
+        _search.clear();
+        _categoryId = id;
+        _reset();
+        if (_scroll.hasClients) _scroll.jumpTo(0);
+      });
+    }, fireImmediately: true);
   }
 
   @override
@@ -108,7 +126,33 @@ class _CatalogState extends ConsumerState<_Catalog> {
     _debounce?.cancel();
     _scroll.dispose();
     _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
+  }
+
+  /// Qidiruvni bajaradi va tarixga yozadi.
+  void _runSearch(String q) {
+    _debounce?.cancel();
+    if (_search.text != q) _search.text = q;
+    _searchFocus.unfocus();
+    ref.read(searchHistoryProvider.notifier).add(q);
+    _reset();
+  }
+
+  /// Shtrix-kod: topilgan kod mavjud `search` ga beriladi; bitta natija bo'lsa — mahsulot ochiladi.
+  Future<void> _scan() async {
+    final code = await Navigator.of(context, rootNavigator: true)
+        .push<String>(MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()));
+    if (code == null || !mounted) return;
+    try {
+      final r = await ref.read(catalogRepositoryProvider).products(_branchId, search: code, pageSize: 2);
+      if (!mounted) return;
+      if (r.items.length == 1) {
+        context.push('/home/product/${r.items.first.id}');
+        return;
+      }
+    } catch (_) {}
+    if (mounted) _runSearch(code);
   }
 
   void _reset() {
@@ -162,12 +206,16 @@ class _CatalogState extends ConsumerState<_Catalog> {
     final categories = ref.watch(categoriesProvider(_branchId)).value ?? const <ShopCategory>[];
     final cart = ref.watch(cartControllerProvider);
     final showCartBar = !cart.isEmpty && cart.branchId == _branchId;
+    // Qidiruv yoki kategoriya tanlanmagan bo'lsa — marketing bloklari (bannerlar, Top 10, kolleksiyalar...).
+    final showSections = _search.text.trim().isEmpty && _categoryId == null;
 
     return Stack(children: [
       RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(categoriesProvider(_branchId));
           ref.invalidate(storeProvider(_branchId));
+          ref.invalidate(shopHomeProvider(_branchId));
+          ref.invalidate(lastDeliveredOrderProvider(_branchId));
           _reset();
         },
         child: CustomScrollView(
@@ -181,12 +229,17 @@ class _CatalogState extends ConsumerState<_Catalog> {
                 const SizedBox(height: 14),
                 TextField(
                   controller: _search,
+                  focusNode: _searchFocus,
                   textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     hintText: t.catSearchHint,
                     prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
                     suffixIcon: _search.text.isEmpty
-                        ? null
+                        ? IconButton(
+                            tooltip: t.scanTitle,
+                            icon: const Icon(Icons.qr_code_scanner, color: AppColors.textSecondary),
+                            onPressed: _scan,
+                          )
                         : IconButton(
                             tooltip: t.catClear,
                             icon: const Icon(Icons.close, color: AppColors.textSecondary),
@@ -201,18 +254,37 @@ class _CatalogState extends ConsumerState<_Catalog> {
                     _debounce?.cancel();
                     _debounce = Timer(const Duration(milliseconds: 400), _reset);
                   },
-                  onSubmitted: (_) {
-                    _debounce?.cancel();
-                    _reset();
-                  },
+                  onSubmitted: _runSearch,
                 ),
+                if (_searchFocus.hasFocus)
+                  SearchSuggestionsPanel(
+                    branchId: _branchId,
+                    query: _search.text,
+                    onQuery: _runSearch,
+                    onProduct: (id) {
+                      ref.read(searchHistoryProvider.notifier).add(_search.text);
+                      _searchFocus.unfocus();
+                      context.push('/home/product/$id');
+                    },
+                    onCategory: (id, _) {
+                      _searchFocus.unfocus();
+                      _search.clear();
+                      _categoryId = id;
+                      _reset();
+                    },
+                  ),
                 const SizedBox(height: 14),
-                if (store.deliveryEnabled && store.freeDeliveryFrom != null) ...[
-                  _PromoBanner(store: store),
-                  const SizedBox(height: 14),
-                ],
               ]),
             ),
+            if (showSections)
+              SliverToBoxAdapter(
+                child: HomeMarketingSections(
+                  branchId: _branchId,
+                  fallbackBanner:
+                      store.deliveryEnabled && store.freeDeliveryFrom != null ? _PromoBanner(store: store) : null,
+                ),
+              ),
+            if (showSections) const SliverToBoxAdapter(child: SizedBox(height: 16)),
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 40,

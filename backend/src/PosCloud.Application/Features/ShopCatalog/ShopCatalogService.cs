@@ -19,8 +19,26 @@ public interface IShopCatalogService
     Task<StoreAppPlatformInfo?> GetStoreAppPlatformAsync(string slug, bool isIos, CancellationToken ct = default);
     Task<ShopStoreDto> GetStoreAsync(Guid branchId, CancellationToken ct = default);
     Task<IReadOnlyList<ShopCategoryDto>> GetCategoriesAsync(Guid branchId, CancellationToken ct = default);
-    Task<PagedResult<ShopProductDto>> GetProductsAsync(Guid branchId, ShopProductQuery query, CancellationToken ct = default);
-    Task<ShopProductDetailDto> GetProductAsync(Guid branchId, Guid productId, CancellationToken ct = default);
+    /// <param name="shopUserId">Token bo'lsa — isFavorite to'ldiriladi.</param>
+    Task<PagedResult<ShopProductDto>> GetProductsAsync(Guid branchId, ShopProductQuery query, Guid? shopUserId = null,
+        CancellationToken ct = default);
+
+    /// <param name="shopUserId">Token bo'lsa — isFavorite va isSubscribed to'ldiriladi.</param>
+    Task<ShopProductDetailDto> GetProductAsync(Guid branchId, Guid productId, Guid? shopUserId = null,
+        CancellationToken ct = default);
+
+    // ---- Bosqich 9: marketing ----
+    Task<ShopHomeDto> GetHomeAsync(Guid branchId, Guid? shopUserId, CancellationToken ct = default);
+    Task<IReadOnlyList<ShopProductDto>> GetTopAsync(Guid branchId, int days, int limit, Guid? shopUserId, CancellationToken ct = default);
+    Task<ShopCollectionDto> GetCollectionAsync(Guid branchId, Guid collectionId, Guid? shopUserId, CancellationToken ct = default);
+    Task<IReadOnlyList<ShopProductDto>> GetRelatedAsync(Guid branchId, Guid productId, int limit, Guid? shopUserId,
+        CancellationToken ct = default);
+    Task<IReadOnlyList<ShopProductDto>> GetCartSuggestionsAsync(Guid branchId, IReadOnlyCollection<Guid> productIds,
+        Guid? shopUserId, CancellationToken ct = default);
+    Task<ShopSearchSuggestDto> SearchSuggestAsync(Guid branchId, string? q, CancellationToken ct = default);
+
+    /// <summary>Mijozning sevimlilari — shu filial narxi/qoldig'i bilan (boshqa tashkilot mahsuloti chiqmaydi).</summary>
+    Task<IReadOnlyList<ShopProductDto>> GetFavoritesAsync(Guid shopUserId, Guid branchId, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -28,7 +46,7 @@ public interface IShopCatalogService
 /// QO'LDA filtrlanadi. Ko'rinadigan do'kon: filial va tashkilot faol, turi Store, online sozlama
 /// yoqilgan, bloklanmagan, tarif muddati o'tmagan.
 /// </summary>
-public class ShopCatalogService : IShopCatalogService
+public partial class ShopCatalogService : IShopCatalogService
 {
     /// <summary>O'zbekiston vaqti (UTC+5, yozgi vaqt yo'q).</summary>
     private static readonly TimeSpan LocalOffset = TimeSpan.FromHours(5);
@@ -133,7 +151,7 @@ public class ShopCatalogService : IShopCatalogService
     }
 
     public async Task<PagedResult<ShopProductDto>> GetProductsAsync(Guid branchId, ShopProductQuery query,
-        CancellationToken ct = default)
+        Guid? shopUserId = null, CancellationToken ct = default)
     {
         var orgId = await RequireStoreOrganization(branchId, ct);
         var page = Math.Max(1, query.Page);
@@ -147,9 +165,13 @@ public class ShopCatalogService : IShopCatalogService
         var term = query.Search?.Trim();
         if (!string.IsNullOrEmpty(term))
         {
-            var lower = term.ToLower();
-            products = products.Where(p => p.Name.ToLower().Contains(lower) || p.Barcode == term);
+            // Transliteratsiya (lotin↔kirill), apostrof variantlari, har so'z nomda; yoki aniq shtrix-kod.
+            var terms = ShopSearch.Terms(term);
+            products = products.Where(ShopSearch.Match<Product>(p => p.Name, terms, p => p.Barcode == term));
         }
+
+        if (query.Discounted)
+            products = OnlyDiscounted(products, orgId);
 
         if (query.InStockOnly)
             products = products.Where(p => p.Stocks.Any(s => s.BranchId == branchId && s.Quantity - s.Reserved > 0));
@@ -177,17 +199,20 @@ public class ShopCatalogService : IShopCatalogService
         var total = await products.CountAsync(ct);
         var pageRows = await rows.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         var promotions = await LoadActivePromotions(orgId, ct);
+        var items = pageRows.Select(r => Fill(new ShopProductDto(), r.Product, r.Available, promotions)).ToList();
+        await MarkFavoritesAsync(items, shopUserId, ct);
 
         return new PagedResult<ShopProductDto>
         {
-            Items = pageRows.Select(r => Fill(new ShopProductDto(), r.Product, r.Available, promotions)).ToList(),
+            Items = items,
             TotalCount = total,
             Page = page,
             PageSize = pageSize
         };
     }
 
-    public async Task<ShopProductDetailDto> GetProductAsync(Guid branchId, Guid productId, CancellationToken ct = default)
+    public async Task<ShopProductDetailDto> GetProductAsync(Guid branchId, Guid productId, Guid? shopUserId = null,
+        CancellationToken ct = default)
     {
         var orgId = await RequireStoreOrganization(branchId, ct);
 
@@ -207,6 +232,14 @@ public class ShopCatalogService : IShopCatalogService
         dto.Description = row.Product.Description;
         dto.Barcode = row.Product.Barcode;
         dto.CategoryName = row.CategoryName;
+
+        if (shopUserId is { } userId)
+        {
+            await MarkFavoritesAsync([dto], userId, ct);
+            dto.IsSubscribed = await _db.ShopStockSubscriptions.IgnoreQueryFilters().AsNoTracking()
+                .AnyAsync(s => s.ShopUserId == userId && s.ProductId == productId && s.BranchId == branchId
+                               && s.NotifiedAt == null, ct);
+        }
         return dto;
     }
 
@@ -279,9 +312,11 @@ public class ShopCatalogService : IShopCatalogService
             .ToListAsync(ct);
     }
 
-    private static T Fill<T>(T dto, Product p, decimal available, List<Promotion> promotions) where T : ShopProductDto
+    internal static T Fill<T>(T dto, Product p, decimal available, List<Promotion> promotions) where T : ShopProductDto
     {
-        var percent = PromotionCalculator.GetDiscountPercent(promotions, p.Id, p.CategoryId);
+        var promo = PromotionCalculator.GetBestPromotion(promotions, p.Id, p.CategoryId);
+        var percent = promo?.DiscountPercent ?? 0m;
+        dto.DiscountEndsAt = percent > 0 ? promo!.EndDate : null;
 
         dto.Id = p.Id;
         dto.Name = p.Name;
@@ -311,6 +346,7 @@ public class ShopCatalogService : IShopCatalogService
         return new ShopStoreDto
         {
             Id = b.Id,
+            OrganizationId = b.OrganizationId ?? Guid.Empty,
             Name = string.IsNullOrWhiteSpace(s.DisplayName) ? r.OrganizationName : s.DisplayName,
             BranchName = b.Name,
             Description = s.Description,
@@ -341,7 +377,9 @@ public class ShopCatalogService : IShopCatalogService
             AllowClick = s.AllowClick,
             BonusPayEnabled = s.BonusPayEnabled && s.BonusMaxPercent > 0,
             BonusMaxPercent = s.BonusPayEnabled ? s.BonusMaxPercent : 0,
-            DeliveryRadiusKm = s.DeliveryRadiusKm
+            DeliveryRadiusKm = s.DeliveryRadiusKm,
+            SupportPhone = s.SupportPhone,
+            SupportTelegram = s.SupportTelegram
         };
     }
 

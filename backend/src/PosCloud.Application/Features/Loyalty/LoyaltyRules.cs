@@ -18,6 +18,18 @@ public sealed record EffectiveLoyaltySettings(
 {
     public static EffectiveLoyaltySettings Default { get; } =
         new(true, 1m, 0m, 50m, null, 0m, true, new Dictionary<Guid, decimal>());
+
+    /// <summary>Darajalar (MinSpend o'sish tartibida).</summary>
+    public IReadOnlyList<LoyaltyTierRule> Tiers { get; init; } = Array.Empty<LoyaltyTierRule>();
+}
+
+/// <summary>Loyalty darajasi qoidasi.</summary>
+public sealed record LoyaltyTierRule(Guid Id, string Name, decimal MinSpend, decimal CashbackPercent);
+
+/// <summary>Mijozning joriy darajasi, keyingi darajasi va oxirgi 365 kundagi xaridi.</summary>
+public sealed record LoyaltyTierStatus(LoyaltyTierRule? Tier, LoyaltyTierRule? Next, decimal Spend)
+{
+    public static LoyaltyTierStatus None { get; } = new(null, null, 0);
 }
 
 /// <summary>Ball hisoblash uchun savdo qatori.</summary>
@@ -44,17 +56,59 @@ public static class LoyaltyRules
             .Where(r => r.OrganizationId == orgId)
             .ToDictionaryAsync(r => r.CategoryId, r => r.Percent, ct);
 
-        return s is null
+        var tiers = await db.LoyaltyTiers.IgnoreQueryFilters().AsNoTracking()
+            .Where(t => t.OrganizationId == orgId)
+            .OrderBy(t => t.MinSpend).ThenBy(t => t.SortOrder)
+            .Select(t => new LoyaltyTierRule(t.Id, t.Name, t.MinSpend, t.CashbackPercent))
+            .ToListAsync(ct);
+
+        var result = s is null
             ? EffectiveLoyaltySettings.Default with { CategoryRates = rates }
             : new EffectiveLoyaltySettings(s.Enabled, s.CashbackPercent, s.MinSaleAmount, s.MaxRedeemPercent,
                 s.PointsExpireDays, s.SignupBonus, s.EarnOnDiscountedItems, rates);
+        return result with { Tiers = tiers };
+    }
+
+    /// <summary>Daraja hisobi uchun davr (kun).</summary>
+    public const int TierSpendDays = 365;
+
+    /// <summary>Mijozning oxirgi 365 kundagi xaridi: yakunlangan (qaytarilmagan) savdolar jami. Tenant filtri chetlab o'tiladi.</summary>
+    public static async Task<decimal> SpendAsync(IApplicationDbContext db, Guid customerId, CancellationToken ct)
+    {
+        var since = DateTime.UtcNow.AddDays(-TierSpendDays);
+        return await db.Sales.IgnoreQueryFilters()
+            .Where(x => x.CustomerId == customerId && x.Type == SaleType.Sale && x.Status == SaleStatus.Completed
+                        && x.CreatedAt >= since)
+            .SumAsync(x => (decimal?)x.TotalAmount, ct) ?? 0;
+    }
+
+    /// <summary>Xarid summasi bo'yicha daraja: MinSpend ≤ spend bo'lgan eng yuqorisi; keyingisi — birinchi kattasi.</summary>
+    public static LoyaltyTierStatus ResolveTier(EffectiveLoyaltySettings s, decimal spend)
+    {
+        LoyaltyTierRule? tier = null, next = null;
+        foreach (var t in s.Tiers.OrderBy(t => t.MinSpend))
+        {
+            if (t.MinSpend <= spend) tier = t;
+            else { next = t; break; }
+        }
+        return new LoyaltyTierStatus(tier, next, spend);
+    }
+
+    /// <summary>Mijoz darajasi (darajalar bo'lmasa yoki dastur o'chiq bo'lsa — bazaga so'rov yuborilmaydi).</summary>
+    public static async Task<LoyaltyTierStatus> TierStatusAsync(IApplicationDbContext db, EffectiveLoyaltySettings s,
+        Guid customerId, CancellationToken ct)
+    {
+        if (s.Tiers.Count == 0) return LoyaltyTierStatus.None;
+        return ResolveTier(s, await SpendAsync(db, customerId, ct));
     }
 
     /// <summary>
     /// Savdodan topiladigan ball (butun so'm, pastga yaxlitlanadi). Baza — qatorning chegirmadan keyingi summasi;
     /// Service qatorlari va (sozlamaga ko'ra) chegirmali qatorlar hisobga olinmaydi; jami minSaleAmount'dan kam bo'lsa — 0.
+    /// Foiz: kategoriya stavkasi (bo'lmasa bazaviy) va mijoz darajasi foizining eng kattasi.
     /// </summary>
-    public static decimal ComputeEarn(EffectiveLoyaltySettings s, decimal saleTotal, IEnumerable<LoyaltyEarnLine> lines)
+    public static decimal ComputeEarn(EffectiveLoyaltySettings s, decimal saleTotal, IEnumerable<LoyaltyEarnLine> lines,
+        decimal tierPercent = 0)
     {
         if (!s.Enabled || saleTotal <= 0 || saleTotal < s.MinSaleAmount) return 0;
 
@@ -64,6 +118,7 @@ public static class LoyaltyRules
             if (l.ProductType == ProductType.Service || l.LineTotal <= 0) continue;
             if (!s.EarnOnDiscountedItems && l.IsDiscounted) continue;
             var percent = s.CategoryRates.TryGetValue(l.CategoryId, out var rate) ? rate : s.CashbackPercent;
+            percent = Math.Max(percent, tierPercent);
             if (percent <= 0) continue;
             sum += l.LineTotal * percent / 100m;
         }

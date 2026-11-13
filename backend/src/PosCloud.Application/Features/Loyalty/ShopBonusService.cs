@@ -57,12 +57,20 @@ public class ShopBonusService : IShopBonusService
         // Sekund aniqligiga keltiramiz (payload unix sekundda).
         expiresAt = DateTime.SpecifyKind(new DateTime(expiresAt.Ticks - expiresAt.Ticks % TimeSpan.TicksPerSecond), DateTimeKind.Utc);
 
+        // Loyalty darajasi va keyingi darajagacha qolgan xarid.
+        var loyalty = await LoyaltyRules.LoadAsync(_db, orgId, ct);
+        var tier = await LoyaltyRules.TierStatusAsync(_db, loyalty, customer.Id, ct);
+
         return new BonusCardDto
         {
             StoreName = string.IsNullOrWhiteSpace(settings) ? branch.OrgName : settings!,
             Points = Math.Floor(Math.Max(0, customer.LoyaltyPoints)),
             QrPayload = _qr.Sign(user.Id, orgId, expiresAt),
-            ExpiresAt = expiresAt
+            ExpiresAt = expiresAt,
+            Tier = tier.Tier is { } t ? new BonusTierDto { Name = t.Name, CashbackPercent = t.CashbackPercent } : null,
+            NextTier = tier.Next is { } n
+                ? new BonusNextTierDto { Name = n.Name, MinSpend = n.MinSpend, Remaining = Math.Max(0, n.MinSpend - tier.Spend) }
+                : null
         };
     }
 

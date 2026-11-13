@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:firebase_core/firebase_core.dart';
@@ -9,6 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart' show Locale, WidgetsBinding;
 
 import '../../features/auth/auth_controller.dart';
+import '../../features/catalog/store_selection.dart';
+import '../../features/marketing/data/marketing_models.dart';
+import '../../features/marketing/shop_link.dart';
 import '../../l10n/app_localizations.dart';
 import '../api/api_client.dart';
 import '../locale/locale_controller.dart';
@@ -21,7 +25,8 @@ import '../router.dart';
 ///
 /// Oqim: ruxsat so'rash → token → kirgan bo'lsa `POST /api/me/devices`; token yoki til o'zgarsa qayta
 /// ro'yxatdan o'tadi; chiqishda token logout so'rovida yuboriladi (AuthController.signOut).
-/// Xabar ma'lumoti `{type: 'order', orderId}` — bosilganda `/orders/<id>` ochiladi.
+/// Xabar ma'lumoti `{type: 'order', orderId}` — bosilganda `/orders/<id>` ochiladi; bosqich 9 turlari
+/// (`back_in_stock`, `cart_reminder`, `campaign`, `referral_reward`) — [_openFromData].
 class PushService {
   PushService(this._ref);
 
@@ -37,7 +42,7 @@ class PushService {
   bool _enabled = false;
   String? _token;
   String? _registered; // "token|til" — bir xil ma'lumot qayta yuborilmaydi
-  String? _pendingOrderId;
+  Future<void> Function()? _pending; // kirgandan keyin bajariladigan navigatsiya
 
   /// Joriy FCM token (push o'chiq bo'lsa null).
   String? get token => _token;
@@ -120,8 +125,13 @@ class PushService {
         ),
       ),
       onDidReceiveNotificationResponse: (r) {
-        final id = r.payload;
-        if (id != null && id.isNotEmpty) _openOrder(id);
+        final p = r.payload;
+        if (p == null || p.isEmpty) return;
+        if (!p.startsWith('{')) return _openOrder(p); // eski format: faqat buyurtma ID
+        try {
+          final data = jsonDecode(p);
+          if (data is Map) _openFromData(Map<String, dynamic>.from(data));
+        } catch (_) {}
       },
     );
     final t = lookupAppLocalizations(Locale(LocaleController.languageCode));
@@ -165,7 +175,8 @@ class PushService {
       id: m.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title: n.title,
       body: n.body,
-      payload: orderId,
+      // Bosilganda ochiladigan joy uchun to'liq data (JSON).
+      payload: jsonEncode(m.data),
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channelId,
@@ -184,23 +195,64 @@ class PushService {
     return id == null || id.isEmpty ? null : id;
   }
 
+  static String? _str(Object? v) {
+    final s = v?.toString().trim();
+    return s == null || s.isEmpty ? null : s;
+  }
+
+  /// Bosilgan push → ekran (kelishuv 9.2/9.4): `order` → buyurtma, `back_in_stock` → mahsulot,
+  /// `cart_reminder` → savatcha, `campaign` → havola, `referral_reward` → bonus karta.
   void _openFromData(Map<String, dynamic> data) {
     final id = _orderIdOf(data);
-    if (id != null) _openOrder(id);
+    if (id != null) return _openOrder(id);
+    final router = _ref.read(routerProvider);
+    final branchId = _str(data['branchId']);
+
+    // Push boshqa filial haqida bo'lsa — avval o'sha filial tanlanadi.
+    Future<void> selectBranch() async {
+      if (branchId != null && _ref.read(storeSelectionProvider).value != branchId) {
+        await _ref.read(storeSelectionProvider.notifier).select(branchId);
+      }
+    }
+
+    switch (data['type']) {
+      case 'back_in_stock':
+        final productId = _str(data['productId']);
+        if (productId == null) return;
+        _schedule(() async {
+          await selectBranch();
+          router.go('/home');
+          router.push('/home/product/$productId');
+        });
+      case 'cart_reminder':
+        _schedule(() async => router.go('/cart'));
+      case 'referral_reward':
+        _schedule(() async => router.go('/bonus'));
+      case 'campaign':
+        final link = ShopLink(ShopLinkType.parse(data['linkType']), _str(data['linkValue']));
+        _schedule(() async {
+          await selectBranch();
+          if (!link.isActionable) return router.go('/home');
+          router.go('/home');
+          await openShopLink(router, _ref.read(homeCategoryRequestProvider.notifier), link);
+        });
+    }
   }
 
   /// Sessiya hali o'qilmagan bo'lsa (ilova push bosilib ochilgan) — kirgandan keyin ochiladi.
-  void _openOrder(String orderId) {
-    _pendingOrderId = orderId;
+  void _openOrder(String orderId) => _schedule(() async => _ref.read(routerProvider).go('/orders/$orderId'));
+
+  void _schedule(Future<void> Function() action) {
+    _pending = action;
     _flushPending();
   }
 
   void _flushPending() {
-    final id = _pendingOrderId;
-    if (id == null || !_ref.read(authControllerProvider).isSignedIn) return;
-    _pendingOrderId = null;
+    final action = _pending;
+    if (action == null || !_ref.read(authControllerProvider).isSignedIn) return;
+    _pending = null;
     // Router redirect'i (splash → home) tugagach navigatsiya qilamiz.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ref.read(routerProvider).go('/orders/$id'));
+    WidgetsBinding.instance.addPostFrameCallback((_) => action());
     WidgetsBinding.instance.scheduleFrame();
   }
 }

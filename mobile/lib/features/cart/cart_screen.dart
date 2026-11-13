@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -10,6 +11,8 @@ import '../auth/auth_controller.dart';
 import '../catalog/data/catalog_repository.dart';
 import '../catalog/widgets/common.dart';
 import '../checkout/checkout_options.dart';
+import '../marketing/data/marketing_repository.dart';
+import '../marketing/widgets/product_rail.dart';
 import 'cart_controller.dart';
 import 'data/order_api.dart';
 
@@ -94,6 +97,7 @@ class CartScreen extends ConsumerWidget {
               ],
             ]),
           ),
+          _CartSuggestions(branchId: branchId, productIds: cart.lines.keys),
           const SizedBox(height: 16),
           _PromoSection(quote: quote, loading: loading),
           const SizedBox(height: 16),
@@ -142,6 +146,32 @@ class CartScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Qo'shib qo'ying" — savatdagilar bilan birga olinadiganlar (`cart-suggestions`). Bo'sh bo'lsa ko'rinmaydi.
+/// ListView ichida 20 px chetlardan chiqib, butun kenglikda suriladi.
+class _CartSuggestions extends ConsumerWidget {
+  const _CartSuggestions({required this.branchId, required this.productIds});
+
+  final String branchId;
+  final Iterable<String> productIds;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ids = (productIds.toList()..sort()).join(',');
+    final items = ref.watch(cartSuggestionsProvider((branchId: branchId, ids: ids))).value;
+    if (items == null || items.isEmpty) return const SizedBox.shrink();
+    final width = MediaQuery.sizeOf(context).width;
+    return OverflowBox(
+      fit: OverflowBoxFit.deferToChild,
+      minWidth: width,
+      maxWidth: width,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        RailHeader(title: AppLocalizations.of(context).mkCartSuggestions, padding: const EdgeInsets.fromLTRB(20, 16, 8, 8)),
+        ProductRail(branchId: branchId, products: items),
+      ]),
     );
   }
 }

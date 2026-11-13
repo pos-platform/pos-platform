@@ -25,6 +25,9 @@ public class ShopUser : BaseEntity
     /// <summary>Akkaunt o'chirilgan vaqt (shaxsiy ma'lumotlar tozalanadi, buyurtmalar tarixi qoladi).</summary>
     public DateTime? DeletedAt { get; set; }
 
+    /// <summary>Do'stni taklif qilish kodi (6–8 belgi, unik). Birinchi so'rovda yaratiladi.</summary>
+    public string? ReferralCode { get; set; }
+
     public ICollection<ShopUserAddress> Addresses { get; set; } = new List<ShopUserAddress>();
 }
 

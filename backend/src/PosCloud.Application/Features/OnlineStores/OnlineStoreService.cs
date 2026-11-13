@@ -231,6 +231,14 @@ public class OnlineStoreService : IOnlineStoreService
         if (mxik is not null && !Mxik.IsValid(mxik))
             throw new ValidationException($"Yetkazish xizmati MXIK kodi {Mxik.Length} xonali bo'lishi kerak.");
 
+        var telegram = NullIfEmpty(r.SupportTelegram)?.TrimStart('@');
+        if (telegram is not null && !TelegramRegex.IsMatch(telegram))
+            throw new ValidationException("Telegram username 5–32 ta lotin harfi, raqam yoki '_' bo'lishi kerak.");
+        if (r.ReferrerBonus < 0 || r.RefereeBonus < 0)
+            throw new ValidationException("Taklif bonuslari manfiy bo'lmasligi kerak.");
+        if (r.ReferralEnabled && r.ReferrerBonus <= 0 && r.RefereeBonus <= 0)
+            throw new ValidationException("Do'stni taklif qilish uchun kamida bitta bonusni kiriting.");
+
         var card = NormalizeCard(r.TransferCardNumber);
         if (card is not null && (card.Length < 16 || card.Length > 20))
             throw new ValidationException("Karta raqami 16 xonali bo'lishi kerak.");
@@ -257,6 +265,11 @@ public class OnlineStoreService : IOnlineStoreService
         settings.DeliveryServiceMxikCode = mxik;
         settings.BonusPayEnabled = r.BonusPayEnabled;
         settings.BonusMaxPercent = r.BonusMaxPercent;
+        settings.SupportPhone = NullIfEmpty(r.SupportPhone);
+        settings.SupportTelegram = telegram;
+        settings.ReferralEnabled = r.ReferralEnabled;
+        settings.ReferrerBonus = Math.Floor(r.ReferrerBonus);
+        settings.RefereeBonus = Math.Floor(r.RefereeBonus);
 
         await _db.SaveChangesAsync(ct);
         return ToDto(org, settings);
@@ -294,6 +307,7 @@ public class OnlineStoreService : IOnlineStoreService
     private static readonly Regex SlugRegex = new("^[a-z0-9-]{3,40}$", RegexOptions.Compiled);
     private static readonly Regex PackageIdRegex = new(@"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$", RegexOptions.Compiled);
     private static readonly Regex ColorRegex = new("^#[0-9A-F]{6}$", RegexOptions.Compiled);
+    private static readonly Regex TelegramRegex = new("^[A-Za-z0-9_]{5,32}$", RegexOptions.Compiled);
 
     private static void ValidateBuilds(int? min, int? latest, string platform)
     {
@@ -386,7 +400,12 @@ public class OnlineStoreService : IOnlineStoreService
         IosLatestBuild = s.IosLatestBuild,
         IosLatestVersion = s.IosLatestVersion,
         IosStoreUrl = s.IosStoreUrl,
-        IsVisible = org.IsActive && s.IsEnabled && !s.IsBlocked && (s.PaidUntil == null || s.PaidUntil >= DateTime.UtcNow)
+        IsVisible = org.IsActive && s.IsEnabled && !s.IsBlocked && (s.PaidUntil == null || s.PaidUntil >= DateTime.UtcNow),
+        SupportPhone = s.SupportPhone,
+        SupportTelegram = s.SupportTelegram,
+        ReferralEnabled = s.ReferralEnabled,
+        ReferrerBonus = s.ReferrerBonus,
+        RefereeBonus = s.RefereeBonus
     };
 
     private static string? NormalizeCard(string? s)

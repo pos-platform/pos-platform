@@ -55,6 +55,14 @@ builder.Services.AddHostedService<PosCloud.Api.Background.OnlineOrderAutoCancelS
 // Fon vazifa: faolsizlik tufayli bonus ball muddati (kuniga bir marta).
 builder.Services.AddHostedService<PosCloud.Api.Background.LoyaltyExpiryService>();
 
+// Bosqich 9 (marketing): mijozga umumiy push navbati, push kampaniyalar, "yana sotuvda", savatcha eslatmasi.
+builder.Services.AddSingleton<PosCloud.Api.Background.ShopPushQueue>();
+builder.Services.AddSingleton<IShopPushQueue>(sp => sp.GetRequiredService<PosCloud.Api.Background.ShopPushQueue>());
+builder.Services.AddHostedService<PosCloud.Api.Background.ShopPushDispatchService>();
+builder.Services.AddHostedService<PosCloud.Api.Background.PushCampaignService>();
+builder.Services.AddHostedService<PosCloud.Api.Background.BackInStockService>();
+builder.Services.AddHostedService<PosCloud.Api.Background.CartReminderService>();
+
 // --- Controllerlar + enum'larni string sifatida (JSON) ---
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

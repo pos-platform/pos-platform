@@ -346,7 +346,26 @@ export const onlineStoreApi = {
 // Admin panel: online buyurtmalar (faqat ko'rish; amallar kassada)
 export const onlineOrdersApi = {
   list: (params) => http.get('/api/online-orders', { params }).then((r) => r.data),
-  get: (id) => http.get(`/api/online-orders/${id}`).then((r) => r.data)
+  get: (id) => http.get(`/api/online-orders/${id}`).then((r) => r.data),
+  // Bosqich 9.3: { average, count, distribution: {1..5}, tagCounts: {tag:int}, items: [...] }
+  ratings: (params) => http.get('/api/online-orders/ratings', { params }).then((r) => r.data)
+}
+
+// Bosqich 9 (CONTRACT-9): ilova reklamasi — bannerlar, kolleksiyalar, stories, push kampaniyalar.
+function crud(base) {
+  return {
+    list: () => http.get(base).then((r) => r.data),
+    get: (id) => http.get(`${base}/${id}`).then((r) => r.data),
+    create: (payload) => http.post(base, payload).then((r) => r.data),
+    update: (id, payload) => http.put(`${base}/${id}`, payload).then((r) => r.data),
+    remove: (id) => http.delete(`${base}/${id}`).then((r) => r.data)
+  }
+}
+export const onlineMarketingApi = {
+  banners: { ...crud('/api/online-store/banners'), reorder: (ids) => http.put('/api/online-store/banners/reorder', { ids }).then((r) => r.data) },
+  collections: crud('/api/online-store/collections'),
+  stories: { ...crud('/api/online-store/stories'), reorder: (ids) => http.put('/api/online-store/stories/reorder', { ids }).then((r) => r.data) },
+  pushCampaigns: { ...crud('/api/online-store/push-campaigns'), send: (id) => http.post(`/api/online-store/push-campaigns/${id}/send`).then((r) => r.data) }
 }
 
 // Promokodlar (online do'kon, tashkilot bo'yicha). Huquq: settings.manage.

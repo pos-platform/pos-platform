@@ -219,6 +219,28 @@ public class ShopOrderDto : ShopOrderSummaryDto
 
     /// <summary>Mavjud provayderlar: "Payme", "Click".</summary>
     public List<string> OnlineProviders { get; set; } = [];
+
+    /// <summary>Mijoz bahosi (1–5), izoh, teglar va vaqti.</summary>
+    public int? Rating { get; set; }
+    public string? RatingComment { get; set; }
+    public List<string> RatingTags { get; set; } = [];
+    public DateTime? RatedAt { get; set; }
+
+    /// <summary>Baholash mumkin: Delivered, hali baholanmagan, yetkazilganiga 14 kun bo'lmagan.</summary>
+    public bool CanRate { get; set; }
+}
+
+/// <summary>POST /api/shop/orders/{id}/rate.</summary>
+public class RateShopOrderRequest
+{
+    [Range(1, 5)]
+    public int Rating { get; set; }
+
+    [MaxLength(500)]
+    public string? Comment { get; set; }
+
+    /// <summary>fast | fresh | polite | accurate | late | damaged | missing | wrong_item</summary>
+    public List<string>? Tags { get; set; }
 }
 
 /// <summary>Online to'lov havolasi so'rovi.</summary>

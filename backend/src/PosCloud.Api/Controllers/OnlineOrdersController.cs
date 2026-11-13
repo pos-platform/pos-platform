@@ -33,6 +33,13 @@ public class OnlineOrdersController : ControllerBase
         CancellationToken ct = default) =>
         Ok(await _service.GetListAsync(branchId, active, from, to, status, ct));
 
+    /// <summary>Mijoz baholari: ?from=&amp;to=&amp;branchId= (YYYY-MM-DD, "to" kuni ham kiradi; standart — oxirgi 30 kun).</summary>
+    [HttpGet("ratings")]
+    [HasPermission(Permissions.SalesView)]
+    public async Task<ActionResult<OnlineOrderRatingsDto>> GetRatings([FromQuery] DateTime? from, [FromQuery] DateTime? to,
+        [FromQuery] Guid? branchId, CancellationToken ct) =>
+        Ok(await _service.GetRatingsAsync(from, to, branchId, ct));
+
     [HttpGet("{id:guid}")]
     [HasPermission(Permissions.SalesView)]
     public async Task<ActionResult<OnlineOrderDto>> Get(Guid id, CancellationToken ct) =>

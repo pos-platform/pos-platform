@@ -17,6 +17,25 @@ public class LoyaltySettingsDto
     public decimal SignupBonus { get; set; }
     public bool EarnOnDiscountedItems { get; set; }
     public List<LoyaltyCategoryRateDto> CategoryRates { get; set; } = new();
+
+    /// <summary>Darajalar (minSpend o'sish tartibida).</summary>
+    public List<LoyaltyTierDto> Tiers { get; set; } = new();
+}
+
+/// <summary>Loyalty darajasi: oxirgi 365 kunda minSpend'dan ko'p xarid qilgan mijozga cashbackPercent.</summary>
+public class LoyaltyTierDto
+{
+    public Guid? Id { get; set; }
+
+    [Required]
+    [MaxLength(30)]
+    public string Name { get; set; } = string.Empty;
+
+    [Range(0, double.MaxValue)]
+    public decimal MinSpend { get; set; }
+
+    [Range(0, 100)]
+    public decimal CashbackPercent { get; set; }
 }
 
 public class LoyaltyCategoryRateDto
@@ -49,6 +68,9 @@ public class UpdateLoyaltySettingsRequest
     public bool EarnOnDiscountedItems { get; set; } = true;
 
     public List<UpdateLoyaltyCategoryRateRequest> CategoryRates { get; set; } = new();
+
+    /// <summary>Darajalar — to'liq ro'yxat sifatida almashtiriladi. Null — o'zgarmaydi (eski klientlar uchun).</summary>
+    public List<LoyaltyTierDto>? Tiers { get; set; }
 }
 
 public class UpdateLoyaltyCategoryRateRequest
@@ -87,6 +109,9 @@ public class ResolveBonusCardResponse
     public string? MaskedPhone { get; set; }
     public decimal Points { get; set; }
     public decimal MaxRedeemPercent { get; set; }
+
+    /// <summary>Mijozning loyalty darajasi nomi (darajasi bo'lmasa null).</summary>
+    public string? TierName { get; set; }
 }
 
 public class LoyaltyReportDto
@@ -105,6 +130,25 @@ public class BonusCardDto
     public decimal Points { get; set; }
     public string QrPayload { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }
+
+    /// <summary>Joriy daraja (bo'lmasa null).</summary>
+    public BonusTierDto? Tier { get; set; }
+
+    /// <summary>Keyingi daraja va unga qolgan xarid summasi (eng yuqori darajada null).</summary>
+    public BonusNextTierDto? NextTier { get; set; }
+}
+
+public class BonusTierDto
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal CashbackPercent { get; set; }
+}
+
+public class BonusNextTierDto
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal MinSpend { get; set; }
+    public decimal Remaining { get; set; }
 }
 
 /// <summary>GET /api/me/bonus/stores elementi.</summary>

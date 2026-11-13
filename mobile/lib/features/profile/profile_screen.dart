@@ -11,6 +11,7 @@ import '../auth/auth_controller.dart';
 import '../auth/data/auth_models.dart';
 import '../bonus/bonus_card_screen.dart';
 import '../catalog/store_selection.dart';
+import '../marketing/support.dart';
 import 'data/addresses_repository.dart';
 import 'data/bonus_repository.dart';
 import 'data/profile_repository.dart';
@@ -18,8 +19,8 @@ import 'widgets/profile_widgets.dart';
 
 /// Profil (dizayn: Profile.dc.html).
 ///
-/// Keyinga (dizaynda bor, 4.6 ga kirmagan): to'lov kartalari, sevimlilar,
-/// bildirishnomalar sozlamasi, yordam va aloqa.
+/// Keyinga (dizaynda bor, 4.6 ga kirmagan): to'lov kartalari,
+/// bildirishnomalar sozlamasi. Sevimlilar, do'stni taklif qilish va "Yordam" — bosqich 9.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -71,9 +72,24 @@ class ProfileScreen extends ConsumerWidget {
                   value: addressCount == null || addressCount == 0 ? null : t.profileAddressCount(addressCount),
                   onTap: () => context.push('/profile/addresses'),
                 ),
+                _MenuRow(
+                  icon: Icons.favorite_border,
+                  label: t.favTitle,
+                  onTap: () => context.push('/profile/favorites'),
+                ),
+                _MenuRow(
+                  icon: Icons.card_giftcard,
+                  label: t.refTitle,
+                  onTap: () => context.push('/profile/referral'),
+                ),
               ]),
               const SizedBox(height: 16),
               _MenuGroup(children: [
+                _MenuRow(
+                  icon: Icons.support_agent,
+                  label: t.supportTitle,
+                  onTap: () => showSupportSheet(context, ref.read(selectedStoreProvider).value),
+                ),
                 _MenuRow(
                   icon: Icons.language,
                   label: t.profileLanguage,
