@@ -7,13 +7,13 @@ import 'package:material_ui/material_ui.dart';
 class AppColors {
   AppColors._();
 
-  /// Standart (PosCloud) yashil.
-  static const defaultPrimary = Color(0xFF0B6B45);
+  /// Standart (Xo‘ja Market) qizil.
+  static const defaultPrimary = Color(0xFFD81F26);
 
   static Color _primary = defaultPrimary;
-  static Color _primaryPressed = const Color(0xFF08523A);
-  static Color _primarySoft = const Color(0xFFE3F1E9);
-  static Color _onPrimarySoft = const Color(0xFFD4EBDD);
+  static Color _primaryPressed = const Color(0xFFB71A20);
+  static Color _primarySoft = const Color(0xFFFAE4E5);
+  static Color _onPrimarySoft = const Color(0xFFF8D7D8);
 
   static Color get primary => _primary;
   static Color get primaryPressed => _primaryPressed;
@@ -24,15 +24,15 @@ class AppColors {
 
   static const background = Color(0xFFF5F4EF);
   static const surface = Color(0xFFFFFFFF);
-  static const text = Color(0xFF16201B);
-  static const textSecondary = Color(0xFF5B6660);
-  static const textMuted = Color(0xFF3A4540);
+  static const text = Color(0xFF14162B);
+  static const textSecondary = Color(0xFF5E6175);
+  static const textMuted = Color(0xFF3A3D52);
   static const border = Color(0xFFE4E2DA);
   static const borderSoft = Color(0xFFECEAE3);
   static const chipSurface = Color(0xFFF1EFEA);
   static const danger = Color(0xFFB42318);
   static const accent = Color(0xFFC2410C);
-  static const iconMuted = Color(0xFF9AA49F);
+  static const iconMuted = Color(0xFF9C9FAE);
 
   /// `#RRGGBB` (yoki `RRGGBB`) → Color. Noto'g'ri qiymat — null.
   static Color? parseHex(String? hex) {
@@ -42,14 +42,14 @@ class AppColors {
     return Color(0xFF000000 | int.parse(h, radix: 16));
   }
 
-  /// Brend rangini qo'llaydi (null — standart yashil). Oq matn o'qilishi uchun rang yetarlicha to'q
+  /// Brend rangini qo'llaydi (null — standart qizil). Oq matn o'qilishi uchun rang yetarlicha to'q
   /// bo'lguncha (kontrast ≥ 4.5:1) to'qlashtiriladi; bosilgan va och soyalar shundan hosil qilinadi.
   static void applyBrand(Color? brand) {
     if (brand == null || brand.toARGB32() == defaultPrimary.toARGB32()) {
       _primary = defaultPrimary;
-      _primaryPressed = const Color(0xFF08523A);
-      _primarySoft = const Color(0xFFE3F1E9);
-      _onPrimarySoft = const Color(0xFFD4EBDD);
+      _primaryPressed = const Color(0xFFB71A20);
+      _primarySoft = const Color(0xFFFAE4E5);
+      _onPrimarySoft = const Color(0xFFF8D7D8);
       return;
     }
     var hsl = HSLColor.fromColor(brand.withValues(alpha: 1));

@@ -368,3 +368,6 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
   Bir martalik: Android SDK'da oddiy va do'kon buildini tekshirish; `dotnet ef database update` (StoreWhiteLabel).
 - 2026-11-13 — 4.7 Firebase — loyiha `xujamarket`, `mobile/android/app/google-services.json` qo'yildi; `flutter build apk --debug` OK, google-services plagini qo'llandi.
   Backend ProjectId service account'dan olinadi. Qoldi: serverda `Push__Fcm__ServiceAccountPath`, qurilmada push sinovi; iOS (plist + APNs) keyin.
+- 2026-11-13 — Xo‘ja Market brendi — standart build bitta do'kon rejimida (`STORE_SLUG` standarti `xoja-market`, `APP_NAME`, `BRAND_COLOR=#D81F26`), ilova nomi "Xo‘ja Market" (arb, gradle, Store.xcconfig),
+  ranglar (qizil + to'q ko'k matn), ikonka/splash/`logo.png` logodan; `StoreLogo` endi ichki asset. Paket ID o'zgarmadi. `flutter analyze` 0, emulyatorda ko'rildi.
+  Qoldi: admin panelda do'konga slug `xoja-market` berish, backend ishga tushirish.

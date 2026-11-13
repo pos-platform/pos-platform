@@ -278,7 +278,11 @@ class _PhoneField extends StatelessWidget {
         hintText: '90 123 45 67',
         prefixIcon: Padding(
           padding: EdgeInsets.only(left: 16, right: 10),
-          child: Text('+998', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.text)),
+          // Center — prefiks matni maydon balandligi bo'yicha o'rtada turishi uchun (aks holda tepaga yopishadi).
+          child: Center(
+            widthFactor: 1,
+            child: Text('+998', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.text)),
+          ),
         ),
         prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: AppTheme.controlHeight),
       ),

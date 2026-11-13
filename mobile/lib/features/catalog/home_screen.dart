@@ -6,7 +6,9 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/config.dart';
+import '../../core/locale/locale_controller.dart';
 import '../../core/store_app/store_app.dart';
+import '../../core/store_app/store_branding.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
@@ -14,6 +16,7 @@ import '../auth/auth_controller.dart';
 import '../bonus/bonus_card_screen.dart';
 import '../cart/cart_controller.dart';
 import '../profile/data/bonus_repository.dart';
+import '../profile/profile_screen.dart' show showLanguageSheet;
 import '../cart/delivery_time.dart';
 import 'data/catalog_models.dart';
 import 'data/catalog_repository.dart';
@@ -367,7 +370,14 @@ class _StoreHeader extends ConsumerWidget {
           child: Row(children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: SizedBox(width: 44, height: 44, child: ProductImage(url: store.logoUrl, iconSize: 20, fit: BoxFit.cover)),
+              // Do'kon rejimida (yoki logo yuklanmagan bo'lsa) — ilova ichidagi brend logosi.
+              child: SizedBox(
+                width: 44,
+                height: 44,
+                child: AppConfig.isStoreMode || (store.logoUrl ?? '').isEmpty
+                    ? const ColoredBox(color: Colors.white, child: Padding(padding: EdgeInsets.all(4), child: StoreLogo(size: 36)))
+                    : ProductImage(url: store.logoUrl, iconSize: 20, fit: BoxFit.cover),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -379,17 +389,57 @@ class _StoreHeader extends ConsumerWidget {
                         color: store.isOpenNow ? AppColors.primary : AppColors.textSecondary)),
                 Row(children: [
                   Flexible(
-                    child: Text(store.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                    // Do'kon rejimida filial nomi o'rniga brend yozuvi (Xo‘ja market).
+                    child: AppConfig.isStoreMode
+                        ? const BrandWordmark(fontSize: 18)
+                        : Text(store.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
                   if (canSwitch) const Icon(Icons.keyboard_arrow_down, size: 20),
                 ]),
               ]),
             ),
+            const _LanguageButton(),
             _BonusChip(branchId: store.id),
           ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Til almashtirish (UZ / RU) — kirmasdan ham bosh sahifadan.
+class _LanguageButton extends ConsumerWidget {
+  const _LanguageButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(localeControllerProvider);
+    final code = Localizations.localeOf(context).languageCode.toUpperCase();
+    return Semantics(
+      button: true,
+      label: AppLocalizations.of(context).profileLanguage,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => showLanguageSheet(context, ref),
+          child: Container(
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.25)),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.language, size: 18),
+              const SizedBox(width: 4),
+              Text(code, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+            ]),
+          ),
         ),
       ),
     );

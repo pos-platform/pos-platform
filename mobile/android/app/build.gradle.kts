@@ -32,7 +32,7 @@ if (storePropertiesFile.exists()) {
 val storeApplicationId: String = storeProperties.getProperty("applicationId")?.trim()?.takeIf { it.isNotEmpty() }
     ?: "uz.poscloud.poscloud_market"
 val storeAppLabel: String = storeProperties.getProperty("appLabel")?.trim()?.takeIf { it.isNotEmpty() }
-    ?: "PosCloud Market"
+    ?: "Xo‘ja Market"
 
 android {
     // namespace (Kotlin paketi) do'kon ilovalarida ham o'zgarmaydi — faqat applicationId o'zgaradi.

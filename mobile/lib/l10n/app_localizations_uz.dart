@@ -10,7 +10,7 @@ class AppLocalizationsUz extends AppLocalizations {
   AppLocalizationsUz([String locale = 'uz']) : super(locale);
 
   @override
-  String get appTitle => 'PosCloud Market';
+  String get appTitle => 'Xo‘ja Market';
 
   @override
   String get navHome => 'Asosiy';

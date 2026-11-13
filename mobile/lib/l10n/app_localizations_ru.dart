@@ -10,7 +10,7 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
-  String get appTitle => 'PosCloud Market';
+  String get appTitle => 'Xo‘ja Market';
 
   @override
   String get navHome => 'Главная';

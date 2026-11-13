@@ -111,7 +111,7 @@ if ($Slug -eq 'default') {
 // Do'kon (white-label) sozlamalari. tool/store.ps1 qayta yozadi; ``-Slug default`` - shu standart holatga qaytaradi.
 // Runner target'ning PRODUCT_BUNDLE_IDENTIFIER = `$(STORE_BUNDLE_ID) (project.pbxproj), Info.plist CFBundleDisplayName = `$(APP_DISPLAY_NAME).
 STORE_BUNDLE_ID = uz.poscloud.poscloudMarket
-APP_DISPLAY_NAME = PosCloud Market
+APP_DISPLAY_NAME = Xo‘ja Market
 
 "@
     Restore-FirebaseFile $AndroidFirebase

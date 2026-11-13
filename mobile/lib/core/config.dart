@@ -11,16 +11,16 @@ class AppConfig {
   );
 
   /// Do'kon (white-label) rejimi: `--dart-define=STORE_SLUG=<slug>` (tool/store.ps1 beradi).
-  /// Bo'sh — marketplace rejimi (barcha do'konlar, "PosCloud Market").
-  static const storeSlug = String.fromEnvironment('STORE_SLUG');
+  /// Standart — Xo‘ja Market (ilova faqat shu do'kon uchun). Bo'sh qiymat (`STORE_SLUG=`) — marketplace rejimi.
+  static const storeSlug = String.fromEnvironment('STORE_SLUG', defaultValue: 'xoja-market');
 
   static bool get isStoreMode => storeSlug.isNotEmpty;
 
   /// Build paytidagi brend rangi (`#RRGGBB`, store.json dan) — server javobi kelguncha (birinchi ochilishda) ishlatiladi.
-  static const brandColor = String.fromEnvironment('BRAND_COLOR');
+  static const brandColor = String.fromEnvironment('BRAND_COLOR', defaultValue: '#D81F26');
 
   /// Build paytidagi ilova nomi (store.json dan) — server javobi kelguncha.
-  static const appName = String.fromEnvironment('APP_NAME');
+  static const appName = String.fromEnvironment('APP_NAME', defaultValue: 'Xo‘ja Market');
 
   /// Nisbiy rasm manzilini ("/uploads/..") to'liq URL'ga aylantiradi.
   static String? imageUrl(String? path) {

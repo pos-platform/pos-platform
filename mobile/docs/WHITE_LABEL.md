@@ -1,6 +1,8 @@
 # Har do'konga alohida ilova (white-label)
 
-Kelishuv: `docs/mobile/CONTRACT-8.md`. Kod bazasi bitta (`mobile/`); har do'kon o'z nomi, ikonkasi, rangi va paket ID'si bilan
+Kelishuv: `docs/mobile/CONTRACT-8.md`.
+
+> **2026-11-13:** standart build endi Xo‘ja Market (`STORE_SLUG` standarti `xoja-market`, qizil `#D81F26`, `assets/branding`). Marketplace — `--dart-define=STORE_SLUG=`. Kod bazasi bitta (`mobile/`); har do'kon o'z nomi, ikonkasi, rangi va paket ID'si bilan
 alohida ilova sifatida chiqariladi. `STORE_SLUG` berilmagan build — marketplace rejimi ("PosCloud Market", barcha do'konlar).
 
 ## Ilova do'kon rejimida qanday ishlaydi

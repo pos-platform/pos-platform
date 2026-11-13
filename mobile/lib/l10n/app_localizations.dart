@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In uz, this message translates to:
-  /// **'PosCloud Market'**
+  /// **'Xo‘ja Market'**
   String get appTitle;
 
   /// No description provided for @navHome.
