@@ -70,6 +70,7 @@ public class ShopPushDispatchService : BackgroundService
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Mijoz push'i yuborilmadi: {ShopUserId}", push.ShopUserId);
+                    BackgroundErrors.Report(_scopeFactory, "ShopPush", ex, level: PosCloud.Domain.Enums.SystemErrorLevel.Warning);
                 }
             }
         }

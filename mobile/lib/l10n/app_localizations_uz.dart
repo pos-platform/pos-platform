@@ -1715,4 +1715,265 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get tierTop => 'Siz eng yuqori darajadasiz';
+
+  @override
+  String catOpensAt(String time) {
+    return '$time da ochiladi';
+  }
+
+  @override
+  String get checkoutWhenOpens => 'Do‘kon ochilganda';
+
+  @override
+  String checkoutWhenOpensAt(String time) {
+    return 'Do‘kon ochilganda ($time)';
+  }
+
+  @override
+  String get checkoutPreorderHint => 'Oldindan buyurtma';
+
+  @override
+  String get ordersPreorderTitle => 'Oldindan buyurtma';
+
+  @override
+  String ordersPreorderNote(String time) {
+    return 'Do‘kon hozir yopiq. Buyurtmangiz $time da ko‘rib chiqiladi.';
+  }
+
+  @override
+  String get ordersPreorderNoteNoTime =>
+      'Do‘kon hozir yopiq. Buyurtmangiz do‘kon ochilganda ko‘rib chiqiladi.';
+
+  @override
+  String get courierTabOffers => 'Takliflar';
+
+  @override
+  String get courierOffersEmpty => 'Hozircha taklif yo‘q';
+
+  @override
+  String get courierOfferTitle => 'Yangi buyurtma';
+
+  @override
+  String courierOfferNumber(String number) {
+    return 'Buyurtma #$number';
+  }
+
+  @override
+  String get courierOfferExpired => 'Taklif vaqti tugadi';
+
+  @override
+  String get courierOfferAccept => 'Qabul qilaman';
+
+  @override
+  String get courierOfferDecline => 'Rad etaman';
+
+  @override
+  String get courierOfferTaken => 'Boshqa kuryer oldi';
+
+  @override
+  String get courierOfferClosed => 'Taklif yopildi';
+
+  @override
+  String get courierOfferAccepted => 'Buyurtma sizga biriktirildi';
+
+  @override
+  String get courierOfferCash => 'Naqd to‘lov';
+
+  @override
+  String get courierOfferPaidOrCard => 'Karta / to‘langan';
+
+  @override
+  String get courierBack => 'Orqaga';
+
+  @override
+  String get courierPickedUpFromStore => 'Do‘kondan oldim';
+
+  @override
+  String get courierAwaitingPickup => 'Do‘kondan olish';
+
+  @override
+  String get courierDonePickedUp => 'Buyurtma yo‘lda';
+
+  @override
+  String get courierReturnTask => 'Qaytarish';
+
+  @override
+  String courierReturnNumber(String number) {
+    return 'Qaytarish #$number';
+  }
+
+  @override
+  String get courierReturnPickedUp => 'Olib ketildi';
+
+  @override
+  String get courierReturnPickedUpConfirm =>
+      'Tovarlarni mijozdan olganingizni tasdiqlaysizmi?';
+
+  @override
+  String get courierReturnDone => 'Qaytarish olib ketildi';
+
+  @override
+  String get courierReturnNoCash => 'Pul berilmaydi — do‘kon o‘zi qaytaradi';
+
+  @override
+  String get courierRejectItems => 'Ba’zi tovarlarni rad etdi';
+
+  @override
+  String get courierRejectTitle => 'Mijoz qaysi tovarlarni olmadi?';
+
+  @override
+  String get courierRejectedEdit => 'Rad etilganlarni o‘zgartirish';
+
+  @override
+  String get courierToCollect => 'Olinadigan summa';
+
+  @override
+  String get courierRejectApprox =>
+      'Taxminiy — yakuniy summani server hisoblaydi';
+
+  @override
+  String get courierSave => 'Saqlash';
+
+  @override
+  String get returnReasonDamaged => 'Shikastlangan';
+
+  @override
+  String get returnReasonWrongItem => 'Noto‘g‘ri tovar';
+
+  @override
+  String get returnReasonQuality => 'Sifatsiz';
+
+  @override
+  String get returnReasonExpired => 'Muddati o‘tgan';
+
+  @override
+  String get returnReasonMissing => 'Yetishmaydi';
+
+  @override
+  String get returnReasonOther => 'Boshqa';
+
+  @override
+  String get refundMethodCash => 'Naqd (do‘konda)';
+
+  @override
+  String get refundMethodTransfer => 'Kartaga o‘tkazma';
+
+  @override
+  String get refundMethodBonus => 'Bonus ball';
+
+  @override
+  String get returnMethodCourier => 'Kuryer olib ketadi';
+
+  @override
+  String get returnMethodStore => 'Do‘konga o‘zingiz olib borasiz';
+
+  @override
+  String get returnStatusRequested => 'Ko‘rib chiqilmoqda';
+
+  @override
+  String get returnStatusApproved => 'Tasdiqlandi';
+
+  @override
+  String get returnStatusPickupAssigned => 'Kuryer biriktirildi';
+
+  @override
+  String get returnStatusPickedUp => 'Kuryer olib ketdi';
+
+  @override
+  String get returnStatusReceived => 'Do‘konga yetib keldi';
+
+  @override
+  String get returnStatusRefunded => 'Pul qaytarildi';
+
+  @override
+  String get returnStatusRejected => 'Rad etildi';
+
+  @override
+  String get returnStatusCancelled => 'Bekor qilindi';
+
+  @override
+  String get returnsTitle => 'Qaytarishlarim';
+
+  @override
+  String get returnsEmpty => 'Qaytarishlar yo‘q';
+
+  @override
+  String get returnAction => 'Qaytarish';
+
+  @override
+  String get returnRequestTitle => 'Tovarni qaytarish';
+
+  @override
+  String get returnChooseItems => 'Qaytariladigan tovarlar';
+
+  @override
+  String get returnNothingToReturn => 'Qaytariladigan tovar qolmagan';
+
+  @override
+  String get returnReason => 'Sabab';
+
+  @override
+  String get returnSelectReason => 'Sababni tanlang';
+
+  @override
+  String get returnComment => 'Izoh';
+
+  @override
+  String get returnCommentHint => 'Muammoni qisqacha yozing';
+
+  @override
+  String get returnPhotos => 'Rasmlar (3 tagacha)';
+
+  @override
+  String get returnAddPhoto => 'Rasm';
+
+  @override
+  String get returnRemovePhoto => 'Rasmni olib tashlash';
+
+  @override
+  String get returnRefundMethod => 'Pulni qaytarish usuli';
+
+  @override
+  String get returnCashbackNote =>
+      'Shu tovarlar uchun berilgan keshbek ayiriladi.';
+
+  @override
+  String get returnAmount => 'Qaytariladigan summa';
+
+  @override
+  String get returnSubmit => 'So‘rov yuborish';
+
+  @override
+  String get returnSelectItems => 'Kamida bitta tovar tanlang';
+
+  @override
+  String get returnSent => 'So‘rov yuborildi';
+
+  @override
+  String returnNumber(String number) {
+    return 'Qaytarish #$number';
+  }
+
+  @override
+  String get returnWithheld => 'Keshbek ushlab qolindi';
+
+  @override
+  String get returnCancel => 'So‘rovni bekor qilish';
+
+  @override
+  String get returnCancelConfirm => 'Qaytarish so‘rovini bekor qilasizmi?';
+
+  @override
+  String get returnCancelled => 'So‘rov bekor qilindi';
+
+  @override
+  String returnRejectReason(String reason) {
+    return 'Rad etish sababi: $reason';
+  }
+
+  @override
+  String get returnTimeline => 'Holat';
+
+  @override
+  String get returnMethod => 'Qaytarish usuli';
 }

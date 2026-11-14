@@ -73,7 +73,7 @@ public static class EscPosReceipt
         // Tovarlar bo'limi sarlavhasi.
         Write(CENTER);
         Write(BOLD_ON);
-        Line("Savdo");
+        Line(r.IsRefund ? "Qaytarish" : "Savdo");
         Write(BOLD_OFF);
         Write(LEFT);
         Divider();
@@ -108,8 +108,18 @@ public static class EscPosReceipt
         Line($"To'lov: {PaymentLabel(r.Payment)}");
         foreach (var ln in ReceiptLayout.PaymentSplitRows(r))
             Line(ln);
-        Line($"Berilgan: {r.Paid:N0}");
-        Line($"Qaytim: {r.Change:N0}");
+        if (r.IsRefund)
+        {
+            Write(BOLD_ON);
+            foreach (var ln in ReceiptLayout.RefundRows(r))
+                Line(ln);
+            Write(BOLD_OFF);
+        }
+        else
+        {
+            Line($"Berilgan: {r.Paid:N0}");
+            Line($"Qaytim: {r.Change:N0}");
+        }
         Divider();
 
         // Bonus karta bloki (mijoz biriktirilgan bo'lsa).

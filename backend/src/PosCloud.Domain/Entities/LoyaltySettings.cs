@@ -49,3 +49,16 @@ public class LoyaltyCategoryRate : BaseEntity
     /// <summary>Cashback foizi (0..100).</summary>
     public decimal Percent { get; set; }
 }
+
+/// <summary>Bonus sozlamalari o'zgarishlari tarixi (har o'zgargan maydon — alohida yozuv).</summary>
+public class LoyaltySettingsChange : BaseEntity
+{
+    public DateTime ChangedAt { get; set; } = DateTime.UtcNow;
+    public Guid? UserId { get; set; }
+    public string? UserName { get; set; }
+
+    /// <summary>Maydon: cashbackPercent, minSaleAmount, category:NOM, tier:NOM ...</summary>
+    public string Field { get; set; } = string.Empty;
+    public string? OldValue { get; set; }
+    public string? NewValue { get; set; }
+}

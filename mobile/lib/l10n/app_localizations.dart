@@ -3169,6 +3169,492 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Siz eng yuqori darajadasiz'**
   String get tierTop;
+
+  /// No description provided for @catOpensAt.
+  ///
+  /// In uz, this message translates to:
+  /// **'{time} da ochiladi'**
+  String catOpensAt(String time);
+
+  /// No description provided for @checkoutWhenOpens.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘kon ochilganda'**
+  String get checkoutWhenOpens;
+
+  /// No description provided for @checkoutWhenOpensAt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘kon ochilganda ({time})'**
+  String checkoutWhenOpensAt(String time);
+
+  /// No description provided for @checkoutPreorderHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oldindan buyurtma'**
+  String get checkoutPreorderHint;
+
+  /// No description provided for @ordersPreorderTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oldindan buyurtma'**
+  String get ordersPreorderTitle;
+
+  /// No description provided for @ordersPreorderNote.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘kon hozir yopiq. Buyurtmangiz {time} da ko‘rib chiqiladi.'**
+  String ordersPreorderNote(String time);
+
+  /// No description provided for @ordersPreorderNoteNoTime.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘kon hozir yopiq. Buyurtmangiz do‘kon ochilganda ko‘rib chiqiladi.'**
+  String get ordersPreorderNoteNoTime;
+
+  /// No description provided for @courierTabOffers.
+  ///
+  /// In uz, this message translates to:
+  /// **'Takliflar'**
+  String get courierTabOffers;
+
+  /// No description provided for @courierOffersEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha taklif yo‘q'**
+  String get courierOffersEmpty;
+
+  /// No description provided for @courierOfferTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi buyurtma'**
+  String get courierOfferTitle;
+
+  /// No description provided for @courierOfferNumber.
+  ///
+  /// In uz, this message translates to:
+  /// **'Buyurtma #{number}'**
+  String courierOfferNumber(String number);
+
+  /// No description provided for @courierOfferExpired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Taklif vaqti tugadi'**
+  String get courierOfferExpired;
+
+  /// No description provided for @courierOfferAccept.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qabul qilaman'**
+  String get courierOfferAccept;
+
+  /// No description provided for @courierOfferDecline.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rad etaman'**
+  String get courierOfferDecline;
+
+  /// No description provided for @courierOfferTaken.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshqa kuryer oldi'**
+  String get courierOfferTaken;
+
+  /// No description provided for @courierOfferClosed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Taklif yopildi'**
+  String get courierOfferClosed;
+
+  /// No description provided for @courierOfferAccepted.
+  ///
+  /// In uz, this message translates to:
+  /// **'Buyurtma sizga biriktirildi'**
+  String get courierOfferAccepted;
+
+  /// No description provided for @courierOfferCash.
+  ///
+  /// In uz, this message translates to:
+  /// **'Naqd to‘lov'**
+  String get courierOfferCash;
+
+  /// No description provided for @courierOfferPaidOrCard.
+  ///
+  /// In uz, this message translates to:
+  /// **'Karta / to‘langan'**
+  String get courierOfferPaidOrCard;
+
+  /// No description provided for @courierBack.
+  ///
+  /// In uz, this message translates to:
+  /// **'Orqaga'**
+  String get courierBack;
+
+  /// No description provided for @courierPickedUpFromStore.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘kondan oldim'**
+  String get courierPickedUpFromStore;
+
+  /// No description provided for @courierAwaitingPickup.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘kondan olish'**
+  String get courierAwaitingPickup;
+
+  /// No description provided for @courierDonePickedUp.
+  ///
+  /// In uz, this message translates to:
+  /// **'Buyurtma yo‘lda'**
+  String get courierDonePickedUp;
+
+  /// No description provided for @courierReturnTask.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish'**
+  String get courierReturnTask;
+
+  /// No description provided for @courierReturnNumber.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish #{number}'**
+  String courierReturnNumber(String number);
+
+  /// No description provided for @courierReturnPickedUp.
+  ///
+  /// In uz, this message translates to:
+  /// **'Olib ketildi'**
+  String get courierReturnPickedUp;
+
+  /// No description provided for @courierReturnPickedUpConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tovarlarni mijozdan olganingizni tasdiqlaysizmi?'**
+  String get courierReturnPickedUpConfirm;
+
+  /// No description provided for @courierReturnDone.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish olib ketildi'**
+  String get courierReturnDone;
+
+  /// No description provided for @courierReturnNoCash.
+  ///
+  /// In uz, this message translates to:
+  /// **'Pul berilmaydi — do‘kon o‘zi qaytaradi'**
+  String get courierReturnNoCash;
+
+  /// No description provided for @courierRejectItems.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ba’zi tovarlarni rad etdi'**
+  String get courierRejectItems;
+
+  /// No description provided for @courierRejectTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz qaysi tovarlarni olmadi?'**
+  String get courierRejectTitle;
+
+  /// No description provided for @courierRejectedEdit.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rad etilganlarni o‘zgartirish'**
+  String get courierRejectedEdit;
+
+  /// No description provided for @courierToCollect.
+  ///
+  /// In uz, this message translates to:
+  /// **'Olinadigan summa'**
+  String get courierToCollect;
+
+  /// No description provided for @courierRejectApprox.
+  ///
+  /// In uz, this message translates to:
+  /// **'Taxminiy — yakuniy summani server hisoblaydi'**
+  String get courierRejectApprox;
+
+  /// No description provided for @courierSave.
+  ///
+  /// In uz, this message translates to:
+  /// **'Saqlash'**
+  String get courierSave;
+
+  /// No description provided for @returnReasonDamaged.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shikastlangan'**
+  String get returnReasonDamaged;
+
+  /// No description provided for @returnReasonWrongItem.
+  ///
+  /// In uz, this message translates to:
+  /// **'Noto‘g‘ri tovar'**
+  String get returnReasonWrongItem;
+
+  /// No description provided for @returnReasonQuality.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sifatsiz'**
+  String get returnReasonQuality;
+
+  /// No description provided for @returnReasonExpired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muddati o‘tgan'**
+  String get returnReasonExpired;
+
+  /// No description provided for @returnReasonMissing.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yetishmaydi'**
+  String get returnReasonMissing;
+
+  /// No description provided for @returnReasonOther.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshqa'**
+  String get returnReasonOther;
+
+  /// No description provided for @refundMethodCash.
+  ///
+  /// In uz, this message translates to:
+  /// **'Naqd (do‘konda)'**
+  String get refundMethodCash;
+
+  /// No description provided for @refundMethodTransfer.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kartaga o‘tkazma'**
+  String get refundMethodTransfer;
+
+  /// No description provided for @refundMethodBonus.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bonus ball'**
+  String get refundMethodBonus;
+
+  /// No description provided for @returnMethodCourier.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kuryer olib ketadi'**
+  String get returnMethodCourier;
+
+  /// No description provided for @returnMethodStore.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘konga o‘zingiz olib borasiz'**
+  String get returnMethodStore;
+
+  /// No description provided for @returnStatusRequested.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ko‘rib chiqilmoqda'**
+  String get returnStatusRequested;
+
+  /// No description provided for @returnStatusApproved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tasdiqlandi'**
+  String get returnStatusApproved;
+
+  /// No description provided for @returnStatusPickupAssigned.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kuryer biriktirildi'**
+  String get returnStatusPickupAssigned;
+
+  /// No description provided for @returnStatusPickedUp.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kuryer olib ketdi'**
+  String get returnStatusPickedUp;
+
+  /// No description provided for @returnStatusReceived.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘konga yetib keldi'**
+  String get returnStatusReceived;
+
+  /// No description provided for @returnStatusRefunded.
+  ///
+  /// In uz, this message translates to:
+  /// **'Pul qaytarildi'**
+  String get returnStatusRefunded;
+
+  /// No description provided for @returnStatusRejected.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rad etildi'**
+  String get returnStatusRejected;
+
+  /// No description provided for @returnStatusCancelled.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bekor qilindi'**
+  String get returnStatusCancelled;
+
+  /// No description provided for @returnsTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarishlarim'**
+  String get returnsTitle;
+
+  /// No description provided for @returnsEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarishlar yo‘q'**
+  String get returnsEmpty;
+
+  /// No description provided for @returnAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish'**
+  String get returnAction;
+
+  /// No description provided for @returnRequestTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tovarni qaytarish'**
+  String get returnRequestTitle;
+
+  /// No description provided for @returnChooseItems.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytariladigan tovarlar'**
+  String get returnChooseItems;
+
+  /// No description provided for @returnNothingToReturn.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytariladigan tovar qolmagan'**
+  String get returnNothingToReturn;
+
+  /// No description provided for @returnReason.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sabab'**
+  String get returnReason;
+
+  /// No description provided for @returnSelectReason.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sababni tanlang'**
+  String get returnSelectReason;
+
+  /// No description provided for @returnComment.
+  ///
+  /// In uz, this message translates to:
+  /// **'Izoh'**
+  String get returnComment;
+
+  /// No description provided for @returnCommentHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muammoni qisqacha yozing'**
+  String get returnCommentHint;
+
+  /// No description provided for @returnPhotos.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rasmlar (3 tagacha)'**
+  String get returnPhotos;
+
+  /// No description provided for @returnAddPhoto.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rasm'**
+  String get returnAddPhoto;
+
+  /// No description provided for @returnRemovePhoto.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rasmni olib tashlash'**
+  String get returnRemovePhoto;
+
+  /// No description provided for @returnRefundMethod.
+  ///
+  /// In uz, this message translates to:
+  /// **'Pulni qaytarish usuli'**
+  String get returnRefundMethod;
+
+  /// No description provided for @returnCashbackNote.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shu tovarlar uchun berilgan keshbek ayiriladi.'**
+  String get returnCashbackNote;
+
+  /// No description provided for @returnAmount.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytariladigan summa'**
+  String get returnAmount;
+
+  /// No description provided for @returnSubmit.
+  ///
+  /// In uz, this message translates to:
+  /// **'So‘rov yuborish'**
+  String get returnSubmit;
+
+  /// No description provided for @returnSelectItems.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kamida bitta tovar tanlang'**
+  String get returnSelectItems;
+
+  /// No description provided for @returnSent.
+  ///
+  /// In uz, this message translates to:
+  /// **'So‘rov yuborildi'**
+  String get returnSent;
+
+  /// No description provided for @returnNumber.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish #{number}'**
+  String returnNumber(String number);
+
+  /// No description provided for @returnWithheld.
+  ///
+  /// In uz, this message translates to:
+  /// **'Keshbek ushlab qolindi'**
+  String get returnWithheld;
+
+  /// No description provided for @returnCancel.
+  ///
+  /// In uz, this message translates to:
+  /// **'So‘rovni bekor qilish'**
+  String get returnCancel;
+
+  /// No description provided for @returnCancelConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish so‘rovini bekor qilasizmi?'**
+  String get returnCancelConfirm;
+
+  /// No description provided for @returnCancelled.
+  ///
+  /// In uz, this message translates to:
+  /// **'So‘rov bekor qilindi'**
+  String get returnCancelled;
+
+  /// No description provided for @returnRejectReason.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rad etish sababi: {reason}'**
+  String returnRejectReason(String reason);
+
+  /// No description provided for @returnTimeline.
+  ///
+  /// In uz, this message translates to:
+  /// **'Holat'**
+  String get returnTimeline;
+
+  /// No description provided for @returnMethod.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish usuli'**
+  String get returnMethod;
 }
 
 class _AppLocalizationsDelegate

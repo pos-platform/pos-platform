@@ -95,6 +95,13 @@ public partial class ReceiptPreviewWindow : Window
                         Render();
                         return;
                     }
+                    if (sale?.Receipt is { FiscalStatus: "Failed" })
+                    {
+                        // Fiskal xato SuperAdmin'ga (10.4); dublikat reporter ichida cheklanadi.
+                        ErrorReporter.Report("Error", $"Fiskal: chek {_receipt.ReceiptNumber} ro'yxatdan o'tmadi (Failed)",
+                            $"saleId={saleId}; terminal={AppState.TerminalId}");
+                        return;
+                    }
                 }
                 catch (OperationCanceledException) { return; }
                 catch { /* tarmoq xatosi — keyingi urinishda qayta sinaymiz */ }

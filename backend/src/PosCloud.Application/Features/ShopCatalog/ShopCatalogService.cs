@@ -379,7 +379,9 @@ public partial class ShopCatalogService : IShopCatalogService
             BonusMaxPercent = s.BonusPayEnabled ? s.BonusMaxPercent : 0,
             DeliveryRadiusKm = s.DeliveryRadiusKm,
             SupportPhone = s.SupportPhone,
-            SupportTelegram = s.SupportTelegram
+            SupportTelegram = s.SupportTelegram,
+            AcceptWhenClosed = s.AcceptWhenClosed,
+            NextOpenAt = IsWithinHours(s.OpensAt, s.ClosesAt) ? null : NextOpenAt(s.OpensAt, s.ClosesAt, DateTime.UtcNow)
         };
     }
 
@@ -395,6 +397,19 @@ public partial class ShopCatalogService : IShopCatalogService
         return opens < closes
             ? now >= opens && now < closes
             : now >= opens || now < closes;
+    }
+
+    /// <summary>
+    /// Keyingi ochilish vaqti (UTC): mahalliy (UTC+5) bugungi OpensAt, o'tib ketgan bo'lsa — ertangi.
+    /// Tungi smena (22:00–06:00) ham shu formula bilan to'g'ri chiqadi. Ish vaqti berilmagan — null (doim ochiq).
+    /// </summary>
+    public static DateTime? NextOpenAt(TimeOnly? opens, TimeOnly? closes, DateTime utc)
+    {
+        if (opens is null || closes is null || opens == closes) return null;
+        var local = utc + LocalOffset;
+        var candidate = local.Date + opens.Value.ToTimeSpan();
+        if (candidate <= local) candidate = candidate.AddDays(1);
+        return DateTime.SpecifyKind(candidate - LocalOffset, DateTimeKind.Utc);
     }
 
     internal static double HaversineKm(double lat1, double lon1, double lat2, double lon2)

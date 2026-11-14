@@ -1,10 +1,10 @@
 <script setup>
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter, RouterView, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from './stores/auth'
 import { useStoreFilterStore } from './stores/storeFilter'
-import { usersApi } from './api/catalog'
+import { usersApi, adminErrorsApi } from './api/catalog'
 
 const auth = useAuthStore()
 const storeFilter = useStoreFilterStore()
@@ -109,6 +109,7 @@ const navItems = [
   { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true, perm: 'cashbox.view', group: 'finance' },
   { name: 'analytics', key: 'nav.analytics', icon: '📈', admin: true, perm: 'reports.view', group: 'finance' },
   { name: 'reports', key: 'nav.reports', icon: '📊', admin: true, perm: 'reports.view', group: 'finance' },
+  { name: 'sold-items', key: 'nav.soldItems', icon: '📜', admin: true, perm: 'reports.view', group: 'finance' },
   { name: 'users', key: 'nav.users', icon: '👥', admin: true, perm: 'users.view', group: 'finance' },
   // Rollar boshqaruvi faqat SuperAdmin'da (superNavItems → admin-roles). Org admin ko'rmaydi.
   { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage', group: 'finance' }
@@ -127,8 +128,44 @@ const superNavItems = [
   { name: 'admin-roles', key: 'nav.roles', icon: '🔑' },
   { name: 'audit', key: 'nav.audit', icon: '🛡️' },
   { name: 'fiscal-audit', key: 'nav.fiscalAudit', icon: '🧾' },
-  { name: 'admin-online-stores', key: 'nav.onlineStores', icon: '📱' }
+  { name: 'admin-online-stores', key: 'nav.onlineStores', icon: '📱' },
+  { name: 'admin-errors', key: 'nav.systemErrors', icon: '🐞', badge: 'errors' }
 ]
+
+// Bosqich 10.4: SuperAdmin menyusida ochiq xatoliklar soni (60 soniyada yangilanadi).
+const openErrorCount = ref(0)
+let errorTimer = null
+async function loadErrorSummary() {
+  if (!auth.isAuthenticated || !auth.isSuperAdmin) { openErrorCount.value = 0; return }
+  try {
+    const s = await adminErrorsApi.summary()
+    openErrorCount.value = Number(s?.openCount) || 0
+  } catch {
+    // jim — belgi ishlamasa ham menyu ishlaydi
+  }
+}
+function badgeCount(item) {
+  return item.badge === 'errors' ? openErrorCount.value : 0
+}
+watch(
+  () => auth.isAuthenticated && auth.isSuperAdmin,
+  (on) => {
+    clearInterval(errorTimer)
+    errorTimer = null
+    openErrorCount.value = 0
+    if (on) {
+      loadErrorSummary()
+      errorTimer = setInterval(loadErrorSummary, 60000)
+    }
+  },
+  { immediate: true }
+)
+// Xatoliklar sahifasida hal qilinganda belgini darhol yangilash uchun
+window.addEventListener('admin-errors-changed', loadErrorSummary)
+onBeforeUnmount(() => {
+  clearInterval(errorTimer)
+  window.removeEventListener('admin-errors-changed', loadErrorSummary)
+})
 
 function canSee(i) {
   if (i.admin && auth.role !== 'Admin') return false
@@ -197,6 +234,7 @@ function logout() {
           >
             <span class="side-ico">{{ item.icon }}</span>
             <span class="side-label">{{ t(item.key) }}</span>
+            <span v-if="badgeCount(item)" class="side-badge">{{ badgeCount(item) > 99 ? '99+' : badgeCount(item) }}</span>
           </RouterLink>
         </template>
 
@@ -313,6 +351,7 @@ function logout() {
   100% { transform: translateX(-50%); }
 }
 
+.side-badge { margin-left:auto; min-width:20px; padding:1px 6px; border-radius:999px; background:var(--danger, #dc2626); color:#fff; font-size:11px; font-weight:700; text-align:center; line-height:16px; }
 .side-lang { display:flex; gap:6px; margin-bottom:8px; }
 .lang-btn { flex:1; padding:4px; border:1px solid var(--border); border-radius:4px; background:transparent; cursor:pointer; font-size:11px; color:var(--text-muted); }
 .lang-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }

@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PosCloud.Application.Common.Interfaces;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Infrastructure.Push;
 
@@ -32,11 +33,15 @@ public class FcmPushSender : IPushSender
     private string? _accessToken;
     private DateTime _accessTokenExpires;
 
-    public FcmPushSender(IHttpClientFactory httpFactory, IOptions<PushSettings> settings, ILogger<FcmPushSender> logger)
+    private readonly ISystemErrorRecorder _errors;
+
+    public FcmPushSender(IHttpClientFactory httpFactory, IOptions<PushSettings> settings, ILogger<FcmPushSender> logger,
+        ISystemErrorRecorder errors)
     {
         _httpFactory = httpFactory;
         _settings = settings.Value.Fcm;
         _logger = logger;
+        _errors = errors;
         _account = new Lazy<ServiceAccount>(LoadServiceAccount);
     }
 
@@ -85,6 +90,7 @@ public class FcmPushSender : IPushSender
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "FCM push yuborilmadi");
+            _errors.Record(SystemErrorEntry.FromException(SystemErrorSource.Background, ex, "FCM push", SystemErrorLevel.Warning));
             return PushSendResult.Failed;
         }
     }
@@ -116,6 +122,15 @@ public class FcmPushSender : IPushSender
             return PushSendResult.InvalidToken;
         }
 
+        _errors.Record(new SystemErrorEntry
+        {
+            Source = SystemErrorSource.Background,
+            Level = SystemErrorLevel.Warning,
+            Message = $"FCM push xatosi: HTTP {(int)response.StatusCode}",
+            Details = text.Length > 2000 ? text[..2000] : text,
+            ErrorType = "fcm",
+            Location = "FcmPushSender"
+        });
         _logger.LogWarning("FCM xato: {Status} {Body}", (int)response.StatusCode,
             text.Length > 500 ? text[..500] : text);
         return PushSendResult.Failed;

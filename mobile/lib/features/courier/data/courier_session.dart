@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_exception.dart';
+import '../../../core/push/push_service.dart';
 
 /// Kuryer sessiyasi — xodim JWT (`POST /api/auth/login`). Mijoz sessiyasidan butunlay alohida:
 /// boshqa kalitda saqlanadi, boshqa Dio bilan yuboriladi. Refresh token yo'q — muddati tugasa qayta kirish so'raladi.
@@ -187,6 +188,9 @@ class CourierAuthController extends Notifier<CourierAuthState> {
 
   /// Kuryer o'zi chiqdi — mijoz login ekraniga qaytadi.
   Future<void> logout() async {
+    // Kelishuv 10.6: push tokeni serverdan o'chiriladi (xato chiqishni to'xtatmaydi).
+    final token = state.session?.token;
+    if (token != null) await ref.read(pushServiceProvider).unregisterCourier(token);
     await _storage.clear();
     state = const CourierAuthState(CourierAuthStatus.none);
   }

@@ -26,9 +26,12 @@ public class FiscalQueueService : IFiscalQueueService
     /// </summary>
     private const int MaxFiscalRetries = 30;
 
-    public FiscalQueueService(IApplicationDbContext db)
+    private readonly ISystemErrorRecorder _errors;
+
+    public FiscalQueueService(IApplicationDbContext db, ISystemErrorRecorder errors)
     {
         _db = db;
+        _errors = errors;
     }
 
     public async Task<IReadOnlyList<PendingReceiptDto>> GetPendingAsync(int max, string? terminalId = null, CancellationToken cancellationToken = default)
@@ -106,6 +109,27 @@ public class FiscalQueueService : IFiscalQueueService
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        // Yakuniy fiskal xato — SuperAdmin "Xatoliklar"ga (tashkilot bo'yicha guruhlanadi; chek tafsiloti yozilmaydi).
+        if (!result.Success && receipt.FiscalStatus == FiscalStatus.Failed)
+        {
+            var sale = await _db.Sales.AsNoTracking()
+                .Where(s => s.Id == saleId)
+                .Select(s => new { s.OrganizationId, s.BranchId, s.TerminalId, s.ReceiptNumber })
+                .FirstOrDefaultAsync(cancellationToken);
+            await _errors.RecordAsync(new SystemErrorEntry
+            {
+                Source = Domain.Enums.SystemErrorSource.Fiscal,
+                Level = Domain.Enums.SystemErrorLevel.Error,
+                Message = $"Fiskal chek ro'yxatdan o'tmadi: {result.ErrorMessage ?? "noma'lum xato"}",
+                Details = $"Chek: {sale?.ReceiptNumber}; kassa: {sale?.TerminalId}; urinishlar: {receipt.FiscalRetryCount}",
+                ErrorType = "fiscal",
+                Location = "FiscalQueueService.ApplyResult",
+                OrganizationId = sale?.OrganizationId,
+                BranchId = sale?.BranchId,
+                Device = sale?.TerminalId
+            }, cancellationToken);
+        }
     }
 
     /// <summary>

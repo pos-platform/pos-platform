@@ -21,17 +21,34 @@ public class ReceiptPrinter
     /// pastdagi "Chop etish" (oddiy nusxa) uchun qisqa ko'rinish.</param>
     public void Print(ReceiptData r, string? printerName, bool showCodes = true)
     {
-        var name = ResolvePrinterName(printerName);
-        var data = EscPosReceipt.BuildReceipt(r, showCodes: showCodes);
-        EscPosReceipt.SendRaw(name, data, "Chek " + r.ReceiptNumber);
+        try
+        {
+            var name = ResolvePrinterName(printerName);
+            var data = EscPosReceipt.BuildReceipt(r, showCodes: showCodes);
+            EscPosReceipt.SendRaw(name, data, "Chek " + r.ReceiptNumber);
+        }
+        catch (Exception ex)
+        {
+            // Printer xatosi SuperAdmin'ga ketadi (10.4); chaqiruvchi o'zi kassirga ko'rsatadi.
+            ErrorReporter.Report(ex, "Warning", "Printer");
+            throw;
+        }
     }
 
     /// <summary>Smena yakuni (Z-hisobot) chekini termal printerga RAW ESC/POS sifatida yuboradi.</summary>
     public void PrintShiftReport(ShiftReportData r, string? printerName)
     {
-        var name = ResolvePrinterName(printerName);
-        var data = EscPosReceipt.BuildShiftReport(r);
-        EscPosReceipt.SendRaw(name, data, "Z-hisobot " + r.Shift.Id);
+        try
+        {
+            var name = ResolvePrinterName(printerName);
+            var data = EscPosReceipt.BuildShiftReport(r);
+            EscPosReceipt.SendRaw(name, data, "Z-hisobot " + r.Shift.Id);
+        }
+        catch (Exception ex)
+        {
+            ErrorReporter.Report(ex, "Warning", "Printer (Z-hisobot)");
+            throw;
+        }
     }
 
     /// <summary>Tanlangan printer nomini qaytaradi; bo'sh bo'lsa Windows standart printeri.</summary>
@@ -99,7 +116,7 @@ public class ReceiptPrinter
         Add(sep);
 
         // Tovarlar bo'limi sarlavhasi.
-        Add("Savdo", bold: true, align: TextAlignment.Center);
+        Add(r.IsRefund ? "Qaytarish" : "Savdo", bold: true, align: TextAlignment.Center);
         Add(sep);
 
         foreach (var line in r.Lines)
@@ -127,8 +144,16 @@ public class ReceiptPrinter
         Add($"To'lov: {PaymentLabel(r.Payment)}");
         foreach (var ln in ReceiptLayout.PaymentSplitRows(r))
             Add(ln);
-        Add($"Berilgan: {r.Paid:N0}");
-        Add($"Qaytim: {r.Change:N0}");
+        if (r.IsRefund)
+        {
+            foreach (var ln in ReceiptLayout.RefundRows(r))
+                Add(ln, bold: true);
+        }
+        else
+        {
+            Add($"Berilgan: {r.Paid:N0}");
+            Add($"Qaytim: {r.Change:N0}");
+        }
         Add(sep);
 
         // Bonus karta bloki (mijoz biriktirilgan bo'lsa).

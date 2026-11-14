@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PosCloud.Api.Authorization;
+using PosCloud.Application.Common.Authorization;
 using PosCloud.Application.Features.Reports;
+using PosCloud.Application.Features.Reports.Dtos;
 
 namespace PosCloud.Api.Controllers;
 
@@ -36,6 +39,23 @@ public class ReportsController : ControllerBase
         var t    = (to   ?? DateTime.Today).Date;
         var bytes = await _reports.ExportSalesReportAsync(f, t, branchId, ct);
         var name  = $"savdolar-hisoboti-{f:yyyy-MM-dd}-{t:yyyy-MM-dd}.xlsx";
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name);
+    }
+
+    /// <summary>Sotilgan tovarlar logi (har SaleItem — qator). source: Pos|Online|All, type: Sale|Refund|All.</summary>
+    [HttpGet("sold-items")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<ActionResult<SoldItemsPageDto>> GetSoldItems([FromQuery] SoldItemsQuery query, CancellationToken ct)
+        => Ok(await _reports.GetSoldItemsAsync(query, ct));
+
+    [HttpGet("sold-items/export")]
+    [HasPermission(Permissions.ReportsView)]
+    public async Task<IActionResult> ExportSoldItems([FromQuery] SoldItemsQuery query, CancellationToken ct)
+    {
+        var bytes = await _reports.ExportSoldItemsAsync(query, ct);
+        var f = (query.From ?? DateTime.UtcNow).Date;
+        var t = (query.To ?? query.From ?? DateTime.UtcNow).Date;
+        var name = $"sotuvlar-logi-{f:yyyy-MM-dd}-{t:yyyy-MM-dd}.xlsx";
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name);
     }
 

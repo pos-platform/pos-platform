@@ -60,6 +60,9 @@ public static class DependencyInjection
         services.AddSingleton<IProductExcelService, ProductExcelService>();
         services.AddSingleton<IReportExcelService, ReportExcelService>();
 
+        // Bosqich 10: xatoliklarni SuperAdmin uchun yozish (alohida scope, xato otmaydi).
+        services.AddSingleton<ISystemErrorRecorder, PosCloud.Infrastructure.Diagnostics.SystemErrorRecorder>();
+
         return services;
     }
 }

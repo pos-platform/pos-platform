@@ -61,6 +61,12 @@ public class ShopStoreDto
     /// <summary>Mijozlar uchun yordam: telefon va Telegram username (@ siz).</summary>
     public string? SupportPhone { get; set; }
     public string? SupportTelegram { get; set; }
+
+    /// <summary>Do'kon yopiq paytda ham buyurtma qabul qilinadi (oldindan buyurtma).</summary>
+    public bool AcceptWhenClosed { get; set; }
+
+    /// <summary>Ish vaqti bo'yicha yopiq bo'lsa — keyingi ochilish vaqti (UTC); ochiq bo'lsa null.</summary>
+    public DateTime? NextOpenAt { get; set; }
 }
 
 /// <summary>Alohida (white-label) do'kon ilovasi ochilganda oladigan ma'lumot: brend va ko'rinadigan filiallar.</summary>

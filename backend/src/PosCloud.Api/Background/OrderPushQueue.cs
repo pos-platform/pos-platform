@@ -70,6 +70,7 @@ public class OrderPushService : BackgroundService
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Buyurtma push'i yuborilmadi: {OrderId}", push.OrderId);
+                    BackgroundErrors.Report(_scopeFactory, "OrderPush", ex, level: PosCloud.Domain.Enums.SystemErrorLevel.Warning);
                 }
             }
         }

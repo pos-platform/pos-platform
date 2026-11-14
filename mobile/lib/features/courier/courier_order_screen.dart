@@ -9,6 +9,8 @@ import '../../core/api/api_exception.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../returns/data/return_models.dart';
+import '../returns/widgets/return_format.dart';
 import 'courier_navigation.dart';
 import 'courier_updates.dart';
 import 'data/courier_models.dart';
@@ -28,6 +30,35 @@ class CourierOrderScreen extends ConsumerStatefulWidget {
 class _CourierOrderScreenState extends ConsumerState<CourierOrderScreen> {
   Timer? _poll;
   bool _busy = false;
+
+  /// Eshik oldida mijoz olmagan qatorlar (kelishuv 10.5) — "Yetkazildi" bilan birga yuboriladi.
+  List<CourierRejectedItem> _rejected = const [];
+
+  Future<void> _editRejected(CourierOrder o) async {
+    final result = await showModalBottomSheet<List<CourierRejectedItem>>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surface,
+      builder: (_) => CourierRejectSheet(order: o, initial: _rejected),
+    );
+    if (result != null && mounted) setState(() => _rejected = result);
+  }
+
+  Future<void> _pickedUp(CourierOrder o) async {
+    final t = AppLocalizations.of(context);
+    setState(() => _busy = true);
+    try {
+      await ref.read(courierRepositoryProvider).pickedUp(o.id);
+      ref.invalidate(courierOrderProvider(o.id));
+      ref.invalidate(courierOrdersProvider(false));
+      if (mounted) _snack(t.courierDonePickedUp);
+    } on ApiException catch (e) {
+      if (mounted) _snack(e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   void initState() {
@@ -65,7 +96,9 @@ class _CourierOrderScreenState extends ConsumerState<CourierOrderScreen> {
     final t = AppLocalizations.of(context);
     double? cash;
     if (o.mustCollectCash) {
-      cash = await showDialog<double>(context: context, builder: (_) => _CashDialog(total: o.totalAmount));
+      // Rad etilgan tovarlar ayirilgan summa (server ham qayta hisoblaydi).
+      cash = await showDialog<double>(
+          context: context, builder: (_) => _CashDialog(total: courierAmountToCollect(o, _rejected)));
       if (cash == null) return;
     } else {
       final ok = await showDialog<bool>(
@@ -83,7 +116,7 @@ class _CourierOrderScreenState extends ConsumerState<CourierOrderScreen> {
     if (!mounted) return;
     setState(() => _busy = true);
     try {
-      await ref.read(courierRepositoryProvider).delivered(o.id, cashCollected: cash);
+      await ref.read(courierRepositoryProvider).delivered(o.id, cashCollected: cash, rejectedItems: _rejected);
       if (mounted) _finish(t.courierDoneDelivered);
     } on ApiException catch (e) {
       if (mounted) _snack(e.message);
@@ -145,12 +178,24 @@ class _CourierOrderScreenState extends ConsumerState<CourierOrderScreen> {
             onYandex: () => _openNav(() => CourierNavigation.yandex(o)),
             onGoogle: () => _openNav(() => CourierNavigation.google(o)),
             onCall: o.customerPhone == null ? null : () => _openNav(() => CourierNavigation.call(o.customerPhone!)),
+            rejected: _rejected,
+            onReject: o.isActive && o.items.any((i) => i.id != null) ? () => _editRejected(o) : null,
           ),
         ),
       ),
-      bottomNavigationBar: order == null || !order.isActive
+      bottomNavigationBar: order == null || !(order.isActive || order.isAwaitingPickup)
           ? null
-          : SafeArea(
+          : order.isAwaitingPickup
+              // Taklif qabul qilingan — do'kondan olgach "Do'kondan oldim" → OnTheWay (kelishuv 10.6).
+              ? SafeArea(
+                  minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: FilledButton.icon(
+                    onPressed: _busy ? null : () => _pickedUp(order),
+                    icon: const Icon(Icons.shopping_bag_outlined),
+                    label: Text(t.courierPickedUpFromStore),
+                  ),
+                )
+              : SafeArea(
               minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               child: Row(children: [
                 Expanded(
@@ -182,12 +227,23 @@ class _CourierOrderScreenState extends ConsumerState<CourierOrderScreen> {
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.order, required this.onYandex, required this.onGoogle, required this.onCall});
+  const _Body({
+    required this.order,
+    required this.onYandex,
+    required this.onGoogle,
+    required this.onCall,
+    this.rejected = const [],
+    this.onReject,
+  });
 
   final CourierOrder order;
   final VoidCallback onYandex;
   final VoidCallback onGoogle;
   final VoidCallback? onCall;
+  final List<CourierRejectedItem> rejected;
+
+  /// Null — rad etish mumkin emas (yo'lda emas yoki server qator ID bermagan).
+  final VoidCallback? onReject;
 
   @override
   Widget build(BuildContext context) {
@@ -300,12 +356,53 @@ class _Body extends StatelessWidget {
                 Text(CourierFormat.money(t, it.lineTotal), style: const TextStyle(fontWeight: FontWeight.w700)),
               ]),
             ),
+          // Rad etilgan qatorlar (eshik oldida).
+          for (final r in rejected)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(children: [
+                const Icon(Icons.remove_circle_outline, size: 18, color: AppColors.danger),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${_itemName(o, r.itemId)} × ${CourierFormat.number(r.quantity)} · ${returnReasonLabel(t, ReturnReason.parse(r.reason))}',
+                    style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Text('−${CourierFormat.money(t, r.quantity * r.unitPrice)}',
+                    style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+              ]),
+            ),
+          if (onReject != null) ...[
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: onReject,
+                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                icon: const Icon(Icons.block, size: 18),
+                label: Text(rejected.isEmpty ? t.courierRejectItems : t.courierRejectedEdit),
+              ),
+            ),
+          ],
           const Divider(height: 24, color: AppColors.borderSoft),
           Row(children: [
             Expanded(child: Text(t.courierTotal, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
             Text(CourierFormat.money(t, o.totalAmount),
                 style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
           ]),
+          if (rejected.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                child: Text(t.courierToCollect,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: AppColors.accent)),
+              ),
+              Text(CourierFormat.money(t, courierAmountToCollect(o, rejected)),
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: AppColors.accent)),
+            ]),
+            Text(t.courierRejectApprox, style: label),
+          ],
         ]),
       ],
     );
@@ -465,6 +562,127 @@ class _FailReasonSheetState extends State<_FailReasonSheet> {
             child: Text(t.courierConfirm),
           ),
         ]),
+      ),
+    );
+  }
+}
+
+String _itemName(CourierOrder o, String itemId) {
+  for (final it in o.items) {
+    if (it.id == itemId) return it.productName;
+  }
+  return '—';
+}
+
+/// "Ba'zi tovarlarni rad etdi": qatorni belgilash, miqdor va sabab. Natija — rad etilgan qatorlar ro'yxati.
+class CourierRejectSheet extends StatefulWidget {
+  const CourierRejectSheet({super.key, required this.order, this.initial = const []});
+
+  final CourierOrder order;
+  final List<CourierRejectedItem> initial;
+
+  @override
+  State<CourierRejectSheet> createState() => _CourierRejectSheetState();
+}
+
+class _CourierRejectSheetState extends State<CourierRejectSheet> {
+  /// itemId → miqdor.
+  final _qty = <String, double>{};
+  ReturnReason _reason = ReturnReason.damaged;
+
+  @override
+  void initState() {
+    super.initState();
+    for (final r in widget.initial) {
+      _qty[r.itemId] = r.quantity;
+      _reason = ReturnReason.parse(r.reason);
+    }
+  }
+
+  /// Tarozi tovarida qadam 0.1, donada 1.
+  static double _step(CourierOrderItem it) => it.quantity == it.quantity.roundToDouble() ? 1 : 0.1;
+
+  void _change(CourierOrderItem it, double delta) {
+    final id = it.id!;
+    final next = ((_qty[id] ?? 0) + delta).clamp(0, it.quantity).toDouble();
+    setState(() => next <= 0.0001 ? _qty.remove(id) : _qty[id] = double.parse(next.toStringAsFixed(3)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final items = widget.order.items.where((i) => i.id != null).toList();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.8),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(t.courierRejectTitle, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView(shrinkWrap: true, children: [
+                for (final it in items)
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: AppColors.danger,
+                    value: _qty.containsKey(it.id),
+                    onChanged: (v) => setState(() => v == true ? _qty[it.id!] = it.quantity : _qty.remove(it.id)),
+                    title: Text(it.productName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text('${CourierFormat.number(it.quantity)} × ${CourierFormat.money(t, it.unitPrice)}'),
+                    secondary: _qty.containsKey(it.id)
+                        ? Row(mainAxisSize: MainAxisSize.min, children: [
+                            IconButton(
+                              tooltip: '−',
+                              onPressed: () => _change(it, -_step(it)),
+                              icon: const Icon(Icons.remove),
+                            ),
+                            Text(CourierFormat.number(_qty[it.id]!), style: const TextStyle(fontWeight: FontWeight.w800)),
+                            IconButton(
+                              tooltip: '+',
+                              onPressed: (_qty[it.id] ?? 0) >= it.quantity ? null : () => _change(it, _step(it)),
+                              icon: const Icon(Icons.add),
+                            ),
+                          ])
+                        : null,
+                  ),
+                const SizedBox(height: 8),
+                Text(t.returnReason, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final r in ReturnReason.values)
+                    ChoiceChip(
+                      label: Text(returnReasonLabel(t, r)),
+                      selected: _reason == r,
+                      onSelected: (_) => setState(() => _reason = r),
+                      selectedColor: AppColors.primarySoft,
+                      labelStyle: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: _reason == r ? AppColors.primary : AppColors.text,
+                      ),
+                    ),
+                ]),
+              ]),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, [
+                for (final it in items)
+                  if (_qty[it.id] != null)
+                    CourierRejectedItem(
+                      itemId: it.id!,
+                      quantity: _qty[it.id]!,
+                      reason: _reason.apiName,
+                      unitPrice: it.unitPrice,
+                    ),
+              ]),
+              child: Text(t.courierSave),
+            ),
+          ]),
+        ),
       ),
     );
   }

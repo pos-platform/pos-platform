@@ -68,6 +68,12 @@ public class OfflineStore : IDisposable
                 CountedCash  REAL NOT NULL,
                 QueuedAt     TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS PendingClientErrors (
+                Id        TEXT PRIMARY KEY,
+                Payload   TEXT NOT NULL,
+                CreatedAt TEXT NOT NULL,
+                Attempts  INTEGER NOT NULL DEFAULT 0
+            );
             INSERT OR IGNORE INTO ShiftCache(Key, Payload) VALUES('current', NULL);
         ");
 
@@ -342,6 +348,47 @@ public class OfflineStore : IDisposable
     {
         using var cmd = Cmd("SELECT COUNT(*) FROM PendingSales WHERE Blocked = 0");
         return Convert.ToInt32(cmd.ExecuteScalar());
+    }
+
+    // ─── Xatolik hisobotlari navbati (10.4, /api/client-errors) ─────────────
+
+    /// <summary>Navbatda saqlanadigan eng ko'p hisobot — eskilari o'chiriladi (disk to'lmasin).</summary>
+    private const int MaxPendingClientErrors = 200;
+
+    public void EnqueueClientError(string payloadJson)
+    {
+        var cmd = Cmd("INSERT OR REPLACE INTO PendingClientErrors(Id,Payload,CreatedAt,Attempts) VALUES(@Id,@P,@At,0)");
+        cmd.Parameters.AddWithValue("@Id", Guid.NewGuid().ToString("N"));
+        cmd.Parameters.AddWithValue("@P", payloadJson);
+        cmd.Parameters.AddWithValue("@At", DateTime.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+        Exec($"DELETE FROM PendingClientErrors WHERE Id NOT IN " +
+             $"(SELECT Id FROM PendingClientErrors ORDER BY CreatedAt DESC LIMIT {MaxPendingClientErrors})");
+    }
+
+    public List<(string Id, string Payload, int Attempts)> GetPendingClientErrors(int limit = 20)
+    {
+        var list = new List<(string, string, int)>();
+        using var cmd = Cmd("SELECT Id, Payload, Attempts FROM PendingClientErrors ORDER BY CreatedAt LIMIT @L");
+        cmd.Parameters.AddWithValue("@L", limit);
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add((r.GetString(0), r.GetString(1), r.GetInt32(2)));
+        return list;
+    }
+
+    public void RemovePendingClientError(string id)
+    {
+        var cmd = Cmd("DELETE FROM PendingClientErrors WHERE Id=@Id");
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void MarkClientErrorRetry(string id)
+    {
+        var cmd = Cmd("UPDATE PendingClientErrors SET Attempts = Attempts + 1 WHERE Id=@Id");
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.ExecuteNonQuery();
     }
 
     // ─── Yordamchilar ───────────────────────────────────────────────────────

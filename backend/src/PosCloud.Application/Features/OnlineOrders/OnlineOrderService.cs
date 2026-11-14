@@ -40,6 +40,17 @@ public interface IOnlineOrderService
 
     /// <summary>Mijoz baholari: o'rtacha, taqsimot, teglar, izohlar (ratedAt bo'yicha; standart — oxirgi 30 kun).</summary>
     Task<OnlineOrderRatingsDto> GetRatingsAsync(DateTime? from, DateTime? to, Guid? branchId, CancellationToken ct = default);
+
+    // ---- Bosqich 10 ----
+
+    /// <summary>Kuryerlarga taklifni (qayta) yuborish.</summary>
+    Task<OnlineOrderDto> OfferCouriersAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Eshik oldida rad etilgan, hali do'konga qabul qilinmagan buyurtmalar.</summary>
+    Task<IReadOnlyList<OnlineOrderDto>> GetRejectedPendingAsync(Guid? branchId, CancellationToken ct = default);
+
+    /// <summary>Rad etilgan tovarlar do'konga keldi: ombor qoldig'i qaytadi, RejectedReturnedAt.</summary>
+    Task<OnlineOrderDto> RejectedReceivedAsync(Guid id, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -54,15 +65,17 @@ public class OnlineOrderService : IOnlineOrderService
     private readonly ISaleService _sales;
     private readonly IOnlineOrderNotifier _notifier;
     private readonly IShopPushQueue _pushQueue;
+    private readonly Courier.ICourierOfferService _offers;
 
     public OnlineOrderService(IApplicationDbContext db, ICurrentUser currentUser, ISaleService sales,
-        IOnlineOrderNotifier notifier, IShopPushQueue pushQueue)
+        IOnlineOrderNotifier notifier, IShopPushQueue pushQueue, Courier.ICourierOfferService offers)
     {
         _db = db;
         _currentUser = currentUser;
         _sales = sales;
         _notifier = notifier;
         _pushQueue = pushQueue;
+        _offers = offers;
     }
 
     public async Task<IReadOnlyList<OnlineOrderDto>> GetListAsync(Guid? branchId, bool activeOnly, DateTime? from,
@@ -107,7 +120,46 @@ public class OnlineOrderService : IOnlineOrderService
         var stock = await _db.BranchStocks.AsNoTracking()
             .Where(s => s.BranchId == order.BranchId && ids.Contains(s.ProductId))
             .ToDictionaryAsync(s => s.ProductId, s => s.Quantity, ct);
-        return OnlineOrderDto.FromEntity(order, stock);
+        var dto = OnlineOrderDto.FromEntity(order, stock);
+        dto.CourierOffers = (await _offers.GetHistoryAsync(order.Id, ct)).ToList();
+        return dto;
+    }
+
+    // ---------------- Bosqich 10 ----------------
+
+    public async Task<OnlineOrderDto> OfferCouriersAsync(Guid id, CancellationToken ct = default)
+    {
+        var order = await Load(id, ct);
+        await _offers.SendAsync(order, manual: true, ct);
+        return await GetAsync(id, ct);
+    }
+
+    public async Task<IReadOnlyList<OnlineOrderDto>> GetRejectedPendingAsync(Guid? branchId, CancellationToken ct = default)
+    {
+        var query = Scope().AsNoTracking()
+            .Include(o => o.Branch)
+            .Include(o => o.Sale)
+            .Include(o => o.Items).ThenInclude(i => i.Product)
+            .Where(o => o.RejectedReturnedAt == null && o.Items.Any(i => i.RejectedQuantity > 0));
+        if (_currentUser.BranchId is null && branchId is { } b)
+            query = query.Where(o => o.BranchId == b);
+
+        var orders = await query.OrderBy(o => o.DeliveredAt).Take(200).ToListAsync(ct);
+        return orders.Select(o => OnlineOrderDto.FromEntity(o)).ToList();
+    }
+
+    public async Task<OnlineOrderDto> RejectedReceivedAsync(Guid id, CancellationToken ct = default)
+    {
+        var order = await Load(id, ct);
+        var lines = order.Items.Where(i => i.RejectedQuantity > 0).Select(i => (i.ProductId, i.RejectedQuantity)).ToList();
+        if (lines.Count == 0) throw new ValidationException("Bu buyurtmada rad etilgan tovar yo'q.");
+        if (order.RejectedReturnedAt is not null) throw new ValidationException("Rad etilgan tovarlar allaqachon qabul qilingan.");
+
+        // Eshik oldidagi qisman refund ombor qoldig'ini qaytarmagan — tovar shu yerda (do'konga kelganda) qaytadi.
+        await _sales.ReturnToStockAsync(order.BranchId, lines, ct);
+        order.RejectedReturnedAt = DateTime.UtcNow;
+        await SaveAndNotify(order, ct);
+        return await GetAsync(id, ct);
     }
 
     public async Task<OnlineOrderDto> AcceptAsync(Guid id, CancellationToken ct = default)
@@ -389,6 +441,8 @@ public class OnlineOrderService : IOnlineOrderService
         order.Status = NextAfterReady(order, await RequireTransferBeforeDispatch(order, ct));
 
         await SaveAndNotify(order, ct);
+        // Kuryerlarga taklif (Broadcast rejimida, yetkazish va kuryer biriktirilmagan bo'lsa).
+        await _offers.SendAsync(order, manual: false, ct);
         return await GetAsync(id, ct);
     }
 
@@ -401,12 +455,14 @@ public class OnlineOrderService : IOnlineOrderService
             throw new ValidationException("To'lov allaqachon tasdiqlangan.");
 
         MarkPaid(order);
-        if (order.Status == OnlineOrderStatus.AwaitingTransfer)
+        var wasAwaiting = order.Status == OnlineOrderStatus.AwaitingTransfer;
+        if (wasAwaiting)
             order.Status = order.FulfillmentType == FulfillmentType.Pickup
                 ? OnlineOrderStatus.ReadyForPickup
                 : OnlineOrderStatus.Ready;
 
         await SaveAndNotify(order, ct);
+        if (wasAwaiting) await _offers.SendAsync(order, manual: false, ct);
         return await GetAsync(id, ct);
     }
 
@@ -442,8 +498,13 @@ public class OnlineOrderService : IOnlineOrderService
 
         order.Status = OnlineOrderStatus.OnTheWay;
         order.DispatchedAt = DateTime.UtcNow;
+        // Qo'lda berildi — kutilayotgan takliflar yopiladi.
+        var closedOffers = await _offers.CancelPendingAsync(order.Id, ct);
+        if (order.CourierOfferStatus == CourierOfferStatus.Pending)
+            order.CourierOfferStatus = order.CourierUserId is null ? CourierOfferStatus.None : CourierOfferStatus.Accepted;
 
         await SaveAndNotify(order, ct);
+        await _notifier.CourierOfferClosedAsync(order.Id, closedOffers, ct);
         if (order.CourierUserId is not null)
             await _notifier.CourierAssignedAsync(order, ct);
         return await GetAsync(id, ct);
@@ -532,6 +593,7 @@ public class OnlineOrderService : IOnlineOrderService
             order.PaymentStatus = OrderPaymentStatus.Refunded;
 
         await OnlineOrderPricing.ReleasePromoAsync(_db, order, ct);
+        var closedOffers = await _offers.CancelPendingAsync(order.Id, ct);
 
         // Yechilgan bonus mijozga qaytariladi.
         if (order.BonusCharged && order.BonusUsed > 0 && order.CustomerId is { } customerId
@@ -566,6 +628,7 @@ public class OnlineOrderService : IOnlineOrderService
             await _db.SaveChangesAsync(ct);
 
         await _notifier.OrderChangedAsync(order, isNew: false, pushToCustomer: true, ct);
+        await _notifier.CourierOfferClosedAsync(order.Id, closedOffers, ct);
         return await GetAsync(id, ct);
     }
 

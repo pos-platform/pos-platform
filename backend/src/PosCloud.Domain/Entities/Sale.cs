@@ -56,6 +56,26 @@ public class Sale : BaseEntity
     /// <summary>Kassada ball bilan to'langan summa (qatorlarga chegirma sifatida taqsimlangan).</summary>
     public decimal LoyaltyPointsRedeemed { get; set; }
 
+    // --- Qaytarish (Type = Refund) ---
+
+    /// <summary>Refund: mijozdan ayirilgan (qaytarib olingan) cashback ball.</summary>
+    public decimal LoyaltyPointsReversed { get; set; }
+
+    /// <summary>
+    /// Refund: mijoz balansi yetmagani uchun qaytariladigan puldan ushlab qolingan summa (1 ball = 1 so'm).
+    /// Fiskal chekda asl ball bilan to'lov kabi — qatorlarga chegirma sifatida taqsimlanadi.
+    /// </summary>
+    public decimal LoyaltyWithheldAmount { get; set; }
+
+    /// <summary>Refund: ball bilan to'langan qismdan mijozga ballga qaytarilgani (pul emas).</summary>
+    public decimal RedeemedPointsReturned { get; set; }
+
+    /// <summary>Refund: mijozga beriladigan pul (= TotalAmount; online qaytarishda Bonus usulida ballga o'tkaziladi).</summary>
+    public decimal RefundCashAmount { get; set; }
+
+    /// <summary>Refund sababi (ixtiyoriy).</summary>
+    public string? RefundReason { get; set; }
+
     // --- Restoran (ochiq buyurtma) metadatasi ---
 
     /// <summary>Restoran stoli — ochiq buyurtma qaysi stolga tegishli (ixtiyoriy).</summary>

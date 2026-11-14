@@ -40,10 +40,29 @@ public class OnlineOrdersController : ControllerBase
         [FromQuery] Guid? branchId, CancellationToken ct) =>
         Ok(await _service.GetRatingsAsync(from, to, branchId, ct));
 
+    /// <summary>Eshik oldida rad etilgan, hali do'konga qabul qilinmagan buyurtmalar ("Kuryer qaytargan tovarlar").</summary>
+    [HttpGet("rejected-pending")]
+    [HasPermission(Permissions.SalesView)]
+    public async Task<ActionResult<IReadOnlyList<OnlineOrderDto>>> GetRejectedPending([FromQuery] Guid? branchId,
+        CancellationToken ct) =>
+        Ok(await _service.GetRejectedPendingAsync(branchId, ct));
+
     [HttpGet("{id:guid}")]
     [HasPermission(Permissions.SalesView)]
     public async Task<ActionResult<OnlineOrderDto>> Get(Guid id, CancellationToken ct) =>
         Ok(await _service.GetAsync(id, ct));
+
+    /// <summary>Rad etilgan tovarlar do'konga keldi — ombor qoldig'i qaytadi.</summary>
+    [HttpPost("{id:guid}/rejected-received")]
+    [HasPermission(Permissions.SalesCreate)]
+    public async Task<ActionResult<OnlineOrderDto>> RejectedReceived(Guid id, CancellationToken ct) =>
+        Ok(await _service.RejectedReceivedAsync(id, ct));
+
+    /// <summary>Kuryerlarga taklifni (qayta) yuborish — faqat tayyor, kuryersiz yetkazish buyurtmasi.</summary>
+    [HttpPost("{id:guid}/offer-couriers")]
+    [HasPermission(Permissions.SalesCreate)]
+    public async Task<ActionResult<OnlineOrderDto>> OfferCouriers(Guid id, CancellationToken ct) =>
+        Ok(await _service.OfferCouriersAsync(id, ct));
 
     [HttpPost("{id:guid}/accept")]
     [HasPermission(Permissions.SalesCreate)]

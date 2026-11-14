@@ -93,6 +93,54 @@ public class ReportExcelService : IReportExcelService
         ws.SheetView.FreezeRows(1);
     }
 
+    public byte[] ExportSoldItems(IReadOnlyList<SoldItemDto> items)
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Sotuvlar logi");
+        AddHeader(ws, new[]
+        {
+            "Vaqt (UTC+5)", "Chek", "Turi", "Manba", "Filial", "Kassir", "Mijoz", "Mahsulot", "Barcode", "Miqdor",
+            "Qaytarilgan", "Narx", "Chegirma", "Summa", "Tannarx", "Foyda", "To'lov", "Keshbek", "Fiskal", "Online #"
+        });
+        var r = 2;
+        foreach (var i in items)
+        {
+            var isRefund = i.Type == Domain.Enums.SaleType.Refund;
+            ws.Cell(r, 1).Value = i.SoldAt.AddHours(5).ToString("yyyy-MM-dd HH:mm");
+            ws.Cell(r, 2).Value = i.ReceiptNumber;
+            ws.Cell(r, 3).Value = isRefund ? "Qaytarish" : "Sotuv";
+            ws.Cell(r, 4).Value = i.Source;
+            ws.Cell(r, 5).Value = i.BranchName ?? "";
+            ws.Cell(r, 6).Value = i.CashierName ?? "";
+            ws.Cell(r, 7).Value = i.CustomerName ?? "";
+            ws.Cell(r, 8).Value = i.ProductName;
+            ws.Cell(r, 9).Value = i.Barcode ?? "";
+            ws.Cell(r, 10).Value = (double)i.Quantity;
+            ws.Cell(r, 11).Value = (double)i.RefundedQuantity;
+            ws.Cell(r, 12).Value = (double)i.UnitPrice;
+            ws.Cell(r, 13).Value = (double)i.DiscountAmount;
+            ws.Cell(r, 14).Value = (double)(isRefund ? -i.LineTotal : i.LineTotal);
+            ws.Cell(r, 15).Value = (double)i.CostPrice;
+            ws.Cell(r, 16).Value = (double)i.Profit;
+            ws.Cell(r, 17).Value = i.PaymentMethod.ToString();
+            ws.Cell(r, 18).Value = (double)i.CashbackEarned;
+            ws.Cell(r, 19).Value = i.FiscalStatus?.ToString() ?? "";
+            ws.Cell(r, 20).Value = i.OnlineOrderNumber is { } n ? n.ToString() : "";
+            if (isRefund) ws.Row(r).Style.Font.FontColor = XLColor.FromHtml("#b91c1c");
+            r++;
+        }
+        ws.Cell(r, 1).Value = "JAMI";
+        ws.Cell(r, 14).FormulaA1 = r > 2 ? $"SUM(N2:N{r - 1})" : "0";
+        ws.Cell(r, 16).FormulaA1 = r > 2 ? $"SUM(P2:P{r - 1})" : "0";
+        ws.Row(r).Style.Font.Bold = true;
+        ws.Columns(12, 16).Style.NumberFormat.Format = "#,##0";
+        ws.Column(18).Style.NumberFormat.Format = "#,##0";
+        ws.Columns().AdjustToContents();
+        ws.Column(8).Width = Math.Max(ws.Column(8).Width, 28);
+
+        return ToBytes(wb);
+    }
+
     private static byte[] ToBytes(XLWorkbook wb)
     {
         using var ms = new MemoryStream();

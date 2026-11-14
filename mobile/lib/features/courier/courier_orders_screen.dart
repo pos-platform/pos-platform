@@ -8,6 +8,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import 'courier_navigation.dart';
+import 'courier_offers.dart';
+import 'courier_return_card.dart';
 import 'courier_updates.dart';
 import 'data/courier_models.dart';
 import 'data/courier_repository.dart';
@@ -54,9 +56,10 @@ class _CourierOrdersScreenState extends ConsumerState<CourierOrdersScreen> {
     final t = AppLocalizations.of(context);
     ref.watch(courierUpdatesProvider);
     final active = ref.watch(courierOrdersProvider(false)).value ?? const [];
+    final offerCount = ref.watch(courierOffersProvider).value?.where((o) => !o.isExpired()).length ?? 0;
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: Text(t.courierMode),
@@ -66,10 +69,19 @@ class _CourierOrdersScreenState extends ConsumerState<CourierOrdersScreen> {
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
             labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontFamily: 'Manrope'),
-            tabs: [Tab(text: t.courierTabActive), Tab(text: t.courierTabToday)],
+            tabs: [
+              Tab(text: t.courierTabActive),
+              // Kelishuv 10.6: kutilayotgan takliflar soni bilan.
+              Tab(text: offerCount > 0 ? '${t.courierTabOffers} ($offerCount)' : t.courierTabOffers),
+              Tab(text: t.courierTabToday),
+            ],
           ),
         ),
-        body: const TabBarView(children: [_OrdersList(history: false), _OrdersList(history: true)]),
+        body: const TabBarView(children: [
+          _OrdersList(history: false),
+          CourierOffersList(),
+          _OrdersList(history: true),
+        ]),
         bottomNavigationBar: active.isEmpty
             ? null
             : SafeArea(
@@ -130,11 +142,14 @@ class _OrdersList extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   itemCount: list.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (_, i) => _OrderCard(
-                    order: list[i],
-                    distance: CourierNavigation.distance(loc, list[i]),
-                    history: history,
-                  ),
+                  // Qaytarishni olib ketish vazifasi — alohida karta (kelishuv 10.5).
+                  itemBuilder: (_, i) => list[i].isReturnPickup
+                      ? CourierReturnCard(task: list[i], distance: CourierNavigation.distance(loc, list[i]))
+                      : _OrderCard(
+                          order: list[i],
+                          distance: CourierNavigation.distance(loc, list[i]),
+                          history: history,
+                        ),
                 ),
         );
       },
@@ -184,6 +199,14 @@ class _OrderCard extends StatelessWidget {
               const Spacer(),
               if (history)
                 _StatusPill(delivered: order.status == 'Delivered')
+              else if (order.isAwaitingPickup)
+                // Taklif qabul qilingan — avval do'kondan olish kerak (kelishuv 10.6).
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(10)),
+                  child: Text(t.courierAwaitingPickup,
+                      style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                )
               else if (distance != null)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

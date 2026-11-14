@@ -58,7 +58,65 @@ public class OnlineOrderDto
 
     public List<OnlineOrderItemDto> Items { get; set; } = new();
 
+    // ---- Bosqich 10.1: oldindan buyurtma (eski backend'da yo'q — false/null) ----
+    public bool IsPreorder { get; set; }
+
+    // ---- Bosqich 10.5: eshik oldida rad etilgan tovarlar ----
+    public List<OnlineRejectedItemDto>? RejectedItems { get; set; }
+    public DateTime? RejectedReturnedAt { get; set; }
+
+    // ---- Bosqich 10.6: kuryerga taklif ----
+    /// <summary>None | Pending | Accepted | NoCourier (eski backend'da null).</summary>
+    public string? CourierOfferStatus { get; set; }
+    public DateTime? CourierAcceptedAt { get; set; }
+    /// <summary>Takliflar tarixi (faqat tafsilotda keladi).</summary>
+    public List<CourierOfferDto>? CourierOffers { get; set; }
+
     // ---- ko'rinish uchun ----
+
+    /// <summary>Oldindan buyurtma va ochilish vaqti hali kelmagan — doskada pastda turadi.</summary>
+    public bool IsPreorderWaiting => IsPreorder && ScheduledFor is { } s && s.ToUniversalTime() > DateTime.UtcNow;
+
+    /// <summary>"🌙 Oldindan · 09:00".</summary>
+    public string PreorderText => IsPreorder
+        ? "🌙 Oldindan" + (ScheduledFor is { } s ? $" · {s.ToLocalTime():HH:mm}" : "")
+        : "";
+    public System.Windows.Visibility PreorderVisibility =>
+        IsPreorder ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+
+    /// <summary>Kuryer taklifi holati: "⏳ Kuryer kutilmoqda (2/5 rad)", "✅ Ali qabul qildi 14:32", "⚠ Kuryer topilmadi".</summary>
+    public string CourierOfferText
+    {
+        get
+        {
+            switch (CourierOfferStatus)
+            {
+                case "Pending":
+                    var offers = CourierOffers ?? new List<CourierOfferDto>();
+                    var declined = offers.Count(x => x.Status is "Declined" or "Expired");
+                    return offers.Count > 0 ? $"⏳ Kuryer kutilmoqda ({declined}/{offers.Count} rad)" : "⏳ Kuryer kutilmoqda";
+                case "Accepted":
+                    return $"✅ {(string.IsNullOrWhiteSpace(CourierName) ? "Kuryer" : CourierName)} qabul qildi" +
+                           (CourierAcceptedAt is { } a ? $" {a.ToLocalTime():HH:mm}" : "");
+                case "NoCourier":
+                    return "⚠ Kuryer topilmadi";
+                default:
+                    return "";
+            }
+        }
+    }
+
+    public bool IsNoCourier => CourierOfferStatus == "NoCourier";
+    public System.Windows.Visibility CourierOfferVisibility =>
+        CourierOfferText.Length > 0 ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+    public System.Windows.Media.Brush CourierOfferBrush => new System.Windows.Media.SolidColorBrush(CourierOfferStatus switch
+    {
+        "Accepted" => System.Windows.Media.Color.FromRgb(0x0B, 0x6B, 0x45),
+        "NoCourier" => System.Windows.Media.Color.FromRgb(0xB4, 0x23, 0x18),
+        _ => System.Windows.Media.Color.FromRgb(0xB7, 0x79, 0x1F)
+    });
+
+    public bool HasPendingRejected => RejectedItems is { Count: > 0 } && RejectedReturnedAt is null;
 
     /// <summary>Normallashtirilgan siyosat: Replace | Call | Remove.</summary>
     public string SubstitutionKind
@@ -166,7 +224,8 @@ public class OnlineOrderDto
     }
 
     /// <summary>Yangi buyurtma 5 daqiqadan ko'p kutsa — qizil.</summary>
-    public bool IsLate => Status == "New" && (DateTime.UtcNow - CreatedAt.ToUniversalTime()).TotalMinutes >= 5;
+    public bool IsLate => Status == "New" && !IsPreorderWaiting &&
+        (DateTime.UtcNow - (IsPreorder && ScheduledFor is { } due ? due : CreatedAt).ToUniversalTime()).TotalMinutes >= 5;
 
     public string AddressText
     {
@@ -249,6 +308,127 @@ public class CourierCashDto
     public string? CourierName { get; set; }
     public decimal Amount { get; set; }
     public DateTime? DeliveredAt { get; set; }
+}
+
+/// <summary>Eshik oldida mijoz rad etgan tovar (10.5).</summary>
+public class OnlineRejectedItemDto
+{
+    public Guid? ItemId { get; set; }
+    public string? ProductName { get; set; }
+    public decimal Quantity { get; set; }
+    public string? Reason { get; set; }
+}
+
+/// <summary>Kuryerga taklif (10.6) — tafsilotdagi tarix qatori.</summary>
+public class CourierOfferDto
+{
+    public string? CourierName { get; set; }
+    /// <summary>Pending | Accepted | Declined | Expired | Cancelled.</summary>
+    public string? Status { get; set; }
+    public DateTime? RespondedAt { get; set; }
+
+    public string StatusText => Status switch
+    {
+        "Pending" => "kutilmoqda",
+        "Accepted" => "qabul qildi",
+        "Declined" => "rad etdi",
+        "Expired" => "javob bermadi",
+        "Cancelled" => "bekor (boshqasi oldi)",
+        _ => Status ?? ""
+    };
+}
+
+/// <summary>Online buyurtmani qaytarish so'rovi (10.5) — /api/online-returns. Hamma maydon tolerant.</summary>
+public class OnlineReturnDto
+{
+    public Guid Id { get; set; }
+    public int Number { get; set; }
+    public Guid? OnlineOrderId { get; set; }
+    public int? OrderNumber { get; set; }
+    public Guid? BranchId { get; set; }
+    /// <summary>Requested | Approved | PickupAssigned | PickedUp | Received | Refunded | Rejected | Cancelled.</summary>
+    public string Status { get; set; } = "";
+    /// <summary>CourierPickup | BringToStore (tasdiqlangach).</summary>
+    public string? Method { get; set; }
+    /// <summary>Damaged | WrongItem | Quality | Expired | Missing | Other.</summary>
+    public string? Reason { get; set; }
+    public string? Comment { get; set; }
+    public List<string>? PhotoUrls { get; set; }
+    /// <summary>Cash | Transfer | Bonus.</summary>
+    public string? RefundMethod { get; set; }
+    public Guid? CourierId { get; set; }
+    public string? CourierName { get; set; }
+    public string? RejectReason { get; set; }
+    public Guid? RefundSaleId { get; set; }
+    public decimal RefundAmount { get; set; }
+    public decimal LoyaltyWithheldAmount { get; set; }
+    public string? CustomerName { get; set; }
+    public string? CustomerPhone { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public List<OnlineReturnItemDto>? Items { get; set; }
+
+    public string StatusText => Status switch
+    {
+        "Requested" => "So'rov",
+        "Approved" => "Tasdiqlandi",
+        "PickupAssigned" => "Kuryer biriktirildi",
+        "PickedUp" => "Kuryer oldi",
+        "Received" => "Do'konga keldi",
+        "Refunded" => "Pul qaytarildi",
+        "Rejected" => "Rad etildi",
+        "Cancelled" => "Bekor qilindi",
+        _ => Status
+    };
+
+    public string ReasonText => Reason switch
+    {
+        "Damaged" => "Shikastlangan",
+        "WrongItem" => "Noto'g'ri tovar",
+        "Quality" => "Sifatsiz",
+        "Expired" => "Muddati o'tgan",
+        "Missing" => "Yetishmadi",
+        "Other" => "Boshqa",
+        _ => Reason ?? "—"
+    };
+
+    public string MethodText => Method switch
+    {
+        "CourierPickup" => "Kuryer olib keladi",
+        "BringToStore" => "Mijoz olib keladi",
+        _ => ""
+    };
+
+    public string RefundMethodText => RefundMethod switch
+    {
+        "Cash" => "Naqd",
+        "Transfer" => "O'tkazma",
+        "Bonus" => "Bonus ball",
+        _ => RefundMethod ?? "—"
+    };
+
+    public decimal ItemsTotal => (Items ?? new()).Sum(i => i.Quantity * i.UnitPrice);
+
+    public string Title => $"Qaytarish #{Number}" + (OrderNumber is { } n ? $" · buyurtma #{n}" : "");
+    public string Line => $"{StatusText} · {ReasonText} · {(RefundAmount > 0 ? RefundAmount : ItemsTotal):N0} so'm · {CreatedAt.ToLocalTime():dd.MM HH:mm}";
+}
+
+public class OnlineReturnItemDto
+{
+    public Guid? Id { get; set; }
+    public Guid? OnlineOrderItemId { get; set; }
+    public string ProductName { get; set; } = "";
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+}
+
+/// <summary>SignalR ReturnCreated/ReturnUpdated xabari — shakli tolerant.</summary>
+public class OnlineReturnEvent
+{
+    public Guid Id { get; set; }
+    public int Number { get; set; }
+    public Guid? BranchId { get; set; }
+    public string? Status { get; set; }
 }
 
 /// <summary>SignalR xabari (/hubs/orders).</summary>

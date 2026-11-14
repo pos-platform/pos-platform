@@ -149,6 +149,11 @@ class _Body extends ConsumerWidget {
               children: [
                 if (failed) _FailedCard(order: o) else _StatusCard(order: o),
                 const SizedBox(height: 16),
+                // Kelishuv 10.1: yopiq do'konga berilgan buyurtma — ochilganda ko'rib chiqiladi.
+                if (o.isPreorder && o.status == OrderStatus.created) ...[
+                  _PreorderNote(order: o),
+                  const SizedBox(height: 16),
+                ],
                 if (o.status == OrderStatus.delivered && OrderRatingCard.visibleFor(o)) ...[
                   OrderRatingCard(order: o),
                   const SizedBox(height: 16),
@@ -166,6 +171,18 @@ class _Body extends ConsumerWidget {
                   const SizedBox(height: 16),
                 ],
                 _SummaryCard(order: o),
+                // Kelishuv 10.5: yetkazilgan buyurtmani qaytarish.
+                if (o.canReturn) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push('/orders/${o.id}/return'),
+                      icon: const Icon(Icons.assignment_return_outlined),
+                      label: Text(AppLocalizations.of(context).returnAction),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 SupportCard(branchId: o.branchId),
               ],
@@ -249,6 +266,41 @@ class _StatusCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Oldindan buyurtma izohi: "Do'kon hozir yopiq. Buyurtmangiz 09:00 da ko'rib chiqiladi."
+class _PreorderNote extends StatelessWidget {
+  const _PreorderNote({required this.order});
+
+  final OrderDetail order;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final at = order.scheduledFor;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.nightlight_round, color: AppColors.primary),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(t.ordersPreorderTitle,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.primary)),
+            const SizedBox(height: 4),
+            Text(
+              at == null ? t.ordersPreorderNoteNoTime : t.ordersPreorderNote(OrderFormat.time(at)),
+              style: const TextStyle(fontSize: 14, color: AppColors.text),
+            ),
+          ]),
+        ),
+      ]),
     );
   }
 }

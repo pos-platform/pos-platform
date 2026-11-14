@@ -46,6 +46,7 @@ public class LoyaltyExpiryService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Bonus ball muddatini tekshirishda xato");
+                BackgroundErrors.Report(_scopeFactory, nameof(LoyaltyExpiryService), ex);
             }
         } while (await WaitNext(timer, stoppingToken));
     }

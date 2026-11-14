@@ -80,6 +80,14 @@ public interface IApplicationDbContext
     DbSet<ShopPushCampaign> ShopPushCampaigns { get; }
     DbSet<LoyaltyTier> LoyaltyTiers { get; }
 
+    // Bosqich 10
+    DbSet<OnlineReturn> OnlineReturns { get; }
+    DbSet<OnlineReturnItem> OnlineReturnItems { get; }
+    DbSet<SystemError> SystemErrors { get; }
+    DbSet<LoyaltySettingsChange> LoyaltySettingsChanges { get; }
+    DbSet<CourierOffer> CourierOffers { get; }
+    DbSet<StaffDeviceToken> StaffDeviceTokens { get; }
+
     // Task 6: Label printing
     DbSet<LabelPrintJob> LabelPrintJobs { get; }
     DbSet<LabelPrintJobItem> LabelPrintJobItems { get; }

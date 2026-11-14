@@ -1,31 +1,106 @@
 <Window x:Class="PosCloud.Desktop.Views.RefundWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Qaytarish (refund)" Height="560" Width="720"
+        Title="Qaytarish (refund)" Height="720" Width="1100" MinWidth="900" MinHeight="560"
         WindowStartupLocation="CenterOwner" Background="#F4F5F7">
     <DockPanel Margin="14">
-        <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
-            <TextBlock Text="Savdolar" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
-            <Button Content="Yangilash" HorizontalAlignment="Right" Padding="10,5" Click="Refresh_Click" />
+        <TextBlock x:Name="MessageText" DockPanel.Dock="Bottom" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="360" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Chap: chek qidirish va savdolar ro'yxati -->
+            <DockPanel Grid.Column="0" Margin="0,0,12,0">
+                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Yangilash" Padding="10,5" Margin="6,0,0,0" Click="Refresh_Click" />
+                        <TextBlock Text="Chekni toping" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <TextBox x:Name="SearchBox" Height="36" FontSize="15" Margin="0,8,0,0" VerticalContentAlignment="Center"
+                             TextChanged="Search_TextChanged" KeyDown="Search_KeyDown"
+                             ToolTip="Chek raqamini kiriting yoki chek shtrix-kodini skanerlang, Enter" />
+                </StackPanel>
+                <ListView x:Name="SalesList" BorderBrush="#E2E5EA" SelectionChanged="SalesList_SelectionChanged">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Chek" Width="120" DisplayMemberBinding="{Binding ReceiptNumber}" />
+                            <GridViewColumn Header="Sana" Width="100" DisplayMemberBinding="{Binding DateLabel}" />
+                            <GridViewColumn Header="Holat" Width="60" DisplayMemberBinding="{Binding TypeLabel}" />
+                            <GridViewColumn Header="Jami" Width="70" DisplayMemberBinding="{Binding TotalLabel}" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </DockPanel>
+
+            <!-- O'ng: qatorlar, sabab, preview -->
+            <Border Grid.Column="1" Background="White" CornerRadius="12" BorderBrush="#E2E5EA" BorderThickness="1" Padding="14">
+                <Grid>
+                    <TextBlock x:Name="EmptyText" Text="Chapdan savdoni tanlang yoki chek raqamini skanerlang"
+                               Foreground="#6B7280" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <DockPanel x:Name="DetailPanel" Visibility="Collapsed">
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="Hammasi" Padding="12,5" Click="All_Click"
+                                    ToolTip="Barcha qaytariladigan qatorlarni to'liq miqdorda belgilash" />
+                            <StackPanel>
+                                <TextBlock x:Name="SaleTitle" FontSize="18" FontWeight="Bold" />
+                                <TextBlock x:Name="SaleSubtitle" FontSize="12" Foreground="#6B7280" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                            <TextBlock Text="Sabab" FontWeight="SemiBold" Margin="0,0,0,4" />
+                            <TextBox x:Name="ReasonBox" Height="34" FontSize="14" VerticalContentAlignment="Center" />
+
+                            <Border Background="#F8FAFC" BorderBrush="#E2E5EA" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,10,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="Qaytariladigan summa" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="PvTotal" Text="—" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="1" Text="Ayiriladigan keshbek (ball)" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="PvPoints" Text="—" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="2" Text="Ushlab qolinadigan pul" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="PvWithheld" Text="—" FontWeight="SemiBold" Foreground="#B45309" />
+                                    <TextBlock Grid.Row="3" Text="Mijozga beriladigan pul" FontSize="16" FontWeight="Bold" Margin="0,4,0,0" />
+                                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="PvCash" Text="—" FontSize="16" FontWeight="Bold" Margin="0,4,0,0" Foreground="#DC2626" />
+                                    <TextBlock Grid.Row="4" Grid.ColumnSpan="2" x:Name="PvNote" FontSize="12" Foreground="#6B7280" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                </Grid>
+                            </Border>
+
+                            <Button x:Name="RefundButton" Content="Qaytarish va chek chop etish" Height="44" Margin="0,10,0,0"
+                                    Background="#DC2626" Foreground="White" FontWeight="Bold" BorderThickness="0"
+                                    Cursor="Hand" Click="DoRefund_Click" IsEnabled="False" />
+                        </StackPanel>
+
+                        <ListBox x:Name="ItemsList" BorderBrush="#E2E5EA" HorizontalContentAlignment="Stretch">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="2,5" IsEnabled="{Binding CanRefund}">
+                                        <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBox Text="{Binding QtyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" Height="30"
+                                                     FontSize="14" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" />
+                                            <TextBlock Text="{Binding MaxText}" Foreground="#6B7280" Margin="6,0,0,0" VerticalAlignment="Center" Width="70" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Item.ProductName}" FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding InfoText}" FontSize="11" Foreground="#6B7280" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Grid>
+            </Border>
         </Grid>
-
-        <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
-            <TextBlock x:Name="MessageText" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed" />
-            <Button x:Name="RefundButton" Content="Tanlangan savdoni qaytarish" Height="42"
-                    Background="#DC2626" Foreground="White" FontWeight="Bold" BorderThickness="0"
-                    Cursor="Hand" Click="DoRefund_Click" />
-        </StackPanel>
-
-        <ListView x:Name="SalesList" BorderBrush="#E2E5EA">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Chek" Width="150" DisplayMemberBinding="{Binding ReceiptNumber}" />
-                    <GridViewColumn Header="Sana" Width="140" DisplayMemberBinding="{Binding DateLabel}" />
-                    <GridViewColumn Header="Tur" Width="110" DisplayMemberBinding="{Binding TypeLabel}" />
-                    <GridViewColumn Header="To'lov" Width="90" DisplayMemberBinding="{Binding PaymentMethod}" />
-                    <GridViewColumn Header="Jami" Width="120" DisplayMemberBinding="{Binding TotalLabel}" />
-                </GridView>
-            </ListView.View>
-        </ListView>
     </DockPanel>
 </Window>

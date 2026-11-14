@@ -327,6 +327,51 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.CourierOffer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CourierUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeclineReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OnlineOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourierUserId", "Status");
+
+                    b.HasIndex("OnlineOrderId", "CourierUserId");
+
+                    b.HasIndex("Status", "ExpiresAt");
+
+                    b.ToTable("CourierOffers");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -970,6 +1015,51 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("LoyaltySettings", (string)null);
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.LoyaltySettingsChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NewValue")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("OldValue")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId", "ChangedAt");
+
+                    b.ToTable("LoyaltySettingsChanges");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.LoyaltyTier", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1015,6 +1105,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
 
+                    b.Property<decimal?>("BalanceAfter")
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("Comment")
                         .HasColumnType("text");
 
@@ -1041,6 +1134,13 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
@@ -1097,6 +1197,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<bool>("Contactless")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("CourierAcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal?>("CourierCashCollected")
                         .HasColumnType("numeric(18,2)");
 
@@ -1116,11 +1219,15 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("CourierOfferStatus")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CourierPhone")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.Property<Guid?>("CourierUserId")
+                        .IsConcurrencyToken()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1163,6 +1270,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<bool>("IsPreorder")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("ItemsTotal")
                         .HasColumnType("numeric(18,2)");
 
@@ -1203,6 +1313,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("PickingStartedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("PreorderNotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PromoCode")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -1228,6 +1341,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.Property<DateTime?>("ReadyAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RejectedReturnedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("SaleId")
@@ -1275,6 +1391,8 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ShopUserId", "CreatedAt");
 
+                    b.HasIndex("IsPreorder", "Status", "ScheduledFor");
+
                     b.ToTable("OnlineOrders");
                 });
 
@@ -1319,8 +1437,18 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Quantity")
                         .HasColumnType("numeric(18,3)");
 
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("RejectedQuantity")
+                        .HasColumnType("numeric(18,3)");
+
                     b.Property<Guid?>("ReplacesItemId")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("ReturnedQuantity")
+                        .HasColumnType("numeric(18,3)");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("numeric(18,2)");
@@ -1380,11 +1508,166 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("OnlinePayments");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.OnlineReturn", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("CourierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CourierName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CourierPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("LoyaltyWithheldAmount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OnlineOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<List<string>>("PhotoUrls")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasDefaultValueSql("'{}'::text[]");
+
+                    b.Property<DateTime?>("PickedUpAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PickupAssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("RefundAmount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("RefundMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("RefundSaleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ShopUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OnlineOrderId");
+
+                    b.HasIndex("BranchId", "Status");
+
+                    b.HasIndex("CourierId", "Status");
+
+                    b.HasIndex("OrganizationId", "Number")
+                        .IsUnique();
+
+                    b.HasIndex("ShopUserId", "CreatedAt");
+
+                    b.ToTable("OnlineReturns");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.OnlineReturnItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OnlineOrderItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OnlineReturnId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OnlineReturnId");
+
+                    b.ToTable("OnlineReturnItems");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.OnlineStoreSettings", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("AcceptWhenClosed")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("AllowCardOnDelivery")
                         .HasColumnType("boolean");
@@ -1442,6 +1725,12 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.Property<TimeOnly?>("ClosesAt")
                         .HasColumnType("time without time zone");
+
+                    b.Property<int>("CourierOfferMode")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CourierOfferTimeoutSec")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1538,6 +1827,15 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<bool>("RequireTransferBeforeDispatch")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ReturnDays")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("ReturnPickupByCourier")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ReturnsEnabled")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Slug")
@@ -2082,6 +2380,12 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("LoyaltyPointsRedeemed")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<decimal>("LoyaltyPointsReversed")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("LoyaltyWithheldAmount")
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<DateTime?>("OpenedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2101,6 +2405,16 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("RedeemedPointsReturned")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("RefundCashAmount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("RefundReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<decimal>("ServiceChargeAmount")
                         .HasColumnType("numeric(18,2)");
@@ -2214,6 +2528,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("OriginalSaleItemId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PackageCode")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
@@ -2227,6 +2544,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<decimal>("RefundedQuantity")
                         .HasColumnType("numeric(18,3)");
 
                     b.Property<Guid>("SaleId")
@@ -3002,6 +3322,44 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("ShopUserAddresses");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.StaffDeviceToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("StaffDeviceTokens");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.StockReceipt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3263,6 +3621,100 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("SupplierPayments");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.SystemError", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AppVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(16000)
+                        .HasColumnType("character varying(16000)");
+
+                    b.Property<string>("Device")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("FirstSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Method")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OrganizationName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Path")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("RequestId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResolvedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("StatusCode")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fingerprint")
+                        .IsUnique();
+
+                    b.HasIndex("LastSeenAt");
+
+                    b.HasIndex("ResolvedAt", "LastSeenAt");
+
+                    b.ToTable("SystemErrors", (string)null);
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3492,6 +3944,25 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.CourierOffer", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.User", "CourierUser")
+                        .WithMany()
+                        .HasForeignKey("CourierUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosCloud.Domain.Entities.OnlineOrder", "OnlineOrder")
+                        .WithMany()
+                        .HasForeignKey("OnlineOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourierUser");
+
+                    b.Navigation("OnlineOrder");
                 });
 
             modelBuilder.Entity("PosCloud.Domain.Entities.Customer", b =>
@@ -3749,6 +4220,28 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Sale");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.OnlineReturn", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.OnlineOrder", "OnlineOrder")
+                        .WithMany()
+                        .HasForeignKey("OnlineOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OnlineOrder");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.OnlineReturnItem", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.OnlineReturn", "OnlineReturn")
+                        .WithMany("Items")
+                        .HasForeignKey("OnlineReturnId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OnlineReturn");
                 });
 
             modelBuilder.Entity("PosCloud.Domain.Entities.Product", b =>
@@ -4093,6 +4586,17 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Navigation("ShopUser");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.StaffDeviceToken", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.StockReceipt", b =>
                 {
                     b.HasOne("PosCloud.Domain.Entities.Branch", "Branch")
@@ -4282,6 +4786,11 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("PosCloud.Domain.Entities.OnlineOrder", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.OnlineReturn", b =>
                 {
                     b.Navigation("Items");
                 });

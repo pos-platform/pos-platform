@@ -426,10 +426,12 @@ class _StoreHeader extends ConsumerWidget {
     final t = AppLocalizations.of(context);
     // Do'kon rejimida filial bitta bo'lsa — almashtirish yo'q (marketplace do'konlari ko'rsatilmaydi).
     final canSwitch = !(ref.watch(storeAppProvider).value?.singleBranch ?? false);
+    // Yopiq va keyingi ochilish ma'lum bo'lsa: "Yopiq · 09:00 da ochiladi" (ish vaqti o'rniga).
+    final opensAt = store.isOpenNow ? null : store.nextOpenTime;
     final status = [
       // "Ochiq" ko'rsatilmaydi (ortiqcha) — faqat yopiq bo'lsa ogohlantiriladi.
       if (!store.isOpenNow) t.catClosedNow,
-      ?store.hoursText,
+      if (opensAt != null) t.catOpensAt(opensAt) else ?store.hoursText,
       ?deliveryTimeText(t, store),
     ].join(' · ');
     return Semantics(

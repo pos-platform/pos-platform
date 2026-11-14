@@ -75,6 +75,20 @@ public static class ReceiptLayout
             yield return $"Bonus: +{r.LoyaltyPointsEarned:N0} ball";
     }
 
+    /// <summary>Qaytarish cheki bloki (10.5): ayirilgan keshbek, ushlab qolingan pul, mijozga beriladigan pul.
+    /// Oddiy savdo chekida hech narsa qaytmaydi.</summary>
+    public static IEnumerable<string> RefundRows(ReceiptData r)
+    {
+        if (!r.IsRefund) yield break;
+        if (r.LoyaltyPointsReversed > 0)
+            yield return $"Keshbek ayirildi: -{r.LoyaltyPointsReversed:N0} ball";
+        if (r.LoyaltyWithheldAmount > 0)
+            yield return $"Keshbek ushlab qolindi: {r.LoyaltyWithheldAmount:N0}";
+        yield return $"Mijozga qaytarildi: {(r.RefundCashAmount ?? r.Total):N0} so'm";
+        if (!string.IsNullOrWhiteSpace(r.RefundReason))
+            yield return $"Sabab: {r.RefundReason!.Trim()}";
+    }
+
     /// <summary>Qator chegirmasi ("Chegirma: −1 200") — chegirma bo'lmasa null.</summary>
     public static string? ItemDiscountRow(ReceiptLine l) =>
         l.Discount > 0 ? $"Chegirma: -{l.Discount:N0}" : null;

@@ -51,6 +51,7 @@ public class OnlineOrderAutoCancelService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Online buyurtmalarni avtomatik bekor qilishda xato");
+                BackgroundErrors.Report(_scopeFactory, nameof(OnlineOrderAutoCancelService), ex);
             }
         } while (await WaitNext(timer, stoppingToken));
     }
@@ -87,7 +88,8 @@ public class OnlineOrderAutoCancelService : BackgroundService
             var ids = await db.OnlineOrders.IgnoreQueryFilters().AsNoTracking()
                 .Where(o => o.OrganizationId == rule.OrganizationId
                             && o.Status == OnlineOrderStatus.New
-                            && o.CreatedAt < before)
+                            // Oldindan buyurtmada SLA ScheduledFor (ochilish vaqti) dan boshlanadi.
+                            && (o.IsPreorder && o.ScheduledFor != null ? o.ScheduledFor.Value : o.CreatedAt) < before)
                 .OrderBy(o => o.CreatedAt)
                 .Select(o => o.Id)
                 .Take(BatchSize)
@@ -125,6 +127,7 @@ public class OnlineOrderAutoCancelService : BackgroundService
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Buyurtma avtomatik bekor qilinmadi: {OrderId}", id);
+                    BackgroundErrors.Report(_scopeFactory, nameof(OnlineOrderAutoCancelService), ex);
                 }
             }
         }

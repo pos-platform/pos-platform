@@ -35,5 +35,7 @@ public class LoyaltyTransactionConfiguration : IEntityTypeConfiguration<LoyaltyT
         // Tarix va hisobot so'rovlari uchun.
         builder.HasIndex(t => new { t.CustomerId, t.CreatedAt });
         builder.HasIndex(t => new { t.OrganizationId, t.CreatedAt });
+        builder.Property(t => t.BalanceAfter).HasColumnType("numeric(18,2)");
+        builder.Property(t => t.UserName).HasMaxLength(100);
     }
 }

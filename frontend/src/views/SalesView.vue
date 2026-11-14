@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { salesApi, fiscalModulesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useStoreFilterStore } from '../stores/storeFilter'
+import SaleDetailModal from './sales/SaleDetailModal.vue'
 
 const storeFilter = useStoreFilterStore()
 
@@ -391,20 +392,32 @@ function shiftPeriod(step) {
   else { dateTo.value = to; dateFrom.value = from }
 }
 
-async function refund(sale) {
-  if (!window.confirm(`"${sale.receiptNumber}" chekni qaytarasizmi?`)) return
+// Bosqich 10.5: chek tafsiloti va qisman qaytarish (refund-preview bilan) — modalda.
+const detailSaleId = ref(null)
+const detailRefund = ref(false)
+function openDetail(sale, withRefund = false) {
+  detailRefund.value = withRefund
+  detailSaleId.value = sale.id
+}
+function refund(sale) {
   error.value = ''
   success.value = ''
-  refundingId.value = sale.id
-  try {
-    const r = await salesApi.refund(sale.id)
-    success.value = `Qaytarildi — return cheki ${r.receiptNumber}`
-    await load()
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    refundingId.value = null
-  }
+  openDetail(sale, true)
+}
+async function onRefunded(r) {
+  detailSaleId.value = null
+  const extra = []
+  if (Number(r?.loyaltyPointsReversed) > 0) extra.push(`ayirilgan keshbek ${fmtNum(r.loyaltyPointsReversed)}`)
+  if (Number(r?.loyaltyWithheldAmount) > 0) extra.push(`ushlab qolindi ${fmtNum(r.loyaltyWithheldAmount)}`)
+  if (r?.refundCashAmount != null) extra.push(`mijozga ${fmtNum(r.refundCashAmount)} so'm`)
+  success.value = `Qaytarildi — return cheki ${r?.receiptNumber || ''}${extra.length ? ' · ' + extra.join(', ') : ''}`
+  await load()
+}
+/** Qaytarish mumkinmi: server canRefund bersa — shu, aks holda eski qoida. */
+function canRefundRow(s) {
+  if (s.type !== 'Sale') return false
+  if (s.canRefund != null) return !!s.canRefund
+  return s.status !== 'Refunded'
 }
 
 // Chekni to'liq yuklab, brauzer print dialogi orqali chop etadi (80mm chek shakli).
@@ -755,10 +768,11 @@ function openReceiptWindow(sale) {
       </thead>
       <tbody>
         <tr v-for="s in shownSales" :key="s.id">
-          <td><strong>{{ s.receiptNumber }}</strong></td>
+          <td><a href="#" class="rcpt-link" title="Chek tafsiloti" @click.prevent="openDetail(s)"><strong>{{ s.receiptNumber }}</strong></a></td>
           <td>
             <span v-if="s.type === 'Refund'" class="pill pill-red">Qaytarish</span>
             <span v-else-if="s.status === 'Refunded'" class="pill pill-amber">Qaytarilgan</span>
+            <span v-else-if="s.status === 'PartiallyRefunded'" class="pill pill-amber">Qisman qaytarilgan</span>
             <span v-else class="pill pill-gray">Sotuv</span>
           </td>
           <td class="muted">{{ s.terminalId || '—' }}</td>
@@ -794,7 +808,7 @@ function openReceiptWindow(sale) {
               {{ printingId === s.id ? '...' : '🖨 Chek' }}
             </button>
             <button
-              v-if="s.type === 'Sale' && s.status !== 'Refunded'"
+              v-if="canRefundRow(s)"
               class="btn btn-ghost btn-sm"
               :disabled="refundingId === s.id"
               @click="refund(s)"
@@ -814,9 +828,25 @@ function openReceiptWindow(sale) {
     </table>
   </div>
 
+  <SaleDetailModal
+    v-if="detailSaleId"
+    :sale-id="detailSaleId"
+    :allow-refund="true"
+    :start-refund="detailRefund"
+    @close="detailSaleId = null"
+    @refunded="onRefunded"
+  />
 </template>
 
 <style scoped>
+.rcpt-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--border);
+}
+.rcpt-link:hover {
+  color: var(--primary);
+}
 .period-note {
   font-size: 12.5px;
   margin-top: 2px;

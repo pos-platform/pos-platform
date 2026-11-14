@@ -55,14 +55,24 @@ async function save() {
   } catch (e) { err.value = errorMessage(e) }
 }
 
+// Bosqich 10.2: "Ball tuzatish" — POST /api/loyalty/customers/{id}/adjust { points (±), reason }, sabab majburiy.
+const adjustErr = ref('')
+const adjusting = ref(false)
 async function doAdjust() {
-  err.value = ''; success.value = ''
+  err.value = ''; success.value = ''; adjustErr.value = ''
+  const points = Number(adjustPoints.value)
+  const reason = (adjustComment.value || '').trim()
+  if (!Number.isFinite(points) || points === 0) { adjustErr.value = "Ball 0 dan farqli bo'lsin"; return }
+  if (!reason) { adjustErr.value = 'Sababni yozing'; return }
+  if (points < 0 && -points > Number(adjustItem.value.loyaltyPoints || 0)) { adjustErr.value = 'Mijoz balansidan ko\'p ayirib bo\'lmaydi'; return }
+  adjusting.value = true
   try {
-    await customersApi.adjustPoints(adjustItem.value.id, { points: Number(adjustPoints.value), comment: adjustComment.value || null })
+    await loyaltyApi.adjust(adjustItem.value.id, { points, reason })
     success.value = 'Ball yangilandi'
     adjustItem.value = null; adjustPoints.value = 0; adjustComment.value = ''
     await load()
-  } catch (e) { err.value = errorMessage(e) }
+  } catch (e) { adjustErr.value = errorMessage(e) }
+  finally { adjusting.value = false }
 }
 
 async function remove(c) {
@@ -132,11 +142,13 @@ onMounted(load)
   <!-- Ball sozlash modali -->
   <div v-if="adjustItem" class="modal-bg" @click.self="adjustItem=null">
     <div class="modal-box">
-      <h3 style="margin-top:0">{{ adjustItem.name }} — ball sozlash</h3>
+      <h3 style="margin-top:0">{{ adjustItem.name }} — ball tuzatish</h3>
       <p class="muted">Hozirgi ball: <strong>{{ fmt(adjustItem.loyaltyPoints) }}</strong></p>
+      <div v-if="adjustErr" class="alert alert-error">{{ adjustErr }}</div>
       <div class="field"><label>Ball (musbat = qo'shish, manfiy = ayirish)</label><input v-model="adjustPoints" type="number" class="input" /></div>
-      <div class="field"><label>Izoh</label><input v-model="adjustComment" class="input" /></div>
-      <button class="btn" @click="doAdjust">Saqlash</button>
+      <div class="field"><label>Sabab *</label><input v-model="adjustComment" class="input" maxlength="500" placeholder="masalan: kassa xatosi tuzatildi" /></div>
+      <p v-if="Number(adjustPoints)" class="muted small">Yangi balans: <strong>{{ fmt(Number(adjustItem.loyaltyPoints || 0) + Number(adjustPoints)) }}</strong></p>
+      <button class="btn" :disabled="adjusting" @click="doAdjust">{{ adjusting ? '...' : 'Saqlash' }}</button>
       <button class="btn btn-ghost" style="margin-left:8px" @click="adjustItem=null">Bekor</button>
     </div>
   </div>
@@ -187,7 +199,7 @@ onMounted(load)
           <td class="muted">{{ fmtDate(c.createdAt) }}</td>
           <td class="text-right" style="white-space:nowrap">
             <button class="btn btn-ghost btn-sm" @click="openHistory(c)">Bonus tarixi</button>
-            <button class="btn btn-ghost btn-sm" style="margin-left:4px" @click="adjustItem=c; adjustPoints=0; adjustComment=''">Ball</button>
+            <button class="btn btn-ghost btn-sm" style="margin-left:4px" @click="adjustItem=c; adjustPoints=0; adjustComment=''; adjustErr=''">Ball tuzatish</button>
             <button class="btn btn-ghost btn-sm" @click="openEdit(c)" style="margin:0 4px">✎</button>
             <button class="btn btn-ghost btn-sm" @click="remove(c)">✕</button>
           </td>
@@ -201,6 +213,7 @@ onMounted(load)
 </template>
 
 <style scoped>
+.small { font-size: 12px; }
 .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000 }
 .modal-box { background:#fff; border-radius:8px; padding:24px; min-width:360px; max-width:95vw }
 </style>

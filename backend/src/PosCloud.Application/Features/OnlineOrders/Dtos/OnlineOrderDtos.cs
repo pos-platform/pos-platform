@@ -92,8 +92,39 @@ public class OnlineOrderDto
 
     public List<OnlineOrderItemDto> Items { get; set; } = [];
 
+    // ---- Bosqich 10 ----
+
+    /// <summary>Yopiq do'konga berilgan "imkon qadar tez" (ScheduledFor = ochilish vaqti).</summary>
+    public bool IsPreorder { get; set; }
+    public DateTime? PreorderNotifiedAt { get; set; }
+
+    /// <summary>Eshik oldida rad etilgan qatorlar va ular do'konga qaytgan vaqt.</summary>
+    public List<OnlineOrderRejectedItemDto> RejectedItems { get; set; } = [];
+    public DateTime? RejectedReturnedAt { get; set; }
+
+    /// <summary>Kuryer taklifi: None | Pending | Accepted | NoCourier.</summary>
+    public CourierOfferStatus CourierOfferStatus { get; set; }
+    public DateTime? CourierAcceptedAt { get; set; }
+
+    /// <summary>Takliflar tarixi (faqat tafsilotda, GET /{id}).</summary>
+    public List<Courier.CourierOfferHistoryDto>? CourierOffers { get; set; }
+
     public static OnlineOrderDto FromEntity(OnlineOrder o, IReadOnlyDictionary<Guid, decimal>? stock = null) => new()
     {
+        IsPreorder = o.IsPreorder,
+        PreorderNotifiedAt = o.PreorderNotifiedAt,
+        RejectedItems = o.Items.Where(i => i.RejectedQuantity > 0).OrderBy(i => i.CreatedAt)
+            .Select(i => new OnlineOrderRejectedItemDto
+            {
+                ItemId = i.Id,
+                ProductId = i.ProductId,
+                ProductName = i.ProductName,
+                Quantity = i.RejectedQuantity,
+                Reason = i.RejectReason
+            }).ToList(),
+        RejectedReturnedAt = o.RejectedReturnedAt,
+        CourierOfferStatus = o.CourierOfferStatus,
+        CourierAcceptedAt = o.CourierAcceptedAt,
         Id = o.Id,
         Number = o.Number,
         BranchId = o.BranchId,
@@ -165,6 +196,16 @@ public class OnlineOrderDto
             MarkingCodes = i.MarkingCodes.ToList()
         }).ToList()
     };
+}
+
+/// <summary>Eshik oldida rad etilgan qator.</summary>
+public class OnlineOrderRejectedItemDto
+{
+    public Guid ItemId { get; set; }
+    public Guid ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public string? Reason { get; set; }
 }
 
 /// <summary>GET /api/online-orders/ratings javobi.</summary>

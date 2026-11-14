@@ -322,12 +322,24 @@ public class SaleDto
     /// <summary>Ball bilan to'langan qism (chegirma sifatida qatorlarga taqsimlangan).</summary>
     public decimal LoyaltyPointsRedeemed { get; set; }
 
+    // ---- Bosqich 10.5: qisman qaytarish (eski backend'da yo'q — null) ----
+    /// <summary>Qaytariladigan miqdor qolganmi (server hisoblaydi).</summary>
+    public bool? CanRefund { get; set; }
+    /// <summary>Refund javobi: mijozdan ayirilgan keshbek ballari.</summary>
+    public decimal? LoyaltyPointsReversed { get; set; }
+    /// <summary>Refund javobi: ball yetmagani uchun puldan ushlab qolingan summa.</summary>
+    public decimal? LoyaltyWithheldAmount { get; set; }
+    /// <summary>Refund javobi: mijozga beriladigan pul.</summary>
+    public decimal? RefundCashAmount { get; set; }
+
     public List<SaleItemDto> Items { get; set; } = new();
     public ReceiptInfo? Receipt { get; set; }
 }
 
 public class SaleItemDto
 {
+    /// <summary>SaleItem Id — qisman qaytarishda saleItemId sifatida yuboriladi.</summary>
+    public Guid Id { get; set; }
     public Guid ProductId { get; set; }
     public string ProductName { get; set; } = "";
     public decimal Quantity { get; set; }
@@ -339,6 +351,41 @@ public class SaleItemDto
     public decimal VatPercent { get; set; }
     public string? Barcode { get; set; }
     public string? CommitentTin { get; set; }
+
+    /// <summary>Allaqachon qaytarilgan miqdor (10.5; eski backend'da null).</summary>
+    public decimal? RefundedQuantity { get; set; }
+    /// <summary>Hali qaytarish mumkin bo'lgan miqdor (10.5; eski backend'da null).</summary>
+    public decimal? RefundableQuantity { get; set; }
+
+    /// <summary>Qaytarish mumkin bo'lgan miqdor: server bergani yoki sotilgan − qaytarilgan.</summary>
+    public decimal EffectiveRefundable =>
+        RefundableQuantity ?? Math.Max(0, Quantity - (RefundedQuantity ?? 0));
+}
+
+/// <summary>POST /api/sales/{id}/refund va refund-preview tanasi (10.5).</summary>
+public class RefundRequest
+{
+    public List<RefundItemRequest> Items { get; set; } = new();
+    public string? Reason { get; set; }
+}
+
+public class RefundItemRequest
+{
+    public Guid SaleItemId { get; set; }
+    public decimal Quantity { get; set; }
+}
+
+/// <summary>POST /api/sales/{id}/refund-preview javobi (10.5). Maydonlar tolerant.</summary>
+public class RefundPreviewDto
+{
+    /// <summary>Qatorlar tafsiloti — shakli kelishuvda aniq emas, faqat saqlanadi.</summary>
+    public System.Text.Json.JsonElement? Items { get; set; }
+    public decimal RefundTotal { get; set; }
+    public decimal PointsToReverse { get; set; }
+    public decimal? PointsAvailable { get; set; }
+    public decimal WithheldAmount { get; set; }
+    public decimal CashToReturn { get; set; }
+    public decimal? RedeemedPointsReturned { get; set; }
 }
 
 /// <summary>Chekning fiskal holati (backend ReceiptDto bilan mos).</summary>
@@ -381,7 +428,10 @@ public class SaleListDto
     public string DateLabel => CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
     public string TimeLabel => CreatedAt.ToLocalTime().ToString("HH:mm");
     public string TotalLabel => (Type == "Refund" ? "− " : "") + TotalAmount.ToString("N0");
-    public string TypeLabel => Type == "Refund" ? "Qaytarish" : (Status == "Refunded" ? "Qaytarilgan" : "Sotuv");
+    public string TypeLabel => Type == "Refund" ? "Qaytarish"
+        : Status == "Refunded" ? "Qaytarilgan"
+        : Status == "PartiallyRefunded" ? "Qisman qaytarilgan"
+        : "Sotuv";
     public string PaymentLabel => PaymentMethod switch
     {
         "Card" => "Karta",
@@ -390,7 +440,13 @@ public class SaleListDto
         "Debt" => "Nasiya",
         _ => "Naqd"
     };
-    public bool CanRefund => Type == "Sale" && Status != "Refunded";
+    /// <summary>Server bergan canRefund (10.5); eski backend'da null.</summary>
+    [System.Text.Json.Serialization.JsonPropertyName("canRefund")]
+    public bool? ServerCanRefund { get; set; }
+
+    /// <summary>Qaytarish mumkinmi: server bergani, bo'lmasa Sale va to'liq qaytarilmagan.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool CanRefund => ServerCanRefund ?? (Type == "Sale" && Status != "Refunded");
 }
 
 /// <summary>Smena Z-hisoboti chekini chop etish uchun ma'lumot (smena + kassa sarlavhasi).</summary>
@@ -472,6 +528,18 @@ public class ReceiptData
 
     /// <summary>Ball bilan to'langan qism ("Ball bilan to'landi: −M").</summary>
     public decimal LoyaltyPointsRedeemed { get; set; }
+
+    // ---- Qaytarish cheki (10.5) ----
+    /// <summary>Qaytarish (refund) cheki — sarlavha "Qaytarish", "Berilgan/Qaytim" o'rniga qaytarish bloki.</summary>
+    public bool IsRefund { get; set; }
+    /// <summary>Ball yetmagani uchun puldan ushlab qolingan keshbek ("Keshbek ushlab qolindi: X").</summary>
+    public decimal LoyaltyWithheldAmount { get; set; }
+    /// <summary>Mijozdan ayirilgan keshbek ballari.</summary>
+    public decimal LoyaltyPointsReversed { get; set; }
+    /// <summary>Mijozga beriladigan pul (null — Total).</summary>
+    public decimal? RefundCashAmount { get; set; }
+    /// <summary>Qaytarish sababi (ixtiyoriy).</summary>
+    public string? RefundReason { get; set; }
 }
 
 public class ReceiptLine

@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { onlineOrdersApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useStoreFilterStore } from '../stores/storeFilter'
+import ReturnsTab from './online/ReturnsTab.vue'
 
 // Online (mobil ilova) buyurtmalar — faqat ko'rish va hisobot. Amallar kassada (desktop) bajariladi.
 
@@ -27,6 +28,8 @@ function addDays(dateStr, days) {
 const dateFrom = ref(addDays(toDateStr(new Date()), -6))
 const dateTo = ref(toDateStr(new Date()))
 const status = ref('')
+// Bosqich 10.1: faqat oldindan buyurtmalar (yopiq do'konga tushganlar)
+const preorderOnly = ref(false)
 
 const STATUS = {
   New: { text: 'Yangi', cls: 'st-new' },
@@ -54,6 +57,59 @@ const tagText = (t) => TAGS[t] || t
 const stars = (n) => '★'.repeat(n || 0) + '☆'.repeat(5 - (n || 0))
 
 const statusOf = (s) => STATUS[s] || { text: s, cls: 'st-work' }
+
+// Bosqich 10.1: "🌙 Oldindan · 09:00" (UTC → lokal vaqt; bugun bo'lmasa sana ham)
+function preorderText(o) {
+  if (!o?.isPreorder) return ''
+  if (!o.scheduledFor) return '🌙 Oldindan'
+  const d = new Date(o.scheduledFor)
+  const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const sameDay = d.toDateString() === new Date().toDateString()
+  const date = sameDay ? '' : `${d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })} `
+  return `🌙 Oldindan · ${date}${time}`
+}
+
+// Bosqich 10.6: kuryerga taklif holati
+const OFFER = {
+  Pending: { text: '⏳ Kuryer kutilmoqda', cls: 'st-work' },
+  Accepted: { text: '✅ Qabul qildi', cls: 'st-done' },
+  NoCourier: { text: '⚠ Kuryer topilmadi', cls: 'st-bad' }
+}
+const OFFER_ITEM = { Pending: 'Kutilmoqda', Accepted: 'Qabul qildi', Declined: 'Rad etdi', Expired: "Vaqti o'tdi", Cancelled: 'Bekor (boshqasi oldi)' }
+const offerOf = (o) => OFFER[o.courierOfferStatus] || null
+const fmtTime = (v) => (v ? new Date(v).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '')
+function offerSummary(o) {
+  const offers = o.courierOffers || []
+  if (o.courierOfferStatus !== 'Pending' || !offers.length) return ''
+  const declined = offers.filter((x) => x.status === 'Declined').length
+  return `${declined}/${offers.length} rad`
+}
+
+// Bosqich 10.5: eshik oldida rad etilgan tovarlar sabablari
+const REJECT_REASON = { Damaged: 'Shikastlangan', WrongItem: "Noto'g'ri tovar", Quality: 'Sifatsiz', Expired: "Muddati o'tgan", Missing: 'Yetishmadi', Other: 'Boshqa' }
+
+const canReoffer = computed(() => {
+  const o = selected.value
+  return !!o && o.fulfillmentType === 'Delivery' && !o.courierUserId && o.courierOfferStatus !== 'Accepted' &&
+    ['Accepted', 'Picking', 'Ready', 'AwaitingTransfer'].includes(o.status)
+})
+const reoffering = ref(false)
+async function reoffer() {
+  const o = selected.value
+  if (!o) return
+  reoffering.value = true
+  err.value = ''
+  try {
+    const r = await onlineOrdersApi.offerCouriers(o.id)
+    if (r && typeof r === 'object' && r.id === o.id) selected.value = r
+    else await open(o)
+    load()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    reoffering.value = false
+  }
+}
 const typeText = (o) => (o.fulfillmentType === 'Delivery' ? 'Yetkazish' : 'Olib ketish')
 const payText = (o) => `${PAY[o.paymentMethod] || o.paymentMethod} · ${PAY_STATUS[o.paymentStatus] || o.paymentStatus}`
 
@@ -129,10 +185,14 @@ async function loadRatings() {
   }
 }
 
+const returnsTab = ref(null)
 function reload() {
   if (tab.value === 'ratings') loadRatings()
+  else if (tab.value === 'returns') returnsTab.value?.load()
   else load()
 }
+
+const shownOrders = computed(() => (preorderOnly.value ? orders.value.filter((o) => o.isPreorder) : orders.value))
 
 // Taqsimot: { "1": n, ..., "5": n } (yoki massiv) → 5..1 qatorlar
 const distRows = computed(() => {
@@ -164,7 +224,7 @@ const summary = computed(() => {
   let deliveredSum = 0
   let deliveredCount = 0
   let cancelled = 0
-  for (const o of orders.value) {
+  for (const o of shownOrders.value) {
     if (o.status === 'Delivered') {
       deliveredSum += Number(o.totalAmount) || 0
       deliveredCount++
@@ -172,7 +232,7 @@ const summary = computed(() => {
       cancelled++
     }
   }
-  return { count: orders.value.length, deliveredSum, deliveredCount, cancelled }
+  return { count: shownOrders.value.length, deliveredSum, deliveredCount, cancelled }
 })
 
 // Tafsilot: qator holati (yig'ilgan / olib tashlangan / almashtirilgan)
@@ -214,6 +274,7 @@ const timeline = computed(() => {
     ['Yig\'ish boshlandi', o.pickingStartedAt],
     ['Tayyor', o.readyAt],
     ['To\'lov tasdiqlandi', o.paymentConfirmedAt],
+    ['Kuryer qabul qildi', o.courierAcceptedAt],
     ['Kuryerga berildi', o.dispatchedAt],
     ['Yetkazildi / topshirildi', o.deliveredAt],
     ['Bekor / rad', o.cancelledAt]
@@ -222,7 +283,7 @@ const timeline = computed(() => {
 
 watch([dateFrom, dateTo, status], () => reload())
 watch(() => storeFilter.selectedBranchId, () => reload())
-watch(tab, () => reload())
+watch(tab, (v) => { if (v !== 'returns') reload() })
 
 onMounted(async () => {
   await storeFilter.ensureLoaded()
@@ -242,10 +303,14 @@ onMounted(async () => {
   <div class="row" style="gap:8px; margin-bottom:12px">
     <button class="btn btn-ghost btn-sm" :class="{ 'btn-active': tab === 'orders' }" @click="tab = 'orders'">Buyurtmalar</button>
     <button class="btn btn-ghost btn-sm" :class="{ 'btn-active': tab === 'ratings' }" @click="tab = 'ratings'">Baholar</button>
+    <button class="btn btn-ghost btn-sm" :class="{ 'btn-active': tab === 'returns' }" @click="tab = 'returns'">Qaytarishlar</button>
   </div>
 
   <div v-if="err" class="alert alert-error">{{ err }}</div>
 
+  <ReturnsTab v-if="tab === 'returns'" ref="returnsTab" />
+
+  <template v-else>
   <div class="card toolbar">
     <div class="field-inline">
       <span class="muted small">Sana</span>
@@ -257,6 +322,9 @@ onMounted(async () => {
       <option value="">Barcha holatlar</option>
       <option v-for="(v, k) in STATUS" :key="k" :value="k">{{ v.text }}</option>
     </select>
+    <label v-if="tab === 'orders'" class="field-inline small" style="cursor:pointer">
+      <input v-model="preorderOnly" type="checkbox" /> 🌙 Oldindan buyurtmalar
+    </label>
     <span v-if="storeFilter.selectedStore" class="muted small">Do'kon: {{ storeFilter.selectedStore.name }}</span>
   </div>
 
@@ -340,21 +408,30 @@ onMounted(async () => {
             <th>To'lov</th>
             <th class="text-right">Summa</th>
             <th>Holat</th>
+            <th>Kuryer</th>
             <th>Baho</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="9" class="muted" style="text-align:center; padding:24px">Yuklanmoqda...</td></tr>
-          <tr v-else-if="!orders.length"><td colspan="9" class="muted" style="text-align:center; padding:24px">Buyurtma yo'q</td></tr>
-          <tr v-for="o in orders" :key="o.id" class="clickable" :class="{ sel: selected?.id === o.id }" @click="open(o)">
+          <tr v-if="loading"><td colspan="10" class="muted" style="text-align:center; padding:24px">Yuklanmoqda...</td></tr>
+          <tr v-else-if="!shownOrders.length"><td colspan="10" class="muted" style="text-align:center; padding:24px">Buyurtma yo'q</td></tr>
+          <tr v-for="o in shownOrders" :key="o.id" class="clickable" :class="{ sel: selected?.id === o.id }" @click="open(o)">
             <td style="font-weight:700">{{ o.number }}</td>
-            <td class="nowrap">{{ fmtDateTime(o.createdAt) }}</td>
+            <td class="nowrap">
+              {{ fmtDateTime(o.createdAt) }}
+              <div v-if="o.isPreorder" class="pre-badge" :title="o.scheduledFor ? fmtDateTime(o.scheduledFor) : ''">{{ preorderText(o) }}</div>
+            </td>
             <td>{{ o.customerName }}</td>
             <td class="muted nowrap">{{ maskPhone(o.customerPhone) }}</td>
             <td>{{ typeText(o) }}</td>
             <td class="small">{{ payText(o) }}</td>
             <td class="text-right" style="font-weight:600">{{ fmtNum(o.totalAmount) }}</td>
             <td><span class="st" :class="statusOf(o.status).cls">{{ statusOf(o.status).text }}</span></td>
+            <td class="small">
+              <div v-if="o.courierName">{{ o.courierName }}<span v-if="o.courierAcceptedAt" class="muted"> · {{ fmtTime(o.courierAcceptedAt) }}</span></div>
+              <span v-else-if="offerOf(o)" class="st" :class="offerOf(o).cls">{{ offerOf(o).text }}</span>
+              <span v-else class="muted">—</span>
+            </td>
             <td class="nowrap"><span v-if="o.rating" class="star" :class="{ low: o.rating <= 3 }" :title="o.ratingComment || ''">★ {{ o.rating }}</span></td>
           </tr>
         </tbody>
@@ -374,6 +451,7 @@ onMounted(async () => {
       <div class="info">
         <div><b>{{ selected.customerName }}</b> · {{ selected.customerPhone }}</div>
         <div>{{ typeText(selected) }}: {{ addressText(selected) }}<span v-if="selected.contactless"> · kontaktsiz</span></div>
+        <div v-if="selected.isPreorder"><span class="pre-badge">{{ preorderText(selected) }}</span> <span class="muted small">do'kon yopiq paytda tushgan</span></div>
         <div v-if="selected.scheduledFor">Vaqt: {{ fmtDateTime(selected.scheduledFor) }} ga</div>
         <div v-if="selected.comment" class="comment">Izoh: {{ selected.comment }}</div>
         <div v-if="selected.outOfStockPolicy" class="muted small">Mahsulot bo'lmasa: {{ POLICY[selected.outOfStockPolicy] || selected.outOfStockPolicy }}</div>
@@ -389,6 +467,22 @@ onMounted(async () => {
           <template v-if="selected.courierCashCollected != null">Naqd olindi: <b>{{ fmtNum(selected.courierCashCollected) }}</b> so'm · </template>
           <span v-if="selected.courierCashHandedOverAt" style="color:#166534">kassaga topshirildi {{ fmtDateTime(selected.courierCashHandedOverAt) }}</span>
           <span v-else style="color:#b45309">kassaga hali topshirilmagan</span>
+        </div>
+      </div>
+
+      <!-- Bosqich 10.6: kuryerga taklif -->
+      <div v-if="selected.fulfillmentType === 'Delivery' && (offerOf(selected) || (selected.courierOffers || []).length || canReoffer)" class="info">
+        <div v-if="offerOf(selected)">
+          <span class="st" :class="offerOf(selected).cls">{{ offerOf(selected).text }}</span>
+          <span v-if="selected.courierOfferStatus === 'Accepted' && selected.courierName"> {{ selected.courierName }} {{ fmtTime(selected.courierAcceptedAt) }}</span>
+          <span v-if="offerSummary(selected)" class="muted small"> ({{ offerSummary(selected) }})</span>
+        </div>
+        <div v-for="(of, idx) in selected.courierOffers || []" :key="idx" class="tl small">
+          <span>{{ of.courierName }}</span>
+          <span class="muted">{{ OFFER_ITEM[of.status] || of.status }}<template v-if="of.respondedAt"> · {{ fmtDateTime(of.respondedAt) }}</template></span>
+        </div>
+        <div v-if="canReoffer">
+          <button class="btn btn-ghost btn-sm" :disabled="reoffering" @click="reoffer">{{ reoffering ? '...' : 'Kuryerlarga qayta yuborish' }}</button>
         </div>
       </div>
 
@@ -414,6 +508,19 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Bosqich 10.5: eshik oldida rad etilgan tovarlar -->
+      <div v-if="(selected.rejectedItems || []).length" class="info info-bad">
+        <div class="sec-title" style="margin:0">Eshik oldida rad etilgan</div>
+        <div v-for="(r, idx) in selected.rejectedItems" :key="r.itemId || idx" class="tl small">
+          <span>{{ r.productName }} × {{ fmtQty(r.quantity) }}</span>
+          <span>{{ REJECT_REASON[r.reason] || r.reason }}</span>
+        </div>
+        <div class="small">
+          <span v-if="selected.rejectedReturnedAt" style="color:#166534">Do'konga qaytarildi: {{ fmtDateTime(selected.rejectedReturnedAt) }}</span>
+          <span v-else style="color:#b45309">Kuryer hali do'konga qaytarmagan</span>
+        </div>
+      </div>
+
       <div class="totals">
         <div><span>Mahsulotlar</span><span>{{ fmtNum(selected.itemsTotal) }}</span></div>
         <div v-if="Number(selected.promoDiscount) > 0" class="disc">
@@ -434,6 +541,7 @@ onMounted(async () => {
       </div>
     </div>
   </div>
+  </template>
   </template>
 </template>
 
@@ -484,6 +592,7 @@ onMounted(async () => {
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #dcfce7; color: #166534; margin: 1px 4px 1px 0; }
 .tag.neg { background: #fee2e2; color: #991b1b; }
+.pre-badge { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #ede9fe; color: #5b21b6; margin-top: 2px; white-space: nowrap; }
 @media (max-width: 1000px) {
   .layout { grid-template-columns: 1fr; }
   .summary { grid-template-columns: 1fr; }

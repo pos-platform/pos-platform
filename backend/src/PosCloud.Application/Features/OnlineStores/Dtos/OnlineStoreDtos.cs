@@ -1,3 +1,4 @@
+using PosCloud.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace PosCloud.Application.Features.OnlineStores.Dtos;
@@ -99,6 +100,14 @@ public class OnlineStoreSettingsDto
     public bool ReferralEnabled { get; set; }
     public decimal ReferrerBonus { get; set; }
     public decimal RefereeBonus { get; set; }
+
+    // Bosqich 10: oldindan buyurtma, qaytarish, kuryer taklifi
+    public bool AcceptWhenClosed { get; set; }
+    public bool ReturnsEnabled { get; set; }
+    public int ReturnDays { get; set; }
+    public bool ReturnPickupByCourier { get; set; }
+    public CourierOfferMode CourierOfferMode { get; set; }
+    public int CourierOfferTimeoutSec { get; set; }
 }
 
 /// <summary>SuperAdmin o'zgartiradigan qism.</summary>
@@ -231,6 +240,18 @@ public class UpdateOnlineStoreSettingsRequest
 
     [Range(0, 1_000_000)]
     public decimal RefereeBonus { get; set; }
+
+    // Bosqich 10 — ixtiyoriy: yuborilmasa (eski klient) mavjud qiymat saqlanadi.
+    public bool? AcceptWhenClosed { get; set; }
+    public bool? ReturnsEnabled { get; set; }
+
+    [Range(1, 30)]
+    public int? ReturnDays { get; set; }
+    public bool? ReturnPickupByCourier { get; set; }
+    public CourierOfferMode? CourierOfferMode { get; set; }
+
+    [Range(15, 3600)]
+    public int? CourierOfferTimeoutSec { get; set; }
 }
 
 public class SetAcceptingOrdersRequest

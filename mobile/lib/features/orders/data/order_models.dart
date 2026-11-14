@@ -140,6 +140,8 @@ class OrderItem {
     required this.lineTotal,
     required this.isRemoved,
     required this.replacesItemId,
+    this.returnedQuantity = 0,
+    this.returnableQuantityRaw,
   });
 
   final String id;
@@ -155,7 +157,22 @@ class OrderItem {
   /// Almashtirish qatori bo'lsa — qaysi qator o'rniga.
   final String? replacesItemId;
 
+  /// Kelishuv 10.5 (ixtiyoriy): allaqachon qaytarilgan (yoki rad etilgan) miqdor.
+  final double returnedQuantity;
+
+  /// Server qaytariladigan miqdorni o'zi bersa (`returnableQuantity`).
+  final double? returnableQuantityRaw;
+
   bool get isReplacement => replacesItemId != null;
+
+  /// Qaytarish mumkin bo'lgan miqdor: olingan − qaytarilgan (server bergan bo'lsa — o'shasi).
+  double get returnableQuantity {
+    if (isRemoved) return 0;
+    final raw = returnableQuantityRaw;
+    if (raw != null) return raw < 0 ? 0 : raw;
+    final left = (pickedQuantity ?? quantity) - returnedQuantity;
+    return left < 0 ? 0 : left;
+  }
 
   factory OrderItem.fromJson(Map<String, dynamic> j) => OrderItem(
         id: j['id'] as String? ?? '',
@@ -168,6 +185,8 @@ class OrderItem {
         lineTotal: _num(j['lineTotal']),
         isRemoved: j['isRemoved'] as bool? ?? false,
         replacesItemId: _str(j['replacesItemId']),
+        returnedQuantity: _num(j['returnedQuantity'] ?? j['refundedQuantity'] ?? j['rejectedQuantity']),
+        returnableQuantityRaw: _numOrNull(j['returnableQuantity']),
       );
 }
 
@@ -225,6 +244,8 @@ class OrderDetail extends OrderSummary {
     this.ratingComment,
     this.ratingTags = const [],
     this.ratedAt,
+    this.isPreorder = false,
+    this.canReturn = false,
   });
 
   final String? branchName;
@@ -280,6 +301,12 @@ class OrderDetail extends OrderSummary {
   /// `fast|fresh|polite|accurate|late|damaged|missing|wrong_item`.
   final List<String> ratingTags;
   final DateTime? ratedAt;
+
+  /// Kelishuv 10.1: yopiq do'konga berilgan buyurtma — do'kon ochilganda ([scheduledFor]) ko'rib chiqiladi.
+  final bool isPreorder;
+
+  /// Kelishuv 10.5: Delivered va qaytarish muddati ichida — "Qaytarish" tugmasi.
+  final bool canReturn;
 
   bool get isOnlinePayment => onlinePaymentProvider != null;
 
@@ -345,6 +372,8 @@ class OrderDetail extends OrderSummary {
         _ => const [],
       },
       ratedAt: _date(j['ratedAt']),
+      isPreorder: j['isPreorder'] == true,
+      canReturn: j['canReturn'] == true,
     );
   }
 }

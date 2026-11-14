@@ -39,7 +39,15 @@ const form = reactive({
   supportTelegram: '',
   referralEnabled: false,
   referrerBonus: 0,
-  refereeBonus: 0
+  refereeBonus: 0,
+  // Bosqich 10.1 / 10.5
+  acceptWhenClosed: true,
+  returnsEnabled: true,
+  returnDays: 3,
+  returnPickupByCourier: true,
+  // Bosqich 10.6
+  courierOfferMode: 'Broadcast',
+  courierOfferTimeoutSec: 120
 })
 
 const statusText = computed(() => {
@@ -81,7 +89,13 @@ function fill(v) {
     supportTelegram: v.supportTelegram || '',
     referralEnabled: !!v.referralEnabled,
     referrerBonus: v.referrerBonus ?? 0,
-    refereeBonus: v.refereeBonus ?? 0
+    refereeBonus: v.refereeBonus ?? 0,
+    acceptWhenClosed: v.acceptWhenClosed !== false,
+    returnsEnabled: v.returnsEnabled !== false,
+    returnDays: v.returnDays ?? 3,
+    returnPickupByCourier: v.returnPickupByCourier !== false,
+    courierOfferMode: v.courierOfferMode || 'Broadcast',
+    courierOfferTimeoutSec: v.courierOfferTimeoutSec ?? 120
   })
 }
 
@@ -152,6 +166,16 @@ async function save() {
     err.value = '"Do\'stni taklif qilish" yoqilgan — kamida bitta bonusni kiriting.'
     return
   }
+  const returnDays = Number(form.returnDays)
+  if (form.returnsEnabled && !(Number.isInteger(returnDays) && returnDays >= 1 && returnDays <= 30)) {
+    err.value = 'Qaytarish muddati 1–30 kun bo\'lishi kerak.'
+    return
+  }
+  const offerTimeout = Number(form.courierOfferTimeoutSec)
+  if (form.courierOfferMode === 'Broadcast' && !(Number.isInteger(offerTimeout) && offerTimeout >= 30 && offerTimeout <= 1800)) {
+    err.value = 'Kuryer taklifi kutish vaqti 30–1800 soniya bo\'lishi kerak.'
+    return
+  }
   busy.value = true
   try {
     fill(await onlineStoreApi.update({
@@ -181,7 +205,13 @@ async function save() {
       supportTelegram: tg || null,
       referralEnabled: form.referralEnabled,
       referrerBonus: refBonus,
-      refereeBonus: refeeBonus
+      refereeBonus: refeeBonus,
+      acceptWhenClosed: form.acceptWhenClosed,
+      returnsEnabled: form.returnsEnabled,
+      returnDays: Number.isFinite(returnDays) && returnDays > 0 ? returnDays : 3,
+      returnPickupByCourier: form.returnPickupByCourier,
+      courierOfferMode: form.courierOfferMode,
+      courierOfferTimeoutSec: Number.isFinite(offerTimeout) && offerTimeout > 0 ? offerTimeout : 120
     }))
     ok.value = 'Saqlandi.'
   } catch (e) {
@@ -281,6 +311,10 @@ onMounted(load)
           <input v-model="form.closesAt" type="time" class="input" />
         </div>
       </div>
+      <label class="row">
+        <input v-model="form.acceptWhenClosed" type="checkbox" />
+        Do'kon yopiq paytda ham buyurtma qabul qilinsin (oldindan buyurtma — do'kon ochilganda kassaga chiqadi)
+      </label>
 
       <h3>Yetkazish va olib ketish</h3>
       <label class="row"><input v-model="form.deliveryEnabled" type="checkbox" /> Yetkazib berish</label>
@@ -326,6 +360,33 @@ onMounted(load)
           <span class="muted small">Kiritilsa, yetkazish narxi fiskal chekka "Yetkazib berish xizmati" qatori sifatida kiradi. Bo'sh — chekka kirmaydi.</span>
         </div>
       </div>
+
+      <h3>Kuryerga taklif</h3>
+      <div class="grid3">
+        <div class="field">
+          <label>Buyurtma tayyor bo'lganda</label>
+          <select v-model="form.courierOfferMode" class="select">
+            <option value="Broadcast">Filial kuryerlariga taklif yuborilsin (birinchi qabul qilgan oladi)</option>
+            <option value="Off">Yuborilmasin — kuryer qo'lda biriktiriladi</option>
+          </select>
+        </div>
+        <div v-if="form.courierOfferMode === 'Broadcast'" class="field">
+          <label>Javob kutish vaqti, soniya</label>
+          <input v-model="form.courierOfferTimeoutSec" type="number" min="30" max="1800" class="input" />
+        </div>
+      </div>
+
+      <h3>Qaytarish</h3>
+      <label class="row"><input v-model="form.returnsEnabled" type="checkbox" /> Mijoz ilovadan qaytarish so'rovi yubora oladi</label>
+      <div v-if="form.returnsEnabled" class="grid3">
+        <div class="field">
+          <label>Yetkazilgandan keyin necha kun ichida</label>
+          <input v-model="form.returnDays" type="number" min="1" max="30" class="input" />
+        </div>
+      </div>
+      <label v-if="form.returnsEnabled" class="row">
+        <input v-model="form.returnPickupByCourier" type="checkbox" /> Qaytariladigan tovarni kuryer olib ketishi mumkin
+      </label>
 
       <h3>Bonus bilan to'lash</h3>
       <label class="row"><input v-model="form.bonusPayEnabled" type="checkbox" /> Mijoz to'plagan bonus ballari bilan to'lay oladi (1 ball = 1 so'm)</label>

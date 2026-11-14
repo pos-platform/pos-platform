@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 
+import 'package:dio/dio.dart' show Options;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -11,8 +12,11 @@ import 'package:material_ui/material_ui.dart' show Locale, WidgetsBinding;
 
 import '../../features/auth/auth_controller.dart';
 import '../../features/catalog/store_selection.dart';
+import '../../features/courier/courier_offers.dart';
+import '../../features/courier/data/courier_session.dart';
 import '../../features/marketing/data/marketing_models.dart';
 import '../../features/marketing/shop_link.dart';
+import '../../features/returns/data/returns_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../api/api_client.dart';
 import '../locale/locale_controller.dart';
@@ -42,6 +46,7 @@ class PushService {
   bool _enabled = false;
   String? _token;
   String? _registered; // "token|til" — bir xil ma'lumot qayta yuborilmaydi
+  String? _courierRegistered; // kuryer uchun "token|sessiya"
   Future<void> Function()? _pending; // kirgandan keyin bajariladigan navigatsiya
 
   /// Joriy FCM token (push o'chiq bo'lsa null).
@@ -91,6 +96,17 @@ class PushService {
     messaging.onTokenRefresh.listen((t) {
       _token = t;
       _register();
+      _registerCourier();
+    });
+
+    // Kuryer kirganda — token yuboriladi va kutilayotgan push (taklif) ochiladi.
+    _ref.listen(courierAuthProvider, (prev, next) {
+      if (next.isSignedIn && prev?.session?.token != next.session?.token) {
+        _courierRegistered = null;
+        _registerCourier();
+        _flushCourierPending();
+      }
+      if (!next.isSignedIn) _courierRegistered = null;
     });
 
     _ref.listen(authControllerProvider, (prev, next) {
@@ -111,6 +127,7 @@ class PushService {
       debugPrint('FCM token olinmadi: $e');
     }
     await _register();
+    await _registerCourier();
   }
 
   Future<void> _initLocalNotifications() async {
@@ -167,6 +184,12 @@ class PushService {
   void _onForegroundMessage(RemoteMessage m) {
     final orderId = _orderIdOf(m.data);
     if (orderId != null) _orderEvents.add(orderId);
+    // Ilova ochiq va kuryer rejimida — bildirishnoma o'rniga darhol to'liq ekranli taklif.
+    if (m.data['type'] == 'courier_offer' && _ref.read(courierAuthProvider).isSignedIn) {
+      _ref.read(courierOfferAlertProvider).incoming(orderId: _str(m.data['orderId']), offerId: _str(m.data['offerId']));
+      return;
+    }
+    if (m.data['type'] == 'return_status') _ref.invalidate(returnsListProvider);
 
     final n = m.notification;
     if (n == null || !Platform.isAndroid) return; // iOS'da tizim o'zi ko'rsatadi
@@ -216,6 +239,15 @@ class PushService {
     }
 
     switch (data['type']) {
+      case 'courier_offer':
+        // Kelishuv 10.6: kuryer rejimida taklif kartasi ochiladi.
+        _scheduleCourier(() async => _ref
+            .read(courierOfferAlertProvider)
+            .open(orderId: _str(data['orderId']), offerId: _str(data['offerId'])));
+      case 'return_status':
+        // Kelishuv 10.5: qaytarish holati ekrani.
+        final returnId = _str(data['returnId']);
+        _schedule(() async => router.go(returnId == null ? '/profile/returns' : '/profile/returns/$returnId'));
       case 'back_in_stock':
         final productId = _str(data['productId']);
         if (productId == null) return;
@@ -245,6 +277,54 @@ class PushService {
   void _schedule(Future<void> Function() action) {
     _pending = action;
     _flushPending();
+  }
+
+  Future<void> Function()? _courierPending;
+
+  /// Kuryer sessiyasi tiklangach bajariladi (ilova push bosilib ochilgan bo'lsa).
+  void _scheduleCourier(Future<void> Function() action) {
+    _courierPending = action;
+    _flushCourierPending();
+  }
+
+  void _flushCourierPending() {
+    final action = _courierPending;
+    if (action == null || !_ref.read(courierAuthProvider).isSignedIn) return;
+    _courierPending = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) => action());
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  /// Kuryer qurilma tokeni (kelishuv 10.6): `PUT /api/courier/device-token`. Bir xil token qayta yuborilmaydi.
+  Future<void> _registerCourier() async {
+    final token = _token;
+    final session = _ref.read(courierAuthProvider).session;
+    if (token == null || session == null || session.isExpired) return;
+    final key = '$token|${session.token.hashCode}';
+    if (_courierRegistered == key) return;
+    try {
+      await createBaseDio().put<void>('/api/courier/device-token',
+          data: {'token': token, 'platform': Platform.isIOS ? 'ios' : 'android'},
+          options: Options(headers: {'Authorization': 'Bearer ${session.token}'}));
+      _courierRegistered = key;
+    } catch (e) {
+      debugPrint('Kuryer push tokeni yuborilmadi: $e');
+    }
+  }
+
+  /// Kuryer chiqishida token serverdan o'chiriladi (xato e'tiborsiz, chiqishni to'xtatmaydi).
+  Future<void> unregisterCourier(String courierToken) async {
+    final token = _token;
+    _courierRegistered = null;
+    if (token == null) return;
+    try {
+      await createBaseDio()
+          .delete<void>('/api/courier/device-token',
+              data: {'token': token}, options: Options(headers: {'Authorization': 'Bearer $courierToken'}))
+          .timeout(const Duration(seconds: 5));
+    } catch (e) {
+      debugPrint('Kuryer push tokeni o‘chirilmadi: $e');
+    }
   }
 
   void _flushPending() {

@@ -271,6 +271,10 @@ public partial class SalesHistoryWindow : Window
         SaleId = s.Id,
         LoyaltyPointsEarned = s.LoyaltyPointsEarned,
         LoyaltyPointsRedeemed = s.LoyaltyPointsRedeemed,
+        IsRefund = s.Type == "Refund",
+        LoyaltyWithheldAmount = s.LoyaltyWithheldAmount ?? 0,
+        LoyaltyPointsReversed = s.LoyaltyPointsReversed ?? 0,
+        RefundCashAmount = s.RefundCashAmount,
         Lines = s.Items.Select(i => new ReceiptLine
         {
             Name = i.ProductName,
@@ -298,25 +302,12 @@ public partial class SalesHistoryWindow : Window
             ShowMessage("Bu savdoni qaytarib bo'lmaydi (allaqachon qaytarilgan yoki refund cheki).", error: true);
             return;
         }
-        if (MessageBox.Show($"{sale.ReceiptNumber} chekni qaytarasizmi?", "Tasdiqlash",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-            return;
-
-        RefundButton.IsEnabled = false;
-        try
-        {
-            var refund = await AppState.Backend.RefundAsync(sale.Id);
+        // Qisman qaytarish (10.5): qatorlar, miqdor, sabab va preview RefundWindow'da.
+        var dlg = new RefundWindow(sale.Id) { Owner = this };
+        dlg.ShowDialog();
+        if (dlg.Refunded is { } refund)
             ShowMessage($"✓ Qaytarildi — chek {refund.ReceiptNumber}", error: false);
-            await LoadAsync();
-        }
-        catch (Exception ex)
-        {
-            ShowMessage(ex.Message, error: true);
-        }
-        finally
-        {
-            RefundButton.IsEnabled = true;
-        }
+        await LoadAsync();
     }
 
     private void ShowMessage(string text, bool error)

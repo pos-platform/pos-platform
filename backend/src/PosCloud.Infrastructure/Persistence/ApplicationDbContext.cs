@@ -77,6 +77,14 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<ShopReferral> ShopReferrals => Set<ShopReferral>();
     public DbSet<ShopPushCampaign> ShopPushCampaigns => Set<ShopPushCampaign>();
     public DbSet<LoyaltyTier> LoyaltyTiers => Set<LoyaltyTier>();
+
+    // Bosqich 10
+    public DbSet<OnlineReturn> OnlineReturns => Set<OnlineReturn>();
+    public DbSet<OnlineReturnItem> OnlineReturnItems => Set<OnlineReturnItem>();
+    public DbSet<SystemError> SystemErrors => Set<SystemError>();
+    public DbSet<LoyaltySettingsChange> LoyaltySettingsChanges => Set<LoyaltySettingsChange>();
+    public DbSet<CourierOffer> CourierOffers => Set<CourierOffer>();
+    public DbSet<StaffDeviceToken> StaffDeviceTokens => Set<StaffDeviceToken>();
     public DbSet<LabelPrintJob> LabelPrintJobs => Set<LabelPrintJob>();
     public DbSet<LabelPrintJobItem> LabelPrintJobItems => Set<LabelPrintJobItem>();
     public DbSet<RoleTemplate> RoleTemplates => Set<RoleTemplate>();

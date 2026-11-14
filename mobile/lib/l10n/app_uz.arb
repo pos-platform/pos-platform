@@ -1024,5 +1024,135 @@
       }
     }
   },
-  "tierTop": "Siz eng yuqori darajadasiz"
+  "tierTop": "Siz eng yuqori darajadasiz",
+  "catOpensAt": "{time} da ochiladi",
+  "@catOpensAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutWhenOpens": "Do‘kon ochilganda",
+  "checkoutWhenOpensAt": "Do‘kon ochilganda ({time})",
+  "@checkoutWhenOpensAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutPreorderHint": "Oldindan buyurtma",
+  "ordersPreorderTitle": "Oldindan buyurtma",
+  "ordersPreorderNote": "Do‘kon hozir yopiq. Buyurtmangiz {time} da ko‘rib chiqiladi.",
+  "@ordersPreorderNote": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersPreorderNoteNoTime": "Do‘kon hozir yopiq. Buyurtmangiz do‘kon ochilganda ko‘rib chiqiladi.",
+  "courierTabOffers": "Takliflar",
+  "courierOffersEmpty": "Hozircha taklif yo‘q",
+  "courierOfferTitle": "Yangi buyurtma",
+  "courierOfferNumber": "Buyurtma #{number}",
+  "@courierOfferNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "courierOfferExpired": "Taklif vaqti tugadi",
+  "courierOfferAccept": "Qabul qilaman",
+  "courierOfferDecline": "Rad etaman",
+  "courierOfferTaken": "Boshqa kuryer oldi",
+  "courierOfferClosed": "Taklif yopildi",
+  "courierOfferAccepted": "Buyurtma sizga biriktirildi",
+  "courierOfferCash": "Naqd to‘lov",
+  "courierOfferPaidOrCard": "Karta / to‘langan",
+  "courierBack": "Orqaga",
+  "courierPickedUpFromStore": "Do‘kondan oldim",
+  "courierAwaitingPickup": "Do‘kondan olish",
+  "courierDonePickedUp": "Buyurtma yo‘lda",
+  "courierReturnTask": "Qaytarish",
+  "courierReturnNumber": "Qaytarish #{number}",
+  "@courierReturnNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "courierReturnPickedUp": "Olib ketildi",
+  "courierReturnPickedUpConfirm": "Tovarlarni mijozdan olganingizni tasdiqlaysizmi?",
+  "courierReturnDone": "Qaytarish olib ketildi",
+  "courierReturnNoCash": "Pul berilmaydi — do‘kon o‘zi qaytaradi",
+  "courierRejectItems": "Ba’zi tovarlarni rad etdi",
+  "courierRejectTitle": "Mijoz qaysi tovarlarni olmadi?",
+  "courierRejectedEdit": "Rad etilganlarni o‘zgartirish",
+  "courierToCollect": "Olinadigan summa",
+  "courierRejectApprox": "Taxminiy — yakuniy summani server hisoblaydi",
+  "courierSave": "Saqlash",
+  "returnReasonDamaged": "Shikastlangan",
+  "returnReasonWrongItem": "Noto‘g‘ri tovar",
+  "returnReasonQuality": "Sifatsiz",
+  "returnReasonExpired": "Muddati o‘tgan",
+  "returnReasonMissing": "Yetishmaydi",
+  "returnReasonOther": "Boshqa",
+  "refundMethodCash": "Naqd (do‘konda)",
+  "refundMethodTransfer": "Kartaga o‘tkazma",
+  "refundMethodBonus": "Bonus ball",
+  "returnMethodCourier": "Kuryer olib ketadi",
+  "returnMethodStore": "Do‘konga o‘zingiz olib borasiz",
+  "returnStatusRequested": "Ko‘rib chiqilmoqda",
+  "returnStatusApproved": "Tasdiqlandi",
+  "returnStatusPickupAssigned": "Kuryer biriktirildi",
+  "returnStatusPickedUp": "Kuryer olib ketdi",
+  "returnStatusReceived": "Do‘konga yetib keldi",
+  "returnStatusRefunded": "Pul qaytarildi",
+  "returnStatusRejected": "Rad etildi",
+  "returnStatusCancelled": "Bekor qilindi",
+  "returnsTitle": "Qaytarishlarim",
+  "returnsEmpty": "Qaytarishlar yo‘q",
+  "returnAction": "Qaytarish",
+  "returnRequestTitle": "Tovarni qaytarish",
+  "returnChooseItems": "Qaytariladigan tovarlar",
+  "returnNothingToReturn": "Qaytariladigan tovar qolmagan",
+  "returnReason": "Sabab",
+  "returnSelectReason": "Sababni tanlang",
+  "returnComment": "Izoh",
+  "returnCommentHint": "Muammoni qisqacha yozing",
+  "returnPhotos": "Rasmlar (3 tagacha)",
+  "returnAddPhoto": "Rasm",
+  "returnRemovePhoto": "Rasmni olib tashlash",
+  "returnRefundMethod": "Pulni qaytarish usuli",
+  "returnCashbackNote": "Shu tovarlar uchun berilgan keshbek ayiriladi.",
+  "returnAmount": "Qaytariladigan summa",
+  "returnSubmit": "So‘rov yuborish",
+  "returnSelectItems": "Kamida bitta tovar tanlang",
+  "returnSent": "So‘rov yuborildi",
+  "returnNumber": "Qaytarish #{number}",
+  "@returnNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "returnWithheld": "Keshbek ushlab qolindi",
+  "returnCancel": "So‘rovni bekor qilish",
+  "returnCancelConfirm": "Qaytarish so‘rovini bekor qilasizmi?",
+  "returnCancelled": "So‘rov bekor qilindi",
+  "returnRejectReason": "Rad etish sababi: {reason}",
+  "@returnRejectReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "returnTimeline": "Holat",
+  "returnMethod": "Qaytarish usuli"
 }

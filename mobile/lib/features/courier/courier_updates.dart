@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 import '../../core/config.dart';
+import 'courier_offers.dart';
 import 'data/courier_repository.dart';
 import 'data/courier_session.dart';
 
@@ -15,20 +16,38 @@ final courierUpdatesProvider = Provider<CourierUpdates?>((ref) {
   final token = ref.watch(courierAuthProvider.select((s) => s.session?.token));
   if (token == null) return null;
 
-  final updates = CourierUpdates._(token, () {
-    ref.invalidate(courierOrdersProvider);
-    ref.invalidate(courierOrderProvider);
-  });
+  final updates = CourierUpdates._(
+    token,
+    () {
+      ref.invalidate(courierOrdersProvider);
+      ref.invalidate(courierOrderProvider);
+    },
+    // Kelishuv 10.6: yangi taklif — to'liq ekranli karta; yopilgan taklif — ro'yxatdan olinadi.
+    (orderId) => ref.read(courierOfferAlertProvider).incoming(orderId: orderId),
+    () => ref.read(courierOfferAlertProvider).closed(),
+  );
   updates._start();
   ref.onDispose(updates._dispose);
   return updates;
 });
 
+/// SignalR argumentidan `orderId` (yoki `OrderId`).
+String? _orderIdArg(List<Object?>? args) {
+  final raw = args?.isNotEmpty == true ? args!.first : null;
+  if (raw is Map) {
+    final id = raw['orderId'] ?? raw['OrderId'] ?? raw['id'];
+    return id?.toString();
+  }
+  return raw is String ? raw : null;
+}
+
 class CourierUpdates {
-  CourierUpdates._(this._token, this._onEvent);
+  CourierUpdates._(this._token, this._onEvent, this._onOffer, this._onOfferClosed);
 
   final String _token;
   final void Function() _onEvent;
+  final void Function(String? orderId) _onOffer;
+  final void Function() _onOfferClosed;
   HubConnection? _connection;
   Timer? _retry;
   bool _disposed = false;
@@ -41,6 +60,13 @@ class CourierUpdates {
         .build();
     connection.on('CourierOrderAssigned', (_) => _onEvent());
     connection.on('OrderUpdated', (_) => _onEvent());
+    connection.on('CourierOffer', (args) => _onOffer(_orderIdArg(args)));
+    connection.on('CourierOfferClosed', (_) {
+      _onOfferClosed();
+      _onEvent();
+    });
+    // Qaytarish vazifasi biriktirildi / o'zgardi (kelishuv 10.5) — ro'yxat yangilanadi.
+    connection.on('ReturnUpdated', (_) => _onEvent());
     connection.onclose(({error}) => _scheduleRetry());
     _connection = connection;
     _connect();

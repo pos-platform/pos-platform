@@ -160,6 +160,66 @@ public class BackendClient
         return (await resp.Content.ReadFromJsonAsync<SaleDto>(Json))!;
     }
 
+    /// <summary>Qisman (yoki items bo'sh bo'lsa to'liq) qaytarish (10.5).</summary>
+    public async Task<SaleDto> RefundAsync(Guid saleId, RefundRequest request)
+    {
+        var resp = await _http.PostAsJsonAsync($"api/sales/{saleId}/refund", request, Json);
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<SaleDto>(Json))!;
+    }
+
+    /// <summary>Qaytarishdan oldin hisob: summa, ayiriladigan keshbek, ushlab qolinadigan va beriladigan pul (10.5).</summary>
+    public async Task<RefundPreviewDto> RefundPreviewAsync(Guid saleId, RefundRequest request, CancellationToken cancellationToken = default)
+    {
+        var resp = await _http.PostAsJsonAsync($"api/sales/{saleId}/refund-preview", request, Json, cancellationToken);
+        await EnsureOk(resp);
+        return (await resp.Content.ReadFromJsonAsync<RefundPreviewDto>(Json, cancellationToken))!;
+    }
+
+    // ===================== Online qaytarishlar (10.5) =====================
+
+    public async Task<List<OnlineReturnDto>> GetOnlineReturnsAsync(string? status = null, Guid? branchId = null)
+    {
+        var q = new List<string>();
+        if (!string.IsNullOrWhiteSpace(status)) q.Add("status=" + Uri.EscapeDataString(status));
+        if (branchId is { } b) q.Add("branchId=" + b);
+        var url = "api/online-returns" + (q.Count > 0 ? "?" + string.Join("&", q) : "");
+        return (await _http.GetFromJsonAsync<List<OnlineReturnDto>>(url, Json)) ?? new();
+    }
+
+    public async Task<OnlineReturnDto> GetOnlineReturnAsync(Guid id)
+        => (await _http.GetFromJsonAsync<OnlineReturnDto>($"api/online-returns/{id}", Json))!;
+
+    /// <summary>approve {method} | reject {reason} | assign-courier {courierId} | received | refunded.</summary>
+    public async Task<OnlineReturnDto?> OnlineReturnActionAsync(Guid id, string action, object? body = null)
+    {
+        var resp = await _http.PostAsJsonAsync($"api/online-returns/{id}/{action}", body ?? new { });
+        await EnsureOk(resp);
+        try { return await resp.Content.ReadFromJsonAsync<OnlineReturnDto>(Json); }
+        catch { return null; } // javob tanasi bo'sh bo'lishi mumkin
+    }
+
+    /// <summary>Eshik oldida rad etilgan, hali do'konga qabul qilinmagan buyurtmalar (10.5).</summary>
+    public async Task<List<OnlineOrderDto>> GetRejectedPendingAsync(Guid? branchId = null)
+    {
+        var url = "api/online-orders/rejected-pending" + (branchId is { } b ? $"?branchId={b}" : "");
+        return (await _http.GetFromJsonAsync<List<OnlineOrderDto>>(url, Json)) ?? new();
+    }
+
+    /// <summary>Kuryer qaytargan tovarlar do'konga keldi — qoldiq qaytadi.</summary>
+    public async Task RejectedReceivedAsync(Guid orderId)
+    {
+        var resp = await _http.PostAsJsonAsync($"api/online-orders/{orderId}/rejected-received", new { });
+        await EnsureOk(resp);
+    }
+
+    /// <summary>Kuryerlarga taklifni qayta yuborish (10.6).</summary>
+    public async Task OfferCouriersAsync(Guid orderId)
+    {
+        var resp = await _http.PostAsJsonAsync($"api/online-orders/{orderId}/offer-couriers", new { });
+        await EnsureOk(resp);
+    }
+
     // ===================== Restoran =====================
 
     public async Task<List<TableDto>> GetTablesAsync()

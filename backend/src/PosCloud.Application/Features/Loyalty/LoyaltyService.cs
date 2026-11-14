@@ -16,9 +16,14 @@ public interface ILoyaltyService
     Task<ResolveBonusCardResponse> ResolveAsync(string code, CancellationToken ct = default);
     Task<PagedResult<LoyaltyHistoryItemDto>> GetCustomerHistoryAsync(Guid customerId, int page, int pageSize, CancellationToken ct = default);
     Task<LoyaltyReportDto> GetReportAsync(DateTime? from, DateTime? to, CancellationToken ct = default);
+
+    // Bosqich 10: o'zgarishlar tarixi, bonus harakatlari jurnali, qo'lda tuzatish.
+    Task<LoyaltyPageDto<LoyaltySettingsChangeDto>> GetSettingsHistoryAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<LoyaltyTransactionsPageDto> GetTransactionsAsync(LoyaltyTransactionsQuery query, CancellationToken ct = default);
+    Task<LoyaltyAdjustResultDto> AdjustAsync(Guid customerId, LoyaltyAdjustRequest request, CancellationToken ct = default);
 }
 
-public class LoyaltyService : ILoyaltyService
+public partial class LoyaltyService : ILoyaltyService
 {
     public const string ExpiredCodeMessage = "Bonus karta kodi eskirgan — mijoz ilovada QR'ni yangilasin";
 
@@ -71,6 +76,8 @@ public class LoyaltyService : ILoyaltyService
     public async Task<LoyaltySettingsDto> UpdateSettingsAsync(UpdateLoyaltySettingsRequest r, CancellationToken ct = default)
     {
         var orgId = OrgId;
+        // O'zgarishlar tarixi uchun eski qiymatlar.
+        var before = await GetSettingsAsync(ct);
 
         if (r.CashbackPercent is < 0 or > 100) throw new ValidationException("Cashback foizi 0..100 oralig'ida bo'lishi kerak.");
         if (r.MaxRedeemPercent is < 0 or > 100) throw new ValidationException("Ball bilan to'lash foizi 0..100 oralig'ida bo'lishi kerak.");
@@ -158,6 +165,7 @@ public class LoyaltyService : ILoyaltyService
                 });
         }
 
+        await RecordSettingsChangesAsync(orgId, before, r, tiers, ct);
         await _db.SaveChangesAsync(ct);
         return await GetSettingsAsync(ct);
     }

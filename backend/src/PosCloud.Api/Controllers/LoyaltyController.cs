@@ -40,4 +40,25 @@ public class LoyaltyController : ControllerBase
     public async Task<ActionResult<LoyaltyReportDto>> Report([FromQuery] DateTime? from, [FromQuery] DateTime? to,
         CancellationToken ct) =>
         Ok(await _service.GetReportAsync(from, to, ct));
+
+    /// <summary>Sozlamalar o'zgarishlari tarixi: { items: [{ changedAt, userName, field, oldValue, newValue }], total }.</summary>
+    [HttpGet("settings/history")]
+    [HasPermission(Permissions.SettingsManage)]
+    public async Task<ActionResult<LoyaltyPageDto<LoyaltySettingsChangeDto>>> SettingsHistory([FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50, CancellationToken ct = default) =>
+        Ok(await _service.GetSettingsHistoryAsync(page, pageSize, ct));
+
+    /// <summary>Barcha mijozlar bo'yicha bonus harakatlari jurnali (from/to — YYYY-MM-DD, "to" kuni ham kiradi).</summary>
+    [HttpGet("transactions")]
+    [HasPermission(Permissions.SettingsManage)]
+    public async Task<ActionResult<LoyaltyTransactionsPageDto>> Transactions([FromQuery] LoyaltyTransactionsQuery query,
+        CancellationToken ct) =>
+        Ok(await _service.GetTransactionsAsync(query, ct));
+
+    /// <summary>Qo'lda tuzatish (Adjust): { points (±), reason } — sabab majburiy.</summary>
+    [HttpPost("customers/{customerId:guid}/adjust")]
+    [HasPermission(Permissions.SettingsManage)]
+    public async Task<ActionResult<LoyaltyAdjustResultDto>> Adjust(Guid customerId, LoyaltyAdjustRequest request,
+        CancellationToken ct) =>
+        Ok(await _service.AdjustAsync(customerId, request, ct));
 }

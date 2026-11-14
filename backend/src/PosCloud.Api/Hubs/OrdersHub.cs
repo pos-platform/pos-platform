@@ -66,13 +66,15 @@ public class SignalROnlineOrderNotifier : IOnlineOrderNotifier
 {
     private readonly IHubContext<OrdersHub> _hub;
     private readonly OrderPushQueue _pushQueue;
+    private readonly IShopPushQueue _shopPush;
     private readonly ILogger<SignalROnlineOrderNotifier> _logger;
 
-    public SignalROnlineOrderNotifier(IHubContext<OrdersHub> hub, OrderPushQueue pushQueue,
+    public SignalROnlineOrderNotifier(IHubContext<OrdersHub> hub, OrderPushQueue pushQueue, IShopPushQueue shopPush,
         ILogger<SignalROnlineOrderNotifier> logger)
     {
         _hub = hub;
         _pushQueue = pushQueue;
+        _shopPush = shopPush;
         _logger = logger;
     }
 
@@ -126,5 +128,86 @@ public class SignalROnlineOrderNotifier : IOnlineOrderNotifier
         {
             _logger.LogWarning(ex, "Kuryerga xabar yuborilmadi: {OrderId}", order.Id);
         }
+    }
+
+    public async Task ReturnChangedAsync(OnlineReturn ret, bool isNew, bool pushToCustomer, CancellationToken ct = default)
+    {
+        if (pushToCustomer)
+        {
+            try
+            {
+                _shopPush.Enqueue(ReturnPushTexts.Build(ret));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Qaytarish push'i navbatga qo'yilmadi: {ReturnId}", ret.Id);
+            }
+        }
+
+        try
+        {
+            var evt = new ReturnEvent(ret.Id, ret.Number, ret.BranchId, ret.Status);
+            var staffGroups = new List<string> { OrdersHub.BranchGroup(ret.BranchId) };
+            if (ret.OrganizationId is { } orgId) staffGroups.Add(OrdersHub.OrgGroup(orgId));
+
+            await _hub.Clients.Groups(staffGroups).SendAsync(isNew ? "ReturnCreated" : "ReturnUpdated", evt, ct);
+            await _hub.Clients.Group(OrdersHub.ShopUserGroup(ret.ShopUserId)).SendAsync("ReturnStatusChanged", evt, ct);
+            if (ret.CourierId is { } courierId)
+                await _hub.Clients.Group(OrdersHub.CourierGroup(courierId)).SendAsync("ReturnUpdated", evt, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Qaytarish xabari yuborilmadi: {ReturnId}", ret.Id);
+        }
+    }
+
+    public async Task CourierOfferAsync(Guid courierUserId, CourierOfferEvent evt, CancellationToken ct = default)
+    {
+        try
+        {
+            await _hub.Clients.Group(OrdersHub.CourierGroup(courierUserId)).SendAsync("CourierOffer", evt, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Kuryerga taklif yuborilmadi: {OrderId}", evt.OrderId);
+        }
+    }
+
+    public async Task CourierOfferClosedAsync(Guid orderId, IReadOnlyCollection<Guid> courierUserIds, CancellationToken ct = default)
+    {
+        if (courierUserIds.Count == 0) return;
+        try
+        {
+            await _hub.Clients.Groups(courierUserIds.Select(OrdersHub.CourierGroup).ToList())
+                .SendAsync("CourierOfferClosed", new { orderId }, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Taklif yopilgani xabari yuborilmadi: {OrderId}", orderId);
+        }
+    }
+}
+
+/// <summary>Qaytarish xabari tarkibi (shaxsiy ma'lumotsiz).</summary>
+public record ReturnEvent(Guid Id, int Number, Guid BranchId, OnlineReturnStatus Status);
+
+/// <summary>Qaytarish holati push matnlari (uz/ru), data: type=return_status, returnId.</summary>
+public static class ReturnPushTexts
+{
+    public static ShopUserPush Build(OnlineReturn r)
+    {
+        var (uz, ru) = r.Status switch
+        {
+            OnlineReturnStatus.Approved => ("Qaytarish so'rovingiz tasdiqlandi", "Ваш запрос на возврат одобрен"),
+            OnlineReturnStatus.PickupAssigned => ("Kuryer qaytarishni olib ketadi", "Курьер заберёт возврат"),
+            OnlineReturnStatus.PickedUp => ("Kuryer tovarni oldi", "Курьер забрал товар"),
+            OnlineReturnStatus.Received => ("Tovar do'konga yetib keldi", "Товар получен магазином"),
+            OnlineReturnStatus.Refunded => ("Pul qaytarildi", "Деньги возвращены"),
+            OnlineReturnStatus.Rejected => ("Qaytarish so'rovi rad etildi", "Запрос на возврат отклонён"),
+            OnlineReturnStatus.Cancelled => ("Qaytarish bekor qilindi", "Возврат отменён"),
+            _ => ("Qaytarish holati o'zgardi", "Статус возврата изменён")
+        };
+        return new ShopUserPush(r.ShopUserId, $"Qaytarish #{r.Number}", uz, $"Возврат #{r.Number}", ru,
+            new Dictionary<string, string> { ["type"] = "return_status", ["returnId"] = r.Id.ToString() });
     }
 }

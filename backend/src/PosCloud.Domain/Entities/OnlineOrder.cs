@@ -118,6 +118,26 @@ public class OnlineOrder : BaseEntity
     public string? RatingTags { get; set; }
     public DateTime? RatedAt { get; set; }
 
+    // ---- Bosqich 10 ----
+
+    /// <summary>Do'kon yopiq paytda "imkon qadar tez" berilgan — ScheduledFor = keyingi ochilish vaqti.</summary>
+    public bool IsPreorder { get; set; }
+
+    /// <summary>Oldindan buyurtma vaqti kelganda kassaga qayta xabar yuborilgan vaqt.</summary>
+    public DateTime? PreorderNotifiedAt { get; set; }
+
+    /// <summary>Eshik oldida rad etilgan tovarlar do'konga qaytib keldi (ombor qoldig'i shu yerda qaytadi).</summary>
+    public DateTime? RejectedReturnedAt { get; set; }
+
+    /// <summary>Kuryer taklifni qabul qilgan vaqt.</summary>
+    public DateTime? CourierAcceptedAt { get; set; }
+
+    /// <summary>
+    /// Kuryer taklifi holati: None (yuborilmagan), Pending, Accepted, NoCourier (hamma rad etdi yoki vaqt tugadi).
+    /// Atomik qabul uchun shartli UPDATE (CourierUserId IS NULL) ishlatiladi.
+    /// </summary>
+    public CourierOfferStatus CourierOfferStatus { get; set; } = CourierOfferStatus.None;
+
     public ICollection<OnlineOrderItem> Items { get; set; } = new List<OnlineOrderItem>();
 }
 
@@ -149,4 +169,11 @@ public class OnlineOrderItem : BaseEntity
 
     /// <summary>Markirovka (DataMatrix) kodlari — markirovkali dona tovarda soni butun miqdorga teng bo'lishi shart.</summary>
     public List<string> MarkingCodes { get; set; } = new();
+
+    /// <summary>Eshik oldida mijoz olmagan miqdor (kuryer "delivered"da kiritadi) va sababi.</summary>
+    public decimal RejectedQuantity { get; set; }
+    public string? RejectReason { get; set; }
+
+    /// <summary>Yetkazilgandan keyingi qaytarish so'rovlariga band qilingan miqdor (bekor/rad etilganda kamayadi).</summary>
+    public decimal ReturnedQuantity { get; set; }
 }

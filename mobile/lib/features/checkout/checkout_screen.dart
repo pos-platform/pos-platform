@@ -95,9 +95,13 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
     super.initState();
     _type = _store.deliveryEnabled ? FulfillmentType.delivery : FulfillmentType.pickup;
     _payment = _payments.firstOrNull;
-    // Do'kon hozir yopiq bo'lsa — faqat vaqt tanlab buyurtma berish mumkin.
-    _scheduled = !_store.isOpenNow;
+    // Do'kon hozir yopiq bo'lsa — vaqt tanlab buyurtma beriladi; oldindan buyurtma yoqilgan bo'lsa
+    // "imkon qadar tez" = "Do'kon ochilganda" ham mumkin (kelishuv 10.1).
+    _scheduled = !_asapAllowed;
   }
+
+  /// "Imkon qadar tez" tanlash mumkinmi: do'kon ochiq yoki yopiq bo'lsa ham oldindan buyurtma qabul qiladi.
+  bool get _asapAllowed => _store.isOpenNow || _store.acceptsPreorder;
 
   @override
   void dispose() {
@@ -338,14 +342,20 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
           Row(children: [
             Expanded(
               child: _OptionCard(
-                title: t.checkoutAsap,
-                subtitle: !_store.isOpenNow
-                    ? t.checkoutStoreClosed
-                    : isDelivery
-                        ? deliveryTimeText(t, _store)
-                        : null,
+                title: _store.acceptsPreorder
+                    ? (_store.nextOpenTime == null
+                        ? t.checkoutWhenOpens
+                        : t.checkoutWhenOpensAt(_store.nextOpenTime!))
+                    : t.checkoutAsap,
+                subtitle: _store.acceptsPreorder
+                    ? t.checkoutPreorderHint
+                    : !_store.isOpenNow
+                        ? t.checkoutStoreClosed
+                        : isDelivery
+                            ? deliveryTimeText(t, _store)
+                            : null,
                 selected: !_scheduled,
-                onTap: _store.isOpenNow ? () => setState(() => _scheduled = false) : null,
+                onTap: _asapAllowed ? () => setState(() => _scheduled = false) : null,
               ),
             ),
             const SizedBox(width: 10),
@@ -426,7 +436,9 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
             ),
           if (quote?.message != null) ...[
             const SizedBox(height: 8),
-            Text(quote!.message!, style: const TextStyle(color: AppColors.danger)),
+            // Buyurtma berish mumkin bo'lsa (masalan, "Do'kon yopiq. Buyurtma 09:00 da ko'rib chiqiladi") — izoh, xato emas.
+            Text(quote!.message!,
+                style: TextStyle(color: quote.canOrder ? AppColors.textSecondary : AppColors.danger)),
           ],
           if (quote != null && quote.minOrderShortfall > 0) ...[
             const SizedBox(height: 8),

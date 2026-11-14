@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using PosCloud.Application.Features.Sales;
 using PosCloud.Application.Features.Sales.Dtos;
 
@@ -57,11 +58,21 @@ public class SalesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<SaleDto>> Refund(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<SaleDto>> Refund(Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefundRequest? request,
+        CancellationToken cancellationToken)
     {
-        var refund = await _saleService.RefundAsync(id, cancellationToken);
+        // Body yo'q yoki items bo'sh — to'liq qaytarish (eski kassalar body yubormaydi).
+        var refund = await _saleService.RefundAsync(id, request, null, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = refund.Id }, refund);
     }
+
+    /// <summary>Qaytarishdan oldin ko'rish (xuddi shu body): summa, ayiriladigan keshbek, ushlab qolinadigan va beriladigan pul.</summary>
+    [HttpPost("{id:guid}/refund-preview")]
+    public async Task<ActionResult<RefundPreviewDto>> RefundPreview(Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefundRequest? request,
+        CancellationToken cancellationToken) =>
+        Ok(await _saleService.PreviewRefundAsync(id, request, cancellationToken));
 
     // ===================== Restoran: ochiq buyurtmalar =====================
 

@@ -11,6 +11,9 @@ DateTime? parseUtc(Object? v) {
   return DateTime.tryParse(hasZone ? v : '${v}Z')?.toLocal();
 }
 
+/// Mahalliy vaqt → "HH:mm".
+String formatHhMm(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
 /// "HH:mm:ss" → daqiqa (kun boshidan). Null — ish vaqti berilmagan.
 int? _minutes(Object? v) {
   if (v is! String || v.isEmpty) return null;
@@ -54,6 +57,8 @@ class ShopStore {
     this.supportPhone,
     this.supportTelegram,
     this.organizationId,
+    this.acceptWhenClosed = false,
+    this.nextOpenAt,
   });
 
   final String id;
@@ -102,6 +107,18 @@ class ShopStore {
   /// Kelishuvda yo'q — server bersa ishlatiladi ("Do'stni taklif qilish" uchun tashkilot).
   final String? organizationId;
 
+  /// Kelishuv 10.1: yopiq do'kon ham buyurtma qabul qiladimi (oldindan buyurtma). Eski server bermasa — false.
+  final bool acceptWhenClosed;
+
+  /// Yopiq bo'lsa keyingi ochilish vaqti (serverda UTC, bu yerda mahalliy vaqtga o'tkazilgan).
+  final DateTime? nextOpenAt;
+
+  /// Hozir yopiq, lekin oldindan buyurtma qabul qilinadi.
+  bool get acceptsPreorder => !isOpenNow && acceptWhenClosed && isAcceptingOrders;
+
+  /// Keyingi ochilish "HH:mm" (mahalliy) yoki null.
+  String? get nextOpenTime => nextOpenAt == null ? null : formatHhMm(nextOpenAt!);
+
   bool get hasHours => opensAtMinutes != null && closesAtMinutes != null && opensAtMinutes != closesAtMinutes;
 
   /// Serverdagi `IsWithinHours` bilan bir xil: tungi smena (22:00–06:00) ham hisobga olinadi.
@@ -148,6 +165,8 @@ class ShopStore {
         supportPhone: _text(j['supportPhone']),
         supportTelegram: _text(j['supportTelegram'])?.replaceFirst('@', ''),
         organizationId: _text(j['organizationId']),
+        acceptWhenClosed: j['acceptWhenClosed'] == true,
+        nextOpenAt: parseUtc(j['nextOpenAt']),
       );
 }
 

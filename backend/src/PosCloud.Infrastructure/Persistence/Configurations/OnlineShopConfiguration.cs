@@ -111,6 +111,9 @@ public class OnlineOrderConfiguration : IEntityTypeConfiguration<OnlineOrder>
         builder.Property(o => o.PromoDiscount).HasColumnType("numeric(18,2)");
         builder.Property(o => o.BonusUsed).HasColumnType("numeric(18,2)");
         builder.HasIndex(o => new { o.CourierUserId, o.Status });
+        builder.HasIndex(o => new { o.IsPreorder, o.Status, o.ScheduledFor });
+        // Kuryer taklifini atomik qabul qilish: UPDATE ... WHERE CourierUserId = (asl qiymat) — ikkinchisi 409.
+        builder.Property(o => o.CourierUserId).IsConcurrencyToken();
         builder.HasIndex(o => o.PromoCodeId);
 
         // Bosqich 9: mijoz bahosi.
@@ -146,6 +149,9 @@ public class OnlineOrderItemConfiguration : IEntityTypeConfiguration<OnlineOrder
         builder.Property(i => i.LineTotal).HasColumnType("numeric(18,2)");
         // Mavjud qatorlar uchun bo'sh massiv (NOT NULL ustun).
         builder.Property(i => i.MarkingCodes).HasDefaultValueSql("'{}'::text[]");
+        builder.Property(i => i.RejectedQuantity).HasColumnType("numeric(18,3)");
+        builder.Property(i => i.ReturnedQuantity).HasColumnType("numeric(18,3)");
+        builder.Property(i => i.RejectReason).HasMaxLength(200);
 
         builder.HasOne(i => i.OnlineOrder)
             .WithMany(o => o.Items)

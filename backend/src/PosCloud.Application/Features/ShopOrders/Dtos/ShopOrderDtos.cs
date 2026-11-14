@@ -111,6 +111,10 @@ public class ShopOrderQuoteDto
     public bool DeliveryAvailable { get; set; } = true;
     public string? DeliveryMessage { get; set; }
     public double? DistanceKm { get; set; }
+
+    /// <summary>Do'kon yopiq paytda ham buyurtma qabul qilinadi; yopiq bo'lsa — keyingi ochilish (UTC).</summary>
+    public bool AcceptWhenClosed { get; set; }
+    public DateTime? NextOpenAt { get; set; }
 }
 
 public class ShopOrderItemDto
@@ -125,6 +129,11 @@ public class ShopOrderItemDto
     public decimal LineTotal { get; set; }
     public bool IsRemoved { get; set; }
     public Guid? ReplacesItemId { get; set; }
+
+    /// <summary>Eshik oldida rad etilgan, qaytarishga yuborilgan va hali qaytarish mumkin bo'lgan miqdor.</summary>
+    public decimal RejectedQuantity { get; set; }
+    public decimal ReturnedQuantity { get; set; }
+    public decimal ReturnableQuantity { get; set; }
 }
 
 public class ShopOrderSummaryDto
@@ -162,9 +171,15 @@ public class ShopOrderDto : ShopOrderSummaryDto
     public double? Longitude { get; set; }
 
     public DateTime? ScheduledFor { get; set; }
+
+    /// <summary>Yopiq do'konga berilgan "imkon qadar tez" — ScheduledFor = keyingi ochilish.</summary>
+    public bool IsPreorder { get; set; }
     public bool Contactless { get; set; }
     public string? Comment { get; set; }
     public OutOfStockPolicy OutOfStockPolicy { get; set; }
+
+    /// <summary>Qaytarish so'rovini yuborish mumkin (Delivered, ReturnDays ichida, qaytariladigan miqdor bor).</summary>
+    public bool CanReturn { get; set; }
 
     public decimal ItemsTotal { get; set; }
     public decimal DeliveryFee { get; set; }

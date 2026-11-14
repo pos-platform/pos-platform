@@ -62,6 +62,15 @@ public class SaleItem : BaseEntity
     /// <summary>Qator izohi / oddiy modifikator (masalan "shakarsiz", "achchiq emas").</summary>
     public string? Note { get; set; }
 
+    /// <summary>
+    /// Asl savdo qatorida: shu qatordan jami qaytarilgan miqdor (qisman qaytarishlar yig'indisi).
+    /// Qaytariladigan miqdor = Quantity − RefundedQuantity.
+    /// </summary>
+    public decimal RefundedQuantity { get; set; }
+
+    /// <summary>Refund savdosi qatorida: asl savdoning qaysi qatori qaytarilgani.</summary>
+    public Guid? OriginalSaleItemId { get; set; }
+
     /// <summary>Restoran: ushbu qator oshxonaga yuborilganmi (faqat yangi qatorlar chop etiladi).</summary>
     public bool SentToKitchen { get; set; }
 }

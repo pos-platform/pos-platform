@@ -379,6 +379,15 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
 - [x] 9.3 Ishonch va servis: stories, buyurtmaga baho va teglar, "mahsulot bo'lmasa" tanlovi (desktop yig'ishda), yordam (telefon/Telegram), admin baholar hisoboti.
 - [x] 9.4 Mijozni qaytarish: do'stni taklif qilish, loyalty darajalari, tashlab ketilgan savat eslatmasi, push kampaniyalar, "oxirgi buyurtmani takrorlash".
 
+## Bosqich 10 — Oldindan buyurtma, keshbek tarixi, sotuv logi, xatoliklar, qaytarish (kelishuv: `docs/mobile/CONTRACT-10.md`)
+
+- [x] 10.1 Yopiq do'konga buyurtma (oldindan buyurtma, ochilganda kassada ovoz).
+- [x] 10.2 Keshbek boshqaruvi: o'zgarishlar tarixi, bonus harakatlari jurnali, qo'lda tuzatish.
+- [x] 10.3 Sotilgan tovarlar logi (admin panel, Excel).
+- [x] 10.4 Xatoliklar SuperAdmin'da (API, fon, fiskal, desktop, mobil).
+- [x] 10.5 Qisman qaytarish + keshbek ayirish; online qaytarish (eshik oldida rad etish, qaytarish so'rovi, kuryer olib ketishi).
+- [x] 10.6 Kuryerga taklif: push, birinchi qabul qilgan oladi, kassa va admin panelda kim olgani ko'rinadi.
+
 - 2026-11-14 — 9.1–9.4 — 4 agent parallel (backend, admin panel, desktop, mobil), kelishuv `CONTRACT-9.md`.
   Backend: migratsiya `AddMarketing` (faqat qo'shish), `ShopMarketing.cs` (banner, kolleksiya, story, sevimli, obuna, savat, referral, push kampaniya),
   `ShopCatalogService.Marketing.cs` + `ShopSearch.cs` (lotin↔kirill), `OnlineMarketingController`, fon xizmatlari (kampaniya 30 s, qayta sotuvda 10 daq,
@@ -393,3 +402,23 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
   `npm run build` OK; desktop build 0; `flutter analyze` 0, yangi testlar o'tdi, `flutter build apk --debug` OK. Klient↔backend yo'llari va enum nomlari solishtirildi.
   **Runtime sinalmagan.** `widget_test.dart` dagi 2 eski test (brend rangi, mehmon kirishi) oldindan yiqilgan — tuzatish kerak.
   Egasidan: Api'ni to'xtatib qayta ishga tushirish (migratsiya startda qo'llanadi), FCM sozlash. Qoldi: mehmon profilida "Yordam".
+
+- 2026-11-14 — 10.1–10.6 — 4 agent parallel, kelishuv `CONTRACT-10.md`. Migratsiya `AddReturnsAndErrors` (mavjud qatorlarga standartlar;
+  qaytarilgan savdolar qatorlari `RefundedQuantity = Quantity`, eski refund `RefundCashAmount = TotalAmount`).
+  10.1 oldindan buyurtma (`IsPreorder`, `ScheduledFor` = keyingi ochilish, fon xizmati vaqti kelganda `OrderCreated` qayta yuboradi).
+  10.2 `LoyaltySettingsChange`, `/api/loyalty/{settings/history,transactions,customers/{id}/adjust}` (eski adjust-points ham ishlaydi).
+  10.3 `/api/reports/sold-items` (+export xlsx; refund qatorlari `type=Refund`, foyda/keshbek manfiy).
+  10.4 `SystemError` (fingerprint bo'yicha guruhlash), middleware/fon/fiskal/push yozadi, `/api/client-errors` (anonim, 30/daq/IP), `/api/admin/errors*`.
+  10.5 qisman refund + `refund-preview`; keshbek proporsional; balans yetmasa puldan ushlanadi (refund qatorlariga chegirma sifatida →
+  `TotalAmount = refundCashAmount`, smena to'g'ri); eshik oldida rad etish (refund delivered'da, qoldiq `rejected-received` da); `OnlineReturn`
+  (Bonus usuli — ball, smenasiz; `received` uchun ochiq smena). 10.6 `CourierOffer`, `StaffDeviceToken`, birinchi qabul qilgan yutadi
+  (`CourierUserId` concurrency token, yutqazgan 409; `DbUpdateConcurrencyException` middleware'da 409), timeout → NoCourier.
+  Klientlar: admin panel (SoldItems, AdminErrors, SaleDetailModal qisman refund, ReturnsTab, loyalty tablar, sozlamalar), desktop (RefundWindow
+  qayta yozildi, OnlineReturnsWindow, RejectedItemsWindow, ErrorReporter + SQLite navbat, kuryer holati, oldindan belgisi), mobil
+  (`features/returns/`, `core/error_reporter.dart`, kuryer takliflari/rad etish/qaytarish olib ketish, yopiq do'kon matnlari).
+  Tekshiruv: backend build 0 xato (vaqtinchalik papka), pending yo'q, LINQ tarjimasi; `npm run build` OK; desktop 0 xato; `flutter analyze` 0,
+  yangi 12 test o'tdi, apk debug OK. Klient↔backend yo'llari solishtirildi. **Runtime sinalmagan.**
+  Ma'lum cheklovlar: bir vaqtdagi ikki qisman refund himoyalanmagan; eshik oldida rad + keyin qaytarishda keshbek biroz kam ayiriladi;
+  yaroqsiz kuryer push tokenlari tozalanmaydi; bonus jurnali eksporti CSV; desktop savdolar tarixi jami `refundCashAmount` emas; mobil tracking
+  progress chizig'ida qattiq yashil rang.
+  Sinov ro'yxati: ball yetmagan qisman refund, naqd buyurtmada eshik oldida rad, Bonus usulida online qaytarish, ikki kuryer bir vaqtda qabul.

@@ -4,6 +4,7 @@ using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Common.Models;
 using PosCloud.Application.Features.Loyalty;
 using PosCloud.Application.Features.OnlineOrders;
+using PosCloud.Application.Features.OnlineReturns;
 using PosCloud.Application.Features.OnlinePayments;
 using PosCloud.Application.Features.OnlinePayments.Dtos;
 using PosCloud.Application.Features.Promotions;
@@ -131,7 +132,7 @@ public class ShopOrderService : IShopOrderService
         if (!Enum.IsDefined(request.OutOfStockPolicy))
             throw new ValidationException("Mahsulot tugasa nima qilish kerakligini tanlang.");
 
-        var scheduledFor = ValidateSchedule(settings, request.ScheduledFor);
+        var (scheduledFor, isPreorder) = ValidateSchedule(settings, request.ScheduledFor);
 
         var (quote, promo) = await Calculate(store, request, shopUserId, ct);
         if (OnlineOrderPricing.NormalizeCode(request.PromoCode) is not null && quote.PromoMessage is not null)
@@ -158,6 +159,7 @@ public class ShopOrderService : IShopOrderService
             PaymentMethod = request.PaymentMethod,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             ScheduledFor = scheduledFor,
+            IsPreorder = isPreorder,
             Contactless = request.FulfillmentType == FulfillmentType.Delivery && request.Contactless,
             Comment = NullIfEmpty(request.Comment),
             OutOfStockPolicy = request.OutOfStockPolicy,
@@ -300,9 +302,14 @@ public class ShopOrderService : IShopOrderService
                 PickedQuantity = i.PickedQuantity,
                 LineTotal = i.LineTotal,
                 IsRemoved = i.IsRemoved,
-                ReplacesItemId = i.ReplacesItemId
+                ReplacesItemId = i.ReplacesItemId,
+                RejectedQuantity = i.RejectedQuantity,
+                ReturnedQuantity = i.ReturnedQuantity,
+                ReturnableQuantity = order.Status == OnlineOrderStatus.Delivered ? OnlineReturnRules.Returnable(i) : 0
             })
             .ToList();
+        dto.IsPreorder = order.IsPreorder;
+        dto.CanReturn = OnlineReturnRules.CanReturn(order, settings, DateTime.UtcNow);
         dto.AcceptedAt = order.AcceptedAt;
         dto.ReadyAt = order.ReadyAt;
         dto.DispatchedAt = order.DispatchedAt;
@@ -555,6 +562,16 @@ public class ShopOrderService : IShopOrderService
 
         quote.CanOrder = quote.Message is null && quote.DeliveryAvailable
                          && okLines.Count == quote.Lines.Count && okLines.Count > 0;
+
+        // Ish vaqtidan tashqari: AcceptWhenClosed bo'lsa — buyurtma qabul qilinadi (oldindan buyurtma), faqat izoh.
+        quote.AcceptWhenClosed = s.AcceptWhenClosed;
+        var now = DateTime.UtcNow;
+        if (!ShopCatalogService.IsWithinHours(s.OpensAt, s.ClosesAt, now))
+        {
+            quote.NextOpenAt = ShopCatalogService.NextOpenAt(s.OpensAt, s.ClosesAt, now);
+            if (s.AcceptWhenClosed && quote.Message is null)
+                quote.Message = ClosedMessage(s);
+        }
         return (quote, promoCheck.Promo);
     }
 
@@ -590,15 +607,22 @@ public class ShopOrderService : IShopOrderService
             throw new ValidationException("Bu to'lov usuli ushbu do'konda mavjud emas.");
     }
 
-    /// <summary>Null — imkon qadar tez (do'kon hozir ochiq bo'lishi kerak). Aks holda 30 daqiqadan 2 kungacha, ish vaqtida.</summary>
-    private static DateTime? ValidateSchedule(OnlineStoreSettings s, DateTime? scheduledFor)
+    /// <summary>
+    /// Null — imkon qadar tez: do'kon ochiq bo'lsa — null; yopiq va AcceptWhenClosed bo'lsa — oldindan buyurtma
+    /// (ScheduledFor = keyingi ochilish vaqti, IsPreorder). Aks holda 30 daqiqadan 2 kungacha, ish vaqtida.
+    /// </summary>
+    private static (DateTime? At, bool IsPreorder) ValidateSchedule(OnlineStoreSettings s, DateTime? scheduledFor)
     {
         var now = DateTime.UtcNow;
         if (scheduledFor is null)
         {
             if (!ShopCatalogService.IsWithinHours(s.OpensAt, s.ClosesAt, now))
+            {
+                if (s.AcceptWhenClosed && ShopCatalogService.NextOpenAt(s.OpensAt, s.ClosesAt, now) is { } nextOpen)
+                    return (nextOpen, true);
                 throw new ValidationException($"Do'kon hozir yopiq ({s.OpensAt:HH\\:mm}–{s.ClosesAt:HH\\:mm}). Vaqtni tanlab buyurtma bering.");
-            return null;
+            }
+            return (null, false);
         }
 
         var at = DateTime.SpecifyKind(scheduledFor.Value, DateTimeKind.Utc);
@@ -608,8 +632,12 @@ public class ShopOrderService : IShopOrderService
             throw new ValidationException("Vaqtni kamida 30 daqiqa keyinga va ko'pi bilan 2 kun ichida tanlang.");
         if (!ShopCatalogService.IsWithinHours(s.OpensAt, s.ClosesAt, at))
             throw new ValidationException("Tanlangan vaqtda do'kon ishlamaydi.");
-        return at;
+        return (at, false);
     }
+
+    /// <summary>Yopiq do'kon xabari: "Do'kon yopiq. Buyurtma 09:00 da ko'rib chiqiladi".</summary>
+    public static string ClosedMessage(OnlineStoreSettings s) =>
+        $"Do'kon yopiq. Buyurtma {s.OpensAt:HH\\:mm} da ko'rib chiqiladi";
 
     private static string ProblemText(ShopOrderQuoteLineDto l) => l.Problem switch
     {

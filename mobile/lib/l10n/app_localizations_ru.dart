@@ -1706,4 +1706,264 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tierTop => 'У вас максимальный уровень';
+
+  @override
+  String catOpensAt(String time) {
+    return 'Откроется в $time';
+  }
+
+  @override
+  String get checkoutWhenOpens => 'Когда магазин откроется';
+
+  @override
+  String checkoutWhenOpensAt(String time) {
+    return 'Когда магазин откроется ($time)';
+  }
+
+  @override
+  String get checkoutPreorderHint => 'Предзаказ';
+
+  @override
+  String get ordersPreorderTitle => 'Предзаказ';
+
+  @override
+  String ordersPreorderNote(String time) {
+    return 'Магазин сейчас закрыт. Заказ рассмотрят в $time.';
+  }
+
+  @override
+  String get ordersPreorderNoteNoTime =>
+      'Магазин сейчас закрыт. Заказ рассмотрят, когда магазин откроется.';
+
+  @override
+  String get courierTabOffers => 'Предложения';
+
+  @override
+  String get courierOffersEmpty => 'Пока нет предложений';
+
+  @override
+  String get courierOfferTitle => 'Новый заказ';
+
+  @override
+  String courierOfferNumber(String number) {
+    return 'Заказ #$number';
+  }
+
+  @override
+  String get courierOfferExpired => 'Время предложения истекло';
+
+  @override
+  String get courierOfferAccept => 'Принимаю';
+
+  @override
+  String get courierOfferDecline => 'Отказываюсь';
+
+  @override
+  String get courierOfferTaken => 'Заказ взял другой курьер';
+
+  @override
+  String get courierOfferClosed => 'Предложение закрыто';
+
+  @override
+  String get courierOfferAccepted => 'Заказ закреплён за вами';
+
+  @override
+  String get courierOfferCash => 'Оплата наличными';
+
+  @override
+  String get courierOfferPaidOrCard => 'Карта / оплачен';
+
+  @override
+  String get courierBack => 'Назад';
+
+  @override
+  String get courierPickedUpFromStore => 'Забрал из магазина';
+
+  @override
+  String get courierAwaitingPickup => 'Забрать в магазине';
+
+  @override
+  String get courierDonePickedUp => 'Заказ в пути';
+
+  @override
+  String get courierReturnTask => 'Возврат';
+
+  @override
+  String courierReturnNumber(String number) {
+    return 'Возврат #$number';
+  }
+
+  @override
+  String get courierReturnPickedUp => 'Забрал';
+
+  @override
+  String get courierReturnPickedUpConfirm =>
+      'Подтверждаете, что забрали товары у клиента?';
+
+  @override
+  String get courierReturnDone => 'Возврат забран';
+
+  @override
+  String get courierReturnNoCash => 'Деньги не выдаются — их вернёт магазин';
+
+  @override
+  String get courierRejectItems => 'Клиент отказался от части товаров';
+
+  @override
+  String get courierRejectTitle => 'От каких товаров отказался клиент?';
+
+  @override
+  String get courierRejectedEdit => 'Изменить отказ';
+
+  @override
+  String get courierToCollect => 'К получению';
+
+  @override
+  String get courierRejectApprox => 'Примерно — итог пересчитает сервер';
+
+  @override
+  String get courierSave => 'Сохранить';
+
+  @override
+  String get returnReasonDamaged => 'Повреждён';
+
+  @override
+  String get returnReasonWrongItem => 'Не тот товар';
+
+  @override
+  String get returnReasonQuality => 'Плохое качество';
+
+  @override
+  String get returnReasonExpired => 'Просрочен';
+
+  @override
+  String get returnReasonMissing => 'Не хватает';
+
+  @override
+  String get returnReasonOther => 'Другое';
+
+  @override
+  String get refundMethodCash => 'Наличными (в магазине)';
+
+  @override
+  String get refundMethodTransfer => 'Перевод на карту';
+
+  @override
+  String get refundMethodBonus => 'Бонусные баллы';
+
+  @override
+  String get returnMethodCourier => 'Заберёт курьер';
+
+  @override
+  String get returnMethodStore => 'Принесёте в магазин';
+
+  @override
+  String get returnStatusRequested => 'На рассмотрении';
+
+  @override
+  String get returnStatusApproved => 'Одобрен';
+
+  @override
+  String get returnStatusPickupAssigned => 'Назначен курьер';
+
+  @override
+  String get returnStatusPickedUp => 'Курьер забрал';
+
+  @override
+  String get returnStatusReceived => 'Получен магазином';
+
+  @override
+  String get returnStatusRefunded => 'Деньги возвращены';
+
+  @override
+  String get returnStatusRejected => 'Отклонён';
+
+  @override
+  String get returnStatusCancelled => 'Отменён';
+
+  @override
+  String get returnsTitle => 'Мои возвраты';
+
+  @override
+  String get returnsEmpty => 'Возвратов нет';
+
+  @override
+  String get returnAction => 'Вернуть товар';
+
+  @override
+  String get returnRequestTitle => 'Возврат товара';
+
+  @override
+  String get returnChooseItems => 'Товары для возврата';
+
+  @override
+  String get returnNothingToReturn => 'Нет товаров для возврата';
+
+  @override
+  String get returnReason => 'Причина';
+
+  @override
+  String get returnSelectReason => 'Выберите причину';
+
+  @override
+  String get returnComment => 'Комментарий';
+
+  @override
+  String get returnCommentHint => 'Кратко опишите проблему';
+
+  @override
+  String get returnPhotos => 'Фото (до 3)';
+
+  @override
+  String get returnAddPhoto => 'Фото';
+
+  @override
+  String get returnRemovePhoto => 'Удалить фото';
+
+  @override
+  String get returnRefundMethod => 'Способ возврата денег';
+
+  @override
+  String get returnCashbackNote =>
+      'Кешбэк, начисленный за эти товары, будет списан.';
+
+  @override
+  String get returnAmount => 'Сумма к возврату';
+
+  @override
+  String get returnSubmit => 'Отправить запрос';
+
+  @override
+  String get returnSelectItems => 'Выберите хотя бы один товар';
+
+  @override
+  String get returnSent => 'Запрос отправлен';
+
+  @override
+  String returnNumber(String number) {
+    return 'Возврат #$number';
+  }
+
+  @override
+  String get returnWithheld => 'Удержан кешбэк';
+
+  @override
+  String get returnCancel => 'Отменить запрос';
+
+  @override
+  String get returnCancelConfirm => 'Отменить запрос на возврат?';
+
+  @override
+  String get returnCancelled => 'Запрос отменён';
+
+  @override
+  String returnRejectReason(String reason) {
+    return 'Причина отказа: $reason';
+  }
+
+  @override
+  String get returnTimeline => 'Статус';
+
+  @override
+  String get returnMethod => 'Способ возврата';
 }

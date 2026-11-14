@@ -63,6 +63,10 @@ builder.Services.AddHostedService<PosCloud.Api.Background.PushCampaignService>()
 builder.Services.AddHostedService<PosCloud.Api.Background.BackInStockService>();
 builder.Services.AddHostedService<PosCloud.Api.Background.CartReminderService>();
 
+// Bosqich 10: oldindan buyurtmalar vaqti kelganda kassaga xabar (har daqiqa), kuryer takliflari muddati (har 15 s).
+builder.Services.AddHostedService<PosCloud.Api.Background.PreorderNotifyService>();
+builder.Services.AddHostedService<PosCloud.Api.Background.CourierOfferExpiryService>();
+
 // --- Controllerlar + enum'larni string sifatida (JSON) ---
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -217,6 +221,16 @@ builder.Services.AddRateLimiter(options =>
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    // Klient xatolari (desktop/mobil/agent): bir IP'dan daqiqasiga 30 ta.
+    options.AddPolicy("client-errors", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

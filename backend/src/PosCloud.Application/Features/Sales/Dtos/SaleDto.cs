@@ -39,6 +39,16 @@ public class SaleDto
 
     /// <summary>Kassada ball bilan to'langan summa.</summary>
     public decimal LoyaltyPointsRedeemed { get; set; }
+
+    /// <summary>Refund: ayirilgan keshbek, puldan ushlab qolingan summa, mijozga beriladigan pul, ballga qaytarilgan qism.</summary>
+    public decimal LoyaltyPointsReversed { get; set; }
+    public decimal LoyaltyWithheldAmount { get; set; }
+    public decimal RefundCashAmount { get; set; }
+    public decimal RedeemedPointsReturned { get; set; }
+    public string? RefundReason { get; set; }
+
+    /// <summary>Savdoda qaytariladigan miqdor qolganmi (Completed/PartiallyRefunded).</summary>
+    public bool CanRefund { get; set; }
     public Guid? TableId { get; set; }
     public Guid? WaiterId { get; set; }
     public int? GuestCount { get; set; }
@@ -73,6 +83,13 @@ public class SaleDto
         CustomerId = s.CustomerId,
         LoyaltyPointsEarned = s.LoyaltyPointsEarned,
         LoyaltyPointsRedeemed = s.LoyaltyPointsRedeemed,
+        LoyaltyPointsReversed = s.LoyaltyPointsReversed,
+        LoyaltyWithheldAmount = s.LoyaltyWithheldAmount,
+        RefundCashAmount = s.RefundCashAmount,
+        RedeemedPointsReturned = s.RedeemedPointsReturned,
+        RefundReason = s.RefundReason,
+        CanRefund = s.Type == SaleType.Sale && (s.Status == SaleStatus.Completed || s.Status == SaleStatus.PartiallyRefunded)
+                    && s.Items.Any(i => i.Quantity - i.RefundedQuantity > 0),
         TableId = s.TableId,
         WaiterId = s.WaiterId,
         GuestCount = s.GuestCount,
@@ -104,6 +121,11 @@ public class SaleItemDto
     public string? Note { get; set; }
     public bool SentToKitchen { get; set; }
 
+    /// <summary>Asl savdo qatorida: qaytarilgan va hali qaytarish mumkin bo'lgan miqdor (refund qatorida — 0).</summary>
+    public decimal RefundedQuantity { get; set; }
+    public decimal RefundableQuantity { get; set; }
+    public Guid? OriginalSaleItemId { get; set; }
+
     public static SaleItemDto FromEntity(SaleItem i) => new()
     {
         Id = i.Id,
@@ -121,7 +143,10 @@ public class SaleItemDto
         VatAmount = i.VatAmount,
         LineTotal = i.LineTotal,
         Note = i.Note,
-        SentToKitchen = i.SentToKitchen
+        SentToKitchen = i.SentToKitchen,
+        RefundedQuantity = i.RefundedQuantity,
+        RefundableQuantity = i.OriginalSaleItemId is null ? Math.Max(0, i.Quantity - i.RefundedQuantity) : 0,
+        OriginalSaleItemId = i.OriginalSaleItemId
     };
 }
 

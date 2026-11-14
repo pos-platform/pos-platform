@@ -1,4 +1,5 @@
 using PosCloud.Domain.Common;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Domain.Entities;
 
@@ -113,4 +114,22 @@ public class OnlineStoreSettings : BaseEntity
     public bool ReferralEnabled { get; set; }
     public decimal ReferrerBonus { get; set; }
     public decimal RefereeBonus { get; set; }
+
+    // ---- Bosqich 10 ----
+
+    /// <summary>Do'kon yopiq paytda ham buyurtma qabul qilinsin (oldindan buyurtma, ochilganda ko'rib chiqiladi).</summary>
+    public bool AcceptWhenClosed { get; set; } = true;
+
+    /// <summary>Yetkazilgan buyurtmani qaytarish so'rovi yoqilganmi va necha kun ichida.</summary>
+    public bool ReturnsEnabled { get; set; } = true;
+    public int ReturnDays { get; set; } = 3;
+
+    /// <summary>Qaytarishni kuryer olib ketishi mumkin (aks holda faqat mijoz do'konga olib keladi).</summary>
+    public bool ReturnPickupByCourier { get; set; } = true;
+
+    /// <summary>Buyurtma tayyor bo'lganda filial kuryerlariga taklif yuborish.</summary>
+    public CourierOfferMode CourierOfferMode { get; set; } = CourierOfferMode.Broadcast;
+
+    /// <summary>Taklif shuncha soniyada qabul qilinmasa — "Kuryer topilmadi".</summary>
+    public int CourierOfferTimeoutSec { get; set; } = 120;
 }

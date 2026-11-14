@@ -55,6 +55,7 @@ public abstract class PeriodicMarketingService : BackgroundService
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "{Name} vazifasida xato", Name);
+                BackgroundErrors.Report(_scopeFactory, Name, ex);
             }
         } while (await WaitNext(timer, stoppingToken));
     }

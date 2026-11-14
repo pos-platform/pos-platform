@@ -7,6 +7,7 @@ import 'package:signalr_netcore/signalr_client.dart';
 import '../../core/api/api_client.dart';
 import '../../core/config.dart';
 import '../auth/auth_controller.dart';
+import '../returns/data/returns_repository.dart';
 import 'data/order_models.dart';
 import 'data/orders_repository.dart';
 
@@ -28,6 +29,11 @@ final orderUpdatesProvider = Provider<OrderUpdates?>((ref) {
       ref.invalidate(ordersListProvider);
       ref.invalidate(orderDetailProvider(e.id));
     },
+    // Kelishuv 10.5: qaytarish holati o'zgardi — ro'yxat va ochiq holat ekrani yangilanadi.
+    () {
+      ref.invalidate(returnsListProvider);
+      ref.invalidate(returnDetailProvider);
+    },
   );
   updates._start();
   ref.onDispose(updates._dispose);
@@ -35,10 +41,11 @@ final orderUpdatesProvider = Provider<OrderUpdates?>((ref) {
 });
 
 class OrderUpdates {
-  OrderUpdates._(this._accessToken, this._onEvent);
+  OrderUpdates._(this._accessToken, this._onEvent, this._onReturn);
 
   final Future<String> Function() _accessToken;
   final void Function(OrderStatusEvent) _onEvent;
+  final void Function() _onReturn;
   final _events = StreamController<OrderStatusEvent>.broadcast();
   HubConnection? _connection;
   Timer? _retry;
@@ -61,6 +68,7 @@ class OrderUpdates {
       _events.add(e);
       _onEvent(e);
     });
+    connection.on('ReturnStatusChanged', (_) => _onReturn());
     // Avtomatik qayta ulanish ham tugasa — 60 soniyadan keyin yana urinamiz.
     connection.onclose(({error}) => _scheduleRetry());
     _connection = connection;

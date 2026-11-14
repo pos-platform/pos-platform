@@ -44,28 +44,91 @@ public partial class OnlineOrdersWindow : Window
             AppState.ScanOverride = code => Dispatcher.Invoke(() => HandleScan(code));
             if (_hub is not null)
             {
-                _hub.OrderCreated += OnHubEvent;
+                _hub.OrderCreated += OnHubCreated;
                 _hub.OrderUpdated += OnHubEvent;
+                _hub.ReturnCreated += OnReturnEvent;
+                _hub.ReturnUpdated += OnReturnEvent;
                 _hub.ConnectionChanged += OnConnectionChanged;
                 OnConnectionChanged(_hub.IsConnected);
             }
             await LoadSettingsAsync();
+            // Oyna ochilganda faol buyurtmalar (shu jumladan tunda tushgan oldindan buyurtmalar) yuklanadi.
             await ReloadAsync();
             await RefreshCourierCashCountAsync();
+            await RefreshReturnCountsAsync();
         };
         Closed += (_, _) =>
         {
             AppState.ScanOverride = null;
             if (_hub is not null)
             {
-                _hub.OrderCreated -= OnHubEvent;
+                _hub.OrderCreated -= OnHubCreated;
                 _hub.OrderUpdated -= OnHubEvent;
+                _hub.ReturnCreated -= OnReturnEvent;
+                _hub.ReturnUpdated -= OnReturnEvent;
                 _hub.ConnectionChanged -= OnConnectionChanged;
             }
         };
     }
 
     // ───────────── yuklash ─────────────
+
+    /// <summary>
+    /// Server oldindan buyurtma vaqti kelganda OrderCreated'ni qayta yuboradi (10.1) — shu Id'lar "vaqti keldi"
+    /// deb belgilanadi va soat farqidan qat'i nazar yuqoriga chiqadi (ovozni hub chaladi).
+    /// </summary>
+    private static readonly HashSet<Guid> DuePreorders = new();
+
+    private void OnHubCreated(OnlineOrderEvent e) => Dispatcher.InvokeAsync(async () =>
+    {
+        await ReloadAsync(createdId: e.Id);
+        if (_selected?.Id == e.Id) await SelectAsync(e.Id);
+        await RefreshCourierCashCountAsync();
+    });
+
+    private static bool IsWaiting(OnlineOrderDto o)
+    {
+        lock (DuePreorders) return o.IsPreorderWaiting && !DuePreorders.Contains(o.Id);
+    }
+
+    private void OnReturnEvent(OnlineReturnEvent e) => Dispatcher.InvokeAsync(RefreshReturnCountsAsync);
+
+    /// <summary>Sarlavhadagi "Qaytarishlar (N)" va "Kuryer qaytargan (N)" hisoblagichlari.</summary>
+    private async Task RefreshReturnCountsAsync()
+    {
+        try
+        {
+            var list = await AppState.Backend.GetOnlineReturnsAsync();
+            var open = list.Count(r => r.Status is "Requested" or "Approved" or "PickupAssigned" or "PickedUp" or "Received");
+            var requested = list.Count(r => r.Status == "Requested");
+            ReturnsButton.Content = requested > 0 ? $"Qaytarishlar ({open}) · yangi {requested}" : $"Qaytarishlar ({open})";
+        }
+        catch
+        {
+            ReturnsButton.Content = "Qaytarishlar"; // backend hali yangilanmagan bo'lishi mumkin
+        }
+        try
+        {
+            var rejected = await AppState.Backend.GetRejectedPendingAsync();
+            RejectedButton.Content = $"Kuryer qaytargan tovarlar ({rejected.Count})";
+        }
+        catch
+        {
+            RejectedButton.Content = "Kuryer qaytargan tovarlar";
+        }
+    }
+
+    private async void Returns_Click(object sender, RoutedEventArgs e)
+    {
+        new OnlineReturnsWindow(_hub) { Owner = this }.ShowDialog();
+        await RefreshReturnCountsAsync();
+    }
+
+    private async void Rejected_Click(object sender, RoutedEventArgs e)
+    {
+        new RejectedItemsWindow { Owner = this }.ShowDialog();
+        await RefreshReturnCountsAsync();
+    }
 
     private void OnHubEvent(OnlineOrderEvent e) => Dispatcher.InvokeAsync(async () =>
     {
@@ -126,12 +189,24 @@ public partial class OnlineOrdersWindow : Window
         }
     }
 
-    private async Task ReloadAsync()
+    /// <param name="createdId">SignalR OrderCreated kelgan buyurtma: oldindan buyurtma bo'lib, vaqti kelgan
+    /// (yoki 5 daqiqa qolgan) bo'lsa — qayta yuborilgan "vaqti keldi" xabari deb yuqoriga chiqariladi.</param>
+    private async Task ReloadAsync(Guid? createdId = null)
     {
         try
         {
             var list = await AppState.Backend.GetOnlineOrdersAsync(active: true);
-            var ordered = list.OrderBy(o => o.CreatedAt).ToList();
+            if (createdId is { } cid && list.FirstOrDefault(o => o.Id == cid) is { IsPreorder: true, ScheduledFor: { } due }
+                && due.ToUniversalTime() - DateTime.UtcNow <= TimeSpan.FromMinutes(5))
+                lock (DuePreorders) DuePreorders.Add(cid);
+            // Ochilish vaqti kelmagan oldindan buyurtmalar har ustunda pastda (10.1); vaqti kelganlari
+            // rejalashtirilgan vaqt bo'yicha boshqalar bilan aralashadi.
+            var ordered = list
+                .OrderBy(IsWaiting)
+                .ThenBy(o => o.IsPreorder && o.ScheduledFor is { } s ? s.ToUniversalTime() : o.CreatedAt.ToUniversalTime())
+                .ToList();
+            lock (DuePreorders)
+                DuePreorders.RemoveWhere(id => list.All(o => o.Id != id));
 
             Fill(NewList, NewHeader, "Yangi", ordered.Where(o => o.Status == "New"));
             Fill(PickingList, PickingHeader, "Yig'ilmoqda", ordered.Where(o => PickingStatuses.Contains(o.Status)));
@@ -193,7 +268,9 @@ public partial class OnlineOrdersWindow : Window
         DetailStatus.Text = o.StatusText;
         DetailTitle.Text = $"Buyurtma #{o.Number}";
         DetailCustomer.Text = $"{o.CustomerName} · {o.CustomerPhone}" +
-                              (o.ScheduledFor is { } s ? $" · {s.ToLocalTime():dd.MM HH:mm} ga" : " · imkon qadar tez");
+                              (o.IsPreorder
+                                  ? $" · {o.PreorderText} (do'kon yopiq paytda berilgan)"
+                                  : o.ScheduledFor is { } s ? $" · {s.ToLocalTime():dd.MM HH:mm} ga" : " · imkon qadar tez");
         DetailAddress.Text = o.AddressText + (o.Contactless ? " · kontaktsiz" : "");
         DetailComment.Text = string.IsNullOrWhiteSpace(o.Comment) ? "" : "Izoh: " + o.Comment;
         // Kuryer + naqd holati (kuryer ilovada olgan naqd, kassaga topshirilganmi).
@@ -203,6 +280,17 @@ public partial class OnlineOrdersWindow : Window
                            (o.CourierCashHandedOverAt is { } h ? $" · kassaga topshirildi {h.ToLocalTime():dd.MM HH:mm}" : " · kassaga topshirilmagan");
         else if (o.CourierCashHandedOverAt is { } h2)
             courierText += (courierText.Length > 0 ? " · " : "") + $"naqd kassaga topshirildi {h2.ToLocalTime():dd.MM HH:mm}";
+        // Kuryerga taklif holati va tarixi (10.6).
+        if (o.CourierOfferText.Length > 0)
+            courierText += (courierText.Length > 0 ? "\n" : "") + o.CourierOfferText;
+        if (o.CourierOffers is { Count: > 0 } offers)
+            courierText += "\nTakliflar: " + string.Join("; ", offers.Select(x =>
+                $"{(string.IsNullOrWhiteSpace(x.CourierName) ? "—" : x.CourierName)} — {x.StatusText}" +
+                (x.RespondedAt is { } r ? $" {r.ToLocalTime():HH:mm}" : "")));
+        if (o.RejectedItems is { Count: > 0 } rej)
+            courierText += (courierText.Length > 0 ? "\n" : "") + "Eshik oldida rad etildi: " + string.Join("; ", rej.Select(x =>
+                $"{x.ProductName} × {x.Quantity:0.###}" + (string.IsNullOrWhiteSpace(x.Reason) ? "" : $" ({x.Reason})"))) +
+                (o.RejectedReturnedAt is { } rr ? $" · do'konga qabul qilindi {rr.ToLocalTime():dd.MM HH:mm}" : " · do'konga hali qaytmagan");
         DetailCourier.Text = courierText;
         DetailCourier.Visibility = courierText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         DetailPolicy.Text = o.SubstitutionText;
@@ -271,7 +359,10 @@ public partial class OnlineOrdersWindow : Window
                 AddAction("To'lov tushdi", primary: true, () => Act(o, "payment-received"));
                 break;
             case "Ready":
-                AddAction("Kuryerga berildi", primary: true, () => Dispatch(o));
+                // Kuryerga taklif (10.6): topilmasa — qayta yuborish; qo'lda biriktirish ham qoladi.
+                if (o.IsDelivery && o.CourierUserId is null && o.CourierOfferStatus is "NoCourier" or "Pending" or "None")
+                    AddAction(o.IsNoCourier ? "Qayta yuborish" : "Kuryerlarga qayta yuborish", primary: o.IsNoCourier, () => OfferCouriers(o));
+                AddAction("Kuryerga berildi", primary: !o.IsNoCourier, () => Dispatch(o));
                 if (transferUnpaid) AddAction("To'lov tushdi", primary: false, () => Act(o, "payment-received"));
                 break;
             case "ReadyForPickup":
@@ -370,6 +461,15 @@ public partial class OnlineOrdersWindow : Window
         }
 
         await DispatchManual(o);
+    }
+
+    /// <summary>Filial kuryerlariga taklifni qayta yuboradi (10.6).</summary>
+    private async Task OfferCouriers(OnlineOrderDto o)
+    {
+        await AppState.Backend.OfferCouriersAsync(o.Id);
+        ShowMessage($"✓ #{o.Number}: kuryerlarga taklif yuborildi.", error: false);
+        await SelectAsync(o.Id);
+        await ReloadAsync();
     }
 
     /// <summary>Kuryer ismi va telefonini qo'lda so'raydi (ikkalasi ixtiyoriy) va dispatch qiladi.</summary>

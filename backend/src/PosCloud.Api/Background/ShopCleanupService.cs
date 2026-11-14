@@ -53,6 +53,7 @@ public class ShopCleanupService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Mijoz OTP/refresh tozalashda xato");
+                BackgroundErrors.Report(_scopeFactory, nameof(ShopCleanupService), ex);
             }
         } while (await WaitNext(timer, stoppingToken));
     }
@@ -90,6 +91,16 @@ public class ShopCleanupService : BackgroundService
         var devices = await db.ShopDeviceTokens.IgnoreQueryFilters()
             .Where(d => d.LastSeenAt < deviceBefore)
             .ExecuteDeleteAsync(ct);
+
+        // Bosqich 10: SystemError — hal qilinganlar 30 kun, qolganlar 90 kundan keyin.
+        var resolvedBefore = now.AddDays(-PosCloud.Application.Features.SystemErrors.SystemErrorService.ResolvedKeepDays);
+        var openBefore = now.AddDays(-PosCloud.Application.Features.SystemErrors.SystemErrorService.OpenKeepDays);
+        var errors = await db.SystemErrors
+            .Where(e => (e.ResolvedAt != null && e.ResolvedAt < resolvedBefore)
+                        || (e.ResolvedAt == null && e.LastSeenAt < openBefore))
+            .ExecuteDeleteAsync(ct);
+        if (errors > 0)
+            _logger.LogInformation("Tozalandi: {Errors} ta eski xatolik", errors);
 
         if (otps > 0 || tokens > 0 || devices > 0)
             _logger.LogInformation("Tozalandi: {Otps} ta OTP, {Tokens} ta refresh token, {Devices} ta push token",

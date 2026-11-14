@@ -17,4 +17,22 @@ public interface IOnlineOrderNotifier
 
     /// <summary>Buyurtma kuryerga biriktirildi — kuryer guruhiga (<c>courier:{userId}</c>) <c>CourierOrderAssigned</c>.</summary>
     Task CourierAssignedAsync(OnlineOrder order, CancellationToken ct = default);
+
+    // ---- Bosqich 10 ----
+
+    /// <summary>
+    /// Qaytarish so'rovi: xodimga <c>ReturnCreated</c>/<c>ReturnUpdated</c>, mijozga <c>ReturnStatusChanged</c>
+    /// (payload <c>{ id, number, branchId, status }</c>), biriktirilgan kuryerga <c>ReturnUpdated</c>.
+    /// pushToCustomer — push <c>type=return_status { returnId }</c>.
+    /// </summary>
+    Task ReturnChangedAsync(OnlineReturn ret, bool isNew, bool pushToCustomer, CancellationToken ct = default);
+
+    /// <summary>Kuryerga yangi taklif: <c>courier:{id}</c> guruhiga <c>CourierOffer</c> (<c>{ offerId, orderId, number, totalAmount, expiresAt }</c>).</summary>
+    Task CourierOfferAsync(Guid courierUserId, CourierOfferEvent evt, CancellationToken ct = default);
+
+    /// <summary>Taklif yopildi (boshqa kuryer oldi yoki bekor qilindi): <c>CourierOfferClosed { orderId }</c>.</summary>
+    Task CourierOfferClosedAsync(Guid orderId, IReadOnlyCollection<Guid> courierUserIds, CancellationToken ct = default);
 }
+
+/// <summary>SignalR <c>CourierOffer</c> xabari (shaxsiy ma'lumotsiz).</summary>
+public sealed record CourierOfferEvent(Guid OfferId, Guid OrderId, int Number, decimal TotalAmount, DateTime ExpiresAt);

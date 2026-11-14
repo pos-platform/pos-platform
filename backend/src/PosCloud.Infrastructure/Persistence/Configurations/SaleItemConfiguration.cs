@@ -22,6 +22,7 @@ public class SaleItemConfiguration : IEntityTypeConfiguration<SaleItem>
         builder.Property(i => i.VatAmount).HasColumnType("numeric(18,2)");
         builder.Property(i => i.LineTotal).HasColumnType("numeric(18,2)");
         builder.Property(i => i.Note).HasMaxLength(512);
+        builder.Property(i => i.RefundedQuantity).HasColumnType("numeric(18,3)");
 
         // Mahsulot o'chmasligi uchun (savdo tarixi saqlanadi) — Restrict.
         builder.HasOne(i => i.Product)

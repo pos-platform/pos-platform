@@ -26,6 +26,12 @@ public sealed class OnlineOrdersHub : IAsyncDisposable
     /// <summary>Buyurtma holati o'zgardi.</summary>
     public event Action<OnlineOrderEvent>? OrderUpdated;
 
+    /// <summary>Yangi qaytarish so'rovi (10.5).</summary>
+    public event Action<OnlineReturnEvent>? ReturnCreated;
+
+    /// <summary>Qaytarish holati o'zgardi (10.5).</summary>
+    public event Action<OnlineReturnEvent>? ReturnUpdated;
+
     /// <summary>Faol (Yangi) buyurtmalar soni o'zgardi.</summary>
     public event Action<int>? NewCountChanged;
 
@@ -59,6 +65,14 @@ public sealed class OnlineOrdersHub : IAsyncDisposable
             OrderUpdated?.Invoke(e);
             _ = RefreshCountAsync();
         });
+
+        // Qaytarish so'rovlari (10.5): yangisida ovoz.
+        _connection.On<OnlineReturnEvent>("ReturnCreated", e =>
+        {
+            PlayNewOrderSound();
+            ReturnCreated?.Invoke(e);
+        });
+        _connection.On<OnlineReturnEvent>("ReturnUpdated", e => ReturnUpdated?.Invoke(e));
 
         _connection.Reconnecting += _ => { ConnectionChanged?.Invoke(false); return Task.CompletedTask; };
         _connection.Reconnected += async _ => { ConnectionChanged?.Invoke(true); await RefreshCountAsync(); };
@@ -110,7 +124,8 @@ public sealed class OnlineOrdersHub : IAsyncDisposable
         try
         {
             var list = await AppState.Backend.GetOnlineOrdersAsync(active: true);
-            var count = list.Count(o => o.Status == "New");
+            // Ochilish vaqti kelmagan oldindan buyurtmalar ovoz chiqarmaydi (10.1).
+            var count = list.Count(o => o.Status == "New" && !o.IsPreorderWaiting);
             NewCount = count;
             NewCountChanged?.Invoke(count);
         }

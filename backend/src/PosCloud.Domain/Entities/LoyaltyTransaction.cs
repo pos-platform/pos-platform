@@ -22,6 +22,13 @@ public class LoyaltyTransaction : BaseEntity
     /// <summary>Manba: kassa yoki mobil ilova.</summary>
     public LoyaltySource Source { get; set; } = LoyaltySource.Store;
 
+    /// <summary>Harakatdan keyingi balans (eski yozuvlarda null).</summary>
+    public decimal? BalanceAfter { get; set; }
+
+    /// <summary>Harakatni bajargan xodim (qo'lda tuzatish, qaytarish). Avtomatik harakatlarda null.</summary>
+    public Guid? UserId { get; set; }
+    public string? UserName { get; set; }
+
     public Guid? SaleId { get; set; }
     public Sale? Sale { get; set; }
 }

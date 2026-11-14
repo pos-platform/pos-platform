@@ -77,7 +77,7 @@ public static class LoyaltyRules
     {
         var since = DateTime.UtcNow.AddDays(-TierSpendDays);
         return await db.Sales.IgnoreQueryFilters()
-            .Where(x => x.CustomerId == customerId && x.Type == SaleType.Sale && x.Status == SaleStatus.Completed
+            .Where(x => x.CustomerId == customerId && x.Type == SaleType.Sale && (x.Status == SaleStatus.Completed || x.Status == SaleStatus.PartiallyRefunded)
                         && x.CreatedAt >= since)
             .SumAsync(x => (decimal?)x.TotalAmount, ct) ?? 0;
     }
@@ -136,7 +136,8 @@ public static class LoyaltyRules
     /// Manfiy harakat balansdan oshsa — balansgacha qisqartiriladi. Haqiqatda yozilgan ballni qaytaradi (0 bo'lsa — yozilmaydi).
     /// </summary>
     public static decimal Apply(IApplicationDbContext db, Customer customer, decimal points, LoyaltyTransactionType type,
-        LoyaltySource source, decimal amount, string? comment, Sale? sale = null, Guid? saleId = null)
+        LoyaltySource source, decimal amount, string? comment, Sale? sale = null, Guid? saleId = null,
+        Guid? userId = null, string? userName = null)
     {
         if (points < 0 && -points > customer.LoyaltyPoints)
             points = -Math.Max(0, customer.LoyaltyPoints);
@@ -154,6 +155,9 @@ public static class LoyaltyRules
             Comment = comment,
             Type = type,
             Source = source,
+            BalanceAfter = customer.LoyaltyPoints,
+            UserId = userId,
+            UserName = userName is { Length: > 100 } ? userName[..100] : userName,
             Sale = sale,
             SaleId = sale is null ? saleId : null
         });

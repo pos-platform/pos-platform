@@ -129,7 +129,11 @@ export const salesApi = {
   list: (params) => http.get('/api/sales', { params }).then((r) => r.data),
   get: (id) => http.get(`/api/sales/${id}`).then((r) => r.data),
   create: (payload) => http.post('/api/sales', payload).then((r) => r.data),
-  refund: (id) => http.post(`/api/sales/${id}/refund`).then((r) => r.data)
+  // Bosqich 10.5: body ixtiyoriy — { items?: [{ saleItemId, quantity }], reason? }; body yo'q — to'liq qaytarish.
+  refund: (id, payload) =>
+    (payload ? http.post(`/api/sales/${id}/refund`, payload) : http.post(`/api/sales/${id}/refund`)).then((r) => r.data),
+  // → { items, refundTotal, pointsToReverse, pointsAvailable, withheldAmount, cashToReturn, redeemedPointsReturned }
+  refundPreview: (id, payload) => http.post(`/api/sales/${id}/refund-preview`, payload || {}).then((r) => r.data)
 }
 
 export const shiftsApi = {
@@ -205,7 +209,10 @@ export const reportsApi = {
   sales:       (params) => http.get('/api/reports/sales',        { params }).then((r) => r.data),
   exportSales: (params) => http.get('/api/reports/sales/export', { params, responseType: 'blob' }).then((r) => r.data),
   stock:       (params) => http.get('/api/reports/stock',        { params }).then((r) => r.data),
-  exportStock: (params) => http.get('/api/reports/stock/export', { params, responseType: 'blob' }).then((r) => r.data)
+  exportStock: (params) => http.get('/api/reports/stock/export', { params, responseType: 'blob' }).then((r) => r.data),
+  // Bosqich 10.3: sotilgan tovarlar logi → { items, total, totals: { quantity, revenue, profit, refunds } }
+  soldItems: (params) => http.get('/api/reports/sold-items', { params }).then((r) => r.data),
+  exportSoldItems: (params) => http.get('/api/reports/sold-items/export', { params, responseType: 'blob' }).then((r) => r.data)
 }
 
 export const expensesApi = {
@@ -236,7 +243,13 @@ export const loyaltyApi = {
   report: (params) => http.get('/api/loyalty/report', { params }).then((r) => r.data),
   // Mijoz bonus tarixi → [{ id, createdAt, type, source, points, amount, comment, receiptNumber }] yoki PagedResult
   customerHistory: (customerId, params) =>
-    http.get(`/api/customers/${customerId}/loyalty-history`, { params }).then((r) => r.data)
+    http.get(`/api/customers/${customerId}/loyalty-history`, { params }).then((r) => r.data),
+  // Bosqich 10.2: sozlamalar o'zgarishlari tarixi → { items: [{ changedAt, userName, field, oldValue, newValue }], total }
+  settingsHistory: (params) => http.get('/api/loyalty/settings/history', { params }).then((r) => r.data),
+  // Bonus harakatlari jurnali → { items, total, totals: { earned, redeemed, refunded, expired, adjusted } }
+  transactions: (params) => http.get('/api/loyalty/transactions', { params }).then((r) => r.data),
+  // Qo'lda tuzatish: { points (±), reason } — sabab majburiy
+  adjust: (customerId, payload) => http.post(`/api/loyalty/customers/${customerId}/adjust`, payload).then((r) => r.data)
 }
 
 export const customersApi = {
@@ -348,7 +361,32 @@ export const onlineOrdersApi = {
   list: (params) => http.get('/api/online-orders', { params }).then((r) => r.data),
   get: (id) => http.get(`/api/online-orders/${id}`).then((r) => r.data),
   // Bosqich 9.3: { average, count, distribution: {1..5}, tagCounts: {tag:int}, items: [...] }
-  ratings: (params) => http.get('/api/online-orders/ratings', { params }).then((r) => r.data)
+  ratings: (params) => http.get('/api/online-orders/ratings', { params }).then((r) => r.data),
+  // [{ id, name, phone, activeOrders }]
+  couriers: (params) => http.get('/api/online-orders/couriers', { params }).then((r) => r.data),
+  // Bosqich 10.6: filial kuryerlariga taklifni qayta yuborish
+  offerCouriers: (id) => http.post(`/api/online-orders/${id}/offer-couriers`).then((r) => r.data)
+}
+
+// Bosqich 10.5: online buyurtmalarni qaytarish (xodim)
+export const onlineReturnsApi = {
+  list: (params) => http.get('/api/online-returns', { params }).then((r) => r.data),
+  get: (id) => http.get(`/api/online-returns/${id}`).then((r) => r.data),
+  approve: (id, method) => http.post(`/api/online-returns/${id}/approve`, { method }).then((r) => r.data),
+  reject: (id, reason) => http.post(`/api/online-returns/${id}/reject`, { reason }).then((r) => r.data),
+  assignCourier: (id, courierId) => http.post(`/api/online-returns/${id}/assign-courier`, { courierId }).then((r) => r.data),
+  received: (id) => http.post(`/api/online-returns/${id}/received`).then((r) => r.data),
+  refunded: (id) => http.post(`/api/online-returns/${id}/refunded`).then((r) => r.data)
+}
+
+// Bosqich 10.4: tizim xatoliklari (SuperAdmin)
+export const adminErrorsApi = {
+  list: (params) => http.get('/api/admin/errors', { params }).then((r) => r.data),
+  get: (id) => http.get(`/api/admin/errors/${id}`).then((r) => r.data),
+  resolve: (id) => http.post(`/api/admin/errors/${id}/resolve`).then((r) => r.data),
+  resolveBulk: (ids) => http.post('/api/admin/errors/resolve-bulk', { ids }).then((r) => r.data),
+  // { openCount, last24h, bySource: {..} }
+  summary: () => http.get('/api/admin/errors/summary').then((r) => r.data)
 }
 
 // Bosqich 9 (CONTRACT-9): ilova reklamasi — bannerlar, kolleksiyalar, stories, push kampaniyalar.

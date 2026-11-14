@@ -37,18 +37,25 @@ public static class OnlineOrderCashback
         if (customer is null) return 0;
 
         var loyalty = await LoyaltyRules.LoadAsync(db, customer.OrganizationId, ct);
+        // Eshik oldida rad etilgan (qisman qaytarilgan) qatorlar hisobga olinmaydi — faqat qolgan tovarlar summasi.
+        static decimal Net(SaleItem i) => i.Quantity > 0 && i.RefundedQuantity > 0
+            ? Math.Round(i.LineTotal * Math.Max(0, i.Quantity - i.RefundedQuantity) / i.Quantity, 2, MidpointRounding.AwayFromZero)
+            : i.LineTotal;
         var lines = sale.Items
             .Where(i => i.Product is not null)
-            .Select(i => new LoyaltyEarnLine(i.Product!.CategoryId, i.Product.ProductType, i.LineTotal,
+            .Select(i => new LoyaltyEarnLine(i.Product!.CategoryId, i.Product.ProductType, Net(i),
                 i.DiscountAmount > 0 || i.UnitPrice < i.Product.Price));
+        var netTotal = sale.Items.Any(i => i.RefundedQuantity > 0)
+            ? sale.Items.Sum(Net) + sale.ServiceChargeAmount
+            : sale.TotalAmount;
 
         // Daraja (Silver/Gold...) foizi — kassadagi savdo bilan bir xil.
         var tier = await LoyaltyRules.TierStatusAsync(db, loyalty, customer.Id, ct);
-        var points = LoyaltyRules.ComputeEarn(loyalty, sale.TotalAmount, lines, tier.Tier?.CashbackPercent ?? 0);
+        var points = LoyaltyRules.ComputeEarn(loyalty, netTotal, lines, tier.Tier?.CashbackPercent ?? 0);
         if (points <= 0) return 0;
 
         var earned = LoyaltyRules.Apply(db, customer, points, LoyaltyTransactionType.Earn, LoyaltySource.Online,
-            sale.TotalAmount, $"Online #{order.Number} — cashback (savdo {sale.ReceiptNumber})", sale);
+            netTotal, $"Online #{order.Number} — cashback (savdo {sale.ReceiptNumber})", sale);
         sale.LoyaltyPointsEarned = earned;
         return earned;
     }

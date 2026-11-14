@@ -5,7 +5,7 @@ using PosCloud.Domain.Enums;
 
 namespace PosCloud.Application.Features.Reports;
 
-public class ReportService : IReportService
+public partial class ReportService : IReportService
 {
     private readonly IApplicationDbContext _db;
     private readonly IReportExcelService _excel;

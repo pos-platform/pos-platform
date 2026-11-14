@@ -33,6 +33,12 @@ const routes = [
     component: () => import('../views/AdminOnlineStoresView.vue'),
     meta: { superAdmin: true }
   },
+  {
+    path: '/admin/errors',
+    name: 'admin-errors',
+    component: () => import('../views/AdminErrorsView.vue'),
+    meta: { superAdmin: true }
+  },
   { path: '/', redirect: { name: 'dashboard' } },
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { adminOnly: true } },
   { path: '/pos', name: 'pos', component: () => import('../views/PosView.vue') },
@@ -133,6 +139,12 @@ const routes = [
     path: '/reports',
     name: 'reports',
     component: () => import('../views/ReportsView.vue'),
+    meta: { adminOnly: true, perm: 'reports.view' }
+  },
+  {
+    path: '/sold-items',
+    name: 'sold-items',
+    component: () => import('../views/SoldItemsView.vue'),
     meta: { adminOnly: true, perm: 'reports.view' }
   },
   {

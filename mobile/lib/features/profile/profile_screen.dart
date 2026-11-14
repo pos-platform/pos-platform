@@ -82,6 +82,11 @@ class ProfileScreen extends ConsumerWidget {
                   label: t.refTitle,
                   onTap: () => context.push('/profile/referral'),
                 ),
+                _MenuRow(
+                  icon: Icons.assignment_return_outlined,
+                  label: t.returnsTitle,
+                  onTap: () => context.push('/profile/returns'),
+                ),
               ]),
               const SizedBox(height: 16),
               _MenuGroup(children: [

@@ -271,6 +271,14 @@ public class OnlineStoreService : IOnlineStoreService
         settings.ReferrerBonus = Math.Floor(r.ReferrerBonus);
         settings.RefereeBonus = Math.Floor(r.RefereeBonus);
 
+        // Bosqich 10 (ixtiyoriy maydonlar).
+        if (r.AcceptWhenClosed is { } acceptWhenClosed) settings.AcceptWhenClosed = acceptWhenClosed;
+        if (r.ReturnsEnabled is { } returnsEnabled) settings.ReturnsEnabled = returnsEnabled;
+        if (r.ReturnDays is { } returnDays) settings.ReturnDays = Math.Clamp(returnDays, 1, 30);
+        if (r.ReturnPickupByCourier is { } pickup) settings.ReturnPickupByCourier = pickup;
+        if (r.CourierOfferMode is { } mode && Enum.IsDefined(mode)) settings.CourierOfferMode = mode;
+        if (r.CourierOfferTimeoutSec is { } timeout) settings.CourierOfferTimeoutSec = Math.Clamp(timeout, 15, 3600);
+
         await _db.SaveChangesAsync(ct);
         return ToDto(org, settings);
     }
@@ -405,7 +413,13 @@ public class OnlineStoreService : IOnlineStoreService
         SupportTelegram = s.SupportTelegram,
         ReferralEnabled = s.ReferralEnabled,
         ReferrerBonus = s.ReferrerBonus,
-        RefereeBonus = s.RefereeBonus
+        RefereeBonus = s.RefereeBonus,
+        AcceptWhenClosed = s.AcceptWhenClosed,
+        ReturnsEnabled = s.ReturnsEnabled,
+        ReturnDays = s.ReturnDays,
+        ReturnPickupByCourier = s.ReturnPickupByCourier,
+        CourierOfferMode = s.CourierOfferMode,
+        CourierOfferTimeoutSec = s.CourierOfferTimeoutSec
     };
 
     private static string? NormalizeCard(string? s)

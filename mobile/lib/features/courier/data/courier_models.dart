@@ -25,14 +25,23 @@ class CourierMe {
 }
 
 class CourierOrderItem {
-  const CourierOrderItem({required this.productName, required this.quantity, required this.unitPrice, required this.lineTotal});
+  const CourierOrderItem({
+    this.id,
+    required this.productName,
+    required this.quantity,
+    required this.unitPrice,
+    required this.lineTotal,
+  });
 
+  /// Qator ID (eshik oldida rad etish uchun `itemId`). Eski server bermasa — null (rad etib bo'lmaydi).
+  final String? id;
   final String productName;
   final double quantity;
   final double unitPrice;
   final double lineTotal;
 
   factory CourierOrderItem.fromJson(Map<String, dynamic> j) => CourierOrderItem(
+        id: _s(j['id'] ?? j['itemId'] ?? j['onlineOrderItemId']),
         productName: _s(j['productName']) ?? '',
         quantity: _d(j['quantity']),
         unitPrice: _d(j['unitPrice']),
@@ -66,7 +75,15 @@ class CourierOrder {
     this.storeName,
     this.branchAddress,
     this.items = const [],
+    this.kind = CourierTaskKind.delivery,
+    this.orderNumber,
   });
+
+  /// Vazifa turi (kelishuv 10.5): oddiy yetkazish yoki qaytarishni olib ketish. Qaytarishda [id] — qaytarish ID.
+  final CourierTaskKind kind;
+
+  /// Qaytarish vazifasida asl buyurtma raqami (bo'lsa).
+  final String? orderNumber;
 
   final String id;
   final String number;
@@ -104,13 +121,24 @@ class CourierOrder {
   bool get mustCollectCash => isCash && !isPaid;
   bool get isActive => status == 'OnTheWay';
 
+  /// Taklif qabul qilingan, kuryer hali do'kondan olmagan (kelishuv 10.6) — "Do'kondan oldim".
+  bool get isAwaitingPickup => kind == CourierTaskKind.delivery && status == 'Ready';
+
+  bool get isReturnPickup => kind == CourierTaskKind.returnPickup;
+
+  /// Qaytarish vazifasi hali olib ketilmagan.
+  bool get isReturnPending =>
+      isReturnPickup && status != 'PickedUp' && status != 'Received' && status != 'Refunded' && status != 'Cancelled';
+
   factory CourierOrder.fromJson(Map<String, dynamic> j) => CourierOrder(
-        id: j['id']?.toString() ?? '',
+        kind: CourierTaskKind.parse(j['kind']),
+        orderNumber: _s(j['orderNumber']),
+        id: (j['id'] ?? j['returnId'])?.toString() ?? '',
         number: j['number']?.toString() ?? '',
         status: j['status']?.toString() ?? '',
         customerName: _s(j['customerName']),
         customerPhone: _s(j['customerPhone']),
-        addressLine: _s(j['addressLine']),
+        addressLine: _s(j['addressLine'] ?? j['address']),
         entrance: _s(j['entrance']),
         floor: _s(j['floor']),
         apartment: _s(j['apartment']),
@@ -133,4 +161,99 @@ class CourierOrder {
                 .toList() ??
             const [],
       );
+}
+
+/// `kind`: `"delivery"` | `"return_pickup"` (yo'q bo'lsa — yetkazish).
+enum CourierTaskKind {
+  delivery,
+  returnPickup;
+
+  static CourierTaskKind parse(Object? v) {
+    final s = v?.toString().toLowerCase().replaceAll('_', '');
+    return s == 'returnpickup' ? returnPickup : delivery;
+  }
+}
+
+/// Eshik oldida rad etilgan qator (`rejectedItems`). Sabab — qaytarish sabablari bilan bir xil enum nomi.
+class CourierRejectedItem {
+  const CourierRejectedItem({required this.itemId, required this.quantity, required this.reason, required this.unitPrice});
+
+  final String itemId;
+  final double quantity;
+
+  /// `Damaged|WrongItem|Quality|Expired|Missing|Other`.
+  final String reason;
+
+  /// Faqat ilovada qayta hisoblash uchun (serverga yuborilmaydi).
+  final double unitPrice;
+
+  Map<String, dynamic> toJson() => {'itemId': itemId, 'quantity': quantity, 'reason': reason};
+}
+
+/// Kuryerga taklif (kelishuv 10.6): `GET /api/courier/offers`.
+class CourierOffer {
+  const CourierOffer({
+    required this.offerId,
+    required this.orderId,
+    required this.number,
+    this.branchName,
+    this.address,
+    this.distanceKm,
+    required this.totalAmount,
+    required this.paymentMethod,
+    this.itemCount = 0,
+    this.expiresAt,
+  });
+
+  final String offerId;
+  final String orderId;
+  final String number;
+  final String? branchName;
+  final String? address;
+  final double? distanceKm;
+  final double totalAmount;
+  final String paymentMethod;
+  final int itemCount;
+
+  /// Mahalliy vaqt. Null — muddat cheklanmagan.
+  final DateTime? expiresAt;
+
+  bool get isCash => paymentMethod == 'Cash';
+
+  /// Qolgan vaqt (manfiy bo'lmaydi).
+  Duration remaining([DateTime? now]) {
+    final e = expiresAt;
+    if (e == null) return const Duration(days: 1);
+    final d = e.difference(now ?? DateTime.now());
+    return d.isNegative ? Duration.zero : d;
+  }
+
+  bool isExpired([DateTime? now]) => expiresAt != null && remaining(now) == Duration.zero;
+
+  factory CourierOffer.fromJson(Map<String, dynamic> j) => CourierOffer(
+        offerId: (j['offerId'] ?? j['id'])?.toString() ?? '',
+        orderId: (j['orderId'] ?? j['onlineOrderId'])?.toString() ?? '',
+        number: j['number']?.toString() ?? '',
+        branchName: _s(j['branchName']),
+        address: _s(j['address'] ?? j['addressLine']),
+        distanceKm: _dn(j['distanceKm']),
+        totalAmount: _d(j['totalAmount']),
+        paymentMethod: j['paymentMethod']?.toString() ?? '',
+        itemCount: (j['itemCount'] as num?)?.toInt() ?? 0,
+        expiresAt: _utc(j['expiresAt']),
+      );
+}
+
+/// Server UTC vaqti (zonasiz bo'lsa ham UTC) → mahalliy.
+DateTime? _utc(Object? v) {
+  if (v is! String || v.isEmpty) return null;
+  final hasZone = v.endsWith('Z') || RegExp(r'[+-]\d\d:?\d\d$').hasMatch(v);
+  return DateTime.tryParse(hasZone ? v : '${v}Z')?.toLocal();
+}
+
+/// Rad etilgan tovarlardan keyin kuryer oladigan summa (taxminiy; yakuniy summani server hisoblaydi).
+double courierAmountToCollect(CourierOrder o, List<CourierRejectedItem> rejected) {
+  final minus = rejected.fold(0.0, (s, r) => s + r.quantity * r.unitPrice);
+  final left = o.totalAmount - minus;
+  return left < 0 ? 0 : left;
 }

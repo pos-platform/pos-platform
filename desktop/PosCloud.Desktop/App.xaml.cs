@@ -23,9 +23,23 @@ public partial class App : Application
         {
             try { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"), args.Exception.ToString()); }
             catch { /* ignore */ }
+            ErrorReporter.Report(args.Exception, "Error", "UI");
             MessageBox.Show(args.Exception.Message, "Xatolik", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
+
+        // Fon oqimlaridagi xatolar (CONTRACT-10 §10.4) — lokal navbatga yoziladi, keyin serverga ketadi.
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
+                ErrorReporter.Report(ex, args.IsTerminating ? "Critical" : "Error", "AppDomain");
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            ErrorReporter.Report(args.Exception.Flatten().InnerException ?? args.Exception, "Warning", "Task");
+            args.SetObserved();
+        };
+        ErrorReporter.Start();
 
         // appsettings.json — standart qiymatlar.
         var config = new ConfigurationBuilder()

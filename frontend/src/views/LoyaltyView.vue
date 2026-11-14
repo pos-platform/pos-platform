@@ -2,6 +2,16 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { loyaltyApi, categoriesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import TransactionsTab from './loyalty/TransactionsTab.vue'
+import HistoryTab from './loyalty/HistoryTab.vue'
+
+// Bosqich 10.2: tablar — Sozlamalar · Bonus harakatlari · O'zgarishlar tarixi
+const TABS = [
+  { id: 'settings', text: 'Sozlamalar' },
+  { id: 'transactions', text: 'Bonus harakatlari' },
+  { id: 'history', text: "O'zgarishlar tarixi" }
+]
+const tab = ref('settings')
 
 // Cashback va bonus karta sozlamalari (tashkilot bo'yicha). 1 ball = 1 so'm.
 // Hisoblash faqat serverda — bu yerda faqat sozlash va hisobot.
@@ -191,6 +201,20 @@ onMounted(() => {
     </div>
   </div>
 
+  <div class="row" style="gap:8px; margin-bottom:12px">
+    <button
+      v-for="t in TABS"
+      :key="t.id"
+      class="btn btn-ghost btn-sm"
+      :class="{ 'btn-active': tab === t.id }"
+      @click="tab = t.id"
+    >{{ t.text }}</button>
+  </div>
+
+  <TransactionsTab v-if="tab === 'transactions'" />
+  <HistoryTab v-else-if="tab === 'history'" />
+
+  <template v-else>
   <div v-if="error" class="alert alert-error">{{ error }}</div>
   <div v-if="success" class="alert alert-success">{{ success }}</div>
 
@@ -344,10 +368,12 @@ onMounted(() => {
       <button class="btn" :disabled="saving" @click="save">{{ saving ? 'Saqlanmoqda...' : 'Saqlash' }}</button>
     </template>
   </div>
+  </template>
 </template>
 
 <style scoped>
 .small { font-size: 12px; }
+.btn-active { background: var(--primary); color: #fff; }
 .hint { font-size: 12px; color: var(--muted); }
 .report-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
 .kpi-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:12px; margin-top:16px; }

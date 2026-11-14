@@ -12,6 +12,7 @@ import '../features/catalog/product_screen.dart';
 import '../features/catalog/stores_screen.dart';
 import '../features/checkout/checkout_screen.dart';
 import '../features/courier/courier_login_screen.dart';
+import '../features/courier/courier_offers.dart';
 import '../features/courier/courier_order_screen.dart';
 import '../features/courier/courier_orders_screen.dart';
 import '../features/courier/data/courier_session.dart';
@@ -23,6 +24,9 @@ import '../features/profile/address_edit_screen.dart';
 import '../features/profile/addresses_screen.dart';
 import '../features/profile/personal_info_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/returns/return_detail_screen.dart';
+import '../features/returns/return_request_screen.dart';
+import '../features/returns/returns_screen.dart';
 import '../features/shell/home_shell.dart';
 import 'config.dart';
 import 'store_app/store_app.dart';
@@ -111,6 +115,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const CourierOrdersScreen(),
         routes: [
           GoRoute(path: 'order/:id', builder: (_, s) => CourierOrderScreen(orderId: s.pathParameters['id']!)),
+          // Kelishuv 10.6: taklif kartasi (push / SignalR dan ochiladi).
+          GoRoute(
+            path: 'offer',
+            builder: (_, s) => CourierOfferScreen(
+              offerId: s.uri.queryParameters['offerId'],
+              orderId: s.uri.queryParameters['orderId'],
+            ),
+          ),
         ],
       ),
       // Checkout'dan yangi manzil — tab almashtirmasdan, butun ekran ustida ochiladi va natija bilan qaytadi.
@@ -164,6 +176,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                 GoRoute(
                   path: ':id',
                   builder: (_, s) => OrderTrackingScreen(orderId: s.pathParameters['id']!),
+                  routes: [
+                    GoRoute(path: 'return', builder: (_, s) => ReturnRequestScreen(orderId: s.pathParameters['id']!)),
+                  ],
                 ),
               ],
             ),
@@ -179,6 +194,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ),
                 GoRoute(path: 'favorites', builder: (_, _) => const FavoritesScreen()),
                 GoRoute(path: 'referral', builder: (_, _) => const ReferralScreen()),
+                // Kelishuv 10.5: qaytarishlar ro'yxati va holati.
+                GoRoute(
+                  path: 'returns',
+                  builder: (_, _) => const ReturnsScreen(),
+                  routes: [
+                    GoRoute(path: ':id', builder: (_, s) => ReturnDetailScreen(returnId: s.pathParameters['id']!)),
+                  ],
+                ),
                 GoRoute(
                   path: 'addresses',
                   builder: (_, _) => const AddressesScreen(),

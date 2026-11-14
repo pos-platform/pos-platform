@@ -10,5 +10,7 @@ public enum SaleStatus
     /// <summary>Bekor qilingan.</summary>
     Cancelled = 2,
     /// <summary>Qaytarilgan (refund qilingan) — asl savdo uchun.</summary>
-    Refunded = 3
+    Refunded = 3,
+    /// <summary>Qisman qaytarilgan — ba'zi qatorlar (miqdorlar) qaytarilgan, qaytariladigan qoldiq bor.</summary>
+    PartiallyRefunded = 4
 }
