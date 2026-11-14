@@ -35,11 +35,22 @@ class _CourierOrdersScreenState extends ConsumerState<CourierOrdersScreen> {
       ref.invalidate(courierOrdersProvider(false));
       ref.invalidate(courierOrdersProvider(true));
     });
+    // Takliflar: push (FCM) yoki SignalR kelmasa ham — ochilganda va har 20 s da tekshiriladi; yangi taklif
+    // bo'lsa to'liq ekranli karta ochiladi (server kuryersiz qolgan buyurtmalarga shu kuryerga taklif yaratadi).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(courierOfferAlertProvider).incoming();
+    });
+    _offerPoll = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (mounted) ref.read(courierOfferAlertProvider).incoming();
+    });
   }
+
+  Timer? _offerPoll;
 
   @override
   void dispose() {
     _poll?.cancel();
+    _offerPoll?.cancel();
     super.dispose();
   }
 

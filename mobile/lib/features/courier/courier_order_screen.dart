@@ -268,7 +268,7 @@ class _Body extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        CourierPaymentBadge(order: o, large: true),
+        CourierPaymentBadge(order: o, large: true, amount: courierAmountToCollect(o, rejected)),
         const SizedBox(height: 12),
         // Mijoz
         _Section(children: [

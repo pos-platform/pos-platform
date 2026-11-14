@@ -435,3 +435,12 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
   Kuzatilgan, tuzatilmagan: savatcha ilova qayta ochilganda bo'shaydi (faqat xotirada); kuryer ekranida rad etilgandan keyin tepadagi
   "olish kerak" summasi yangilanmaydi (pastda to'g'ri); Top 10 rail'dagi "+" ba'zan mahsulot sahifasini ochadi; taklif muddati (120 s)
   o'tgach kuryer kirsa ro'yxat bo'sh — kassir "Qayta yuborish" bosishi kerak (FCM sozlanmaguncha push yo'q).
+- 2026-11-14 — Tuzatishlar (sinovdan keyin) — (1) savatcha qayta ochilganda bo'shardi: Riverpod 3 `listenSelf` build natijasida ham
+  chaqiriladi → tiklash o'tkazib yuborilib, saqlangan nusxa o'chirilardi (`CartController._initial` alohida nusxa); force-stop sinovi o'tdi.
+  (2) kuryer ekrani tepasidagi "olish kerak" rad etilganlardan keyin yangilanadi (`CourierPaymentBadge.amount`).
+  (3) push'siz ham taklif yo'qolmaydi: `GET /api/courier/offers` kuryersiz qolgan tayyor buyurtmalarga (NoCourier yoki kuryer keyin
+  qo'shilgan) shu kuryerga yangi taklif yaratadi (rad etgani qayta taklif qilinmaydi); ilova ochiq bo'lsa har 20 s tekshiradi va
+  to'liq ekranli kartani ochadi — sinaldi (#1006: muddat o'tdi → kuryer kirdi → taklif o'zi chiqdi, kassir hech narsa bosmadi).
+  Brend: tashkilot/filial nomi lokal bazada "Xo‘ja Market"; ilovada do'kon rejimida kuryer menyusi, taklif kartasi, bonus karta —
+  `BrandWordmark`, buyurtma holati/qaytarish matnida `AppConfig.appName`; qolgan qattiq yashil ranglar oq-shaffofga almashtirildi.
+  Qoldi: ilova yopiq bo'lganda kuryerga push — FCM service account (`Push__Fcm__ServiceAccountPath`, `mobile/docs/PUSH.md`).

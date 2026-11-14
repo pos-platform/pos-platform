@@ -102,14 +102,21 @@ class CartController extends Notifier<CartState> {
   /// Foydalanuvchi tiklanishdan oldin savatchani o'zgartirgan bo'lsa — saqlangan nusxa e'tiborsiz qoladi.
   bool _touched = false;
 
+  /// Boshlang'ich holat — alohida nusxa (const emas): Riverpod 3 `listenSelf` build natijasi uchun ham chaqiriladi,
+  /// shu nusxa bilan uni ajratamiz. Aks holda ilova ochilishi bilan savatcha "o'zgardi" deb hisoblanib,
+  /// saqlangani tiklanmasdi va qurilmadagi nusxa o'chib ketardi.
+  // ignore: prefer_const_constructors
+  final CartState _initial = CartState();
+
   @override
   CartState build() {
     listenSelf((_, next) {
+      if (identical(next, _initial)) return;
       _touched = true;
       _persist(next);
     });
     _restore();
-    return const CartState();
+    return _initial;
   }
 
   Future<void> _restore() async {

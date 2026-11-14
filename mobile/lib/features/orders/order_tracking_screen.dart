@@ -243,8 +243,8 @@ class _StatusCard extends StatelessWidget {
                       color: i < done
                           ? Colors.white
                           : i == done
-                              ? const Color(0xFF9FD3B5)
-                              : const Color(0xFF2E8A63),
+                              ? Colors.white.withValues(alpha: 0.6)
+                              : Colors.white.withValues(alpha: 0.25),
                     ),
                   ),
                 ),

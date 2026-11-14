@@ -534,7 +534,7 @@ class _CardPanel extends StatelessWidget {
             Flexible(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFF2E8A63), borderRadius: BorderRadius.circular(999)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(999)),
                 child: Text(storeName!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -618,7 +618,7 @@ class _CardPanel extends StatelessWidget {
           value: loading ? null : progress,
           strokeWidth: 3,
           color: Colors.white,
-          backgroundColor: const Color(0xFF2E8A63),
+          backgroundColor: Colors.white.withValues(alpha: 0.3),
         ),
       ),
       const SizedBox(width: 10),

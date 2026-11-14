@@ -35,16 +35,19 @@ class CourierFormat {
 
 /// To'lov holati: naqd to'lanmagan — "X so'm olish kerak" (ajratilgan), to'langan — "To'langan".
 class CourierPaymentBadge extends StatelessWidget {
-  const CourierPaymentBadge({super.key, required this.order, this.large = false});
+  const CourierPaymentBadge({super.key, required this.order, this.large = false, this.amount});
 
   final CourierOrder order;
   final bool large;
+
+  /// Olinadigan summa (eshik oldida rad etilganlardan keyin). Null — buyurtma summasi.
+  final double? amount;
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final (String text, Color bg, Color fg, IconData icon) = order.mustCollectCash
-        ? (t.courierCollectCash(CourierFormat.money(t, order.totalAmount)), const Color(0xFFFFEDD5), AppColors.accent, Icons.payments_outlined)
+        ? (t.courierCollectCash(CourierFormat.money(t, amount ?? order.totalAmount)), const Color(0xFFFFEDD5), AppColors.accent, Icons.payments_outlined)
         : order.isPaid
             ? (t.courierPaid, AppColors.primarySoft, AppColors.primary, Icons.check_circle_outline)
             : (t.courierPaymentPending, AppColors.chipSurface, AppColors.textSecondary, Icons.schedule);

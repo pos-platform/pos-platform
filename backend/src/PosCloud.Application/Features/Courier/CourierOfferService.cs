@@ -158,6 +158,7 @@ public class CourierOfferService : ICourierOfferService
     {
         var me = RequireCourierId();
         var now = DateTime.UtcNow;
+        await OfferOrphanedToMeAsync(me, now, ct);
         var rows = await _db.CourierOffers.AsNoTracking()
             .Where(o => o.CourierUserId == me && o.Status == CourierOfferItemStatus.Pending && o.ExpiresAt > now
                         && o.OnlineOrder!.Status == OnlineOrderStatus.Ready && o.OnlineOrder.CourierUserId == null)
@@ -195,6 +196,53 @@ public class CourierOfferService : ICourierOfferService
             ItemCount = r.ItemCount,
             ExpiresAt = r.ExpiresAt
         }).ToList();
+    }
+
+    /// <summary>
+    /// Kuryer ilovani ochganda (takliflar ro'yxati so'ralganda): filialidagi kuryersiz qolgan tayyor yetkazish
+    /// buyurtmalariga (taklif muddati o'tgan — NoCourier, yoki kuryer keyin qo'shilgan) shu kuryerga yangi taklif yaratiladi.
+    /// Push (FCM) ishlamasa yoki kuryer o'sha paytda oflayn bo'lsa ham buyurtma yo'qolmaydi, kassir "Qayta yuborish"ni kutmaydi.
+    /// Kuryer avval rad etgan buyurtma qayta taklif qilinmaydi.
+    /// </summary>
+    private async Task OfferOrphanedToMeAsync(Guid me, DateTime now, CancellationToken ct)
+    {
+        var courier = await _db.Users.IgnoreQueryFilters().AsNoTracking()
+            .Where(u => u.Id == me && u.IsActive)
+            .Select(u => new { u.OrganizationId, u.BranchId })
+            .FirstOrDefaultAsync(ct);
+        if (courier?.OrganizationId is not { } orgId || courier.BranchId is not { } branchId) return;
+
+        var settings = await _db.OnlineStoreSettings.IgnoreQueryFilters().AsNoTracking()
+            .FirstOrDefaultAsync(s => s.OrganizationId == orgId, ct);
+        if ((settings?.CourierOfferMode ?? CourierOfferMode.Broadcast) == CourierOfferMode.Off) return;
+        var timeout = Math.Clamp(settings?.CourierOfferTimeoutSec ?? 120, 15, 3600);
+
+        var orders = await _db.OnlineOrders.IgnoreQueryFilters()
+            .Where(o => o.OrganizationId == orgId && o.BranchId == branchId
+                        && o.FulfillmentType == FulfillmentType.Delivery && o.Status == OnlineOrderStatus.Ready
+                        && o.CourierUserId == null
+                        && !_db.CourierOffers.IgnoreQueryFilters().Any(x => x.OnlineOrderId == o.Id && x.CourierUserId == me
+                            && (x.Status == CourierOfferItemStatus.Declined
+                                || (x.Status == CourierOfferItemStatus.Pending && x.ExpiresAt > now))))
+            .Take(20)
+            .ToListAsync(ct);
+        if (orders.Count == 0) return;
+
+        foreach (var order in orders)
+        {
+            _db.CourierOffers.Add(new CourierOffer
+            {
+                OrganizationId = orgId,
+                OnlineOrderId = order.Id,
+                CourierUserId = me,
+                Status = CourierOfferItemStatus.Pending,
+                ExpiresAt = now.AddSeconds(timeout)
+            });
+            order.CourierOfferStatus = CourierOfferStatus.Pending;
+        }
+        await _db.SaveChangesAsync(ct);
+        foreach (var order in orders)
+            await _notifier.OrderChangedAsync(order, isNew: false, pushToCustomer: false, ct);
     }
 
     public async Task<OnlineOrder> AcceptAsync(Guid offerId, CancellationToken ct = default)
