@@ -71,7 +71,7 @@ class AuthController extends Notifier<AuthState> {
     final storage = ref.read(tokenStorageProvider);
     final session = await storage.read();
     if (session != null) {
-      await _repo.logout(session.refreshToken, deviceToken: ref.read(pushServiceProvider).token);
+      await _repo.logout(session.refreshToken, deviceToken: PushService.currentToken);
     }
     await storage.clear();
     state = const AuthState(AuthStatus.signedOut);

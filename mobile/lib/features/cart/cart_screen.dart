@@ -419,7 +419,12 @@ class _PromoSectionState extends ConsumerState<_PromoSection> {
         const SizedBox(width: 10),
         SizedBox(
           height: 56,
-          child: FilledButton.tonal(onPressed: _apply, child: Text(t.cartPromoApply)),
+          // Tema tugmani to'liq kenglikka cho'zadi (Size.fromHeight) — Row ichida cheksiz kenglik xatosi bermasligi uchun.
+          child: FilledButton.tonal(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 56), padding: const EdgeInsets.symmetric(horizontal: 18)),
+            onPressed: _apply,
+            child: Text(t.cartPromoApply),
+          ),
         ),
       ]);
     } else {

@@ -81,7 +81,7 @@ class _Body extends StatelessWidget {
           Text(
             [
               if (r.orderNumber != null) t.ordersOrderNumber(r.orderNumber!),
-              ?r.storeName,
+              if (AppConfig.isStoreMode) AppConfig.appName else ?r.storeName,
             ].join(' · '),
             style: label,
           ),

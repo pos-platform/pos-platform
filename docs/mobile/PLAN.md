@@ -422,3 +422,16 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
   yaroqsiz kuryer push tokenlari tozalanmaydi; bonus jurnali eksporti CSV; desktop savdolar tarixi jami `refundCashAmount` emas; mobil tracking
   progress chizig'ida qattiq yashil rang.
   Sinov ro'yxati: ball yetmagan qisman refund, naqd buyurtmada eshik oldida rad, Bonus usulida online qaytarish, ikki kuryer bir vaqtda qabul.
+
+- 2026-11-14 — Sinov (E2E + video) — lokal API (Docker PostgreSQL, baza zaxirasi oldin olindi), migratsiyalar qo'llandi. API skripti 29/29 o'tdi
+  (sozlamalar, kuryerlar, banner/kolleksiya/story, OTP, sevimli, qidiruv, buyurtma, qabul→yig'ish→tayyor, ikki kuryer bir vaqtda — 200+409,
+  picked-up, eshik oldida rad, rejected-received, baho, Bonus qaytarish, qisman refund, oldindan buyurtma, jurnal, sold-items+xlsx, client-errors, referral).
+  Emulyatorda 5 ta video: `docs/test-videos/` (mijoz buyurtmasi, kuryer taklifi, eshik oldida rad + yetkazish, baho + qaytarish, bonus karta).
+  Topilgan va tuzatilgan xatolar: (1) keshbek eshik oldida raddan keyingi qaytarishda kam ayirilardi (baza rad etilgan miqdorsiz —
+  `SaleService.Refund.cs` PreEarnRefunded); (2) savatcha bo'sh/qulardi — promokod "Qo'llash" tugmasi Row ichida cheksiz kenglik;
+  (3) manzil saqlangach ekran yopilmasdi — addressesProvider aylanma bog'liqlik (invalidate ekranga ko'chirildi);
+  (4) story ochilganda Riverpod xatosi (initState'da provider o'zgartirish); (5) mijoz va kuryer akkauntdan **chiqa olmasdi** —
+  pushServiceProvider ↔ auth aylanma bog'liqlik (token va unregisterCourier statik); (6) `DbUpdateConcurrencyException` → 409.
+  Kuzatilgan, tuzatilmagan: savatcha ilova qayta ochilganda bo'shaydi (faqat xotirada); kuryer ekranida rad etilgandan keyin tepadagi
+  "olish kerak" summasi yangilanmaydi (pastda to'g'ri); Top 10 rail'dagi "+" ba'zan mahsulot sahifasini ochadi; taklif muddati (120 s)
+  o'tgach kuryer kirsa ro'yxat bo'sh — kassir "Qayta yuborish" bosishi kerak (FCM sozlanmaguncha push yo'q).

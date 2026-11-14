@@ -234,7 +234,8 @@ public partial class SaleService
         IReadOnlyDictionary<Guid, ProductType> Types,
         decimal PriorReversed,
         decimal PriorRedeemReturned,
-        decimal RedeemBase)
+        decimal RedeemBase,
+        IReadOnlyDictionary<Guid, decimal> PreEarnRefunded)
     {
         public ProductType? TypeOf(Guid productId) => Types.TryGetValue(productId, out var t) ? t : null;
     }
@@ -263,16 +264,21 @@ public partial class SaleService
         // Ball bilan to'langan qism: kassada — Sale.LoyaltyPointsRedeemed; online buyurtmada — OnlineOrder.BonusUsed
         // (faqat yetkazilgan buyurtma; yetkazilmasdan bekor qilinganda bonusni OnlineOrderService o'zi qaytaradi).
         var redeemBase = original.LoyaltyPointsRedeemed;
-        if (redeemBase <= 0 && LoyaltyRules.SourceFor(original.ClientSaleId) == LoyaltySource.Online)
+        var preEarn = new Dictionary<Guid, decimal>();
+        if (LoyaltyRules.SourceFor(original.ClientSaleId) == LoyaltySource.Online)
         {
             // Kuzatuvdagi (tracked) nusxa — chaqiruvchi servis holatni xotirada o'zgartirgan bo'lsa (masalan, kuryer
             // "Yetkazildi" + eshik oldida rad etish) shu qiymat ko'rinadi.
-            var order = await _db.OnlineOrders.FirstOrDefaultAsync(o => o.SaleId == original.Id, ct);
-            if (order is { Status: OnlineOrderStatus.Delivered, BonusCharged: true })
+            var order = await _db.OnlineOrders.Include(o => o.Items).FirstOrDefaultAsync(o => o.SaleId == original.Id, ct);
+            if (redeemBase <= 0 && order is { Status: OnlineOrderStatus.Delivered, BonusCharged: true })
                 redeemBase = order.BonusUsed;
+            // Eshik oldida rad etilgan miqdorlar keshbek hisoblanishidan OLDIN qaytarilgan — keshbek bazasiga kirmaydi.
+            if (order is not null)
+                foreach (var i in order.Items.Where(i => i.RejectedQuantity > 0))
+                    preEarn[i.ProductId] = preEarn.GetValueOrDefault(i.ProductId) + i.RejectedQuantity;
         }
 
-        return new RefundContext(customer, types, prior?.Reversed ?? 0, prior?.Redeem ?? 0, redeemBase);
+        return new RefundContext(customer, types, prior?.Reversed ?? 0, prior?.Redeem ?? 0, redeemBase, preEarn);
     }
 
     private sealed record RefundLine(SaleItem Item, decimal Quantity, decimal LineTotal, decimal Discount);
@@ -339,8 +345,20 @@ public partial class SaleService
 
         // Keshbek bazasi — tovar qatorlari (xizmat, masalan yetkazish, hisobga olinmaydi).
         var goods = original.Items.Where(i => ctx.TypeOf(i.ProductId) != ProductType.Service).ToList();
-        var baseTotal = goods.Sum(i => i.LineTotal);
-        var cumAfter = goods.Sum(i => Round2(i.Quantity > 0 ? i.LineTotal * After(i) / i.Quantity : 0));
+        // Keshbekdan oldin qaytarilgan (eshik oldida rad etilgan) miqdor har qatordan chiqariladi — aks holda
+        // keyingi qaytarishlarda ayiriladigan keshbek kam chiqadi (keshbek faqat olingan tovarlarga berilgan).
+        var preLeft = new Dictionary<Guid, decimal>(ctx.PreEarnRefunded);
+        var pre = new Dictionary<Guid, decimal>();
+        foreach (var i in goods)
+        {
+            var p = Math.Min(i.Quantity, preLeft.GetValueOrDefault(i.ProductId));
+            if (p <= 0) continue;
+            pre[i.Id] = p;
+            preLeft[i.ProductId] -= p;
+        }
+        decimal Pre(SaleItem i) => pre.GetValueOrDefault(i.Id);
+        var baseTotal = goods.Sum(i => Round2(i.Quantity > 0 ? i.LineTotal * (i.Quantity - Pre(i)) / i.Quantity : 0));
+        var cumAfter = goods.Sum(i => Round2(i.Quantity > 0 ? i.LineTotal * Math.Max(0, After(i) - Pre(i)) / i.Quantity : 0));
         var goodsFinal = goods.Count > 0 ? goods.All(i => After(i) >= i.Quantity) : plan.FullyRefundedAfter;
 
         decimal Target(decimal total) => total <= 0 ? 0

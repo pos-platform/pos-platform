@@ -161,7 +161,11 @@ class _StoryViewerState extends ConsumerState<StoryViewer> with SingleTickerProv
   }
 
   void _start() {
-    ref.read(seenStoriesProvider.notifier).markSeen(_current.id);
+    // initState ichida provider o'zgartirib bo'lmaydi (Riverpod xatosi) — kadr tugagach belgilanadi.
+    final id = _current.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(seenStoriesProvider.notifier).markSeen(id);
+    });
     _progress.duration = Duration(seconds: _current.slides[_slide].durationSec);
     _progress.forward(from: 0);
   }

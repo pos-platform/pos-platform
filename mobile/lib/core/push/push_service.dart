@@ -44,9 +44,14 @@ class PushService {
 
   bool _started = false;
   bool _enabled = false;
-  String? _token;
+  // Statik: AuthController.signOut tokenni pushServiceProvider'ni o'qimasdan oladi (provider auth'ni kuzatadi —
+  // o'qisa Riverpod "circular dependency" xatosi beradi va chiqish ishlamaydi).
+  static String? _token;
+
+  /// Joriy FCM token (provider'siz o'qish uchun).
+  static String? get currentToken => _token;
   String? _registered; // "token|til" — bir xil ma'lumot qayta yuborilmaydi
-  String? _courierRegistered; // kuryer uchun "token|sessiya"
+  static String? _courierRegistered; // kuryer uchun "token|sessiya" (statik — unregisterCourier provider'siz chaqiriladi)
   Future<void> Function()? _pending; // kirgandan keyin bajariladigan navigatsiya
 
   /// Joriy FCM token (push o'chiq bo'lsa null).
@@ -313,7 +318,7 @@ class PushService {
   }
 
   /// Kuryer chiqishida token serverdan o'chiriladi (xato e'tiborsiz, chiqishni to'xtatmaydi).
-  Future<void> unregisterCourier(String courierToken) async {
+  static Future<void> unregisterCourier(String courierToken) async {
     final token = _token;
     _courierRegistered = null;
     if (token == null) return;

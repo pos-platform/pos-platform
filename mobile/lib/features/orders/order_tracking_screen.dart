@@ -15,6 +15,7 @@ import 'order_updates.dart';
 import 'widgets/order_format.dart';
 import 'widgets/order_items_sheet.dart';
 import 'widgets/transfer_section.dart';
+import '../../core/config.dart';
 
 /// Buyurtmani kuzatish (dizayn: Tracking.dc.html). Marshrut: `/orders/:id`.
 /// Yangilanish: SignalR (order_updates.dart) + faol buyurtmada har 30 soniyada so'rov + pull-to-refresh
@@ -479,7 +480,7 @@ class _Timeline extends StatelessWidget {
       _Step(t.ordersStepPlaced,
           '${OrderFormat.paymentMethod(t, o.paymentMethod)} · ${OrderFormat.paymentStatus(t, o.paymentStatus)}',
           o.createdAt),
-      _Step(t.ordersStepAccepted, o.branchName ?? o.storeName, o.acceptedAt),
+      _Step(t.ordersStepAccepted, AppConfig.isStoreMode ? AppConfig.appName : o.branchName ?? o.storeName, o.acceptedAt),
       _Step(t.ordersStepPicking, o.status == OrderStatus.picking ? t.ordersStepPickingSub : null,
           o.pickingStartedAt ?? o.readyAt),
       pickup

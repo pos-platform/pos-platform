@@ -190,7 +190,8 @@ class CourierAuthController extends Notifier<CourierAuthState> {
   Future<void> logout() async {
     // Kelishuv 10.6: push tokeni serverdan o'chiriladi (xato chiqishni to'xtatmaydi).
     final token = state.session?.token;
-    if (token != null) await ref.read(pushServiceProvider).unregisterCourier(token);
+    // Statik chaqiruv: pushServiceProvider courierAuthProvider'ni kuzatadi — uni o'qish aylanma bog'liqlik beradi.
+    if (token != null) await PushService.unregisterCourier(token);
     await _storage.clear();
     state = const CourierAuthState(CourierAuthStatus.none);
   }

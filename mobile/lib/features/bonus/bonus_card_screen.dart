@@ -18,6 +18,7 @@ import '../orders/widgets/order_format.dart';
 import '../profile/widgets/profile_widgets.dart';
 import 'data/bonus_card_cache.dart';
 import 'data/bonus_card_repository.dart';
+import '../../core/store_app/store_branding.dart';
 
 final _points = NumberFormat('#,##0', 'en_US');
 
@@ -522,7 +523,14 @@ class _CardPanel extends StatelessWidget {
               ),
             ]),
           ),
-          if (storeName != null && storeName!.isNotEmpty)
+          if (AppConfig.isStoreMode)
+            // Do'kon rejimida — tashkilot nomi o'rniga brend yozuvi (oq fonda).
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
+              child: const BrandWordmark(fontSize: 13),
+            )
+          else if (storeName != null && storeName!.isNotEmpty)
             Flexible(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

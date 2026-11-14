@@ -135,6 +135,7 @@ class _AddressFormState extends ConsumerState<_AddressForm> {
     try {
       final repo = ref.read(addressesRepositoryProvider);
       final saved = _a == null ? await repo.create(request) : await repo.update(_a.id, request);
+      ref.invalidate(addressesProvider);
       if (mounted) Navigator.of(context).pop(saved);
     } on ApiException catch (e) {
       if (mounted) showProfileSnack(context, e.message);
@@ -221,6 +222,7 @@ class _AddressFormState extends ConsumerState<_AddressForm> {
     setState(() => _busy = true);
     try {
       await ref.read(addressesRepositoryProvider).delete(a.id);
+      ref.invalidate(addressesProvider);
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
       if (mounted) showProfileSnack(context, e.message);

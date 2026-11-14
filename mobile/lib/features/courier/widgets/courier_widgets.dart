@@ -7,6 +7,8 @@ import '../../../l10n/app_localizations.dart';
 import '../data/courier_models.dart';
 import '../data/courier_repository.dart';
 import '../data/courier_session.dart';
+import '../../../core/config.dart';
+import '../../../core/store_app/store_branding.dart';
 
 /// Kuryer ekranlari uchun formatlash.
 class CourierFormat {
@@ -77,7 +79,10 @@ class CourierProfileChip extends ConsumerWidget {
       position: PopupMenuPosition.under,
       onSelected: (_) => confirmCourierLogout(context, ref),
       itemBuilder: (_) => [
-        if (me?.storeName != null || me?.branchName != null)
+        // Do'kon rejimida tashkilot/filial nomi o'rniga brend yozuvi (Xo‘ja market).
+        if (AppConfig.isStoreMode)
+          const PopupMenuItem<int>(enabled: false, child: BrandWordmark(fontSize: 16))
+        else if (me?.storeName != null || me?.branchName != null)
           PopupMenuItem<int>(
             enabled: false,
             child: Text([me?.storeName, me?.branchName].whereType<String>().join(' · ')),

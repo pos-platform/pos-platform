@@ -96,10 +96,9 @@ class SaveAddressRequest {
 }
 
 class AddressesRepository {
-  AddressesRepository(this._dio, this._ref);
+  AddressesRepository(this._dio);
 
   final Dio _dio;
-  final Ref _ref;
 
   Future<List<ShopAddress>> list() => apiCall(() async {
         final res = await _dio.get<List<dynamic>>('/api/me/addresses');
@@ -113,7 +112,6 @@ class AddressesRepository {
       final res = await _dio.post<Map<String, dynamic>>('/api/me/addresses', data: request.toJson());
       return ShopAddress.fromJson(res.data!);
     });
-    _refresh();
     return saved;
   }
 
@@ -122,21 +120,19 @@ class AddressesRepository {
       final res = await _dio.put<Map<String, dynamic>>('/api/me/addresses/$id', data: request.toJson());
       return ShopAddress.fromJson(res.data!);
     });
-    _refresh();
     return saved;
   }
 
   Future<void> delete(String id) async {
     await apiCall(() => _dio.delete<void>('/api/me/addresses/$id'));
-    _refresh();
   }
 
-  // Asosiy manzil boshqa yozuvlarda ham o'zgarishi mumkin — ro'yxat butunlay qayta o'qiladi.
-  void _refresh() => _ref.invalidate(addressesProvider);
+  // Ro'yxatni yangilash (addressesProvider) chaqiruvchi ekranda: repository o'z provideri ichidan uni invalidate qilsa,
+  // Riverpod "circular dependency" xatosini beradi (addressesProvider repository'ni watch qiladi).
 }
 
 final addressesRepositoryProvider =
-    Provider<AddressesRepository>((ref) => AddressesRepository(ref.watch(dioProvider), ref));
+    Provider<AddressesRepository>((ref) => AddressesRepository(ref.watch(dioProvider)));
 
 /// Saqlangan manzillar (asosiysi birinchi). Mehmon uchun bo'sh ro'yxat.
 final addressesProvider = FutureProvider<List<ShopAddress>>((ref) async {

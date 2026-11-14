@@ -11,6 +11,8 @@ import '../../l10n/app_localizations.dart';
 import 'data/courier_models.dart';
 import 'data/courier_repository.dart';
 import 'widgets/courier_widgets.dart';
+import '../../core/config.dart';
+import '../../core/store_app/store_branding.dart';
 
 /// Kuryerga taklif (kelishuv 10.6): push `type=courier_offer` yoki SignalR `CourierOffer` kelganda
 /// takliflar qayta yuklanadi va yangi taklif to'liq ekranda ochiladi (bir taklif — bir marta).
@@ -266,7 +268,10 @@ class _OfferCard extends StatelessWidget {
                         ]),
                       ),
                   ]),
-                  if (offer.branchName != null) ...[
+                  if (AppConfig.isStoreMode) ...[
+                    const SizedBox(height: 4),
+                    const BrandWordmark(fontSize: 15),
+                  ] else if (offer.branchName != null) ...[
                     const SizedBox(height: 4),
                     Text(offer.branchName!, style: label),
                   ],
