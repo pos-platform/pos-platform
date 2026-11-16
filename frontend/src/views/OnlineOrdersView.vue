@@ -146,6 +146,17 @@ function addressText(o) {
   return parts.join(', ') || '—'
 }
 
+// Xarita havolalari: mijoz xaritada belgilagan nuqta (faqat yetkazib berishda).
+function hasPoint(o) {
+  return o.fulfillmentType === 'Delivery' && o.latitude != null && o.longitude != null
+}
+function yandexUrl(o) {
+  return `https://yandex.uz/maps/?pt=${o.longitude},${o.latitude}&z=17&l=map`
+}
+function googleUrl(o) {
+  return `https://www.google.com/maps/search/?api=1&query=${o.latitude},${o.longitude}`
+}
+
 async function load() {
   if (!dateFrom.value || !dateTo.value) return
   loading.value = true
@@ -451,6 +462,11 @@ onMounted(async () => {
       <div class="info">
         <div><b>{{ selected.customerName }}</b> · {{ selected.customerPhone }}</div>
         <div>{{ typeText(selected) }}: {{ addressText(selected) }}<span v-if="selected.contactless"> · kontaktsiz</span></div>
+        <div v-if="hasPoint(selected)" class="map-links small">
+          📍 <a :href="yandexUrl(selected)" target="_blank" rel="noopener">Yandex xaritada ochish</a>
+          · <a :href="googleUrl(selected)" target="_blank" rel="noopener">Google Maps</a>
+          <span class="muted"> · {{ selected.latitude.toFixed(5) }}, {{ selected.longitude.toFixed(5) }}</span>
+        </div>
         <div v-if="selected.isPreorder"><span class="pre-badge">{{ preorderText(selected) }}</span> <span class="muted small">do'kon yopiq paytda tushgan</span></div>
         <div v-if="selected.scheduledFor">Vaqt: {{ fmtDateTime(selected.scheduledFor) }} ga</div>
         <div v-if="selected.comment" class="comment">Izoh: {{ selected.comment }}</div>
@@ -568,6 +584,8 @@ onMounted(async () => {
 .info { display: flex; flex-direction: column; gap: 3px; background: #f8fafc; border-radius: 8px; padding: 8px 10px; font-size: 14px; }
 .info-bad { background: #fef2f2; color: #991b1b; }
 .comment { color: #9a3412; }
+.map-links a { color: #2563eb; text-decoration: none; }
+.map-links a:hover { text-decoration: underline; }
 .sec-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
 .item { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .item.removed .item-name { text-decoration: line-through; color: var(--muted); }
