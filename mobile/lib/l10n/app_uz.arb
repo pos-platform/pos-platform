@@ -1154,5 +1154,52 @@
     }
   },
   "returnTimeline": "Holat",
-  "returnMethod": "Qaytarish usuli"
+  "returnMethod": "Qaytarish usuli",
+  "lockTitle": "Kod-parolni kiriting",
+  "lockWrong": "Noto‘g‘ri kod",
+  "lockBlocked": "Juda ko‘p urinish. {seconds} soniyadan keyin qayta urining",
+  "@lockBlocked": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "lockForgot": "Kodni unutdingizmi?",
+  "lockForgotText": "Akkauntdan chiqasiz va kod-parol o‘chadi. Keyin telefon raqamingizga kelgan kod bilan qayta kirasiz.",
+  "lockForgotConfirm": "Chiqish va qayta kirish",
+  "lockBack": "Orqaga",
+  "lockUseDevice": "Telefon qulfi bilan ochish",
+  "lockDeviceReason": "Ilovani ochish uchun tasdiqlang",
+  "passcodeTitle": "Kod-parol",
+  "passcodeOn": "Yoqilgan",
+  "passcodeOff": "O‘chiq",
+  "passcodeHint": "Yoqilsa, ilovani ochganingizda 4 xonali kod so‘raladi. Telefoningizni boshqa odam olsa ham akkauntingiz himoyalangan bo‘ladi.",
+  "passcodeEnable": "Kod-parolni yoqish",
+  "passcodeChange": "Kodni o‘zgartirish",
+  "passcodeDisable": "Kod-parolni o‘chirish",
+  "passcodeDeviceAuth": "Barmoq izi / Face ID",
+  "passcodeDeviceAuthHint": "Kod o‘rniga telefonning o‘z qulfi (barmoq izi, Face ID yoki ekran paroli) bilan ochish",
+  "passcodeAutoLock": "Avtomatik qulflash",
+  "passcodeAutoLockNow": "Darhol",
+  "passcodeAutoLockMinutes": "{minutes} daqiqadan keyin",
+  "@passcodeAutoLockMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "passcodeAutoLockHours": "{hours} soatdan keyin",
+  "@passcodeAutoLockHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "pinNew": "Yangi kodni kiriting",
+  "pinRepeat": "Kodni qayta kiriting",
+  "pinMismatch": "Kodlar mos kelmadi, qaytadan kiriting",
+  "pinCurrent": "Joriy kodni kiriting"
 }

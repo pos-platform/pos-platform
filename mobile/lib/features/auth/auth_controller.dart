@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/app_lock/app_lock_controller.dart';
 import '../../core/push/push_service.dart';
 
 import 'data/auth_models.dart';
@@ -74,6 +75,8 @@ class AuthController extends Notifier<AuthState> {
       await _repo.logout(session.refreshToken, deviceToken: PushService.currentToken);
     }
     await storage.clear();
+    // Kod-parol shu akkauntga tegishli — chiqishda o'chadi.
+    await ref.read(appLockProvider.notifier).disable();
     state = const AuthState(AuthStatus.signedOut);
   }
 

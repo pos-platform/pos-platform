@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart' show GlobalWid
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'core/app_lock/app_lock_gate.dart';
 import 'core/app_update/app_update_gate.dart';
 import 'core/locale/locale_controller.dart';
 import 'core/push/push_service.dart';
@@ -40,7 +41,8 @@ class _PosCloudAppState extends ConsumerState<PosCloudApp> {
       theme: AppTheme.light(),
       routerConfig: ref.watch(routerProvider),
       // Majburiy yangilash / texnik ishlar / yangi versiya banneri — butun ilova ustida.
-      builder: (context, child) => AppUpdateGate(child: child ?? const SizedBox.shrink()),
+      // Kod-parol qulfi (Profil → Kod-parol) — yangilash ekranidan pastda, ilova ustida.
+      builder: (context, child) => AppUpdateGate(child: AppLockGate(child: child ?? const SizedBox.shrink())),
       // Profil → "Til" da tanlangan til; null — qurilma tili.
       locale: ref.watch(localeControllerProvider),
       // Standart til — o'zbekcha; qurilma tili ruscha bo'lsa ruscha.

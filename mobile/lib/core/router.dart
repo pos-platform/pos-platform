@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'app_lock/passcode_settings_screen.dart';
 import '../features/auth/auth_controller.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
@@ -193,6 +194,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   builder: (_, s) => PersonalInfoScreen(fromPrompt: s.uri.queryParameters['prompt'] == '1'),
                 ),
                 GoRoute(path: 'favorites', builder: (_, _) => const FavoritesScreen()),
+                GoRoute(path: 'passcode', builder: (_, _) => const PasscodeSettingsScreen()),
                 GoRoute(path: 'referral', builder: (_, _) => const ReferralScreen()),
                 // Kelishuv 10.5: qaytarishlar ro'yxati va holati.
                 GoRoute(

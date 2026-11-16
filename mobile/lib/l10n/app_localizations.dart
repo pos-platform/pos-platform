@@ -3655,6 +3655,162 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Qaytarish usuli'**
   String get returnMethod;
+
+  /// No description provided for @lockTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kod-parolni kiriting'**
+  String get lockTitle;
+
+  /// No description provided for @lockWrong.
+  ///
+  /// In uz, this message translates to:
+  /// **'Noto‘g‘ri kod'**
+  String get lockWrong;
+
+  /// No description provided for @lockBlocked.
+  ///
+  /// In uz, this message translates to:
+  /// **'Juda ko‘p urinish. {seconds} soniyadan keyin qayta urining'**
+  String lockBlocked(int seconds);
+
+  /// No description provided for @lockForgot.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kodni unutdingizmi?'**
+  String get lockForgot;
+
+  /// No description provided for @lockForgotText.
+  ///
+  /// In uz, this message translates to:
+  /// **'Akkauntdan chiqasiz va kod-parol o‘chadi. Keyin telefon raqamingizga kelgan kod bilan qayta kirasiz.'**
+  String get lockForgotText;
+
+  /// No description provided for @lockForgotConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'Chiqish va qayta kirish'**
+  String get lockForgotConfirm;
+
+  /// No description provided for @lockBack.
+  ///
+  /// In uz, this message translates to:
+  /// **'Orqaga'**
+  String get lockBack;
+
+  /// No description provided for @lockUseDevice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telefon qulfi bilan ochish'**
+  String get lockUseDevice;
+
+  /// No description provided for @lockDeviceReason.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ilovani ochish uchun tasdiqlang'**
+  String get lockDeviceReason;
+
+  /// No description provided for @passcodeTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kod-parol'**
+  String get passcodeTitle;
+
+  /// No description provided for @passcodeOn.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yoqilgan'**
+  String get passcodeOn;
+
+  /// No description provided for @passcodeOff.
+  ///
+  /// In uz, this message translates to:
+  /// **'O‘chiq'**
+  String get passcodeOff;
+
+  /// No description provided for @passcodeHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yoqilsa, ilovani ochganingizda 4 xonali kod so‘raladi. Telefoningizni boshqa odam olsa ham akkauntingiz himoyalangan bo‘ladi.'**
+  String get passcodeHint;
+
+  /// No description provided for @passcodeEnable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kod-parolni yoqish'**
+  String get passcodeEnable;
+
+  /// No description provided for @passcodeChange.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kodni o‘zgartirish'**
+  String get passcodeChange;
+
+  /// No description provided for @passcodeDisable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kod-parolni o‘chirish'**
+  String get passcodeDisable;
+
+  /// No description provided for @passcodeDeviceAuth.
+  ///
+  /// In uz, this message translates to:
+  /// **'Barmoq izi / Face ID'**
+  String get passcodeDeviceAuth;
+
+  /// No description provided for @passcodeDeviceAuthHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kod o‘rniga telefonning o‘z qulfi (barmoq izi, Face ID yoki ekran paroli) bilan ochish'**
+  String get passcodeDeviceAuthHint;
+
+  /// No description provided for @passcodeAutoLock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Avtomatik qulflash'**
+  String get passcodeAutoLock;
+
+  /// No description provided for @passcodeAutoLockNow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Darhol'**
+  String get passcodeAutoLockNow;
+
+  /// No description provided for @passcodeAutoLockMinutes.
+  ///
+  /// In uz, this message translates to:
+  /// **'{minutes} daqiqadan keyin'**
+  String passcodeAutoLockMinutes(int minutes);
+
+  /// No description provided for @passcodeAutoLockHours.
+  ///
+  /// In uz, this message translates to:
+  /// **'{hours} soatdan keyin'**
+  String passcodeAutoLockHours(int hours);
+
+  /// No description provided for @pinNew.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi kodni kiriting'**
+  String get pinNew;
+
+  /// No description provided for @pinRepeat.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kodni qayta kiriting'**
+  String get pinRepeat;
+
+  /// No description provided for @pinMismatch.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kodlar mos kelmadi, qaytadan kiriting'**
+  String get pinMismatch;
+
+  /// No description provided for @pinCurrent.
+  ///
+  /// In uz, this message translates to:
+  /// **'Joriy kodni kiriting'**
+  String get pinCurrent;
 }
 
 class _AppLocalizationsDelegate

@@ -1966,4 +1966,91 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get returnMethod => 'Способ возврата';
+
+  @override
+  String get lockTitle => 'Введите код-пароль';
+
+  @override
+  String get lockWrong => 'Неверный код';
+
+  @override
+  String lockBlocked(int seconds) {
+    return 'Слишком много попыток. Повторите через $seconds с';
+  }
+
+  @override
+  String get lockForgot => 'Забыли код?';
+
+  @override
+  String get lockForgotText =>
+      'Вы выйдете из аккаунта, код-пароль будет отключён. Затем войдите снова по коду, отправленному на ваш номер.';
+
+  @override
+  String get lockForgotConfirm => 'Выйти и войти заново';
+
+  @override
+  String get lockBack => 'Назад';
+
+  @override
+  String get lockUseDevice => 'Открыть блокировкой телефона';
+
+  @override
+  String get lockDeviceReason => 'Подтвердите, чтобы открыть приложение';
+
+  @override
+  String get passcodeTitle => 'Код-пароль';
+
+  @override
+  String get passcodeOn => 'Включён';
+
+  @override
+  String get passcodeOff => 'Выключен';
+
+  @override
+  String get passcodeHint =>
+      'Если включить, при открытии приложения будет запрашиваться 4-значный код. Аккаунт защищён, даже если телефон окажется в чужих руках.';
+
+  @override
+  String get passcodeEnable => 'Включить код-пароль';
+
+  @override
+  String get passcodeChange => 'Сменить код';
+
+  @override
+  String get passcodeDisable => 'Отключить код-пароль';
+
+  @override
+  String get passcodeDeviceAuth => 'Отпечаток / Face ID';
+
+  @override
+  String get passcodeDeviceAuthHint =>
+      'Открывать блокировкой телефона (отпечаток, Face ID или пароль экрана) вместо кода';
+
+  @override
+  String get passcodeAutoLock => 'Автоблокировка';
+
+  @override
+  String get passcodeAutoLockNow => 'Сразу';
+
+  @override
+  String passcodeAutoLockMinutes(int minutes) {
+    return 'Через $minutes мин';
+  }
+
+  @override
+  String passcodeAutoLockHours(int hours) {
+    return 'Через $hours ч';
+  }
+
+  @override
+  String get pinNew => 'Введите новый код';
+
+  @override
+  String get pinRepeat => 'Повторите код';
+
+  @override
+  String get pinMismatch => 'Коды не совпадают, введите заново';
+
+  @override
+  String get pinCurrent => 'Введите текущий код';
 }

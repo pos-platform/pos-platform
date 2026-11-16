@@ -47,6 +47,11 @@ services:
       # Click__ServiceId: ${CLICK_SERVICE_ID}
       # Click__MerchantId: ${CLICK_MERCHANT_ID}
       # Click__SecretKey: ${CLICK_SECRET_KEY}
+      # Mobil ilova kirish kodi: avval Telegram Gateway, bo'lmasa Eskiz SMS (bo'sh qolsa o'chiq).
+      Otp__Telegram__Token: ${TELEGRAM_GATEWAY_TOKEN:-}
+      Otp__Eskiz__Email: ${ESKIZ_EMAIL:-}
+      Otp__Eskiz__Password: ${ESKIZ_PASSWORD:-}
+      Otp__Eskiz__From: ${ESKIZ_FROM:-4546}
     ports:
       # Faqat localhost — nginx (hostda) shu portga proxy qiladi.
       - "127.0.0.1:5000:5000"

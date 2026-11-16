@@ -1,5 +1,6 @@
 package uz.poscloud.poscloud_market
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// local_auth (barmoq izi / ekran qulfi) FragmentActivity talab qiladi.
+class MainActivity : FlutterFragmentActivity()

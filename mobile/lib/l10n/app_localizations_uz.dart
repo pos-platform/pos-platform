@@ -1976,4 +1976,91 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get returnMethod => 'Qaytarish usuli';
+
+  @override
+  String get lockTitle => 'Kod-parolni kiriting';
+
+  @override
+  String get lockWrong => 'Noto‘g‘ri kod';
+
+  @override
+  String lockBlocked(int seconds) {
+    return 'Juda ko‘p urinish. $seconds soniyadan keyin qayta urining';
+  }
+
+  @override
+  String get lockForgot => 'Kodni unutdingizmi?';
+
+  @override
+  String get lockForgotText =>
+      'Akkauntdan chiqasiz va kod-parol o‘chadi. Keyin telefon raqamingizga kelgan kod bilan qayta kirasiz.';
+
+  @override
+  String get lockForgotConfirm => 'Chiqish va qayta kirish';
+
+  @override
+  String get lockBack => 'Orqaga';
+
+  @override
+  String get lockUseDevice => 'Telefon qulfi bilan ochish';
+
+  @override
+  String get lockDeviceReason => 'Ilovani ochish uchun tasdiqlang';
+
+  @override
+  String get passcodeTitle => 'Kod-parol';
+
+  @override
+  String get passcodeOn => 'Yoqilgan';
+
+  @override
+  String get passcodeOff => 'O‘chiq';
+
+  @override
+  String get passcodeHint =>
+      'Yoqilsa, ilovani ochganingizda 4 xonali kod so‘raladi. Telefoningizni boshqa odam olsa ham akkauntingiz himoyalangan bo‘ladi.';
+
+  @override
+  String get passcodeEnable => 'Kod-parolni yoqish';
+
+  @override
+  String get passcodeChange => 'Kodni o‘zgartirish';
+
+  @override
+  String get passcodeDisable => 'Kod-parolni o‘chirish';
+
+  @override
+  String get passcodeDeviceAuth => 'Barmoq izi / Face ID';
+
+  @override
+  String get passcodeDeviceAuthHint =>
+      'Kod o‘rniga telefonning o‘z qulfi (barmoq izi, Face ID yoki ekran paroli) bilan ochish';
+
+  @override
+  String get passcodeAutoLock => 'Avtomatik qulflash';
+
+  @override
+  String get passcodeAutoLockNow => 'Darhol';
+
+  @override
+  String passcodeAutoLockMinutes(int minutes) {
+    return '$minutes daqiqadan keyin';
+  }
+
+  @override
+  String passcodeAutoLockHours(int hours) {
+    return '$hours soatdan keyin';
+  }
+
+  @override
+  String get pinNew => 'Yangi kodni kiriting';
+
+  @override
+  String get pinRepeat => 'Kodni qayta kiriting';
+
+  @override
+  String get pinMismatch => 'Kodlar mos kelmadi, qaytadan kiriting';
+
+  @override
+  String get pinCurrent => 'Joriy kodni kiriting';
 }

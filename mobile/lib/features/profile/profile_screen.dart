@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/app_lock/app_lock_controller.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/legal_links.dart';
 import '../../core/locale/locale_controller.dart';
@@ -94,6 +95,12 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.support_agent,
                   label: t.supportTitle,
                   onTap: () => showSupportSheet(context, ref.read(selectedStoreProvider).value),
+                ),
+                _MenuRow(
+                  icon: Icons.lock_outline,
+                  label: t.passcodeTitle,
+                  value: ref.watch(appLockProvider).enabled ? t.passcodeOn : t.passcodeOff,
+                  onTap: () => context.push('/profile/passcode'),
                 ),
                 _MenuRow(
                   icon: Icons.language,
