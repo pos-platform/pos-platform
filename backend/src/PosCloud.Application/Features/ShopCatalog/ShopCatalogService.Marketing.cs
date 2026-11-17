@@ -117,8 +117,11 @@ public partial class ShopCatalogService
             ? await BuyAgainAsync(orgId, branchId, userId, promotions, ct)
             : [];
 
+        var recipes = await HomeRecipesAsync(orgId, branchId, ct);
+
         var home = new ShopHomeDto
         {
+            Recipes = recipes,
             Banners = banners,
             TopProducts = top,
             Collections = collectionDtos,

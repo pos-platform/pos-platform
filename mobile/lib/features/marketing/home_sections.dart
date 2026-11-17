@@ -6,12 +6,15 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/auth_controller.dart';
+import '../cart/cart_controller.dart';
+import '../catalog/data/catalog_models.dart';
 import '../catalog/widgets/common.dart';
 import '../orders/data/order_models.dart';
 import '../orders/data/orders_repository.dart';
 import '../orders/reorder.dart';
 import 'data/marketing_models.dart';
 import 'data/marketing_repository.dart';
+import '../recipes/recipe_screens.dart';
 import 'stories.dart';
 import 'widgets/banner_carousel.dart';
 import 'widgets/countdown.dart';
@@ -46,17 +49,17 @@ class HomeMarketingSections extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (home.stories.isNotEmpty) ...[StoriesRow(stories: home.stories), const SizedBox(height: 10)],
+        if (home.stories.isNotEmpty) ...[StoriesRow(stories: home.stories), const SizedBox(height: 16)],
         if (home.banners.isNotEmpty) ...[
           BannerCarousel(banners: home.banners),
           const SizedBox(height: 14),
         ] else if (fallbackBanner != null) ...[
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: fallbackBanner),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: fallbackBanner),
           const SizedBox(height: 14),
         ],
         if (home.discountedCount > 0 || lastOrder != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
             child: Column(
               children: [
                 if (home.discountedCount > 0)
@@ -74,9 +77,10 @@ class HomeMarketingSections extends ConsumerWidget {
             ),
           ),
         if (home.buyAgain.isNotEmpty) ...[
-          RailHeader(title: t.mkBuyAgain),
-          ProductRail(branchId: branchId, products: home.buyAgain),
+          RailHeader(title: t.mkBuyAgain, hint: t.homeBuyAgainHint, padding: const EdgeInsets.fromLTRB(16, 26, 16, 12)),
+          _BuyAgainRail(branchId: branchId, products: home.buyAgain),
         ],
+        if (home.recipes.isNotEmpty) RecipeHomeBanner(recipes: home.recipes),
         if (home.topProducts.isNotEmpty) ...[
           RailHeader(title: t.mkTop10),
           ProductRail(branchId: branchId, products: home.topProducts.take(10).toList(), ranked: true),
@@ -244,6 +248,130 @@ class _ReorderCardState extends ConsumerState<_ReorderCard> {
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : Text(t.mkReorderButton),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Yana olasizmi?" (dizayn v3): kichik kvadrat plitkalar — rangli fon, rasm, burchakda "+" yoki miqdor;
+/// ostida narx (Unbounded) va nom.
+class _BuyAgainRail extends StatelessWidget {
+  const _BuyAgainRail({required this.branchId, required this.products});
+
+  final String branchId;
+  final List<ShopProduct> products;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 160,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: products.length,
+      separatorBuilder: (_, _) => const SizedBox(width: 10),
+      itemBuilder: (_, i) => _BuyAgainTile(
+        branchId: branchId,
+        product: products[i],
+        tint: AppColors.tints[i % AppColors.tints.length],
+      ),
+    ),
+  );
+}
+
+class _BuyAgainTile extends ConsumerWidget {
+  const _BuyAgainTile({required this.branchId, required this.product, required this.tint});
+
+  final String branchId;
+  final ShopProduct product;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
+    final p = product;
+    final qty = ref.watch(cartControllerProvider.select((c) => c.branchId == branchId ? c.quantityOf(p.id) : 0.0));
+    final canAdd = p.inStock && CartState.firstQuantity(p) <= p.available + 1e-9;
+    return SizedBox(
+      width: 108,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 108,
+            height: 108,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Material(
+                    color: tint,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => context.push('/home/product/${p.id}'),
+                      child: ProductImage(url: p.imageUrl, fit: BoxFit.cover),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 6,
+                  bottom: 6,
+                  child: qty > 0
+                      ? Container(
+                          constraints: const BoxConstraints(minWidth: 34),
+                          height: 34,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(17)),
+                          child: Text(
+                            formatQty(context, qty, false),
+                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800),
+                          ),
+                        )
+                      : Semantics(
+                          button: true,
+                          label: t.catAddToCart,
+                          child: Material(
+                            color: AppColors.surface,
+                            shape: const CircleBorder(),
+                            elevation: 2,
+                            shadowColor: AppColors.ink.withValues(alpha: 0.3),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: canAdd
+                                  ? () => ref.read(cartControllerProvider.notifier).increment(branchId, p)
+                                  : null,
+                              child: SizedBox(
+                                width: 34,
+                                height: 34,
+                                child: Icon(Icons.add, size: 20, color: canAdd ? AppColors.text : AppColors.faint),
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 7),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Text(
+              formatMoney(context, p.price),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.display(13),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Text(
+              p.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            ),
           ),
         ],
       ),

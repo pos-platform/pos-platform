@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../marketing/rating.dart';
 import '../marketing/support.dart';
@@ -85,7 +86,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen> with 
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Row(
                 children: [
                   _SquareButton(icon: Icons.arrow_back, tooltip: t.ordersBack, onTap: _back),
@@ -93,7 +94,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen> with 
                     child: Text(
                       order == null ? '' : t.ordersOrderNumber('${order.number}'),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+                      style: AppTheme.display(16),
                     ),
                   ),
                   _SquareButton(
@@ -146,7 +147,7 @@ class _Body extends ConsumerWidget {
             onRefresh: () => ref.read(orderDetailProvider(o.id).notifier).refreshSilently(),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               children: [
                 if (failed) _FailedCard(order: o) else _StatusCard(order: o),
                 const SizedBox(height: 16),
@@ -200,7 +201,8 @@ class _Body extends ConsumerWidget {
   }
 }
 
-/// Yashil karta: holat, 5 bo'lakli progress, izoh.
+/// Holat kartasi (dizayn v3): rangli fon, markazda katta belgi (faol bo'lsa — "puls"), holat (Unbounded),
+/// izoh, 5 bo'lakli progress va taxminiy vaqt.
 class _StatusCard extends StatelessWidget {
   const _StatusCard({required this.order});
 
@@ -212,63 +214,139 @@ class _StatusCard extends StatelessWidget {
     final done = _doneSteps(order.status);
     final scheduled = order.scheduledFor;
     final eta = _etaText(order);
+    final delivered = order.status == OrderStatus.delivered;
+    final (iconBg, iconFg) = delivered
+        ? (Colors.white, const Color(0xFF2E6B1F))
+        : (AppColors.primary, Colors.white);
 
     return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(22)),
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+      decoration: BoxDecoration(
+        color: delivered ? AppColors.tintGreen : AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(28),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            scheduled != null && order.isActive
-                ? t.ordersScheduled(OrderFormat.dateTime(context, t, scheduled))
-                : t.ordersCardLabel,
-            style: TextStyle(fontSize: 13, color: AppColors.onPrimarySoft, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            OrderFormat.status(t, order.status, order.fulfillmentType),
-            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5),
-          ),
+          _PulseIcon(icon: OrderFormat.icon(order.status), background: iconBg, color: iconFg, active: order.isActive),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              for (var i = 0; i < 5; i++) ...[
-                if (i > 0) const SizedBox(width: 6),
-                Expanded(
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      color: i < done
-                          ? Colors.white
-                          : i == done
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : Colors.white.withValues(alpha: 0.25),
+          if (scheduled != null && order.isActive) ...[
+            Text(t.ordersScheduled(OrderFormat.dateTime(context, t, scheduled)),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+            const SizedBox(height: 4),
+          ],
+          Text(OrderFormat.status(t, order.status, order.fulfillmentType),
+              textAlign: TextAlign.center, style: AppTheme.display(21)),
+          const SizedBox(height: 6),
+          Text(OrderFormat.headline(t, order.status),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          if (order.isActive) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                for (var i = 0; i < 5; i++) ...[
+                  if (i > 0) const SizedBox(width: 4),
+                  Expanded(
+                    child: Container(
+                      height: 5,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: i < done
+                            ? AppColors.primary
+                            : i == done
+                                ? AppColors.primary.withValues(alpha: 0.4)
+                                : AppColors.ink.withValues(alpha: 0.08),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(OrderFormat.headline(t, order.status),
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+            ),
+          ],
           if (eta != null) ...[
-            const SizedBox(height: 6),
-            Row(children: [
-              Icon(Icons.schedule, size: 18, color: AppColors.onPrimarySoft),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(t.ordersEta(eta),
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onPrimarySoft)),
-              ),
-            ]),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.fromLTRB(8, 5, 12, 5),
+              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.schedule, size: 16, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(t.ordersEta(eta), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                ),
+              ]),
+            ),
           ],
         ],
       ),
     );
   }
+}
+
+/// 96 px dumaloq belgi; [active] bo'lsa orqasida kengayib yo'qoladigan qizil halqa.
+class _PulseIcon extends StatefulWidget {
+  const _PulseIcon({required this.icon, required this.background, required this.color, required this.active});
+
+  final IconData icon;
+  final Color background;
+  final Color color;
+  final bool active;
+
+  @override
+  State<_PulseIcon> createState() => _PulseIconState();
+}
+
+class _PulseIconState extends State<_PulseIcon> with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800));
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.active) _c.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PulseIcon old) {
+    super.didUpdateWidget(old);
+    if (widget.active && !_c.isAnimating) _c.repeat();
+    if (!widget.active && _c.isAnimating) _c.stop();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 96,
+        height: 96,
+        child: Stack(alignment: Alignment.center, children: [
+          if (widget.active)
+            AnimatedBuilder(
+              animation: _c,
+              builder: (_, _) => Transform.scale(
+                scale: 1 + 0.55 * Curves.easeOut.transform(_c.value),
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary.withValues(alpha: 0.55 * (1 - _c.value)),
+                  ),
+                ),
+              ),
+            ),
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: widget.background),
+            child: Icon(widget.icon, size: 44, color: widget.color),
+          ),
+        ]),
+      );
 }
 
 /// Oldindan buyurtma izohi: "Do'kon hozir yopiq. Buyurtmangiz 09:00 da ko'rib chiqiladi."
@@ -326,8 +404,7 @@ class _FailedCard extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.borderSoft),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,8 +590,7 @@ class _Timeline extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 2),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         children: [
@@ -635,48 +711,91 @@ class _SummaryCard extends StatelessWidget {
 
   final OrderDetail order;
 
+  static const _inline = 4;
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
+    final items = order.items.where((i) => !i.isRemoved).toList();
+    Widget row(String a, String b, {Color? color}) => DefaultTextStyle.merge(
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color ?? AppColors.textSecondary),
+          child: Row(children: [Expanded(child: Text(a)), Text(b)]),
+        );
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
-      child: Row(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(24)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(t.ordersItemsSummary('${order.itemCount}', OrderFormat.money(t, order.totalAmount)),
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 2),
-                Text(
-                  [
-                    OrderFormat.paymentStatus(t, order.paymentStatus),
-                    order.onlinePaymentProvider ?? OrderFormat.paymentMethod(t, order.paymentMethod),
-                  ].join(' · '),
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-                if (order.promoDiscount > 0 || order.bonusUsed > 0)
-                  Text(
-                    [
-                      if (order.promoDiscount > 0) '${t.cartPromoDiscount}: −${OrderFormat.money(t, order.promoDiscount)}',
-                      if (order.bonusUsed > 0) '${t.cartBonusUsed}: −${OrderFormat.money(t, order.bonusUsed)}',
-                    ].join(' · '),
-                    style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
-                  ),
-              ],
+          for (final (i, it) in items.take(_inline).indexed) ...[
+            if (i > 0) const SizedBox(height: 12),
+            Row(children: [
+              OrderThumb(url: AppConfig.imageUrl(it.imageUrl), index: i, size: 44),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(it.productName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                  Text('${OrderFormat.quantity(it.pickedQuantity ?? it.quantity)} × ${OrderFormat.money(t, it.unitPrice)}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.faint)),
+                ]),
+              ),
+              const SizedBox(width: 8),
+              Text(OrderFormat.money(t, it.lineTotal), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+            ]),
+          ],
+          if (items.length > _inline)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => showOrderItemsSheet(context, order),
+                child: Text('${t.ordersContents} (+${items.length - _inline})'),
+              ),
             ),
+          const SizedBox(height: 12),
+          const _DashedLine(),
+          const SizedBox(height: 12),
+          if (order.promoDiscount > 0) ...[
+            row(t.cartPromoDiscount, '−${OrderFormat.money(t, order.promoDiscount)}', color: AppColors.primary),
+            const SizedBox(height: 6),
+          ],
+          if (order.bonusUsed > 0) ...[
+            row(t.cartBonusUsed, '−${OrderFormat.money(t, order.bonusUsed)}', color: AppColors.primary),
+            const SizedBox(height: 6),
+          ],
+          row(
+            t.checkoutPayment,
+            [
+              order.onlinePaymentProvider ?? OrderFormat.paymentMethod(t, order.paymentMethod),
+              OrderFormat.paymentStatus(t, order.paymentStatus),
+            ].join(' · '),
           ),
-          TextButton(onPressed: () => showOrderItemsSheet(context, order), child: Text(t.ordersContents)),
+          const SizedBox(height: 10),
+          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+            Expanded(child: Text(t.cartTotal, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800))),
+            Text(OrderFormat.money(t, order.totalAmount), style: AppTheme.display(19)),
+          ]),
         ],
       ),
     );
   }
+}
+
+class _DashedLine extends StatelessWidget {
+  const _DashedLine();
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (_, c) => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(
+            (c.maxWidth / 8).floor(),
+            (_) => const SizedBox(width: 4, height: 1.5, child: ColoredBox(color: AppColors.border)),
+          ),
+        ),
+      );
 }
 
 /// Online to'lov (Payme/Click): server havolasini olib, tashqi ilova/brauzerda ochadi.
@@ -717,8 +836,7 @@ class _OnlinePaySectionState extends ConsumerState<_OnlinePaySection> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -862,12 +980,9 @@ class _SquareButton extends StatelessWidget {
       message: tooltip,
       child: Material(
         color: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: AppColors.border),
-        ),
+        shape: const CircleBorder(),
         child: InkWell(
-          customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          customBorder: const CircleBorder(),
           onTap: onTap,
           child: SizedBox(
             width: 44,

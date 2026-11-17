@@ -19,6 +19,9 @@ import '../features/courier/courier_orders_screen.dart';
 import '../features/courier/data/courier_session.dart';
 import '../features/marketing/product_lists_screens.dart';
 import '../features/marketing/referral_screen.dart';
+import '../features/orders/order_placed_screen.dart';
+import '../features/lists/family_list_screen.dart';
+import '../features/recipes/recipe_screens.dart';
 import '../features/orders/order_tracking_screen.dart';
 import '../features/orders/orders_screen.dart';
 import '../features/profile/address_edit_screen.dart';
@@ -150,6 +153,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                 GoRoute(path: 'product/:id', builder: (_, s) => ProductScreen(productId: s.pathParameters['id']!)),
                 GoRoute(path: 'collection/:id', builder: (_, s) => CollectionScreen(collectionId: s.pathParameters['id']!)),
                 GoRoute(path: 'discounts', builder: (_, _) => const DiscountsScreen()),
+                GoRoute(path: 'favorites', builder: (_, _) => const FavoritesScreen()),
+                GoRoute(path: 'recipes', builder: (_, _) => const RecipesScreen()),
+                GoRoute(path: 'recipe/:id', builder: (_, s) => RecipeScreen(recipeId: s.pathParameters['id']!)),
               ],
             ),
           ]),
@@ -159,6 +165,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (_, _) => const CartScreen(),
               routes: [
                 GoRoute(path: 'checkout', builder: (_, _) => const CheckoutScreen()),
+                GoRoute(path: 'list', builder: (_, _) => const FamilyListScreen()),
               ],
             ),
           ]),
@@ -185,6 +192,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   builder: (_, s) => OrderTrackingScreen(orderId: s.pathParameters['id']!),
                   routes: [
                     GoRoute(path: 'return', builder: (_, s) => ReturnRequestScreen(orderId: s.pathParameters['id']!)),
+                    GoRoute(path: 'placed', builder: (_, s) => OrderPlacedScreen(orderId: s.pathParameters['id']!)),
                   ],
                 ),
               ],

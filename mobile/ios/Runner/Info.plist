@@ -6,6 +6,10 @@
 		<string>Ilovani Face ID bilan tez ochish uchun.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>Mahsulot shtrix-kodini skanerlash va o‘tkazma chekini suratga olish uchun kameraga ruxsat kerak.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Mahsulotni ovoz bilan qidirish uchun mikrofonga ruxsat kerak.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Aytilgan mahsulot nomini matnga aylantirish uchun.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>O‘tkazma chekining rasmini yuklash uchun galereyaga ruxsat kerak.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>

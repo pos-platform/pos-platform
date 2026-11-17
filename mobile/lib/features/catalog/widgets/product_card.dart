@@ -10,7 +10,8 @@ import '../../marketing/favorites.dart';
 import '../data/catalog_models.dart';
 import 'common.dart';
 
-/// Katalogdagi mahsulot kartochkasi (dizayn: Main.dc.html — rasm, nom, birlik, narx, "+" yoki stepper).
+/// Mahsulot kartochkasi (dizayn v3): rangli karta, kvadrat rasm, chapda chegirma, o'ngda ♥,
+/// pastki o'ng burchakda qizil "+" (savatda bo'lsa — oq "− N +" kapsula); ostida narx (Unbounded), nom, birlik.
 class ProductCard extends ConsumerWidget {
   const ProductCard({super.key, required this.branchId, required this.product});
 
@@ -20,90 +21,150 @@ class ProductCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context);
-    final qty = ref.watch(cartControllerProvider.select((c) => c.branchId == branchId ? c.quantityOf(product.id) : 0.0));
+    final p = product;
+    final qty = ref.watch(cartControllerProvider.select((c) => c.branchId == branchId ? c.quantityOf(p.id) : 0.0));
     final cart = ref.read(cartControllerProvider.notifier);
-    final canAdd = product.inStock &&
-        (qty > 0 ? qty + CartState.stepFor(product.isKg) : CartState.firstQuantity(product)) <=
-            product.available + 1e-9;
-    void open() => context.push('/home/product/${product.id}');
+    final canAdd = p.inStock &&
+        (qty > 0 ? qty + CartState.stepFor(p.isKg) : CartState.firstQuantity(p)) <= p.available + 1e-9;
+    final discounted = (p.discountPercent ?? 0) > 0;
+    void open() => context.push('/home/product/${p.id}');
 
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
-      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: AppColors.tintFor(p.id), borderRadius: BorderRadius.circular(26)),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Expanded(
-          child: GestureDetector(
-            onTap: open,
-            child: Stack(children: [
-              Positioned.fill(
-                child: ClipRRect(borderRadius: BorderRadius.circular(12), child: ProductImage(url: product.imageUrl)),
-              ),
-              if (product.discountPercent != null && product.discountPercent! > 0)
-                Positioned(left: 6, top: 6, child: DiscountBadge(percent: product.discountPercent!)),
-              Positioned(right: 4, top: 4, child: FavoriteButton(product: product, size: 18)),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: open,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(product.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, height: 1.3)),
-            Text(unitLabel(context, product.isKg), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          ]),
-        ),
-        const SizedBox(height: 6),
-        Row(children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (product.oldPrice != null)
-                Text(formatMoney(context, product.oldPrice!),
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textSecondary, decoration: TextDecoration.lineThrough)),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(formatMoney(context, product.price),
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-              ),
-            ]),
-          ),
-          if (qty > 0)
-            QtyStepper(
-              label: formatQty(context, qty, false),
-              buttonWidth: 32,
-              onMinus: () => cart.decrement(branchId, product),
-              onPlus: canAdd ? () => cart.increment(branchId, product) : null,
-            )
-          else
-            Semantics(
-              button: true,
-              label: t.catAddToCart,
-              child: Material(
-                color: product.inStock ? AppColors.primary : AppColors.chipSurface,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: canAdd ? () => cart.increment(branchId, product) : null,
-                  child: SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: Icon(Icons.add, color: product.inStock ? Colors.white : AppColors.iconMuted),
+          child: Stack(children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: open,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Opacity(
+                    opacity: p.inStock ? 1 : 0.5,
+                    child: ProductImage(url: p.imageUrl, fit: BoxFit.cover),
                   ),
                 ),
               ),
             ),
-        ]),
+            if (discounted) Positioned(left: 4, top: 4, child: DiscountBadge(percent: p.discountPercent!, fontSize: 11)),
+            Positioned(right: 0, top: 0, child: FavoriteButton(product: p, size: 17)),
+            if (qty > 0)
+              Positioned(
+                left: 2,
+                right: 2,
+                bottom: 2,
+                child: Container(
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(21),
+                    boxShadow: [BoxShadow(color: AppColors.ink.withValues(alpha: 0.12), blurRadius: 16, offset: const Offset(0, 6))],
+                  ),
+                  child: Row(children: [
+                    _RoundIcon(icon: Icons.remove, label: t.catDecrease, onTap: () => cart.decrement(branchId, p)),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(formatQty(context, qty, p.isKg), style: AppTheme.display(14)),
+                      ),
+                    ),
+                    _RoundIcon(icon: Icons.add, label: t.catIncrease, onTap: canAdd ? () => cart.increment(branchId, p) : null),
+                  ]),
+                ),
+              )
+            else if (p.inStock)
+              Positioned(
+                right: 2,
+                bottom: 2,
+                child: Semantics(
+                  button: true,
+                  label: t.catAddToCart,
+                  child: Material(
+                    color: canAdd ? AppColors.primary : AppColors.segment,
+                    shape: const CircleBorder(),
+                    elevation: canAdd ? 4 : 0,
+                    shadowColor: AppColors.primary.withValues(alpha: 0.5),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: canAdd ? () => cart.increment(branchId, p) : null,
+                      child: SizedBox(
+                        width: 42,
+                        height: 42,
+                        child: Icon(Icons.add, size: 23, color: canAdd ? Colors.white : AppColors.faint),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ]),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: open,
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(formatMoney(context, p.price),
+                        style: AppTheme.display(15, color: discounted ? AppColors.primary : AppColors.text)),
+                  ),
+                ),
+                if (p.oldPrice != null) ...[
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(formatMoney(context, p.oldPrice!),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text.withValues(alpha: 0.4),
+                            decoration: TextDecoration.lineThrough)),
+                  ),
+                ],
+              ]),
+              const SizedBox(height: 3),
+              Text(p.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, height: 1.3)),
+              Text(p.inStock ? unitLabel(context, p.isKg) : t.catOutOfStock,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.text.withValues(alpha: 0.45))),
+            ]),
+          ),
+        ),
       ]),
     );
   }
+}
+
+class _RoundIcon extends StatelessWidget {
+  const _RoundIcon({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        label: label,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 42,
+            height: 42,
+            child: Icon(icon, size: 20, color: onTap == null ? AppColors.faint : AppColors.primary),
+          ),
+        ),
+      );
 }
 
 /// "−10%" belgisi.

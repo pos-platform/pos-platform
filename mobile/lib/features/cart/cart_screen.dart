@@ -29,21 +29,37 @@ class CartScreen extends ConsumerWidget {
 
     if (cart.isEmpty || branchId == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(t.navCart)),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.shopping_cart_outlined, size: 56, color: AppColors.iconMuted),
-              const SizedBox(height: 12),
-              Text(t.cartEmpty, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 6),
-              Text(t.cartEmptyHint,
-                  textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
-              const SizedBox(height: 20),
-              FilledButton(onPressed: () => context.go('/home'), child: Text(t.cartGoShopping)),
-            ]),
-          ),
+        body: SafeArea(
+          child: Column(children: [
+            _CartHeader(title: t.navCart, action: const _ListButton()),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 0, 32, 60),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(color: AppColors.tintPeach, borderRadius: BorderRadius.circular(32)),
+                      child: const Icon(Icons.shopping_basket_outlined, size: 42, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(t.cartEmpty, style: AppTheme.display(18)),
+                    const SizedBox(height: 8),
+                    Text(t.cartEmptyHint,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14, height: 1.5, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+                    const SizedBox(height: 22),
+                    FilledButton(
+                      style: FilledButton.styleFrom(minimumSize: const Size(0, 52), padding: const EdgeInsets.symmetric(horizontal: 28)),
+                      onPressed: () => context.go('/home'),
+                      child: Text(t.cartGoShopping),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          ]),
         ),
       );
     }
@@ -55,10 +71,14 @@ class CartScreen extends ConsumerWidget {
     final loading = quoteAsync.isLoading;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t.navCart),
-        actions: [
-          TextButton(
+      body: SafeArea(
+        bottom: false,
+        child: Column(children: [
+          _CartHeader(
+            title: t.navCart,
+            action: Row(mainAxisSize: MainAxisSize.min, children: [
+              const _ListButton(),
+              TextButton(
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
@@ -72,35 +92,32 @@ class CartScreen extends ConsumerWidget {
               );
               if (ok == true) ref.read(cartControllerProvider.notifier).clear();
             },
-            child: Text(t.cartClear, style: const TextStyle(color: AppColors.danger)),
+            child: Text(t.cartClear, style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+            ),
+            ]),
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          Expanded(
+            child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
         children: [
           if (quote?.freeDeliveryRemaining != null && quote?.freeDeliveryFrom != null) ...[
             _FreeDeliveryProgress(remaining: quote!.freeDeliveryRemaining!, from: quote.freeDeliveryFrom!),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
           ],
           Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-              border: Border.all(color: AppColors.borderSoft),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppTheme.radiusCard)),
             child: Column(children: [
               for (final (i, line) in cart.lines.values.indexed) ...[
-                if (i > 0) const Divider(height: 1, color: AppColors.borderSoft),
+                if (i > 0) const Divider(height: 1, color: AppColors.line),
                 _CartLineTile(line: line, quote: quote?.line(line.productId)),
               ],
             ]),
           ),
           _CartSuggestions(branchId: branchId, productIds: cart.lines.keys),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _PromoSection(quote: quote, loading: loading),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           if (quoteAsync.hasError && quote == null)
             ErrorRetry(
               message: ApiException.from(quoteAsync.error!).message,
@@ -113,7 +130,6 @@ class CartScreen extends ConsumerWidget {
               deliveryFee: type == FulfillmentType.delivery ? quote?.deliveryFee : null,
               promoDiscount: quote?.promoDiscount ?? 0,
               bonusUsed: quote?.bonusUsed ?? 0,
-              total: quote?.totalAmount,
             ),
           if (quote != null && quote.minOrderShortfall > 0) ...[
             const SizedBox(height: 12),
@@ -125,11 +141,11 @@ class CartScreen extends ConsumerWidget {
             _Notice(quote!.message!),
           ],
         ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-          child: FilledButton(
+            ),
+          ),
+          TotalBar(
+            total: quote?.totalAmount,
+            button: FilledButton(
             onPressed: quote == null || loading || !quote.canOrder
                 ? null
                 : () {
@@ -143,8 +159,88 @@ class CartScreen extends ConsumerWidget {
             child: loading && quote == null
                 ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                 : Text(t.cartCheckout),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// "Oilaviy ro'yxat" tugmasi (CONTRACT-11 §2).
+class _ListButton extends StatelessWidget {
+  const _ListButton();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(right: 4),
+        child: Material(
+          color: AppColors.surface,
+          shape: const StadiumBorder(),
+          child: InkWell(
+            customBorder: const StadiumBorder(),
+            onTap: () => context.push('/cart/list'),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.checklist_rounded, size: 18, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(AppLocalizations.of(context).listTitle,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              ]),
+            ),
           ),
         ),
+      );
+}
+
+/// Katta sarlavha (Unbounded 24) + ixtiyoriy amal.
+class _CartHeader extends StatelessWidget {
+  const _CartHeader({required this.title, this.action});
+
+  final String title;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 6, 8, 12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 46),
+          child: Row(children: [
+            Expanded(child: Text(title, style: AppTheme.display(24))),
+            ?action,
+          ]),
+        ),
+      );
+}
+
+/// Pastki oq panel: chapda "Jami" va summa (Unbounded), o'ngda asosiy tugma. Savatcha va rasmiylashtirishda.
+class TotalBar extends StatelessWidget {
+  const TotalBar({super.key, required this.total, required this.button});
+
+  /// Null — server hisobi hali kelmagan.
+  final double? total;
+  final Widget button;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.borderSoft)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
+        child: Row(children: [
+          Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(t.cartTotal,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+            Text(total == null ? '…' : formatMoney(context, total!), style: AppTheme.display(19)),
+          ]),
+          const SizedBox(width: 14),
+          Expanded(child: button),
+        ]),
       ),
     );
   }
@@ -190,14 +286,18 @@ class _FreeDeliveryProgress extends StatelessWidget {
     final text = t.cartFreeDeliveryLeft(sum);
     final idx = text.indexOf(sum);
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(16)),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: remaining <= 0 ? AppColors.tintGreen : AppColors.tintPeach,
+        borderRadius: BorderRadius.circular(22),
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (remaining <= 0)
-          Text(t.cartFreeDeliveryReached,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary))
-        else
-          Text.rich(
+        Row(children: [
+          const Icon(Icons.local_shipping_outlined, size: 19),
+          const SizedBox(width: 8),
+          Expanded(child: remaining <= 0
+          ? Text(t.cartFreeDeliveryReached, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))
+          : Text.rich(
             idx < 0
                 ? TextSpan(text: text)
                 : TextSpan(children: [
@@ -205,16 +305,17 @@ class _FreeDeliveryProgress extends StatelessWidget {
                     TextSpan(text: sum, style: const TextStyle(fontWeight: FontWeight.w800)),
                     TextSpan(text: text.substring(idx + sum.length)),
                   ]),
-            style: const TextStyle(fontSize: 14, color: AppColors.text),
-          ),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.text),
+          )),
+        ]),
         const SizedBox(height: 10),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(3),
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            color: AppColors.primary,
-            backgroundColor: AppColors.surface,
+            color: AppColors.ink,
+            backgroundColor: AppColors.ink.withValues(alpha: 0.08),
           ),
         ),
       ]),
@@ -246,30 +347,44 @@ class _CartLineTile extends ConsumerWidget {
       _ => null,
     };
 
+    final last = line.quantity - line.step < line.step - 1e-9;
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(width: 64, height: 64, child: ProductImage(url: line.imageUrl, iconSize: 24)),
+          GestureDetector(
+            onTap: () => context.push('/home/product/${line.productId}'),
+            child: Container(
+              width: 62,
+              height: 62,
+              decoration: BoxDecoration(color: AppColors.tintFor(line.productId), borderRadius: BorderRadius.circular(18)),
+              clipBehavior: Clip.antiAlias,
+              child: ProductImage(url: line.imageUrl, iconSize: 24, fit: BoxFit.cover),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(line.name,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-              Text('${formatMoney(context, unitPrice)} / ${line.isKg ? t.catUnitKg : t.catUnitPiece}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              const SizedBox(height: 3),
+              Text(formatMoney(context, total), style: AppTheme.display(14)),
               const SizedBox(height: 2),
-              Text(formatMoney(context, total), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+              Text('${formatMoney(context, unitPrice)} / ${line.isKg ? t.catUnitKg : t.catUnitPiece}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.faint)),
             ]),
           ),
+          const SizedBox(width: 8),
           QtyStepper(
             label: formatQty(context, line.quantity, line.isKg),
-            buttonWidth: 34,
+            height: 42,
+            buttonWidth: 38,
+            fontSize: 14,
+            background: AppColors.chipSurface,
+            foreground: AppColors.text,
+            minusIcon: last ? Icons.delete_outline : Icons.remove,
             onMinus: () => cart.changeLine(line.productId, -line.step),
             onPlus: canPlus && problem == null ? () => cart.changeLine(line.productId, line.step) : null,
           ),
@@ -300,7 +415,6 @@ class _Totals extends StatelessWidget {
     required this.deliveryFee,
     this.promoDiscount = 0,
     this.bonusUsed = 0,
-    required this.total,
   });
 
   final int itemKinds;
@@ -311,40 +425,24 @@ class _Totals extends StatelessWidget {
   final double promoDiscount;
   final double bonusUsed;
 
-  /// Null — server hisobi hali kelmagan.
-  final double? total;
-
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    Widget row(String a, String b, {bool bold = false}) => Padding(
+    Widget row(String a, String b, {Color? color}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 5),
-          child: Row(children: [
-            Expanded(
-              child: Text(a,
-                  style: TextStyle(
-                      fontSize: bold ? 17 : 15,
-                      fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
-                      color: bold ? AppColors.text : AppColors.textSecondary)),
-            ),
-            Text(b, style: TextStyle(fontSize: bold ? 17 : 15, fontWeight: bold ? FontWeight.w800 : FontWeight.w700)),
-          ]),
+          child: DefaultTextStyle.merge(
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color ?? AppColors.textSecondary),
+            child: Row(children: [Expanded(child: Text(a)), Text(b)]),
+          ),
         );
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Column(children: [
         row(t.cartItemsKinds(itemKinds), formatMoney(context, itemsTotal)),
-        if (promoDiscount > 0) row(t.cartPromoDiscount, '−${formatMoney(context, promoDiscount)}'),
-        if (bonusUsed > 0) row(t.cartBonusUsed, '−${formatMoney(context, bonusUsed)}'),
+        if (promoDiscount > 0) row(t.cartPromoDiscount, '−${formatMoney(context, promoDiscount)}', color: AppColors.primary),
+        if (bonusUsed > 0) row(t.cartBonusUsed, '−${formatMoney(context, bonusUsed)}', color: AppColors.primary),
         if (deliveryFee != null)
           row(t.cartDelivery, deliveryFee == 0 ? t.cartFree : formatMoney(context, deliveryFee!)),
-        const Divider(color: AppColors.borderSoft),
-        row(t.cartTotal, total == null ? '…' : formatMoney(context, total!), bold: true),
       ]),
     );
   }
@@ -409,10 +507,13 @@ class _PromoSectionState extends ConsumerState<_PromoSection> {
             textCapitalization: TextCapitalization.characters,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _apply(),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 0.6),
             decoration: InputDecoration(
-              hintText: t.cartPromoHint,
+              hintText: t.cartPromoTitle,
               counterText: '',
-              prefixIcon: const Icon(Icons.local_offer_outlined, size: 20),
+              filled: true,
+              fillColor: AppColors.background,
+              prefixIcon: const Icon(Icons.sell_outlined, size: 20, color: AppColors.textSecondary),
             ),
           ),
         ),
@@ -420,8 +521,12 @@ class _PromoSectionState extends ConsumerState<_PromoSection> {
         SizedBox(
           height: 56,
           // Tema tugmani to'liq kenglikka cho'zadi (Size.fromHeight) — Row ichida cheksiz kenglik xatosi bermasligi uchun.
-          child: FilledButton.tonal(
-            style: FilledButton.styleFrom(minimumSize: const Size(0, 56), padding: const EdgeInsets.symmetric(horizontal: 18)),
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 56),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              backgroundColor: AppColors.ink,
+            ),
             onPressed: _apply,
             child: Text(t.cartPromoApply),
           ),
@@ -434,7 +539,7 @@ class _PromoSectionState extends ConsumerState<_PromoSection> {
       final ok = !pending && error == null && quote.promoDiscount > 0;
       body = Row(children: [
         Icon(
-          error != null ? Icons.error_outline : Icons.local_offer,
+          error != null ? Icons.error_outline : Icons.sell,
           color: error != null ? AppColors.danger : AppColors.primary,
         ),
         const SizedBox(width: 10),
@@ -463,21 +568,10 @@ class _PromoSectionState extends ConsumerState<_PromoSection> {
       ]);
     }
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(t.cartPromoTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 10),
-      if (applied == null)
-        body
-      else
-        Container(
-          padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-            border: Border.all(color: AppColors.borderSoft),
-          ),
-          child: body,
-        ),
-    ]);
+    return Container(
+      padding: EdgeInsets.fromLTRB(applied == null ? 10 : 16, 10, 6, 10),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppTheme.radiusCard)),
+      child: body,
+    );
   }
 }

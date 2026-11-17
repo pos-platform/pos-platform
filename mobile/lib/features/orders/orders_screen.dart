@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/config.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/auth_controller.dart';
 import 'data/order_models.dart';
@@ -32,17 +33,22 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
       body: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(t.ordersTitle, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                child: SizedBox(
+                  height: 46,
+                  child: Align(alignment: Alignment.centerLeft, child: Text(t.ordersTitle, style: AppTheme.display(24))),
+                ),
+              ),
               if (!signedIn)
                 const Expanded(child: _SignInPrompt())
               else ...[
                 _Tabs(active: _active, onChanged: (v) => setState(() => _active = v)),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Expanded(child: _OrdersList(key: ValueKey(_active), active: _active)),
               ],
             ],
@@ -92,7 +98,7 @@ class _Tabs extends ConsumerWidget {
     final activeCount = ref.watch(ordersListProvider(true)).value?.totalCount;
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: const Color(0xFFE9E7E0), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: AppColors.segment, borderRadius: BorderRadius.circular(18)),
       child: Row(
         children: [
           _tab(activeCount == null || activeCount == 0 ? t.ordersTabActive : t.ordersTabActiveCount('$activeCount'),
@@ -116,7 +122,7 @@ class _Tabs extends ConsumerWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: selected ? AppColors.surface : Colors.transparent,
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(14),
                 boxShadow: selected
                     ? const [BoxShadow(color: Color(0x14000000), blurRadius: 3, offset: Offset(0, 1))]
                     : null,
@@ -177,7 +183,7 @@ class _OrdersList extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.only(bottom: 24),
               itemCount: page.items.length + (page.hasMore ? 1 : 0),
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
                 if (i >= page.items.length) {
                   return const Padding(
@@ -222,71 +228,70 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final images = order.previewImages.take(3).toList();
+    final images = order.previewImages.take(4).toList();
     final extra = order.itemCount - images.length;
+    final (iconBg, iconFg) = OrderFormat.iconColors(order.status);
     void open() => context.push('/orders/${order.id}');
 
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
         onTap: open,
-        child: Container(
+        child: Padding(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.borderSoft),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(14)),
+                    child: Icon(OrderFormat.icon(order.status), size: 21, color: iconFg),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('#${order.number}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                        Text(OrderFormat.status(t, order.status, order.fulfillmentType),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
                         const SizedBox(height: 2),
                         Text(
-                          '${OrderFormat.dateTime(context, t, order.createdAt)} · '
-                          '${OrderFormat.fulfillment(t, order.fulfillmentType)}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          '№ ${order.number} · ${OrderFormat.dateTime(context, t, order.createdAt)}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.faint),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
-                  OrderStatusPill(status: order.status, fulfillment: order.fulfillmentType),
+                  Text(OrderFormat.money(t, order.totalAmount), style: AppTheme.display(14)),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Row(
                 children: [
                   for (var i = 0; i < images.length; i++) ...[
-                    OrderThumb(url: AppConfig.imageUrl(images[i]), index: i),
+                    OrderThumb(url: AppConfig.imageUrl(images[i]), index: i, size: 42),
                     const SizedBox(width: 6),
                   ],
-                  Container(
-                    height: 40,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(10)),
-                    child: Text(
-                      images.isEmpty || extra <= 0 ? t.ordersItemKinds('${order.itemCount}') : '+$extra',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                  if (images.isEmpty || extra > 0)
+                    Container(
+                      height: 42,
+                      constraints: const BoxConstraints(minWidth: 42),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: AppColors.chipSurface, borderRadius: BorderRadius.circular(14)),
+                      child: Text(
+                        images.isEmpty ? t.ordersItemKinds('${order.itemCount}') : '+$extra',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textSecondary),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(OrderFormat.money(t, order.totalAmount),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                  ),
+                  const Spacer(),
                   if (order.isActive)
                     _SmallButton(label: t.ordersTrack, primary: true, onTap: open)
                   else if (!order.status.isFailed)

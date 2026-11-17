@@ -76,6 +76,11 @@ public interface IApplicationDbContext
     DbSet<ShopFavorite> ShopFavorites { get; }
     DbSet<ShopStockSubscription> ShopStockSubscriptions { get; }
     DbSet<ShopCartSnapshot> ShopCartSnapshots { get; }
+    DbSet<ShopRecipe> ShopRecipes { get; }
+    DbSet<ShopRecipeItem> ShopRecipeItems { get; }
+    DbSet<ShopList> ShopLists { get; }
+    DbSet<ShopListMember> ShopListMembers { get; }
+    DbSet<ShopListItem> ShopListItems { get; }
     DbSet<ShopReferral> ShopReferrals { get; }
     DbSet<ShopPushCampaign> ShopPushCampaigns { get; }
     DbSet<LoyaltyTier> LoyaltyTiers { get; }

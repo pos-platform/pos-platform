@@ -35,6 +35,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get phoneNumber => 'Номер телефона';
 
   @override
+  String get enterCodeTitle => 'Введите код';
+
+  @override
   String get smsCode => 'Код из SMS';
 
   @override
@@ -2053,4 +2056,149 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pinCurrent => 'Введите текущий код';
+
+  @override
+  String homeGreeting(String name) {
+    return 'Добрый день, $name!';
+  }
+
+  @override
+  String get homeWelcome => 'Добро пожаловать!';
+
+  @override
+  String get homeDeliverIn => '— время доставки';
+
+  @override
+  String get homeBuyAgainHint => 'прошлые покупки';
+
+  @override
+  String get homeSections => 'Разделы';
+
+  @override
+  String homeProductsCount(int count) {
+    return '$count товаров';
+  }
+
+  @override
+  String get orderPlacedTitle => 'Заказ принят';
+
+  @override
+  String get orderPlacedHome => 'На главную';
+
+  @override
+  String get orderPlacedTrack => 'Отследить';
+
+  @override
+  String orderPlacedNumber(String number) {
+    return 'Заказ № $number';
+  }
+
+  @override
+  String get profileStay => 'Остаться';
+
+  @override
+  String get recipesTitle => 'Рецепты';
+
+  @override
+  String get recipeToday => 'Что приготовим сегодня?';
+
+  @override
+  String recipeOneTap(int count) {
+    return '$count товаров · в один клик';
+  }
+
+  @override
+  String recipeMinutes(int n) {
+    return '$n мин';
+  }
+
+  @override
+  String recipeServings(int n) {
+    return '$n порц.';
+  }
+
+  @override
+  String get recipeIngredients => 'Ингредиенты';
+
+  @override
+  String get recipeSteps => 'Приготовление';
+
+  @override
+  String recipeAddAll(int count) {
+    return 'Всё в корзину ($count)';
+  }
+
+  @override
+  String cartAddedCount(int count) {
+    return 'Добавлено в корзину: $count';
+  }
+
+  @override
+  String get recipeUnavailable => 'Нет в наличии';
+
+  @override
+  String get listTitle => 'Семейный список';
+
+  @override
+  String get listAddHint => 'Что купить?';
+
+  @override
+  String get listEmpty => 'Список пуст. Заполняйте его вместе с семьёй.';
+
+  @override
+  String get listMembers => 'Участники';
+
+  @override
+  String get listAddMember => 'Добавить участника';
+
+  @override
+  String get listAddMemberHint =>
+      'Номер телефона члена семьи. Он увидит список, когда войдёт в приложение с этим номером.';
+
+  @override
+  String get listInvite => 'Добавить';
+
+  @override
+  String get listPending => 'ожидает';
+
+  @override
+  String listToCart(int count) {
+    return 'В корзину ($count)';
+  }
+
+  @override
+  String get listClearChecked => 'Убрать отмеченные';
+
+  @override
+  String listAddedBy(String name) {
+    return 'добавил(а) $name';
+  }
+
+  @override
+  String listCheckedBy(String name) {
+    return 'купил(а) $name';
+  }
+
+  @override
+  String get listLeave => 'Выйти из списка';
+
+  @override
+  String get listRemoveMember => 'Удалить';
+
+  @override
+  String get listOwner => 'владелец';
+
+  @override
+  String get listLoginText =>
+      'Войдите по номеру телефона, чтобы пользоваться семейным списком.';
+
+  @override
+  String get voiceSearch => 'Голосовой поиск';
+
+  @override
+  String get voiceListening => 'Говорите…';
+
+  @override
+  String get voiceUnavailable =>
+      'Голосовой поиск недоступен на этом устройстве';
 }

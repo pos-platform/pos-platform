@@ -7,6 +7,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/legal_links.dart';
 import '../../core/locale/locale_controller.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/auth_controller.dart';
 import '../auth/data/auth_models.dart';
@@ -18,10 +19,8 @@ import 'data/bonus_repository.dart';
 import 'data/profile_repository.dart';
 import 'widgets/profile_widgets.dart';
 
-/// Profil (dizayn: Profile.dc.html).
-///
-/// Keyinga (dizaynda bor, 4.6 ga kirmagan): to'lov kartalari,
-/// bildirishnomalar sozlamasi. Sevimlilar, do'stni taklif qilish va "Yordam" — bosqich 9.
+/// Profil (dizayn v3): foydalanuvchi sarlavhasi, 4 ta rangli plitka, sozlamalar ro'yxati,
+/// pastda "Maxfiylik · Shartlar · Chiqish".
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -47,21 +46,52 @@ class ProfileScreen extends ConsumerWidget {
             await ref.read(addressesProvider.future);
           },
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
             children: [
               _UserHeader(user: user),
               if (!user.profileCompleted) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 const _NameBanner(),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.45,
+                children: [
+                  _Tile(
+                    icon: Icons.receipt_long_outlined,
+                    label: t.navOrders,
+                    background: AppColors.tintBlue,
+                    onTap: () => context.go('/orders'),
+                  ),
+                  _Tile(
+                    icon: Icons.qr_code_2,
+                    label: t.bonusTitle,
+                    sub: bonus == null ? null : formatBonusPoints(t, bonus),
+                    background: AppColors.ink,
+                    foreground: Colors.white,
+                    onTap: () => context.go('/bonus'),
+                  ),
+                  _Tile(
+                    icon: Icons.favorite_border,
+                    label: t.favTitle,
+                    background: AppColors.tintRose,
+                    onTap: () => context.push('/profile/favorites'),
+                  ),
+                  _Tile(
+                    icon: Icons.card_giftcard,
+                    label: t.refTitle,
+                    background: AppColors.tintYellow,
+                    onTap: () => context.push('/profile/referral'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               _MenuGroup(children: [
-                _MenuRow(
-                  icon: Icons.qr_code_2,
-                  label: t.bonusTitle,
-                  value: bonus == null ? null : formatBonusPoints(t, bonus),
-                  onTap: () => context.go('/bonus'),
-                ),
                 _MenuRow(
                   icon: Icons.person_outline,
                   label: t.profilePersonalInfo,
@@ -74,23 +104,10 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/profile/addresses'),
                 ),
                 _MenuRow(
-                  icon: Icons.favorite_border,
-                  label: t.favTitle,
-                  onTap: () => context.push('/profile/favorites'),
-                ),
-                _MenuRow(
-                  icon: Icons.card_giftcard,
-                  label: t.refTitle,
-                  onTap: () => context.push('/profile/referral'),
-                ),
-                _MenuRow(
                   icon: Icons.assignment_return_outlined,
                   label: t.returnsTitle,
                   onTap: () => context.push('/profile/returns'),
                 ),
-              ]),
-              const SizedBox(height: 16),
-              _MenuGroup(children: [
                 _MenuRow(
                   icon: Icons.support_agent,
                   label: t.supportTitle,
@@ -109,19 +126,16 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => showLanguageSheet(context, ref),
                 ),
               ]),
-              const SizedBox(height: 16),
-              const _LegalGroup(),
-              const SizedBox(height: 8),
-              _DangerButton(
-                icon: Icons.logout,
-                label: t.signOut,
-                onTap: () => _confirmSignOut(context, ref),
+              const SizedBox(height: 10),
+              Wrap(
+                alignment: WrapAlignment.center,
+                children: [
+                  _FooterLink(label: t.legalPrivacy, onTap: () => openLegal(context, LegalLinks.privacyUrl)),
+                  _FooterLink(label: t.legalTerms, onTap: () => openLegal(context, LegalLinks.termsUrl)),
+                  _FooterLink(label: t.signOut, danger: true, onTap: () => _confirmSignOut(context, ref)),
+                ],
               ),
-              _DangerButton(
-                label: t.profileDeleteAccount,
-                small: true,
-                onTap: () => _confirmDelete(context, ref),
-              ),
+              _FooterLink(label: t.profileDeleteAccount, danger: true, onTap: () => _confirmDelete(context, ref)),
             ],
           ),
         ),
@@ -133,17 +147,45 @@ class ProfileScreen extends ConsumerWidget {
     final t = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.profileSignOutTitle),
-        content: Text(t.profileSignOutMessage),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t.profileCancel)),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t.signOut),
-          ),
-        ],
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(t.profileSignOutTitle, style: AppTheme.display(17)),
+            const SizedBox(height: 8),
+            Text(t.profileSignOutMessage,
+                style: const TextStyle(fontSize: 14, height: 1.5, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+            const SizedBox(height: 22),
+            Row(children: [
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 50),
+                    backgroundColor: AppColors.chipSurface,
+                    foregroundColor: AppColors.text,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(t.profileStay),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 50),
+                    backgroundColor: AppColors.ink,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(t.signOut),
+                ),
+              ),
+            ]),
+          ]),
+        ),
       ),
     );
     if (ok == true) await ref.read(authControllerProvider.notifier).signOut();
@@ -172,18 +214,16 @@ class _UserHeader extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => context.push('/profile/personal'),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 60),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 6),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              child: Text(
-                initialsOf(user.firstName, user.lastName, '?'),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-              ),
+            Container(
+              width: 58,
+              height: 58,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(20)),
+              child: Text(initialsOf(user.firstName, user.lastName, '?'), style: AppTheme.display(18, color: Colors.white)),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -192,19 +232,87 @@ class _UserHeader extends StatelessWidget {
                 children: [
                   Text(
                     user.displayName == user.phone ? formatPhone(user.phone) : user.displayName,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                    style: AppTheme.display(18),
                   ),
-                  const SizedBox(height: 2),
-                  Text(formatPhone(user.phone), style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                  const SizedBox(height: 3),
+                  Text(formatPhone(user.phone),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            const Icon(Icons.chevron_right, size: 22, color: AppColors.faint),
           ],
         ),
       ),
     );
   }
+}
+
+/// Rangli plitka: tepada belgi, pastda nom va izoh.
+class _Tile extends StatelessWidget {
+  const _Tile({
+    required this.icon,
+    required this.label,
+    required this.background,
+    required this.onTap,
+    this.sub,
+    this.foreground = AppColors.text,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? sub;
+  final Color background;
+  final Color foreground;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: background,
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, size: 24, color: foreground),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: foreground)),
+                  if (sub != null)
+                    Text(sub!,
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: foreground.withValues(alpha: 0.65))),
+                ]),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _FooterLink extends StatelessWidget {
+  const _FooterLink({required this.label, required this.onTap, this.danger = false});
+
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+        style: TextButton.styleFrom(
+          foregroundColor: danger ? AppColors.primaryPressed : AppColors.textSecondary,
+          minimumSize: const Size(0, 44),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+        onPressed: onTap,
+        child: Text(label),
+      );
 }
 
 /// Ism kiritilmagan (profileCompleted == false) — to'ldirishga taklif.
@@ -246,28 +354,6 @@ class _NameBanner extends StatelessWidget {
   }
 }
 
-/// Huquqiy hujjatlar: maxfiylik siyosati va foydalanish shartlari (tashqi brauzerda).
-class _LegalGroup extends StatelessWidget {
-  const _LegalGroup();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    return _MenuGroup(children: [
-      _MenuRow(
-        icon: Icons.privacy_tip_outlined,
-        label: t.legalPrivacy,
-        onTap: () => openLegal(context, LegalLinks.privacyUrl),
-      ),
-      _MenuRow(
-        icon: Icons.description_outlined,
-        label: t.legalTerms,
-        onTap: () => openLegal(context, LegalLinks.termsUrl),
-      ),
-    ]);
-  }
-}
-
 class _MenuGroup extends StatelessWidget {
   const _MenuGroup({required this.children});
 
@@ -275,12 +361,14 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppTheme.radiusCard),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const Divider(height: 1, thickness: 1, color: Color(0xFFF0EEE8)),
+            if (i > 0) const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16, color: AppColors.line),
             children[i],
           ],
         ],
@@ -302,50 +390,22 @@ class _MenuRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 52),
+        constraints: const BoxConstraints(minHeight: 56),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(color: AppColors.chipSurface, borderRadius: BorderRadius.circular(10)),
-                child: Icon(icon, size: 18, color: AppColors.text),
-              ),
+              Icon(icon, size: 21, color: AppColors.textSecondary),
               const SizedBox(width: 14),
               Expanded(child: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
               if (value != null)
-                Text(value!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                Text(value!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.faint)),
               const SizedBox(width: 4),
-              const Icon(Icons.chevron_right, size: 20, color: AppColors.iconMuted),
+              const Icon(Icons.chevron_right, size: 20, color: Color(0xFFCFCCC5)),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _DangerButton extends StatelessWidget {
-  const _DangerButton({required this.label, required this.onTap, this.icon, this.small = false});
-
-  final String label;
-  final IconData? icon;
-  final bool small;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      style: TextButton.styleFrom(
-        foregroundColor: AppColors.danger,
-        minimumSize: const Size.fromHeight(48),
-        textStyle: TextStyle(fontSize: small ? 14 : 15, fontWeight: FontWeight.w700),
-      ),
-      onPressed: onTap,
-      icon: icon == null ? null : Icon(icon, size: 18),
-      label: Text(label),
     );
   }
 }
@@ -403,7 +463,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   }
 }
 
-/// Mehmon rejimi: kirish taklifi.
+/// Mehmon rejimi (dizayn v3 "darvoza"): belgi, sarlavha, izoh va qizil "Kirish"; pastda huquqiy havolalar.
 class _GuestProfile extends ConsumerWidget {
   const _GuestProfile();
 
@@ -411,39 +471,41 @@ class _GuestProfile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(t.navProfile)),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: AppColors.primarySoft,
-                    child: Icon(Icons.person_outline, color: AppColors.primary, size: 28),
+      body: SafeArea(
+        child: Column(children: [
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 36),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    width: 92,
+                    height: 92,
+                    decoration: BoxDecoration(color: AppColors.tintBlue, borderRadius: BorderRadius.circular(30)),
+                    child: const Icon(Icons.person_outline, size: 40, color: AppColors.ink),
                   ),
-                  const SizedBox(height: 14),
-                  Text(t.profileGuestTitle,
-                      textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 6),
-                  Text(t.profileGuestText,
-                      textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
                   const SizedBox(height: 18),
+                  Text(t.profileGuestTitle, textAlign: TextAlign.center, style: AppTheme.display(18)),
+                  const SizedBox(height: 8),
+                  Text(t.profileGuestText,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 14, height: 1.5, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+                  const SizedBox(height: 22),
                   FilledButton(
+                    style: FilledButton.styleFrom(minimumSize: const Size(0, 52), padding: const EdgeInsets.symmetric(horizontal: 32)),
                     onPressed: () => ref.read(authControllerProvider.notifier).requestSignIn(),
                     child: Text(t.login),
                   ),
-                ],
+                ]),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          const _LegalGroup(),
-        ],
+          Wrap(alignment: WrapAlignment.center, children: [
+            _FooterLink(label: t.legalPrivacy, onTap: () => openLegal(context, LegalLinks.privacyUrl)),
+            _FooterLink(label: t.legalTerms, onTap: () => openLegal(context, LegalLinks.termsUrl)),
+          ]),
+          const SizedBox(height: 8),
+        ]),
       ),
     );
   }

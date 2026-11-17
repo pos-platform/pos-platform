@@ -53,6 +53,24 @@ class OrderFormat {
   static String fulfillment(AppLocalizations t, FulfillmentType f) =>
       f == FulfillmentType.pickup ? t.ordersPickup : t.ordersDelivery;
 
+  /// Dizayn v3: holat belgisi va uning foni/rangi (ro'yxat kartasi, buyurtma sahifasi).
+  static IconData icon(OrderStatus s) => switch (s) {
+        OrderStatus.created => Icons.receipt_long_rounded,
+        OrderStatus.accepted => Icons.storefront_rounded,
+        OrderStatus.picking => Icons.shopping_bag_rounded,
+        OrderStatus.ready || OrderStatus.readyForPickup => Icons.inventory_2_rounded,
+        OrderStatus.awaitingTransfer => Icons.payments_rounded,
+        OrderStatus.onTheWay => Icons.delivery_dining_rounded,
+        OrderStatus.delivered => Icons.check_rounded,
+        OrderStatus.rejected || OrderStatus.cancelled => Icons.close_rounded,
+      };
+
+  static (Color bg, Color fg) iconColors(OrderStatus s) => switch (s) {
+        OrderStatus.delivered => (AppColors.tintGreen, const Color(0xFF2E6B1F)),
+        OrderStatus.rejected || OrderStatus.cancelled => (AppColors.chipSurface, AppColors.faint),
+        _ => (AppColors.primarySoft, AppColors.primary),
+      };
+
   static String status(AppLocalizations t, OrderStatus s, FulfillmentType f) => switch (s) {
         OrderStatus.created => t.ordersStatusNew,
         OrderStatus.accepted => t.ordersStatusAccepted,
@@ -129,18 +147,19 @@ class OrderThumb extends StatelessWidget {
   final double size;
   final int index;
 
-  static const _placeholders = [Color(0xFFE8EEF6), Color(0xFFF7F1DE), Color(0xFFEEEAF5)];
-
   @override
   Widget build(BuildContext context) {
-    final bg = _placeholders[index % _placeholders.length];
+    final bg = AppColors.tints[index % AppColors.tints.length];
     final placeholder = Container(width: size, height: size, color: bg);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(size / 4),
+      borderRadius: BorderRadius.circular(size / 3),
       child: url == null
           ? placeholder
-          : Image.network(url!, width: size, height: size, fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => placeholder),
+          : ColoredBox(
+              color: bg,
+              child: Image.network(url!, width: size, height: size, fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => placeholder),
+            ),
     );
   }
 }

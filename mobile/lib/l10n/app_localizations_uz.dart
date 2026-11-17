@@ -35,6 +35,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get phoneNumber => 'Telefon raqam';
 
   @override
+  String get enterCodeTitle => 'Kodni kiriting';
+
+  @override
   String get smsCode => 'SMS kod';
 
   @override
@@ -2063,4 +2066,149 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get pinCurrent => 'Joriy kodni kiriting';
+
+  @override
+  String homeGreeting(String name) {
+    return 'Xayrli kun, $name!';
+  }
+
+  @override
+  String get homeWelcome => 'Xush kelibsiz!';
+
+  @override
+  String get homeDeliverIn => 'ichida yetkazamiz';
+
+  @override
+  String get homeBuyAgainHint => 'oldingi xaridlar';
+
+  @override
+  String get homeSections => 'Bo‘limlar';
+
+  @override
+  String homeProductsCount(int count) {
+    return '$count ta mahsulot';
+  }
+
+  @override
+  String get orderPlacedTitle => 'Buyurtma qabul qilindi';
+
+  @override
+  String get orderPlacedHome => 'Bosh sahifa';
+
+  @override
+  String get orderPlacedTrack => 'Kuzatish';
+
+  @override
+  String orderPlacedNumber(String number) {
+    return 'Buyurtma № $number';
+  }
+
+  @override
+  String get profileStay => 'Qolish';
+
+  @override
+  String get recipesTitle => 'Retseptlar';
+
+  @override
+  String get recipeToday => 'Bugun nima pishiramiz?';
+
+  @override
+  String recipeOneTap(int count) {
+    return '$count ta mahsulot · bir bosishda';
+  }
+
+  @override
+  String recipeMinutes(int n) {
+    return '$n daq';
+  }
+
+  @override
+  String recipeServings(int n) {
+    return '$n kishi';
+  }
+
+  @override
+  String get recipeIngredients => 'Ingrediyentlar';
+
+  @override
+  String get recipeSteps => 'Tayyorlash';
+
+  @override
+  String recipeAddAll(int count) {
+    return 'Hammasini savatga ($count)';
+  }
+
+  @override
+  String cartAddedCount(int count) {
+    return '$count ta mahsulot savatga qo‘shildi';
+  }
+
+  @override
+  String get recipeUnavailable => 'Do‘konda yo‘q';
+
+  @override
+  String get listTitle => 'Oilaviy ro‘yxat';
+
+  @override
+  String get listAddHint => 'Nima olish kerak?';
+
+  @override
+  String get listEmpty =>
+      'Ro‘yxat bo‘sh. Oila a’zolaringiz bilan birga to‘ldiring.';
+
+  @override
+  String get listMembers => 'A’zolar';
+
+  @override
+  String get listAddMember => 'A’zo qo‘shish';
+
+  @override
+  String get listAddMemberHint =>
+      'Oila a’zosining telefon raqami. U ilovaga shu raqam bilan kirganda ro‘yxatni ko‘radi.';
+
+  @override
+  String get listInvite => 'Qo‘shish';
+
+  @override
+  String get listPending => 'kutilmoqda';
+
+  @override
+  String listToCart(int count) {
+    return 'Savatga o‘tkazish ($count)';
+  }
+
+  @override
+  String get listClearChecked => 'Belgilanganlarni tozalash';
+
+  @override
+  String listAddedBy(String name) {
+    return '$name qo‘shdi';
+  }
+
+  @override
+  String listCheckedBy(String name) {
+    return '$name oldi';
+  }
+
+  @override
+  String get listLeave => 'Ro‘yxatdan chiqish';
+
+  @override
+  String get listRemoveMember => 'Olib tashlash';
+
+  @override
+  String get listOwner => 'egasi';
+
+  @override
+  String get listLoginText =>
+      'Oilaviy ro‘yxatdan foydalanish uchun telefon raqamingiz bilan kiring.';
+
+  @override
+  String get voiceSearch => 'Ovozli qidiruv';
+
+  @override
+  String get voiceListening => 'Gapiring…';
+
+  @override
+  String get voiceUnavailable => 'Ovozli qidiruv bu qurilmada ishlamaydi';
 }

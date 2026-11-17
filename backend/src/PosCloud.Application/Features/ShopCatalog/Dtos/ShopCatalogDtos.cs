@@ -191,6 +191,9 @@ public class ShopHomeDto
     /// <summary>"Yana olasizmi?" — faqat token bilan.</summary>
     public List<ShopProductDto> BuyAgain { get; set; } = [];
     public List<ShopStoryDto> Stories { get; set; } = [];
+
+    /// <summary>Bosqich 11.8: "Bugun nima pishiramiz?" — bosh sahifadagi retseptlar.</summary>
+    public List<ShopRecipeBriefDto> Recipes { get; set; } = [];
 }
 
 /// <summary>Qidiruv taklifi uchun qisqa mahsulot.</summary>

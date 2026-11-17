@@ -55,6 +55,36 @@ public class OnlineMarketingController : ControllerBase
         return NoContent();
     }
 
+    // ---------------- retseptlar (11.8) ----------------
+
+    [HttpGet("recipes")]
+    [HasPermission(Permissions.SalesView)]
+    public async Task<ActionResult<IReadOnlyList<RecipeAdminDto>>> GetRecipes([FromServices] IRecipeAdminService recipes,
+        CancellationToken ct) => Ok(await recipes.GetAllAsync(ct));
+
+    [HttpGet("recipes/{id:guid}")]
+    [HasPermission(Permissions.SalesView)]
+    public async Task<ActionResult<RecipeAdminDto>> GetRecipe(Guid id, [FromServices] IRecipeAdminService recipes,
+        CancellationToken ct) => Ok(await recipes.GetAsync(id, ct));
+
+    [HttpPost("recipes")]
+    [HasPermission(Permissions.SettingsManage)]
+    public async Task<ActionResult<RecipeAdminDto>> CreateRecipe(SaveRecipeRequest request,
+        [FromServices] IRecipeAdminService recipes, CancellationToken ct) => Ok(await recipes.CreateAsync(request, ct));
+
+    [HttpPut("recipes/{id:guid}")]
+    [HasPermission(Permissions.SettingsManage)]
+    public async Task<ActionResult<RecipeAdminDto>> UpdateRecipe(Guid id, SaveRecipeRequest request,
+        [FromServices] IRecipeAdminService recipes, CancellationToken ct) => Ok(await recipes.UpdateAsync(id, request, ct));
+
+    [HttpDelete("recipes/{id:guid}")]
+    [HasPermission(Permissions.SettingsManage)]
+    public async Task<IActionResult> DeleteRecipe(Guid id, [FromServices] IRecipeAdminService recipes, CancellationToken ct)
+    {
+        await recipes.DeleteAsync(id, ct);
+        return NoContent();
+    }
+
     // ---------------- kolleksiyalar ----------------
 
     [HttpGet("collections")]

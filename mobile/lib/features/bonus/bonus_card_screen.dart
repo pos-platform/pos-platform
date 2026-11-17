@@ -10,6 +10,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/config.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/auth_controller.dart';
 import '../catalog/store_selection.dart';
@@ -330,7 +331,7 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
       child: ListView(
         controller: _scroll,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           if (stores.length > 1 || (stores.isNotEmpty && current == null)) ...[
             _StoreChips(
@@ -357,9 +358,12 @@ class _BonusBodyState extends ConsumerState<_BonusBody> with WidgetsBindingObser
             const SizedBox(height: 12),
             _TierProgress(card: _card!),
           ],
-          const SizedBox(height: 20),
-          Text(t.bonusHistory, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 18),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(t.bonusHistory, style: AppTheme.display(16)),
+          ),
+          const SizedBox(height: 10),
           if (org == null)
             const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
           else
@@ -404,8 +408,7 @@ class _TierProgress extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -425,8 +428,8 @@ class _TierProgress extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              color: AppColors.primary,
-              backgroundColor: AppColors.primarySoft,
+              color: AppColors.ink,
+              backgroundColor: AppColors.ink.withValues(alpha: 0.08),
             ),
           ),
           const SizedBox(height: 8),
@@ -501,15 +504,15 @@ class _CardPanel extends StatelessWidget {
   final double? progress;
   final VoidCallback onRetry;
 
-  static Color get _onPrimarySoft => AppColors.onPrimarySoft;
+  static Color get _onPrimarySoft => Colors.white.withValues(alpha: 0.6);
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final expired = remaining == Duration.zero;
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(24)),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(30)),
       child: Column(children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(
@@ -519,7 +522,7 @@ class _CardPanel extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 points == null ? '…' : formatBonusPoints(t, points!),
-                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -0.5, color: Colors.white),
+                style: AppTheme.display(28, color: Colors.white),
               ),
             ]),
           ),
@@ -534,7 +537,7 @@ class _CardPanel extends StatelessWidget {
             Flexible(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(999)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
                 child: Text(storeName!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -542,21 +545,25 @@ class _CardPanel extends StatelessWidget {
               ),
             ),
         ]),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18)),
-          child: SizedBox(
-            width: 220,
-            height: 220,
-            child: _qr(t, expired),
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(22)),
+          child: Center(
+            child: SizedBox(
+              width: 196,
+              height: 196,
+              child: _qr(t, expired),
+            ),
           ),
         ),
         const SizedBox(height: 12),
         if (hasBranch) _status(t, expired),
         const SizedBox(height: 10),
         Text(t.bonusHint,
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 13, height: 1.45, color: _onPrimarySoft)),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, height: 1.45, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.65))),
       ]),
     );
   }
@@ -637,7 +644,9 @@ class _History extends ConsumerWidget {
     final t = AppLocalizations.of(context);
     final history = ref.watch(bonusHistoryProvider(organizationId));
     return switch (history) {
-      AsyncData(:final value) when value.items.isEmpty => Card(
+      AsyncData(:final value) when value.items.isEmpty => Material(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Text(t.bonusHistoryEmpty,
@@ -645,11 +654,13 @@ class _History extends ConsumerWidget {
           ),
         ),
       AsyncData(:final value) => Column(children: [
-          Card(
+          Material(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(24),
             clipBehavior: Clip.antiAlias,
             child: Column(children: [
               for (var i = 0; i < value.items.length; i++) ...[
-                if (i > 0) const Divider(height: 1, thickness: 1, color: Color(0xFFF0EEE8)),
+                if (i > 0) const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16, color: AppColors.line),
                 _HistoryRow(tx: value.items[i]),
               ],
             ]),
@@ -684,7 +695,7 @@ class _HistoryRow extends StatelessWidget {
       BonusTxType.unknown => (Icons.swap_horiz, t.bonusTypeOther),
     };
     final positive = tx.points >= 0;
-    final color = positive ? AppColors.primary : AppColors.danger;
+    final color = positive ? const Color(0xFF2E6B1F) : AppColors.primary;
     final sub = [
       OrderFormat.dateTime(context, t, tx.createdAt),
       switch (tx.source) {
@@ -702,8 +713,8 @@ class _HistoryRow extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: positive ? AppColors.primarySoft : const Color(0xFFFDECEA),
-            borderRadius: BorderRadius.circular(10),
+            color: positive ? AppColors.tintGreen : AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, size: 18, color: color),
         ),
@@ -712,14 +723,13 @@ class _HistoryRow extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
             const SizedBox(height: 2),
-            Text(sub, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            Text(sub, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.faint)),
             if (tx.comment != null && tx.comment!.trim().isNotEmpty)
               Text(tx.comment!.trim(), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           ]),
         ),
         const SizedBox(width: 8),
-        Text('${positive ? '+' : '−'}$value',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: color)),
+        Text('${positive ? '+' : '−'}$value', style: AppTheme.display(14, color: color)),
       ]),
     );
   }
@@ -732,31 +742,31 @@ class _GuestPrompt extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context);
-    return ListView(padding: const EdgeInsets.all(20), children: [
-      Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: AppColors.primarySoft,
-              child: Icon(Icons.qr_code_2, color: AppColors.primary, size: 28),
-            ),
-            const SizedBox(height: 14),
-            Text(t.bonusGuestTitle,
-                textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            Text(t.bonusGuestText,
-                textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-            const SizedBox(height: 18),
-            FilledButton(
-              onPressed: () => ref.read(authControllerProvider.notifier).requestSignIn(),
-              child: Text(t.login),
-            ),
-          ]),
-        ),
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(36, 0, 36, 60),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 92,
+            height: 92,
+            decoration: BoxDecoration(color: AppColors.tintBlue, borderRadius: BorderRadius.circular(30)),
+            child: const Icon(Icons.qr_code_2, size: 40, color: AppColors.ink),
+          ),
+          const SizedBox(height: 18),
+          Text(t.bonusGuestTitle, textAlign: TextAlign.center, style: AppTheme.display(18)),
+          const SizedBox(height: 8),
+          Text(t.bonusGuestText,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, height: 1.5, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+          const SizedBox(height: 22),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 52), padding: const EdgeInsets.symmetric(horizontal: 32)),
+            onPressed: () => ref.read(authControllerProvider.notifier).requestSignIn(),
+            child: Text(t.login),
+          ),
+        ]),
       ),
-    ]);
+    );
   }
 }
 

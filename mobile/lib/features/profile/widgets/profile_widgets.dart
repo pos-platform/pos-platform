@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// Ichki sahifa sarlavhasi: oq kvadrat "Orqaga" tugmasi + sarlavha (dizayn: PersonalInfo, Addresses).
@@ -17,32 +18,33 @@ class ProfilePageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      padding: EdgeInsets.fromLTRB(showBack ? 16 : 20, 6, 16, 8),
       child: Row(
         children: [
           if (showBack) ...[
           Semantics(
             button: true,
             label: MaterialLocalizations.of(context).backButtonTooltip,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: () => Navigator.of(context).maybePop(),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: const Icon(Icons.chevron_left, color: AppColors.text),
+            child: Material(
+              color: AppColors.surface,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => Navigator.of(context).maybePop(),
+                child: const SizedBox(width: 44, height: 44, child: Icon(Icons.arrow_back, size: 22, color: AppColors.text)),
               ),
             ),
           ),
           const SizedBox(width: 12),
           ],
           Expanded(
-            child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 46),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(title, style: AppTheme.display(showBack ? 18 : 24)),
+              ),
+            ),
           ),
           ?trailing,
         ],

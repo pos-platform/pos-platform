@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../catalog/data/catalog_models.dart';
 import '../../catalog/widgets/product_card.dart';
@@ -12,36 +13,42 @@ class RailHeader extends StatelessWidget {
     required this.title,
     this.onAll,
     this.trailing,
-    this.padding = const EdgeInsets.fromLTRB(20, 20, 8, 8),
+    this.hint,
+    this.padding = const EdgeInsets.fromLTRB(16, 26, 4, 8),
   });
 
   final String title;
   final VoidCallback? onAll;
   final Widget? trailing;
+
+  /// Sarlavha yonidagi och izoh (masalan "oldingi xaridlar").
+  final String? hint;
   final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: padding,
     child: ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 40),
+      constraints: const BoxConstraints(minHeight: 36),
       child: Row(
         children: [
-          Expanded(
-            child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-          ),
+          Expanded(child: Text(title, style: AppTheme.display(18))),
+          if (hint != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Text(hint!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.faint)),
+            ),
           ?trailing,
           if (onAll != null)
             TextButton(
               onPressed: onAll,
+              style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    AppLocalizations.of(context).mkAll,
-                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary),
-                  ),
-                  Icon(Icons.chevron_right, size: 20, color: AppColors.primary),
+                  Text(AppLocalizations.of(context).mkAll, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                  const SizedBox(width: 2),
+                  const Icon(Icons.arrow_forward, size: 18),
                 ],
               ),
             ),
@@ -67,7 +74,7 @@ class ProductRail extends StatelessWidget {
     height: height,
     child: ListView.separated(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: products.length,
       separatorBuilder: (_, _) => const SizedBox(width: 12),
       itemBuilder: (_, i) {

@@ -11,17 +11,17 @@ import '../../core/store_app/store_app.dart';
 import '../../core/store_app/store_branding.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/circle_icon_button.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/auth_controller.dart';
-import '../bonus/bonus_card_screen.dart';
 import '../cart/cart_controller.dart';
-import '../profile/data/bonus_repository.dart';
 import '../profile/profile_screen.dart' show showLanguageSheet;
 import '../cart/delivery_time.dart';
 import '../marketing/data/marketing_repository.dart';
 import '../marketing/home_sections.dart';
 import '../marketing/search.dart';
 import '../marketing/shop_link.dart';
+import '../marketing/voice_search.dart';
 import 'data/catalog_models.dart';
 import 'data/catalog_repository.dart';
 import 'store_selection.dart';
@@ -155,6 +155,12 @@ class _CatalogState extends ConsumerState<_Catalog> {
     if (mounted) _runSearch(code);
   }
 
+  /// Ovozli qidiruv (CONTRACT-11 §3): eshitilgan matn oddiy qidiruvga beriladi.
+  Future<void> _voice() async {
+    final text = await showVoiceSearch(context);
+    if (text != null && mounted) _runSearch(text);
+  }
+
   void _reset() {
     _generation++;
     setState(() {
@@ -223,31 +229,64 @@ class _CatalogState extends ConsumerState<_Catalog> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               sliver: SliverList.list(children: [
                 _StoreHeader(store: store),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
+                _Greeting(store: store),
+                const SizedBox(height: 16),
                 TextField(
                   controller: _search,
                   focusNode: _searchFocus,
                   textInputAction: TextInputAction.search,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
                     hintText: t.catSearchHint,
-                    prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
-                    suffixIcon: _search.text.isEmpty
-                        ? IconButton(
-                            tooltip: t.scanTitle,
-                            icon: const Icon(Icons.qr_code_scanner, color: AppColors.textSecondary),
-                            onPressed: _scan,
-                          )
-                        : IconButton(
-                            tooltip: t.catClear,
-                            icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                            onPressed: () {
-                              _search.clear();
-                              _reset();
-                            },
-                          ),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                    border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(26)), borderSide: BorderSide.none),
+                    enabledBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(26)), borderSide: BorderSide.none),
+                    focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(26)), borderSide: BorderSide.none),
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Icon(Icons.search, size: 21, color: AppColors.textSecondary),
+                    ),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: _search.text.isEmpty
+                          ? Row(mainAxisSize: MainAxisSize.min, children: [
+                              IconButton(
+                                tooltip: t.scanTitle,
+                                icon: const Icon(Icons.qr_code_scanner, size: 21, color: AppColors.textSecondary),
+                                onPressed: _scan,
+                              ),
+                              CircleIconButton(
+                                icon: Icons.mic_rounded,
+                                tooltip: t.voiceSearch,
+                                size: 40,
+                                iconSize: 20,
+                                background: AppColors.ink,
+                                foreground: Colors.white,
+                                onPressed: _voice,
+                              ),
+                            ])
+                          : CircleIconButton(
+                              icon: Icons.close,
+                              tooltip: t.catClear,
+                              size: 40,
+                              iconSize: 20,
+                              background: AppColors.chipSurface,
+                              onPressed: () {
+                                _search.clear();
+                                _reset();
+                              },
+                            ),
+                    ),
+                    suffixIconConstraints: const BoxConstraints(minWidth: 46, minHeight: 40),
                   ),
                   onChanged: (_) {
                     setState(() {});
@@ -273,7 +312,7 @@ class _CatalogState extends ConsumerState<_Catalog> {
                       _reset();
                     },
                   ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 22),
               ]),
             ),
             if (showSections)
@@ -284,13 +323,24 @@ class _CatalogState extends ConsumerState<_Catalog> {
                       store.deliveryEnabled && store.freeDeliveryFrom != null ? _PromoBanner(store: store) : null,
                 ),
               ),
+            if (showSections && categories.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _CategoryTiles(
+                  categories: categories,
+                  onTap: (id) {
+                    _categoryId = id;
+                    _reset();
+                    if (_scroll.hasClients) _scroll.jumpTo(0);
+                  },
+                ),
+              ),
             if (showSections) const SliverToBoxAdapter(child: SizedBox(height: 16)),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 40,
+                height: 38,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
                     _CategoryChip(
                       label: t.catAll,
@@ -316,13 +366,10 @@ class _CatalogState extends ConsumerState<_Catalog> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+              padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
               sliver: SliverToBoxAdapter(
                 child: Row(children: [
-                  Expanded(
-                    child: Text(_titleFor(t, categories),
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                  ),
+                  Expanded(child: Text(_titleFor(t, categories), style: AppTheme.display(18))),
                   PopupMenuButton<ProductSort>(
                     tooltip: t.catSort,
                     initialValue: _sort,
@@ -347,13 +394,13 @@ class _CatalogState extends ConsumerState<_Catalog> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverGrid.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  mainAxisExtent: 268,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  mainAxisExtent: 262,
                 ),
                 itemCount: _items.length,
                 itemBuilder: (_, i) => ProductCard(branchId: _branchId, product: _items[i]),
@@ -415,7 +462,7 @@ class _CatalogState extends ConsumerState<_Catalog> {
       };
 }
 
-/// Yuqori qator: do'kon nomi (bosilsa — do'kon almashtirish) va holati.
+/// Yuqori qator (dizayn v3): logo, do'kon (bosilsa — almashtirish), til, sevimlilar.
 class _StoreHeader extends ConsumerWidget {
   const _StoreHeader({required this.store});
 
@@ -429,64 +476,74 @@ class _StoreHeader extends ConsumerWidget {
     // Yopiq va keyingi ochilish ma'lum bo'lsa: "Yopiq · 09:00 da ochiladi" (ish vaqti o'rniga).
     final opensAt = store.isOpenNow ? null : store.nextOpenTime;
     final status = [
-      // "Ochiq" ko'rsatilmaydi (ortiqcha) — faqat yopiq bo'lsa ogohlantiriladi.
       if (!store.isOpenNow) t.catClosedNow,
       if (opensAt != null) t.catOpensAt(opensAt) else ?store.hoursText,
-      ?deliveryTimeText(t, store),
     ].join(' · ');
-    return Semantics(
-      button: canSwitch,
-      label: canSwitch ? t.catChangeStore : null,
-      child: InkWell(
+    return Row(children: [
+      ClipRRect(
         borderRadius: BorderRadius.circular(14),
-        onTap: canSwitch ? () => context.push('/home/stores') : null,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
-          child: Row(children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              // Do'kon rejimida (yoki logo yuklanmagan bo'lsa) — ilova ichidagi brend logosi.
-              child: SizedBox(
-                width: 44,
-                height: 44,
-                child: AppConfig.isStoreMode || (store.logoUrl ?? '').isEmpty
-                    ? const ColoredBox(color: Colors.white, child: Padding(padding: EdgeInsets.all(4), child: StoreLogo(size: 36)))
-                    : ProductImage(url: store.logoUrl, iconSize: 20, fit: BoxFit.cover),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                if (status.isNotEmpty)
-                  Text(status,
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: store.isOpenNow ? AppColors.primary : AppColors.textSecondary)),
-                Row(children: [
-                  Flexible(
-                    // Do'kon rejimida filial nomi o'rniga brend yozuvi (Xo‘ja market).
-                    child: AppConfig.isStoreMode
-                        ? const BrandWordmark(fontSize: 18)
-                        : Text(store.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                  ),
-                  if (canSwitch) const Icon(Icons.keyboard_arrow_down, size: 20),
-                ]),
-              ]),
-            ),
-            const _LanguageButton(),
-            _BonusChip(branchId: store.id),
-          ]),
+        // Do'kon rejimida (yoki logo yuklanmagan bo'lsa) — ilova ichidagi brend logosi.
+        child: SizedBox(
+          width: 42,
+          height: 42,
+          child: AppConfig.isStoreMode || (store.logoUrl ?? '').isEmpty
+              ? const ColoredBox(color: AppColors.chipSurface, child: Padding(padding: EdgeInsets.all(4), child: StoreLogo(size: 34)))
+              : ProductImage(url: store.logoUrl, iconSize: 20, fit: BoxFit.cover),
         ),
       ),
-    );
+      const SizedBox(width: 10),
+      Expanded(
+        child: Semantics(
+          button: canSwitch,
+          label: canSwitch ? t.catChangeStore : null,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: canSwitch ? () => context.push('/home/stores') : null,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (status.isNotEmpty)
+                    Text(status,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: store.isOpenNow ? AppColors.textSecondary : AppColors.primary)),
+                  Row(children: [
+                    Flexible(
+                      // Do'kon rejimida filial nomi o'rniga brend yozuvi (Xo‘ja market).
+                      child: AppConfig.isStoreMode
+                          ? const BrandWordmark(fontSize: 16)
+                          : Text(store.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    ),
+                    if (canSwitch) const Icon(Icons.expand_more, size: 20, color: AppColors.textSecondary),
+                  ]),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      const _LanguageButton(),
+      const SizedBox(width: 8),
+      CircleIconButton(
+        icon: Icons.favorite_border,
+        tooltip: t.favTitle,
+        iconSize: 21,
+        onPressed: () => context.push('/home/favorites'),
+      ),
+    ]);
   }
 }
 
-/// Til almashtirish (UZ / RU) — kirmasdan ham bosh sahifadan.
+/// Til almashtirish (UZ / RU) — kirmasdan ham bosh sahifadan. Oq doira, ichida til kodi.
 class _LanguageButton extends ConsumerWidget {
   const _LanguageButton();
 
@@ -494,27 +551,18 @@ class _LanguageButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeControllerProvider);
     final code = Localizations.localeOf(context).languageCode.toUpperCase();
-    return Semantics(
-      button: true,
-      label: AppLocalizations.of(context).profileLanguage,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 8),
+    return Tooltip(
+      message: AppLocalizations.of(context).profileLanguage,
+      child: Material(
+        color: AppColors.surface,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
           onTap: () => showLanguageSheet(context, ref),
-          child: Container(
-            height: 36,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.25)),
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.language, size: 18),
-              const SizedBox(width: 4),
-              Text(code, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-            ]),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(child: Text(code, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800))),
           ),
         ),
       ),
@@ -522,29 +570,119 @@ class _LanguageButton extends ConsumerWidget {
   }
 }
 
-/// Sarlavhadagi kichik bonus belgisi (faqat kirgan foydalanuvchi) — bonus kartani ochadi.
-class _BonusChip extends ConsumerWidget {
-  const _BonusChip({required this.branchId});
+/// Salomlashish (Unbounded) va yetkazish vaqti belgisi: "⚡ 30–45 daqiqa ichida yetkazamiz".
+class _Greeting extends ConsumerWidget {
+  const _Greeting({required this.store});
 
-  final String branchId;
+  final ShopStore store;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(authControllerProvider.select((a) => a.isSignedIn))) return const SizedBox.shrink();
     final t = AppLocalizations.of(context);
-    final points = ref.watch(bonusBalanceProvider(branchId)).value;
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: ActionChip(
-        avatar: Icon(Icons.qr_code_2, size: 18, color: AppColors.primary),
-        label: Text(points == null ? t.bonusTitle : formatBonusPoints(t, points)),
-        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary),
-        backgroundColor: AppColors.primarySoft,
-        side: BorderSide.none,
-        onPressed: () => context.go('/bonus'),
+    final name = ref.watch(authControllerProvider.select((a) => a.user?.firstName))?.trim();
+    final time = deliveryTimeText(t, store);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(
+        name == null || name.isEmpty ? t.homeWelcome : t.homeGreeting(name),
+        style: AppTheme.display(25).copyWith(height: 1.15),
       ),
+      if (time != null) ...[
+        const SizedBox(height: 6),
+        Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(7, 4, 10, 4),
+            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.bolt, size: 16, color: AppColors.primary),
+              const SizedBox(width: 4),
+              Text(time, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            ]),
+          ),
+          Text(t.homeDeliverIn,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        ]),
+      ],
+    ]);
+  }
+}
+
+/// Bo'lim plitkalari (dizayn v3): rangli kartalar, 3 ustunli to'r — qatorlar navbat bilan 2+1 / 1+2.
+class _CategoryTiles extends StatelessWidget {
+  const _CategoryTiles({required this.categories, required this.onTap});
+
+  final List<ShopCategory> categories;
+  final ValueChanged<String> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final rows = <Widget>[];
+    for (var i = 0, r = 0; i < categories.length; i += 2, r++) {
+      final wideFirst = r.isEven;
+      Widget tile(int k, int flex) => Expanded(
+            flex: flex,
+            child: _CategoryTile(
+              category: categories[k],
+              tint: AppColors.tints[k % AppColors.tints.length],
+              onTap: () => onTap(categories[k].id),
+            ),
+          );
+      final hasSecond = i + 1 < categories.length;
+      rows.add(Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(children: [
+          tile(i, hasSecond ? (wideFirst ? 2 : 1) : 1),
+          if (hasSecond) ...[const SizedBox(width: 8), tile(i + 1, wideFirst ? 1 : 2)],
+        ]),
+      ));
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 26, 16, 0),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(t.homeSections, style: AppTheme.display(18)),
+        const SizedBox(height: 12),
+        ...rows,
+      ]),
     );
   }
+}
+
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({required this.category, required this.tint, required this.onTap});
+
+  final ShopCategory category;
+  final Color tint;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: tint,
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: 122,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(category.name,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, height: 1.2)),
+                  if (category.productCount > 0)
+                    Text(AppLocalizations.of(context).homeProductsCount(category.productCount),
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text.withValues(alpha: 0.5))),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 /// Yashil banner: bepul yetkazish chegarasi. (Yetkazish vaqti "60–90 daqiqa" — do'kon sarlavhasida.)
@@ -585,19 +723,19 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.only(right: 6),
         child: Material(
-          color: selected ? AppColors.text : AppColors.surface,
-          shape: StadiumBorder(side: BorderSide(color: selected ? AppColors.text : AppColors.border)),
+          color: selected ? AppColors.ink : AppColors.surface,
+          shape: const StadiumBorder(),
           child: InkWell(
             customBorder: const StadiumBorder(),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Center(
                 child: Text(label,
                     style: TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600, color: selected ? Colors.white : AppColors.text)),
+                        fontSize: 14, fontWeight: FontWeight.w700, color: selected ? Colors.white : AppColors.text)),
               ),
             ),
           ),

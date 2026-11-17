@@ -198,6 +198,22 @@ class CartController extends Notifier<CartState> {
     state = CartState(branchId: lines.isEmpty ? null : branchId, lines: lines);
   }
 
+  /// Bir nechta mahsulotni birdan qo'shadi (retsept, oilaviy ro'yxat): mavjud miqdorga qo'shiladi, qoldiqdan oshmaydi.
+  /// Qo'shilgan qatorlar soni qaytadi.
+  int addMany(String branchId, Iterable<(ShopProduct, double)> items) {
+    var added = 0;
+    for (final (p, q) in items) {
+      if (!p.inStock || q <= 0) continue;
+      final current = state.branchId == branchId ? state.quantityOf(p.id) : 0.0;
+      final want = p.isKg ? CartState.round(q) : q.ceilToDouble();
+      final next = CartState.round((current + want).clamp(0, p.available));
+      if (next <= current + 1e-9) continue;
+      setQuantity(branchId, p, next);
+      added++;
+    }
+    return added;
+  }
+
   void increment(String branchId, ShopProduct product) {
     final step = CartState.stepFor(product.isKg);
     final current = state.branchId == branchId ? state.quantityOf(product.id) : 0.0;

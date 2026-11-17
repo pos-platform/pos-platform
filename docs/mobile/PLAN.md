@@ -388,6 +388,21 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
 - [x] 10.5 Qisman qaytarish + keshbek ayirish; online qaytarish (eshik oldida rad etish, qaytarish so'rovi, kuryer olib ketishi).
 - [x] 10.6 Kuryerga taklif: push, birinchi qabul qilgan oladi, kassa va admin panelda kim olgani ko'rinadi.
 
+## Bosqich 11 — Dizayn v3 (Claude Design: "Market Mobile v3.dc.html", loyiha 04fb4e14-836a-437a-84ea-d20ab92a42e8)
+
+Faqat ko'rinish: mavjud funksiyalar va API o'zgarmaydi. Har qadamdan oldin dizayndagi ekranni to'liq o'qing
+(DesignSync `get_file`). Tokenlar: fon `#F6F4EF`, siyoh `#1A1B26`, ikkilamchi `#6E707C`, och `#A6A7AF`, chiziq `#F2F0EB`,
+qizil `#D81F26`; sarlavha/narx — Unbounded w600, matn — Manrope; karta 24, tugma/input 18, balandlik 56.
+
+- [x] 11.1 Poydevor: ranglar, Unbounded shrifti, tema (input/karta/sheet/dialog/snackbar), to'q suzuvchi pastki menyu + savat soni.
+- [x] 11.2 Kirish va OTP: tepada rasm, logo, "+998" maydon, 5 ta katak, qayta yuborish taymeri.
+- [x] 11.3 Bosh sahifa: manzil sarlavhasi, salomlashish + yetkazish vaqti, qidiruv (mikrofon), stories, "Yana olasizmi?", bo'lim plitkalari.
+- [x] 11.4 Katalog/qidiruv/sevimlilar (rangli tepa, chiplar, 2 ustunli kartalar, +/− tugma) va mahsulot sahifasi.
+- [x] 11.5 Savatcha (bepul yetkazish progressi, promokod, bonus tumblеri, "tugab qolsa"), rasmiylashtirish (segment, to'lov radiolari), chek ko'rinishidagi muvaffaqiyat.
+- [x] 11.6 Buyurtmalar ro'yxati (miniatyuralar) va buyurtma sahifasi (puls ikonka, bosqich chiziqlari, kuryer kartasi, baho).
+- [x] 11.7 Bonus karta (to'q karta, QR, tarix), profil (plitkalar + sozlamalar ro'yxati), shaxsiy ma'lumot, chiqish dialogi, mehmon "Kirish" ekrani.
+- [x] 11.8 Yangi funksiyalar (kelishuv: `docs/mobile/CONTRACT-11.md`; qaror 2026-11-17): retseptlar (tashkilot admini admin panelda yaratadi: rasm, nom, tavsif, qadamlar, mahsulotlar; ilovada "hammasini savatga"), oilaviy ro'yxat (egasi a'zoni telefon raqami bilan qo'shadi, umumiy bandlar, belgilash, savatga o'tkazish), ovozli qidiruv. Xo'ja Plus va kuryerga choy puli — KERAK EMAS.
+
 - 2026-11-14 — 9.1–9.4 — 4 agent parallel (backend, admin panel, desktop, mobil), kelishuv `CONTRACT-9.md`.
   Backend: migratsiya `AddMarketing` (faqat qo'shish), `ShopMarketing.cs` (banner, kolleksiya, story, sevimli, obuna, savat, referral, push kampaniya),
   `ShopCatalogService.Marketing.cs` + `ShopSearch.cs` (lotin↔kirill), `OnlineMarketingController`, fon xizmatlari (kampaniya 30 s, qayta sotuvda 10 daq,
@@ -444,3 +459,37 @@ Har qadamdan keyin bir qator yozing: sana — qadam — nima qilindi — nima qo
   Brend: tashkilot/filial nomi lokal bazada "Xo‘ja Market"; ilovada do'kon rejimida kuryer menyusi, taklif kartasi, bonus karta —
   `BrandWordmark`, buyurtma holati/qaytarish matnida `AppConfig.appName`; qolgan qattiq yashil ranglar oq-shaffofga almashtirildi.
   Qoldi: ilova yopiq bo'lganda kuryerga push — FCM service account (`Push__Fcm__ServiceAccountPath`, `mobile/docs/PUSH.md`).
+- 2026-11-17 — 11.1–11.2 (dizayn v3) — tokenlar `AppColors` (siyoh, faint, line, segment, bo'lim tintlari), `AppTheme.display()` (Unbounded,
+  `assets/fonts/Unbounded-Variable.ttf`, OFL), chegarasiz input/karta, sheet/dialog/snackbar; pastki menyu — to'q suzuvchi panel, o'rtada qizil QR,
+  savatda son; `core/widgets/circle_icon_button.dart`. Kirish: tepada rasm (`assets/branding/login_hero.jpg`, Unsplash), varaqda logo+nom,
+  "Kod olish" raqam to'lganda qizil; OTP alohida bosqich (orqaga = raqamni o'zgartirish, 62px kataklar, taymer). Yangi kalit `enterCodeTitle`.
+  `flutter analyze` 0. **Emulyatorda ko'rilmagan.**
+- 2026-11-17 — 11.3 (dizayn v3, bosh sahifa) — sarlavha: logo 42/14, do'kon holati + nom (bosilsa almashtirish), til doirasi, sevimlilar
+  (yangi yo'l `/home/favorites`); bonus chip olib tashlandi (pastki menyuda QR bor). Salomlashish Unbounded 25 (`homeGreeting`/`homeWelcome`)
+  + "⚡ vaqt ichida yetkazamiz" belgisi. Qidiruv — oq kapsula 52, o'ngda to'q doira: mikrofon o'rniga skaner (ovozli qidiruv — 11.8).
+  Stories — 70px yumaloq kvadrat, gradient halqa. "Yana olasizmi?" — 108px rangli plitkalar (+ / miqdor). `RailHeader` Unbounded 18, "Hammasi →".
+  Bo'lim plitkalari (`homeSections`) — kategoriyalar 2+1 / 1+2 to'r, `AppColors.tints`; rasm yo'q (API kategoriya rasmini bermaydi).
+  Retsept/Plus bannerlari qo'yilmadi (11.8). Gorizontal chet 16. Testlar: brend rangi testi yangilandi (standart qizil),
+  mehmon testi — telefon o'lchami + QR ikonka; lekin u 11.3 dan oldin ham yiqilgan edi: test muhitida ilova matnsiz qoladi (alohida ko'rish kerak).
+  `flutter analyze` 0. **Emulyatorda ko'rilmagan.**
+- 2026-11-17 — 11.4–11.7 (dizayn v3, faqat ko'rinish; API o'zgarmagan).
+  11.4: `ProductCard` — rangli karta (`AppColors.tintFor(id)`), qizil "+" 42 / oq "− N +" kapsula, narx Unbounded; chiplar siyoh/oq;
+  mahsulot sahifasi — rangli tepa 330, dumaloq orqaga/♥, varaq −22 ustida, narx 28, pastda kulrang stepper + qizil tugma.
+  11.5: savatcha — katta sarlavha, bo'sh holat, bepul yetkazish (siyoh progress), oq qatorlar (oxirgi donada 🗑), promokod oq kartada,
+  pastda `TotalBar` (Jami + tugma; rasmiylashtirishda ham). Rasmiylashtirish — segment, kartalar chegarasiz, to'lov bitta kartada
+  dumaloq radio bilan, siyoh chiplar, yig'indilar ro'yxat oxirida. Yangi `OrderPlacedScreen` (`/orders/:id/placed`) — chek ko'rinishi
+  (naqd/karta; o'tkazma/onlayn to'lov — avvalgidek darhol kuzatish sahifasi). Kalitlar `orderPlaced*`.
+  11.6: ro'yxat kartasi — holat belgisi (`OrderFormat.icon/iconColors`), № · sana, summa Unbounded, 42px miniatyuralar;
+  buyurtma sahifasi — rangli hero, 96px puls belgi, 5 bo'lak chiziq, ETA belgisi; tarkib kartasi chek uslubida.
+  11.7: profil — siyoh initsial, 4 plitka (buyurtmalar/bonus/sevimli/taklif), sozlamalar ro'yxati, pastda Maxfiylik·Shartlar·Chiqish;
+  chiqish dialogi (`profileStay`); mehmon "darvoza" (profil va bonus). Bonus karta — siyoh panel, oq QR, tarix oq kartada.
+  `ProfilePageHeader` — dumaloq orqaga + Unbounded. `flutter analyze` 0; mehmon testi hali yiqiladi (yuqorida). **Emulyatorda ko'rilmagan.**
+- 2026-11-17 — 11.8 (CONTRACT-11). Backend: `ShopRecipe/ShopRecipeItem` (tenant), `ShopList/ShopListMember/ShopListItem` (global),
+  migratsiya `AddRecipesAndShoppingLists` (faqat 5 yangi jadval). Admin: `/api/online-store/recipes` CRUD (`RecipeAdminService`);
+  ilova: `/api/shop/stores/{b}/recipes[/{id}]`, `ShopHomeDto.recipes`; `/api/me/lists` (+members, items, clear-checked) — `ShopListService`,
+  a'zo raqami `+998…` formatida, kirganda raqam bo'yicha bog'lanadi, begona ro'yxat — 404. Admin panel: "Ilova reklamasi" → "Retseptlar" tabi.
+  Ilova: bosh sahifada to'q retsept banneri, `/home/recipes`, `/home/recipe/:id` (belgilash + "Hammasini savatga"),
+  `CartController.addMany`; savatcha sarlavhasida "Oilaviy ro'yxat" → `/cart/list` (a'zolar, taklif chiplari, surib o'chirish, 15 s yangilanish,
+  "Savatga o'tkazish"); ovozli qidiruv — `speech_to_text` 7.5, bosh sahifa qidiruvida to'q mikrofon (skaner yonida), RECORD_AUDIO +
+  RecognitionService query, iOS mikrofon/nutq matnlari. Tekshiruv: `dotnet build` 0 xato, `npm run build` OK, `flutter analyze` 0,
+  `flutter build apk --debug` OK. **Runtime sinalmagan** (migratsiya serverga qo'llanmagan, ekranlar emulyatorda ko'rilmagan).

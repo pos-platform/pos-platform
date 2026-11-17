@@ -55,10 +55,10 @@ class StoriesRow extends ConsumerWidget {
     final seen = ref.watch(seenStoriesProvider);
     final ordered = [...stories.where((s) => !seen.contains(s.id)), ...stories.where((s) => seen.contains(s.id))];
     return SizedBox(
-      height: 98,
+      height: 104,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: ordered.length,
         separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (_, i) {
@@ -70,34 +70,50 @@ class StoriesRow extends ConsumerWidget {
             child: GestureDetector(
               onTap: () => openStories(context, ordered, i),
               child: SizedBox(
-                width: 72,
+                width: 70,
                 child: Column(
                   children: [
+                    // Dizayn v3: yumaloq kvadrat, ko'rilmagan — qizil→to'q sariq gradient halqa.
                     Container(
-                      width: 68,
-                      height: 68,
+                      width: 70,
+                      height: 70,
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: isSeen ? AppColors.border : AppColors.primary, width: 2.5),
+                        borderRadius: BorderRadius.circular(24),
+                        color: isSeen ? const Color(0xFFDCD9D2) : null,
+                        gradient: isSeen
+                            ? null
+                            : LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [AppColors.primary, const Color(0xFFF2994A)],
+                              ),
                       ),
-                      child: ClipOval(
-                        child: ProductImage(
-                          url: s.coverImageUrl ?? s.slides.first.imageUrl,
-                          iconSize: 22,
-                          fit: BoxFit.cover,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(21),
+                          border: Border.all(color: AppColors.background, width: 3),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: ProductImage(
+                            url: s.coverImageUrl ?? s.slides.first.imageUrl,
+                            iconSize: 22,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       s.title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                        fontWeight: FontWeight.w700,
                         color: isSeen ? AppColors.textSecondary : AppColors.text,
                       ),
                     ),

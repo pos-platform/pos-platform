@@ -34,7 +34,7 @@ class ProductScreen extends ConsumerWidget {
     final args = (branchId: branchId, productId: productId);
     final detail = ref.watch(productDetailProvider(args));
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.background,
       body: switch (detail) {
         AsyncData(:final value) => _ProductBody(branchId: branchId, detail: value),
         AsyncError(:final error) => SafeArea(
@@ -96,95 +96,120 @@ class _ProductBodyState extends ConsumerState<_ProductBody> {
     final t = AppLocalizations.of(context);
     final p = _p;
     final d = widget.detail;
-    final subtitle = [
-      ?d.categoryName,
-      if (d.barcode != null) t.catBarcode(d.barcode!),
-    ].join(' · ');
+    final top = MediaQuery.paddingOf(context).top;
+    final discounted = (p.discountPercent ?? 0) > 0;
+    final subtitle = [unitLabel(context, p.isKg), ?d.categoryName].join(' · ');
+
+    Widget roundButton({required Widget child, required VoidCallback onTap, String? label}) => Semantics(
+          button: true,
+          label: label,
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.8),
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(onTap: onTap, child: SizedBox(width: 44, height: 44, child: Center(child: child))),
+          ),
+        );
 
     return Column(children: [
       Expanded(
         child: CustomScrollView(slivers: [
+          // Dizayn v3: rangli tepa (rasm markazda), ustida orqaga / ♥, pastda belgilar.
           SliverToBoxAdapter(
-            child: Stack(children: [
-              SizedBox(height: 360, width: double.infinity, child: ProductImage(url: p.imageUrl, iconSize: 72)),
-              Positioned(
-                top: MediaQuery.paddingOf(context).top + 12,
-                left: 20,
-                child: Material(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: () => context.canPop() ? context.pop() : context.go('/home'),
-                    child: SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: Icon(Icons.chevron_left, semanticLabel: t.catBack),
+            child: Container(
+              height: 330 + top,
+              color: AppColors.tintFor(p.id),
+              padding: EdgeInsets.only(top: top),
+              child: Stack(children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 26),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: ProductImage(url: p.imageUrl, iconSize: 72, fit: BoxFit.cover),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: MediaQuery.paddingOf(context).top + 12,
-                right: 20,
-                child: FavoriteButton(product: p, size: 24),
-              ),
-            ]),
+                Positioned(
+                  left: 16,
+                  top: 6,
+                  child: roundButton(
+                    label: t.catBack,
+                    onTap: () => context.canPop() ? context.pop() : context.go('/home'),
+                    child: const Icon(Icons.arrow_back, size: 22),
+                  ),
+                ),
+                Positioned(right: 16, top: 6, child: FavoriteButton(product: p, size: 21)),
+                Positioned(
+                  left: 16,
+                  bottom: 34,
+                  child: Wrap(spacing: 6, children: [
+                    if (discounted) DiscountBadge(percent: p.discountPercent!, fontSize: 12),
+                    _Tag(
+                      label: p.inStock ? t.catInStock(formatQty(context, p.available, p.isKg)) : t.catOutOfStock,
+                      background: Colors.white,
+                      color: p.inStock ? AppColors.text : AppColors.primary,
+                    ),
+                  ]),
+                ),
+              ]),
+            ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-            sliver: SliverList.list(children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: p.inStock ? AppColors.primarySoft : AppColors.chipSurface,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    p.inStock ? t.catInStock(formatQty(context, p.available, p.isKg)) : t.catOutOfStock,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: p.inStock ? AppColors.primary : AppColors.textSecondary),
-                  ),
+          SliverToBoxAdapter(
+            child: Transform.translate(
+              offset: const Offset(0, -22),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
                 ),
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(p.name, style: AppTheme.display(21).copyWith(height: 1.25)),
+                  const SizedBox(height: 6),
+                  Text(subtitle,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 10,
+                    runSpacing: 4,
+                    children: [
+                      Text(formatMoney(context, p.price),
+                          style: AppTheme.display(28, color: discounted ? AppColors.primary : AppColors.text)),
+                      if (p.oldPrice != null)
+                        Text(formatMoney(context, p.oldPrice!),
+                            style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.faint,
+                                decoration: TextDecoration.lineThrough)),
+                    ],
+                  ),
+                  if (p.discountEndsAt != null && discounted) ...[
+                    const SizedBox(height: 10),
+                    CountdownChip(endsAt: p.discountEndsAt!, label: (t, time) => t.mkDiscountEndsIn(time)),
+                  ],
+                  if (d.description != null && d.description!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 18),
+                    Text(d.description!,
+                        style: const TextStyle(fontSize: 15, height: 1.6, fontWeight: FontWeight.w500, color: AppColors.textMuted)),
+                  ],
+                  if (d.barcode != null) ...[
+                    const SizedBox(height: 14),
+                    Row(children: [
+                      const Icon(Icons.qr_code_scanner, size: 18, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text(t.catBarcode(d.barcode!),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                    ]),
+                  ],
+                ]),
               ),
-              const SizedBox(height: 6),
-              Text(p.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
-              if (subtitle.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(subtitle, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-              ],
-              const SizedBox(height: 18),
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 10,
-                runSpacing: 4,
-                children: [
-                  Text('${formatMoney(context, p.price)} / ${p.isKg ? t.catUnitKg : t.catUnitPiece}',
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-                  if (p.oldPrice != null)
-                    Text(formatMoney(context, p.oldPrice!),
-                        style: const TextStyle(
-                            fontSize: 16, color: AppColors.textSecondary, decoration: TextDecoration.lineThrough)),
-                  if (p.discountPercent != null && p.discountPercent! > 0)
-                    DiscountBadge(percent: p.discountPercent!, fontSize: 13),
-                ],
-              ),
-              if (p.discountEndsAt != null && (p.discountPercent ?? 0) > 0) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: CountdownChip(endsAt: p.discountEndsAt!, label: (t, time) => t.mkDiscountEndsIn(time)),
-                ),
-              ],
-              if (d.description != null && d.description!.trim().isNotEmpty) ...[
-                const SizedBox(height: 18),
-                Text(d.description!, style: const TextStyle(fontSize: 15, height: 1.55, color: AppColors.textMuted)),
-              ],
-            ]),
+            ),
           ),
           SliverToBoxAdapter(child: _Related(branchId: widget.branchId, productId: p.id)),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -195,34 +220,49 @@ class _ProductBodyState extends ConsumerState<_ProductBody> {
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.borderSoft)),
         ),
-        padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + MediaQuery.paddingOf(context).bottom),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + MediaQuery.paddingOf(context).bottom),
         child: !p.inStock
             ? _NotifyButton(branchId: widget.branchId, detail: d)
             : Row(children: [
-          QtyStepper(
-            label: formatQty(context, _qty, p.isKg),
-            height: AppTheme.controlHeight,
-            buttonWidth: 48,
-            fontSize: 18,
-            background: AppColors.background,
-            foreground: AppColors.text,
-            onMinus: p.inStock && _qty - _step >= _step - 1e-9 ? () => _change(-_step) : null,
-            onPlus: p.inStock && _qty + _step <= p.available + 1e-9 ? () => _change(_step) : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: FilledButton(
-              onPressed: p.inStock ? _addToCart : null,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(p.inStock ? t.catAddToCartSum(formatMoney(context, p.price * _qty)) : t.catOutOfStock),
-              ),
-            ),
-          ),
-        ]),
+                QtyStepper(
+                  label: formatQty(context, _qty, p.isKg),
+                  height: AppTheme.controlHeight,
+                  buttonWidth: 46,
+                  fontSize: 15,
+                  background: AppColors.chipSurface,
+                  foreground: AppColors.text,
+                  onMinus: _qty - _step >= _step - 1e-9 ? () => _change(-_step) : null,
+                  onPlus: _qty + _step <= p.available + 1e-9 ? () => _change(_step) : null,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _addToCart,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(t.catAddToCartSum(formatMoney(context, p.price * _qty))),
+                    ),
+                  ),
+                ),
+              ]),
       ),
     ]);
   }
+}
+
+class _Tag extends StatelessWidget {
+  const _Tag({required this.label, required this.background, required this.color});
+
+  final String label;
+  final Color background;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(10)),
+        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color)),
+      );
 }
 
 /// "Bular bilan birga olishadi" lentasi (bo'sh yoki xato bo'lsa ko'rinmaydi).
@@ -237,7 +277,7 @@ class _Related extends ConsumerWidget {
     final items = ref.watch(relatedProductsProvider((branchId: branchId, productId: productId))).value;
     if (items == null || items.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      RailHeader(title: AppLocalizations.of(context).mkRelated, padding: const EdgeInsets.fromLTRB(24, 0, 8, 8)),
+      RailHeader(title: AppLocalizations.of(context).mkRelated, padding: const EdgeInsets.fromLTRB(20, 0, 4, 8)),
       ProductRail(branchId: branchId, products: items),
     ]);
   }

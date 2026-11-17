@@ -22,17 +22,50 @@ class AppColors {
   /// Asosiy rang fonidagi ikkilamchi (och) matn.
   static Color get onPrimarySoft => _onPrimarySoft;
 
-  static const background = Color(0xFFF5F4EF);
+  // v3 dizayn tokenlari (Market Mobile v3).
+  static const background = Color(0xFFF6F4EF);
   static const surface = Color(0xFFFFFFFF);
-  static const text = Color(0xFF14162B);
-  static const textSecondary = Color(0xFF5E6175);
-  static const textMuted = Color(0xFF3A3D52);
-  static const border = Color(0xFFE4E2DA);
-  static const borderSoft = Color(0xFFECEAE3);
-  static const chipSurface = Color(0xFFF1EFEA);
+  static const text = Color(0xFF1A1B26);
+  static const textSecondary = Color(0xFF6E707C);
+  static const textMuted = Color(0xFF4B4D5A);
+  static const border = Color(0xFFE3DFD8);
+  static const borderSoft = Color(0xFFEEEBE5);
+  static const chipSurface = Color(0xFFF2F0EB);
   static const danger = Color(0xFFB42318);
   static const accent = Color(0xFFC2410C);
-  static const iconMuted = Color(0xFF9C9FAE);
+  static const iconMuted = Color(0xFFA6A7AF);
+
+  /// To'q "siyoh" — pastki menyu, ikkilamchi to'q tugmalar, bonus karta.
+  static const ink = Color(0xFF1A1B26);
+
+  /// Juda och matn (placeholder, ikkilamchi izoh).
+  static const faint = Color(0xFFA6A7AF);
+
+  /// Kartalar ichidagi ajratuvchi chiziq.
+  static const line = Color(0xFFF2F0EB);
+
+  /// Segmentli tanlov (yetkazish/olib ketish) foni.
+  static const segment = Color(0xFFECE9E3);
+
+  /// Bo'lim/kategoriya ranglari (dizayndagi oklch tintlar, sRGB'ga o'tkazilgan).
+  static const tintGreen = Color(0xFFE2F0D5);
+  static const tintBlue = Color(0xFFE0ECF6);
+  static const tintPeach = Color(0xFFF8E8DA);
+  static const tintAqua = Color(0xFFDDEFF1);
+  static const tintYellow = Color(0xFFF8F0CC);
+  static const tintRose = Color(0xFFF8E4E3);
+  static const tintSand = Color(0xFFF0E9DA);
+  static const tintLilac = Color(0xFFEDE6F4);
+  static const tints = [tintGreen, tintBlue, tintPeach, tintAqua, tintYellow, tintRose, tintSand, tintLilac];
+
+  /// Kalit (masalan mahsulot id) bo'yicha doimiy tint — bir mahsulot hamma joyda bir xil rangda.
+  static Color tintFor(String key) {
+    var h = 0;
+    for (final c in key.codeUnits) {
+      h = (h * 31 + c) & 0x7fffffff;
+    }
+    return tints[h % tints.length];
+  }
 
   /// `#RRGGBB` (yoki `RRGGBB`) → Color. Noto'g'ri qiymat — null.
   static Color? parseHex(String? hex) {

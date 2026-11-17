@@ -76,6 +76,14 @@ public class ShopCatalogController : ControllerBase
         [FromQuery] int limit = 10, CancellationToken ct = default) =>
         Ok(await _service.GetTopAsync(branchId, days, limit, await HttpContext.TryGetShopUserIdAsync(), ct));
 
+    [HttpGet("{branchId:guid}/recipes")]
+    public async Task<ActionResult<IReadOnlyList<ShopRecipeBriefDto>>> GetRecipes(Guid branchId, CancellationToken ct) =>
+        Ok(await _service.GetRecipesAsync(branchId, ct));
+
+    [HttpGet("{branchId:guid}/recipes/{id:guid}")]
+    public async Task<ActionResult<ShopRecipeDto>> GetRecipe(Guid branchId, Guid id, CancellationToken ct) =>
+        Ok(await _service.GetRecipeAsync(branchId, id, await HttpContext.TryGetShopUserIdAsync(), ct));
+
     [HttpGet("{branchId:guid}/collections/{id:guid}")]
     public async Task<ActionResult<ShopCollectionDto>> GetCollection(Guid branchId, Guid id, CancellationToken ct) =>
         Ok(await _service.GetCollectionAsync(branchId, id, await HttpContext.TryGetShopUserIdAsync(), ct));

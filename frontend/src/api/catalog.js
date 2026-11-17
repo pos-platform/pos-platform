@@ -402,6 +402,7 @@ function crud(base) {
 export const onlineMarketingApi = {
   banners: { ...crud('/api/online-store/banners'), reorder: (ids) => http.put('/api/online-store/banners/reorder', { ids }).then((r) => r.data) },
   collections: crud('/api/online-store/collections'),
+  recipes: crud('/api/online-store/recipes'),
   stories: { ...crud('/api/online-store/stories'), reorder: (ids) => http.put('/api/online-store/stories/reorder', { ids }).then((r) => r.data) },
   pushCampaigns: { ...crud('/api/online-store/push-campaigns'), send: (id) => http.post(`/api/online-store/push-campaigns/${id}/send`).then((r) => r.data) }
 }

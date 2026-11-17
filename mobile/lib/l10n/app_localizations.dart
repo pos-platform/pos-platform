@@ -146,6 +146,12 @@ abstract class AppLocalizations {
   /// **'Telefon raqam'**
   String get phoneNumber;
 
+  /// No description provided for @enterCodeTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kodni kiriting'**
+  String get enterCodeTitle;
+
   /// No description provided for @smsCode.
   ///
   /// In uz, this message translates to:
@@ -3811,6 +3817,246 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Joriy kodni kiriting'**
   String get pinCurrent;
+
+  /// No description provided for @homeGreeting.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xayrli kun, {name}!'**
+  String homeGreeting(String name);
+
+  /// No description provided for @homeWelcome.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xush kelibsiz!'**
+  String get homeWelcome;
+
+  /// No description provided for @homeDeliverIn.
+  ///
+  /// In uz, this message translates to:
+  /// **'ichida yetkazamiz'**
+  String get homeDeliverIn;
+
+  /// No description provided for @homeBuyAgainHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'oldingi xaridlar'**
+  String get homeBuyAgainHint;
+
+  /// No description provided for @homeSections.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bo‘limlar'**
+  String get homeSections;
+
+  /// No description provided for @homeProductsCount.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta mahsulot'**
+  String homeProductsCount(int count);
+
+  /// No description provided for @orderPlacedTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Buyurtma qabul qilindi'**
+  String get orderPlacedTitle;
+
+  /// No description provided for @orderPlacedHome.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bosh sahifa'**
+  String get orderPlacedHome;
+
+  /// No description provided for @orderPlacedTrack.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kuzatish'**
+  String get orderPlacedTrack;
+
+  /// No description provided for @orderPlacedNumber.
+  ///
+  /// In uz, this message translates to:
+  /// **'Buyurtma № {number}'**
+  String orderPlacedNumber(String number);
+
+  /// No description provided for @profileStay.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qolish'**
+  String get profileStay;
+
+  /// No description provided for @recipesTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Retseptlar'**
+  String get recipesTitle;
+
+  /// No description provided for @recipeToday.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun nima pishiramiz?'**
+  String get recipeToday;
+
+  /// No description provided for @recipeOneTap.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta mahsulot · bir bosishda'**
+  String recipeOneTap(int count);
+
+  /// No description provided for @recipeMinutes.
+  ///
+  /// In uz, this message translates to:
+  /// **'{n} daq'**
+  String recipeMinutes(int n);
+
+  /// No description provided for @recipeServings.
+  ///
+  /// In uz, this message translates to:
+  /// **'{n} kishi'**
+  String recipeServings(int n);
+
+  /// No description provided for @recipeIngredients.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ingrediyentlar'**
+  String get recipeIngredients;
+
+  /// No description provided for @recipeSteps.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tayyorlash'**
+  String get recipeSteps;
+
+  /// No description provided for @recipeAddAll.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasini savatga ({count})'**
+  String recipeAddAll(int count);
+
+  /// No description provided for @cartAddedCount.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta mahsulot savatga qo‘shildi'**
+  String cartAddedCount(int count);
+
+  /// No description provided for @recipeUnavailable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do‘konda yo‘q'**
+  String get recipeUnavailable;
+
+  /// No description provided for @listTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oilaviy ro‘yxat'**
+  String get listTitle;
+
+  /// No description provided for @listAddHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Nima olish kerak?'**
+  String get listAddHint;
+
+  /// No description provided for @listEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ro‘yxat bo‘sh. Oila a’zolaringiz bilan birga to‘ldiring.'**
+  String get listEmpty;
+
+  /// No description provided for @listMembers.
+  ///
+  /// In uz, this message translates to:
+  /// **'A’zolar'**
+  String get listMembers;
+
+  /// No description provided for @listAddMember.
+  ///
+  /// In uz, this message translates to:
+  /// **'A’zo qo‘shish'**
+  String get listAddMember;
+
+  /// No description provided for @listAddMemberHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oila a’zosining telefon raqami. U ilovaga shu raqam bilan kirganda ro‘yxatni ko‘radi.'**
+  String get listAddMemberHint;
+
+  /// No description provided for @listInvite.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qo‘shish'**
+  String get listInvite;
+
+  /// No description provided for @listPending.
+  ///
+  /// In uz, this message translates to:
+  /// **'kutilmoqda'**
+  String get listPending;
+
+  /// No description provided for @listToCart.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savatga o‘tkazish ({count})'**
+  String listToCart(int count);
+
+  /// No description provided for @listClearChecked.
+  ///
+  /// In uz, this message translates to:
+  /// **'Belgilanganlarni tozalash'**
+  String get listClearChecked;
+
+  /// No description provided for @listAddedBy.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} qo‘shdi'**
+  String listAddedBy(String name);
+
+  /// No description provided for @listCheckedBy.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} oldi'**
+  String listCheckedBy(String name);
+
+  /// No description provided for @listLeave.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ro‘yxatdan chiqish'**
+  String get listLeave;
+
+  /// No description provided for @listRemoveMember.
+  ///
+  /// In uz, this message translates to:
+  /// **'Olib tashlash'**
+  String get listRemoveMember;
+
+  /// No description provided for @listOwner.
+  ///
+  /// In uz, this message translates to:
+  /// **'egasi'**
+  String get listOwner;
+
+  /// No description provided for @listLoginText.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oilaviy ro‘yxatdan foydalanish uchun telefon raqamingiz bilan kiring.'**
+  String get listLoginText;
+
+  /// No description provided for @voiceSearch.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ovozli qidiruv'**
+  String get voiceSearch;
+
+  /// No description provided for @voiceListening.
+  ///
+  /// In uz, this message translates to:
+  /// **'Gapiring…'**
+  String get voiceListening;
+
+  /// No description provided for @voiceUnavailable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ovozli qidiruv bu qurilmada ishlamaydi'**
+  String get voiceUnavailable;
 }
 
 class _AppLocalizationsDelegate

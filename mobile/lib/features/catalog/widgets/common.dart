@@ -64,6 +64,7 @@ class QtyStepper extends StatelessWidget {
     this.background,
     this.foreground,
     this.fontSize = 15,
+    this.minusIcon = Icons.remove,
   });
 
   final String label;
@@ -76,6 +77,9 @@ class QtyStepper extends StatelessWidget {
   /// null — brend rangi.
   final Color? foreground;
   final double fontSize;
+
+  /// Masalan oxirgi dona uchun — o'chirish belgisi.
+  final IconData minusIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +100,7 @@ class QtyStepper extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(color: background ?? AppColors.primarySoft, borderRadius: BorderRadius.circular(height >= 56 ? 16 : 12)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        btn(Icons.remove, onMinus, t.catDecrease),
+        btn(minusIcon, onMinus, t.catDecrease),
         ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 20),
           child: Text(label,

@@ -5,6 +5,7 @@ import { errorMessage } from '../api/http'
 import { useStoreFilterStore } from '../stores/storeFilter'
 import BannersTab from './marketing/BannersTab.vue'
 import CollectionsTab from './marketing/CollectionsTab.vue'
+import RecipesTab from './marketing/RecipesTab.vue'
 import StoriesTab from './marketing/StoriesTab.vue'
 import PushCampaignsTab from './marketing/PushCampaignsTab.vue'
 
@@ -12,6 +13,7 @@ import PushCampaignsTab from './marketing/PushCampaignsTab.vue'
 const TABS = [
   { id: 'banners', text: 'Bannerlar' },
   { id: 'collections', text: 'Kolleksiyalar' },
+  { id: 'recipes', text: 'Retseptlar' },
   { id: 'stories', text: 'Stories' },
   { id: 'push', text: 'Push xabarlar' }
 ]
@@ -75,6 +77,11 @@ onMounted(async () => {
     :products="products"
     :stores="storeFilter.stores"
     @changed="loadCollections"
+  />
+  <RecipesTab
+    v-else-if="tab === 'recipes'"
+    :products="products"
+    :stores="storeFilter.stores"
   />
   <StoriesTab
     v-else-if="tab === 'stories'"

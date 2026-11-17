@@ -6,6 +6,7 @@ using PosCloud.Application.Features.Loyalty;
 using PosCloud.Application.Features.Loyalty.Dtos;
 using PosCloud.Application.Features.ShopCatalog;
 using PosCloud.Application.Features.ShopCatalog.Dtos;
+using PosCloud.Application.Features.ShopLists;
 using PosCloud.Application.Features.ShopMarketing;
 using PosCloud.Application.Features.ShopMarketing.Dtos;
 using PosCloud.Application.Features.ShopOrders;
@@ -179,6 +180,71 @@ public class ShopMeController : ControllerBase
     public async Task<IActionResult> UnregisterDevice(string token, CancellationToken ct)
     {
         await _push.UnregisterDeviceAsync(User.GetShopUserId(), token, ct);
+        return NoContent();
+    }
+
+    // ---------------- oilaviy ro'yxat (11.8) ----------------
+
+    [HttpGet("lists")]
+    public async Task<ActionResult<IReadOnlyList<ShopListBriefDto>>> GetLists([FromServices] IShopListService lists,
+        CancellationToken ct) => Ok(await lists.GetListsAsync(User.GetShopUserId(), ct));
+
+    [HttpPost("lists")]
+    public async Task<ActionResult<ShopListDto>> CreateList(SaveShopListRequest request, [FromServices] IShopListService lists,
+        CancellationToken ct) => Ok(await lists.CreateAsync(User.GetShopUserId(), request, ct));
+
+    [HttpGet("lists/{id:guid}")]
+    public async Task<ActionResult<ShopListDto>> GetList(Guid id, [FromQuery] Guid? branchId,
+        [FromServices] IShopListService lists, CancellationToken ct) =>
+        Ok(await lists.GetAsync(User.GetShopUserId(), id, branchId, ct));
+
+    [HttpPut("lists/{id:guid}")]
+    public async Task<ActionResult<ShopListDto>> RenameList(Guid id, SaveShopListRequest request,
+        [FromServices] IShopListService lists, CancellationToken ct) =>
+        Ok(await lists.RenameAsync(User.GetShopUserId(), id, request, ct));
+
+    [HttpDelete("lists/{id:guid}")]
+    public async Task<IActionResult> DeleteList(Guid id, [FromServices] IShopListService lists, CancellationToken ct)
+    {
+        await lists.DeleteAsync(User.GetShopUserId(), id, ct);
+        return NoContent();
+    }
+
+    [HttpPost("lists/{id:guid}/members")]
+    public async Task<ActionResult<ShopListDto>> AddListMember(Guid id, AddListMemberRequest request,
+        [FromServices] IShopListService lists, CancellationToken ct) =>
+        Ok(await lists.AddMemberAsync(User.GetShopUserId(), id, request, ct));
+
+    [HttpDelete("lists/{id:guid}/members/{memberId:guid}")]
+    public async Task<IActionResult> RemoveListMember(Guid id, Guid memberId, [FromServices] IShopListService lists,
+        CancellationToken ct)
+    {
+        await lists.RemoveMemberAsync(User.GetShopUserId(), id, memberId, ct);
+        return NoContent();
+    }
+
+    [HttpPost("lists/{id:guid}/items")]
+    public async Task<ActionResult<ShopListItemDto>> AddListItem(Guid id, AddListItemRequest request,
+        [FromServices] IShopListService lists, CancellationToken ct) =>
+        Ok(await lists.AddItemAsync(User.GetShopUserId(), id, request, ct));
+
+    [HttpPut("lists/{id:guid}/items/{itemId:guid}")]
+    public async Task<ActionResult<ShopListItemDto>> UpdateListItem(Guid id, Guid itemId, UpdateListItemRequest request,
+        [FromServices] IShopListService lists, CancellationToken ct) =>
+        Ok(await lists.UpdateItemAsync(User.GetShopUserId(), id, itemId, request, ct));
+
+    [HttpDelete("lists/{id:guid}/items/{itemId:guid}")]
+    public async Task<IActionResult> DeleteListItem(Guid id, Guid itemId, [FromServices] IShopListService lists,
+        CancellationToken ct)
+    {
+        await lists.DeleteItemAsync(User.GetShopUserId(), id, itemId, ct);
+        return NoContent();
+    }
+
+    [HttpPost("lists/{id:guid}/clear-checked")]
+    public async Task<IActionResult> ClearCheckedListItems(Guid id, [FromServices] IShopListService lists, CancellationToken ct)
+    {
+        await lists.ClearCheckedAsync(User.GetShopUserId(), id, ct);
         return NoContent();
     }
 }

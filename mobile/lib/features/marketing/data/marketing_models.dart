@@ -3,6 +3,7 @@
 library;
 
 import '../../catalog/data/catalog_models.dart';
+import '../../recipes/data/recipes_data.dart';
 
 double _d(Object? v) => v is num ? v.toDouble() : double.tryParse('$v') ?? 0;
 String? _s(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
@@ -157,6 +158,7 @@ class ShopHome {
     this.discountedCount = 0,
     this.buyAgain = const [],
     this.stories = const [],
+    this.recipes = const [],
   });
 
   final List<ShopBanner> banners;
@@ -165,6 +167,9 @@ class ShopHome {
   final int discountedCount;
   final List<ShopProduct> buyAgain;
   final List<ShopStory> stories;
+
+  /// Bosqich 11.8: "Bugun nima pishiramiz?".
+  final List<RecipeBrief> recipes;
 
   factory ShopHome.fromJson(Map<String, dynamic> j) => ShopHome(
     banners: [for (final b in _maps(j['banners'])) ShopBanner.fromJson(b)],
@@ -179,6 +184,7 @@ class ShopHome {
       for (final s in _maps(j['stories']))
         if (ShopStory.fromJson(s) case final st when st.slides.isNotEmpty) st,
     ],
+    recipes: RecipeBrief.listFrom(j['recipes']),
   );
 }
 

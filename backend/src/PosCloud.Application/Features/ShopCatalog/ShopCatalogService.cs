@@ -29,6 +29,12 @@ public interface IShopCatalogService
 
     // ---- Bosqich 9: marketing ----
     Task<ShopHomeDto> GetHomeAsync(Guid branchId, Guid? shopUserId, CancellationToken ct = default);
+    Task<IReadOnlyList<ShopRecipeBriefDto>> GetRecipesAsync(Guid branchId, CancellationToken ct = default);
+
+    /// <summary>Filialdagi ko'rinadigan mahsulotlar (qoldig'i yo'qlari ham) — oilaviy ro'yxat uchun.</summary>
+    Task<IReadOnlyDictionary<Guid, ShopProductDto>> GetProductsByIdsAsync(Guid branchId, IReadOnlyCollection<Guid> ids,
+        CancellationToken ct = default);
+    Task<ShopRecipeDto> GetRecipeAsync(Guid branchId, Guid recipeId, Guid? shopUserId, CancellationToken ct = default);
     Task<IReadOnlyList<ShopProductDto>> GetTopAsync(Guid branchId, int days, int limit, Guid? shopUserId, CancellationToken ct = default);
     Task<ShopCollectionDto> GetCollectionAsync(Guid branchId, Guid collectionId, Guid? shopUserId, CancellationToken ct = default);
     Task<IReadOnlyList<ShopProductDto>> GetRelatedAsync(Guid branchId, Guid productId, int limit, Guid? shopUserId,

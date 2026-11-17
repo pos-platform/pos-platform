@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../cart/cart_controller.dart';
+import '../cart/cart_screen.dart' show TotalBar;
 import '../cart/data/order_api.dart';
 import '../cart/delivery_time.dart';
 import '../catalog/data/catalog_models.dart';
@@ -278,7 +279,8 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
       if (!mounted) return;
       ref.read(cartControllerProvider.notifier).clear();
       ref.read(checkoutOptionsProvider.notifier).reset();
-      context.go('/orders/$id');
+      // Bank o'tkazmasi / onlayn to'lov — darhol kuzatish sahifasi (to'lov o'sha yerda); qolganlari — chek ko'rinishi.
+      context.go(_payment!.method == PaymentMethod.transfer ? '/orders/$id' : '/orders/$id/placed');
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -312,7 +314,7 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
     return Scaffold(
       appBar: AppBar(title: Text(t.checkoutTitle)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           if (_store.deliveryEnabled && _store.pickupEnabled) ...[
             _Segmented(
@@ -320,7 +322,7 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
               selected: isDelivery ? 0 : 1,
               onChanged: (i) => setState(() => _type = i == 0 ? FulfillmentType.delivery : FulfillmentType.pickup),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
           ],
           if (isDelivery)
             _addressCard(t, addressesAsync!, address, quote)
@@ -379,23 +381,25 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
             ),
           ]),
           const SizedBox(height: 20),
-          _SectionTitle(t.checkoutPayment),
-          if (_payments.isEmpty)
-            Text(t.checkoutNoPayment, style: const TextStyle(color: AppColors.danger))
-          else
-            Column(children: [
-              for (final p in _payments)
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppTheme.radiusCard)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text(t.checkoutPayment,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+              const SizedBox(height: 4),
+              if (_payments.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _PaymentTile(
-                    option: p,
-                    selected: _payment == p,
-                    onTap: () => setState(() => _payment = p),
-                  ),
-                ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(t.checkoutNoPayment, style: const TextStyle(color: AppColors.danger)),
+                )
+              else
+                for (final p in _payments)
+                  _PaymentTile(option: p, selected: _payment == p, onTap: () => setState(() => _payment = p)),
             ]),
+          ),
+          const SizedBox(height: 12),
           if (showBonus) ...[
-            const SizedBox(height: 4),
             _BonusCard(
               balance: bonusBalance,
               used: useBonus ? quote?.bonusUsed : null,
@@ -403,9 +407,9 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
               value: useBonus,
               onChanged: (v) => ref.read(checkoutOptionsProvider.notifier).setUseBonus(v),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _SectionTitle(t.checkoutOutOfStock),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final p in OutOfStockPolicy.values)
@@ -417,11 +421,11 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
                 }),
                 selected: _policy == p,
                 showCheckmark: false,
-                selectedColor: AppColors.primarySoft,
+                selectedColor: AppColors.ink,
                 backgroundColor: AppColors.surface,
-                side: BorderSide(color: _policy == p ? AppColors.primary : AppColors.border),
+                side: BorderSide.none,
                 labelStyle: TextStyle(
-                    fontWeight: FontWeight.w600, color: _policy == p ? AppColors.primary : AppColors.text),
+                    fontWeight: FontWeight.w700, color: _policy == p ? Colors.white : AppColors.text),
                 shape: const StadiumBorder(),
                 onSelected: (_) => setState(() => _policy = p),
               ),
@@ -462,40 +466,21 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
             const SizedBox(height: 8),
             Text(t.checkoutFixCart, style: const TextStyle(color: AppColors.danger)),
           ],
+          if (quote != null) ...[
+            const SizedBox(height: 14),
+            _MiniRow(t.cartItemsKinds(ref.read(cartControllerProvider).count), formatMoney(context, quote.itemsTotal)),
+            if (quote.promoDiscount > 0)
+              _MiniRow(t.cartPromoDiscount, '−${formatMoney(context, quote.promoDiscount)}', accent: true),
+            if (quote.bonusUsed > 0) _MiniRow(t.cartBonusUsed, '−${formatMoney(context, quote.bonusUsed)}', accent: true),
+            if (isDelivery)
+              _MiniRow(t.cartDelivery, quote.deliveryFee == 0 ? t.cartFree : formatMoney(context, quote.deliveryFee)),
+          ],
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.borderSoft)),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              if (quote != null && quote.promoDiscount > 0)
-                _MiniRow(t.cartPromoDiscount, '−${formatMoney(context, quote.promoDiscount)}'),
-              if (quote != null && quote.bonusUsed > 0)
-                _MiniRow(t.cartBonusUsed, '−${formatMoney(context, quote.bonusUsed)}'),
-              if (quote != null)
-                Text(
-                  isDelivery
-                      ? t.checkoutItemsPlusDelivery(
-                          formatMoney(context, quote.itemsTotal), formatMoney(context, quote.deliveryFee))
-                      : t.checkoutItemsOnly(formatMoney(context, quote.itemsTotal)),
-                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(children: [
-                  Expanded(
-                    child: Text(t.cartTotal, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                  ),
-                  Text(quote == null ? '…' : formatMoney(context, quote.totalAmount),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                ]),
-              ),
-              FilledButton(
+      bottomNavigationBar: SafeArea(
+        child: TotalBar(
+              total: quote?.totalAmount,
+              button: FilledButton(
                 onPressed: _submitting ||
                         quote == null ||
                         quoteAsync.isLoading ||
@@ -509,8 +494,6 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
                         width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                     : Text(t.checkoutPlaceOrder),
               ),
-            ]),
-          ),
         ),
       ),
     );
@@ -559,8 +542,8 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+        child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
       );
 }
 
@@ -575,7 +558,7 @@ class _Segmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(color: AppColors.chipSurface, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: AppColors.segment, borderRadius: BorderRadius.circular(18)),
         child: Row(children: [
           for (final (i, label) in options.indexed)
             Expanded(
@@ -584,9 +567,11 @@ class _Segmented extends StatelessWidget {
                 button: true,
                 child: Material(
                   color: i == selected ? AppColors.surface : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  elevation: i == selected ? 1 : 0,
+                  shadowColor: AppColors.ink.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(14),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     onTap: () => onChanged(i),
                     child: SizedBox(
                       height: 44,
@@ -594,7 +579,7 @@ class _Segmented extends StatelessWidget {
                         child: Text(label,
                             style: TextStyle(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 color: i == selected ? AppColors.text : AppColors.textSecondary)),
                       ),
                     ),
@@ -617,31 +602,24 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
         color: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-          side: const BorderSide(color: AppColors.borderSoft),
-        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: AppColors.primary),
-              ),
+              Icon(icon, size: 22, color: AppColors.textSecondary),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
                   for (final l in lines)
-                    Text(l, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    Text(l,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                 ]),
               ),
-              if (onTap != null) const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              if (onTap != null) const Icon(Icons.chevron_right, size: 20, color: AppColors.faint),
             ]),
           ),
         ),
@@ -661,13 +639,13 @@ class _OptionCard extends StatelessWidget {
         selected: selected,
         button: true,
         child: Material(
-          color: selected ? AppColors.primarySoft : AppColors.surface,
+          color: AppColors.surface,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: selected ? AppColors.primary : AppColors.border, width: selected ? 2 : 1),
+            borderRadius: BorderRadius.circular(AppTheme.radiusInput),
+            side: BorderSide(color: selected ? AppColors.ink : Colors.transparent, width: 2),
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppTheme.radiusInput),
             onTap: onTap,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 72),
@@ -683,7 +661,8 @@ class _OptionCard extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                             color: onTap == null ? AppColors.iconMuted : AppColors.text)),
                     if (subtitle != null)
-                      Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      Text(subtitle!,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                   ],
                 ),
               ),
@@ -710,28 +689,48 @@ class _PaymentTile extends StatelessWidget {
       _PayOption.payme => (Icons.account_balance_wallet_outlined, t.checkoutPayPayme, t.checkoutPayOnlineHint),
       _PayOption.click => (Icons.account_balance_wallet_outlined, t.checkoutPayClick, t.checkoutPayOnlineHint),
     };
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: selected ? AppColors.primary : AppColors.border, width: selected ? 2 : 1),
-      ),
+    return Semantics(
+      selected: selected,
+      button: true,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
           child: Row(children: [
-            Icon(icon, color: AppColors.primary),
+            Container(
+              width: 38,
+              height: 28,
+              decoration: BoxDecoration(color: AppColors.chipSurface, borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, size: 18, color: AppColors.text),
+            ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 Text(name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                Text(hint, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Text(hint, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.faint)),
               ]),
             ),
-            Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
-                color: selected ? AppColors.primary : AppColors.iconMuted),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: selected ? AppColors.primary : AppColors.border, width: 2),
+              ),
+              child: Center(
+                child: AnimatedScale(
+                  scale: selected ? 1 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                  ),
+                ),
+              ),
+            ),
           ]),
         ),
       ),
@@ -754,18 +753,19 @@ enum _PayOption {
 
 /// Pastki paneldagi kichik qator (promokod, bonus).
 class _MiniRow extends StatelessWidget {
-  const _MiniRow(this.label, this.value);
+  const _MiniRow(this.label, this.value, {this.accent = false});
 
   final String label;
   final String value;
+  final bool accent;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 2),
-        child: Row(children: [
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary))),
-          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
-        ]),
+        padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: accent ? AppColors.primary : AppColors.textSecondary),
+          child: Row(children: [Expanded(child: Text(label)), Text(value)]),
+        ),
       );
 }
 
@@ -833,18 +833,18 @@ class _BonusCard extends StatelessWidget {
     ];
     return Material(
       color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: value ? AppColors.primary : AppColors.border, width: value ? 2 : 1),
-      ),
+      borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+      clipBehavior: Clip.antiAlias,
       child: SwitchListTile(
         value: value,
         onChanged: onChanged,
-        activeThumbColor: AppColors.primary,
-        secondary: Icon(Icons.stars_outlined, color: AppColors.primary),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        activeThumbColor: Colors.white,
+        activeTrackColor: AppColors.primary,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        secondary: const Icon(Icons.stars_outlined, color: AppColors.textSecondary),
         title: Text(t.checkoutBonusTitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-        subtitle: Text(sub.join(' · '), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        subtitle: Text(sub.join(' · '),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.faint)),
       ),
     );
   }

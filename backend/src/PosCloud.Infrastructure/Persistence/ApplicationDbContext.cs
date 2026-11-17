@@ -74,6 +74,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<ShopFavorite> ShopFavorites => Set<ShopFavorite>();
     public DbSet<ShopStockSubscription> ShopStockSubscriptions => Set<ShopStockSubscription>();
     public DbSet<ShopCartSnapshot> ShopCartSnapshots => Set<ShopCartSnapshot>();
+    public DbSet<ShopRecipe> ShopRecipes => Set<ShopRecipe>();
+    public DbSet<ShopRecipeItem> ShopRecipeItems => Set<ShopRecipeItem>();
+    public DbSet<ShopList> ShopLists => Set<ShopList>();
+    public DbSet<ShopListMember> ShopListMembers => Set<ShopListMember>();
+    public DbSet<ShopListItem> ShopListItems => Set<ShopListItem>();
     public DbSet<ShopReferral> ShopReferrals => Set<ShopReferral>();
     public DbSet<ShopPushCampaign> ShopPushCampaigns => Set<ShopPushCampaign>();
     public DbSet<LoyaltyTier> LoyaltyTiers => Set<LoyaltyTier>();
