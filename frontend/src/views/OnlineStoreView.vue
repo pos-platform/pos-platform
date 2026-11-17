@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { onlineStoreApi } from '../api/catalog'
-import { errorMessage, mediaUrl } from '../api/http'
+import { errorMessage } from '../api/http'
 
 // Do'kon admini: mobil ilovadagi online do'kon sozlamalari.
 // Ilovaga chiqish, bloklash va to'lov usullarini SuperAdmin boshqaradi (bu yerda faqat ko'rinadi).
@@ -235,19 +235,6 @@ async function requestListing() {
   }
 }
 
-async function onLogo(ev) {
-  const file = ev.target.files?.[0]
-  if (!file) return
-  try {
-    const res = await onlineStoreApi.uploadLogo(file)
-    form.logoUrl = res.url
-  } catch (e) {
-    err.value = errorMessage(e)
-  } finally {
-    ev.target.value = ''
-  }
-}
-
 onMounted(load)
 </script>
 
@@ -279,27 +266,13 @@ onMounted(load)
       <label class="row big"><input v-model="form.isAcceptingOrders" type="checkbox" /> Hozir buyurtma qabul qilinadi</label>
 
       <h3>Do'kon</h3>
-      <div class="grid2">
-        <div class="field">
-          <label>Ilovadagi nomi (bo'sh — tashkilot nomi)</label>
-          <input v-model="form.displayName" class="input" maxlength="200" />
-        </div>
-        <div class="field">
-          <label>Telefon (mijozlar qo'ng'iroq qiladi)</label>
-          <input v-model="form.phone" class="input" maxlength="20" placeholder="+998 90 123 45 67" />
-        </div>
+      <div class="field">
+        <label>Telefon (mijozlar qo'ng'iroq qiladi)</label>
+        <input v-model="form.phone" class="input" maxlength="20" placeholder="+998 90 123 45 67" />
       </div>
       <div class="field">
         <label>Tavsif</label>
         <textarea v-model="form.description" class="input" rows="2" maxlength="1000"></textarea>
-      </div>
-      <div class="field">
-        <label>Logo</label>
-        <div class="logo-row">
-          <div class="logo"><img v-if="form.logoUrl" :src="mediaUrl(form.logoUrl)" alt="" /></div>
-          <input type="file" accept="image/*" @change="onLogo" />
-          <button v-if="form.logoUrl" type="button" class="btn btn-ghost btn-sm" @click="form.logoUrl = ''">Olib tashlash</button>
-        </div>
       </div>
       <div class="grid2">
         <div class="field">
@@ -465,8 +438,5 @@ onMounted(load)
 .grid3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
 .field { display:flex; flex-direction:column; gap:4px; }
 .field label { font-size:13px; color:var(--text-muted); font-weight:600; }
-.logo-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.logo { width:56px; height:56px; border-radius:12px; background:#f1f5f9; overflow:hidden; }
-.logo img { width:100%; height:100%; object-fit:cover; }
 @media (max-width: 700px) { .grid2, .grid3 { grid-template-columns:1fr; } }
 </style>
