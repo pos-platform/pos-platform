@@ -30,6 +30,7 @@ const filterQtyVal = ref('')
 const filterUnit = ref('') // '' = hammasi, 'Kilogram' = kg, 'Piece' = dona
 const filterOnline = ref('') // '' = hammasi, 'yes' = ilovada, 'no' = ilovada emas
 const filterMxik = ref('') // '' = hammasi, 'check' = MXIK yaroqsiz (hammasi), 'suggest' = taklif bor, 'none' = taklif ham yo'q
+const filterImage = ref('') // '' = hammasi, 'yes' = rasmli, 'no' = rasmsiz
 const mxikValid = (code) => /^\d{17}$/.test(code || '')
 // Kategoriya filtri daraxt ko'rinishida: asosiy bo'lim, ostida ichki bo'limlari.
 const categoryOptions = computed(() => {
@@ -248,6 +249,11 @@ const filteredProducts = computed(() => {
     list = list.filter((p) => ids.has(p.categoryId))
   }
 
+  if (filterImage.value) {
+    const want = filterImage.value === 'yes'
+    list = list.filter((p) => !!p.imageUrl === want)
+  }
+
   if (filterMxik.value) {
     list = list.filter((p) =>
       !mxikValid(p.mxikCode) && (
@@ -339,7 +345,7 @@ function setPage(p) {
   if (typeof p === 'number') currentPage.value = Math.min(Math.max(1, p), totalPages.value)
 }
 
-watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit, filterOnline, filterMxik], () => {
+watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit, filterOnline, filterMxik, filterImage], () => {
   currentPage.value = 1
 })
 
@@ -778,6 +784,11 @@ function printBarcode(product) {
         <option value="check">MXIK: yo'q / yaroqsiz</option>
         <option value="suggest">MXIK: taklif bor</option>
         <option value="none">MXIK: taklif ham yo'q</option>
+      </select>
+      <select v-model="filterImage" class="select" style="width:140px" title="Mahsulot rasmi">
+        <option value="">Rasm: hammasi</option>
+        <option value="yes">Rasm: bor</option>
+        <option value="no">Rasm: yo'q</option>
       </select>
       <select v-model="filterUnit" class="select" style="width:130px">
         <option value="">Barcha birlik</option>
