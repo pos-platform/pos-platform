@@ -101,7 +101,7 @@ class StoreAppController extends AsyncNotifier<StoreApp?> {
         final app = StoreApp.fromJson(jsonDecode(raw) as Map<String, dynamic>);
         if (app.slug == AppConfig.storeSlug && app.branches.isNotEmpty) {
           _cached = app;
-          color = AppColors.parseHex(app.brandColor) ?? color;
+          color = AppColors.serverBrand(app.brandColor) ?? color;
         }
       }
     } catch (_) {
@@ -129,7 +129,7 @@ class StoreAppController extends AsyncNotifier<StoreApp?> {
       final app = await ref.read(storeAppRepositoryProvider).fetch(AppConfig.storeSlug);
       if (app.branches.isEmpty) throw const StoreUnavailableException();
       _cached = app;
-      AppColors.applyBrand(AppColors.parseHex(app.brandColor) ?? AppColors.parseHex(AppConfig.brandColor));
+      AppColors.applyBrand(AppColors.serverBrand(app.brandColor) ?? AppColors.parseHex(AppConfig.brandColor));
       unawaited(_save(app));
       return app;
     } on StoreUnavailableException {

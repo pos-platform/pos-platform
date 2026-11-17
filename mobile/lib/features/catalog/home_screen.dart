@@ -321,17 +321,16 @@ class _CatalogState extends ConsumerState<_Catalog> {
                   branchId: _branchId,
                   fallbackBanner:
                       store.deliveryEnabled && store.freeDeliveryFrom != null ? _PromoBanner(store: store) : null,
-                ),
-              ),
-            if (showSections && categories.isNotEmpty)
-              SliverToBoxAdapter(
-                child: _CategoryTiles(
-                  categories: categories,
-                  onTap: (id) {
-                    _categoryId = id;
-                    _reset();
-                    if (_scroll.hasClients) _scroll.jumpTo(0);
-                  },
+                  middle: categories.isEmpty
+                      ? null
+                      : _CategoryTiles(
+                          categories: categories,
+                          onTap: (id) {
+                            _categoryId = id;
+                            _reset();
+                            if (_scroll.hasClients) _scroll.jumpTo(0);
+                          },
+                        ),
                 ),
               ),
             if (showSections) const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -607,15 +606,27 @@ class _Greeting extends ConsumerWidget {
 }
 
 /// Bo'lim plitkalari (dizayn v3): rangli kartalar, 3 ustunli to'r — qatorlar navbat bilan 2+1 / 1+2.
-class _CategoryTiles extends StatelessWidget {
+class _CategoryTiles extends StatefulWidget {
   const _CategoryTiles({required this.categories, required this.onTap});
 
   final List<ShopCategory> categories;
   final ValueChanged<String> onTap;
 
   @override
+  State<_CategoryTiles> createState() => _CategoryTilesState();
+}
+
+/// Ko'p mahsulotli bo'limlar oldin; dastlab [_collapsed] tasi, "Hammasi (N)" bosilsa — qolganlari ham.
+class _CategoryTilesState extends State<_CategoryTiles> {
+  static const _collapsed = 6;
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
+    final sorted = [...widget.categories]..sort((a, b) => b.productCount.compareTo(a.productCount));
+    final categories = _expanded ? sorted : sorted.take(_collapsed).toList();
+    final onTap = widget.onTap;
     final rows = <Widget>[];
     for (var i = 0, r = 0; i < categories.length; i += 2, r++) {
       final wideFirst = r.isEven;
@@ -639,8 +650,21 @@ class _CategoryTiles extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 26, 16, 0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(t.homeSections, style: AppTheme.display(18)),
-        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: Text(t.homeSections, style: AppTheme.display(18))),
+          if (sorted.length > _collapsed)
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+              onPressed: () => setState(() => _expanded = !_expanded),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(_expanded ? t.homeSectionsLess : '${t.mkAll} (${sorted.length})',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                const SizedBox(width: 2),
+                Icon(_expanded ? Icons.expand_less : Icons.expand_more, size: 18),
+              ]),
+            ),
+        ]),
+        const SizedBox(height: 8),
         ...rows,
       ]),
     );
@@ -662,7 +686,7 @@ class _CategoryTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: SizedBox(
-            height: 122,
+            height: 104,
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -696,7 +720,7 @@ class _PromoBanner extends StatelessWidget {
     final t = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppTheme.radiusCard)),
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -708,7 +732,7 @@ class _PromoBanner extends StatelessWidget {
           ]),
         ),
         const SizedBox(width: 12),
-        const Icon(Icons.local_shipping_outlined, size: 56, color: Color(0xFF9FD3B5)),
+        Icon(Icons.local_shipping_outlined, size: 56, color: Colors.white.withValues(alpha: 0.85)),
       ]),
     );
   }

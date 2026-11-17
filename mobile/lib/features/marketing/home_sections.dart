@@ -35,10 +35,13 @@ final lastDeliveredOrderProvider = FutureProvider.autoDispose.family<OrderSummar
 /// "Aksiyalar (N)", oxirgi buyurtmani takrorlash, "Yana olasizmi?", Top 10, kolleksiyalar.
 /// `home` yuklanmagan yoki xato bo'lsa — faqat [fallbackBanner] (katalog odatdagidek ishlaydi).
 class HomeMarketingSections extends ConsumerWidget {
-  const HomeMarketingSections({super.key, required this.branchId, this.fallbackBanner});
+  const HomeMarketingSections({super.key, required this.branchId, this.fallbackBanner, this.middle});
 
   final String branchId;
   final Widget? fallbackBanner;
+
+  /// "Yana olasizmi?" va retseptdan keyin, Top 10 dan oldin (dizayn v3: bo'lim plitkalari).
+  final Widget? middle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -81,6 +84,7 @@ class HomeMarketingSections extends ConsumerWidget {
           _BuyAgainRail(branchId: branchId, products: home.buyAgain),
         ],
         if (home.recipes.isNotEmpty) RecipeHomeBanner(recipes: home.recipes),
+        ?middle,
         if (home.topProducts.isNotEmpty) ...[
           RailHeader(title: t.mkTop10),
           ProductRail(branchId: branchId, products: home.topProducts.take(10).toList(), ranked: true),

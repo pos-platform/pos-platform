@@ -2211,4 +2211,7 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get voiceUnavailable => 'Ovozli qidiruv bu qurilmada ishlamaydi';
+
+  @override
+  String get homeSectionsLess => 'Yig‘ish';
 }

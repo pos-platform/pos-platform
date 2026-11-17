@@ -156,18 +156,22 @@ class _Tab extends StatelessWidget {
                     constraints: const BoxConstraints(minWidth: 18),
                     height: 18,
                     padding: const EdgeInsets.symmetric(horizontal: 5),
-                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.primary,
                       borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: AppColors.ink, width: 2),
                     ),
-                    child: Text(
+                    // widthFactor: 1 — belgi matn kengligida qoladi (Container.alignment uni butun kenglikka cho'zardi).
+                    child: Center(
+                      widthFactor: 1,
+                      child: Text(
                       badge > 99 ? '99+' : '$badge',
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
+                    ),
                     ),
                   ),
                 ),

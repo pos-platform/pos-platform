@@ -154,7 +154,7 @@ public class OnlineStoreService : IOnlineStoreService
         return rows.Count;
     }
 
-    private const string DefaultBrandColor = "#2563EB";
+    private const string DefaultBrandColor = "#D81F26";
 
     /// <summary>
     /// Mobil ilova (white-label) maydonlarini do'kon nomidan avtomatik to'ldiradi — faqat bo'sh bo'lganlarini.

@@ -4057,6 +4057,12 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Ovozli qidiruv bu qurilmada ishlamaydi'**
   String get voiceUnavailable;
+
+  /// No description provided for @homeSectionsLess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yig‘ish'**
+  String get homeSectionsLess;
 }
 
 class _AppLocalizationsDelegate

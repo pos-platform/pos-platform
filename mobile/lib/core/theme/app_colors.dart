@@ -75,6 +75,13 @@ class AppColors {
     return Color(0xFF000000 | int.parse(h, radix: 16));
   }
 
+  /// Serverdagi brend rangi. `#2563EB` — server o'zi qo'ygan eski standart (admin tanlamagan), shuning uchun e'tiborsiz:
+  /// ilova standart qizil (yoki `BRAND_COLOR`) bilan qoladi.
+  static Color? serverBrand(String? hex) {
+    final c = parseHex(hex);
+    return c == null || c.toARGB32() == 0xFF2563EB ? null : c;
+  }
+
   /// Brend rangini qo'llaydi (null — standart qizil). Oq matn o'qilishi uchun rang yetarlicha to'q
   /// bo'lguncha (kontrast ≥ 4.5:1) to'qlashtiriladi; bosilgan va och soyalar shundan hosil qilinadi.
   static void applyBrand(Color? brand) {

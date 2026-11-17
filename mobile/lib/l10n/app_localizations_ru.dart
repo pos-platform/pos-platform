@@ -2201,4 +2201,7 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get voiceUnavailable =>
       'Голосовой поиск недоступен на этом устройстве';
+
+  @override
+  String get homeSectionsLess => 'Свернуть';
 }

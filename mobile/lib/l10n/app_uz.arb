@@ -1253,5 +1253,6 @@
   "listLoginText": "Oilaviy ro‘yxatdan foydalanish uchun telefon raqamingiz bilan kiring.",
   "voiceSearch": "Ovozli qidiruv",
   "voiceListening": "Gapiring…",
-  "voiceUnavailable": "Ovozli qidiruv bu qurilmada ishlamaydi"
+  "voiceUnavailable": "Ovozli qidiruv bu qurilmada ishlamaydi",
+  "homeSectionsLess": "Yig‘ish"
 }
