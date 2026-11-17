@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { onlineStoresAdminApi } from '../api/catalog'
-import { errorMessage, mediaUrl } from '../api/http'
+import { errorMessage } from '../api/http'
 
 // SuperAdmin: mobil ilovadagi do'konlar — yoqish (tasdiqlash), bloklash, to'lov usullari, tavsiya, tarif muddati.
 const filter = ref('all')
@@ -72,7 +72,6 @@ async function open(row) {
       allowPayme: !!s.allowPayme,
       allowClick: !!s.allowClick
     })
-    fillApp(s)
   } catch (e) {
     err.value = errorMessage(e)
   }
@@ -108,150 +107,6 @@ async function save() {
   }
 }
 
-// ---- Mobil ilova (Bosqich 8, white-label) ----
-const SLUG_RE = /^[a-z0-9-]{3,40}$/
-const PACKAGE_RE = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/
-const HEX_RE = /^#[0-9a-fA-F]{6}$/
-const DEFAULT_COLOR = '#2563eb'
-
-const appBusy = ref(false)
-const appErr = ref('')
-const appOk = ref('')
-const copied = ref(false)
-const app = reactive({
-  slug: '',
-  appName: '',
-  appPackageId: '',
-  brandColor: '',
-  androidMinBuild: '',
-  androidLatestBuild: '',
-  androidLatestVersion: '',
-  androidStoreUrl: '',
-  iosMinBuild: '',
-  iosLatestBuild: '',
-  iosLatestVersion: '',
-  iosStoreUrl: ''
-})
-
-// Lotin/kirill nomni slugga aylantiradi: o'/g'/sh/ch, kichik harf, defis.
-const CYR = {
-  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'j', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm',
-  н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'x', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sh',
-  ъ: '', ы: 'i', ь: '', э: 'e', ю: 'yu', я: 'ya', ў: 'o', қ: 'q', ғ: 'g', ҳ: 'h'
-}
-function slugify(name) {
-  let s = (name || '').toLowerCase()
-  s = s.replace(/[а-яёўқғҳ]/g, (c) => CYR[c] ?? '')
-  // o' / g' (har xil apostroflar) → o / g
-  s = s.replace(/([og])['`ʻʼ‘’]/g, '$1')
-  s = s.normalize('NFD').replace(/[̀-ͯ]/g, '')
-  s = s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-')
-  return s.substring(0, 40).replace(/-+$/, '')
-}
-function suggestPackage(slug) {
-  const base = (slug || '').replace(/-/g, '_')
-  if (!base) return ''
-  // Paket qismi harf bilan boshlanishi shart
-  return `uz.poscloud.${/^[a-z]/.test(base) ? base : 's' + base}`
-}
-
-const slugValid = computed(() => !app.slug || SLUG_RE.test(app.slug))
-const packageValid = computed(() => !app.appPackageId || PACKAGE_RE.test(app.appPackageId))
-const colorValid = computed(() => !app.brandColor || HEX_RE.test(app.brandColor))
-const appNameValid = computed(() => app.appName.length <= 30)
-const appValid = computed(() => slugValid.value && packageValid.value && colorValid.value && appNameValid.value)
-const previewColor = computed(() => (HEX_RE.test(app.brandColor) ? app.brandColor : DEFAULT_COLOR))
-const previewName = computed(() => app.appName || selected.value?.displayName || selected.value?.organizationName || 'Ilova')
-const logoSrc = computed(() => mediaUrl(selected.value?.logoUrl))
-const buildCommand = computed(() => `.\\tool\\store.ps1 -Slug ${app.slug || '<slug>'} -Build appbundle`)
-
-// Color picker faqat to'g'ri hex qabul qiladi
-const pickerColor = computed({
-  get: () => previewColor.value,
-  set: (v) => { app.brandColor = v }
-})
-
-function fillApp(s) {
-  const v = (x) => (x === null || x === undefined ? '' : String(x))
-  Object.assign(app, {
-    slug: v(s.slug),
-    appName: v(s.appName),
-    appPackageId: v(s.appPackageId),
-    brandColor: v(s.brandColor),
-    androidMinBuild: v(s.androidMinBuild),
-    androidLatestBuild: v(s.androidLatestBuild),
-    androidLatestVersion: v(s.androidLatestVersion),
-    androidStoreUrl: v(s.androidStoreUrl),
-    iosMinBuild: v(s.iosMinBuild),
-    iosLatestBuild: v(s.iosLatestBuild),
-    iosLatestVersion: v(s.iosLatestVersion),
-    iosStoreUrl: v(s.iosStoreUrl)
-  })
-  appErr.value = ''
-  appOk.value = ''
-  copied.value = false
-}
-
-function suggestSlug() {
-  app.slug = slugify(selected.value?.displayName || selected.value?.organizationName)
-  if (!app.appPackageId) app.appPackageId = suggestPackage(app.slug)
-}
-function suggestPkg() {
-  app.appPackageId = suggestPackage(app.slug)
-}
-function onSlugBlur() {
-  app.slug = app.slug.trim().toLowerCase()
-  if (app.slug && !app.appPackageId) app.appPackageId = suggestPackage(app.slug)
-}
-
-async function copyCommand() {
-  try {
-    await navigator.clipboard.writeText(buildCommand.value)
-    copied.value = true
-    setTimeout(() => { copied.value = false }, 1500)
-  } catch {
-    appErr.value = 'Nusxa olib bo\'lmadi — qo\'lda belgilang.'
-  }
-}
-
-async function saveApp() {
-  if (!selected.value || !appValid.value) return
-  appBusy.value = true
-  appErr.value = ''
-  appOk.value = ''
-  const str = (x) => (x.trim() ? x.trim() : null)
-  const int = (x) => {
-    const t = String(x).trim()
-    return t === '' ? null : Number.parseInt(t, 10)
-  }
-  try {
-    const res = await onlineStoresAdminApi.updateApp(selected.value.organizationId, {
-      slug: str(app.slug),
-      appName: str(app.appName),
-      appPackageId: str(app.appPackageId),
-      brandColor: app.brandColor.trim() ? app.brandColor.trim().toUpperCase() : null,
-      androidMinBuild: int(app.androidMinBuild),
-      androidLatestBuild: int(app.androidLatestBuild),
-      androidLatestVersion: str(app.androidLatestVersion),
-      androidStoreUrl: str(app.androidStoreUrl),
-      iosMinBuild: int(app.iosMinBuild),
-      iosLatestBuild: int(app.iosLatestBuild),
-      iosLatestVersion: str(app.iosLatestVersion),
-      iosStoreUrl: str(app.iosStoreUrl)
-    })
-    // Javob tafsilot obyekti bo'lsa — yangilaymiz
-    if (res && typeof res === 'object' && res.organizationId) {
-      selected.value = res
-      fillApp(res)
-    }
-    appOk.value = 'Ilova sozlamalari saqlandi.'
-    await load()
-  } catch (e) {
-    appErr.value = errorMessage(e)
-  } finally {
-    appBusy.value = false
-  }
-}
 
 function statusOf(r) {
   if (r.isBlocked) return { text: 'Bloklangan', cls: 'st-blocked' }
@@ -373,91 +228,6 @@ onMounted(load)
 
       <button class="btn" :disabled="busy" @click="save">{{ busy ? 'Saqlanmoqda...' : 'Saqlash' }}</button>
 
-      <!-- Mobil ilova (white-label) — alohida saqlanadi -->
-      <div class="app-section">
-        <h4 style="margin:0">Mobil ilova</h4>
-        <div v-if="appErr" class="alert alert-error">{{ appErr }}</div>
-        <div v-if="appOk" class="alert alert-success">{{ appOk }}</div>
-
-        <div class="preview">
-          <div class="app-icon" :style="{ background: previewColor }">
-            <img v-if="logoSrc" :src="logoSrc" alt="logo" />
-            <span v-else class="app-letter">{{ previewName.charAt(0).toUpperCase() }}</span>
-          </div>
-          <div class="app-label">{{ previewName }}</div>
-        </div>
-
-        <div class="field">
-          <label>Slug</label>
-          <div class="inline">
-            <input v-model="app.slug" class="input" placeholder="masalan: baraka-market" @blur="onSlugBlur" />
-            <button class="btn btn-ghost btn-sm" type="button" title="Nomdan taklif" @click="suggestSlug">↺</button>
-          </div>
-          <span v-if="!slugValid" class="small bad">3–40 belgi: a-z, 0-9 va "-".</span>
-        </div>
-
-        <div class="field">
-          <label>Ilova nomi ({{ app.appName.length }}/30)</label>
-          <input v-model="app.appName" class="input" maxlength="30" placeholder="Telefonda ko'rinadigan nom" />
-          <span v-if="!appNameValid" class="small bad">30 belgidan oshmasin.</span>
-        </div>
-
-        <div class="field">
-          <label>Paket ID (Android / iOS)</label>
-          <div class="inline">
-            <input v-model="app.appPackageId" class="input" placeholder="uz.poscloud.baraka_market" />
-            <button class="btn btn-ghost btn-sm" type="button" title="Slugdan taklif" :disabled="!app.slug" @click="suggestPkg">↺</button>
-          </div>
-          <span v-if="!packageValid" class="small bad">Format: uz.poscloud.nom (kichik harf, raqam, "_").</span>
-        </div>
-
-        <div class="field">
-          <label>Brend rangi</label>
-          <div class="inline">
-            <input v-model="pickerColor" type="color" class="color" />
-            <input v-model="app.brandColor" class="input" placeholder="#RRGGBB" maxlength="7" />
-          </div>
-          <span v-if="!colorValid" class="small bad">Format: #RRGGBB.</span>
-        </div>
-
-        <div class="field">
-          <label>Android</label>
-          <div class="grid2">
-            <input v-model="app.androidMinBuild" type="number" min="0" class="input" placeholder="Min build" />
-            <input v-model="app.androidLatestBuild" type="number" min="0" class="input" placeholder="Oxirgi build" />
-          </div>
-          <input v-model="app.androidLatestVersion" class="input" placeholder="Oxirgi versiya (1.0.0)" />
-          <input v-model="app.androidStoreUrl" class="input" placeholder="Google Play havolasi" />
-        </div>
-
-        <div class="field">
-          <label>iOS</label>
-          <div class="grid2">
-            <input v-model="app.iosMinBuild" type="number" min="0" class="input" placeholder="Min build" />
-            <input v-model="app.iosLatestBuild" type="number" min="0" class="input" placeholder="Oxirgi build" />
-          </div>
-          <input v-model="app.iosLatestVersion" class="input" placeholder="Oxirgi versiya (1.0.0)" />
-          <input v-model="app.iosStoreUrl" class="input" placeholder="App Store havolasi" />
-        </div>
-
-        <div class="field">
-          <label>Build buyrug'i (mobile/ papkasida)</label>
-          <div class="inline">
-            <input :value="buildCommand" class="input mono" readonly @focus="$event.target.select()" />
-            <button class="btn btn-ghost btn-sm" type="button" @click="copyCommand">{{ copied ? '✓' : 'Nusxa' }}</button>
-          </div>
-        </div>
-
-        <ul class="hints small muted">
-          <li>Ikonka fayllari (icon.png 1024px, store.json) — <code>mobile/stores/{{ app.slug || 'slug' }}/</code></li>
-          <li>iOS ilova do'konning o'z Apple Developer akkaunti orqali chiqariladi.</li>
-          <li>Slug va paket ID chiqarilgandan keyin o'zgartirilmasin.</li>
-        </ul>
-
-        <button class="btn" :disabled="appBusy || !appValid" @click="saveApp">
-          {{ appBusy ? 'Saqlanmoqda...' : 'Ilovani saqlash' }}
-        </button>
-      </div>
     </div>
   </div>
 </template>
@@ -484,20 +254,6 @@ onMounted(load)
 .field { display:flex; flex-direction:column; gap:4px; }
 .field > label:first-child { font-size:13px; color:var(--text-muted); font-weight:600; }
 .info { display:flex; flex-direction:column; gap:2px; background:#f8fafc; border-radius:8px; padding:8px 10px; }
-.app-section { display:flex; flex-direction:column; gap:10px; border-top:1px solid var(--border, #e2e8f0); padding-top:12px; margin-top:4px; }
-.inline { display:flex; gap:6px; align-items:center; }
-.inline .input { flex:1; min-width:0; }
 .field .input + .input, .field .grid2 + .input { margin-top:6px; }
-.bad { color:#dc2626; }
-.color { width:42px; height:36px; padding:2px; border:1px solid var(--border, #e2e8f0); border-radius:8px; background:#fff; cursor:pointer; }
-.mono { font-family: ui-monospace, Consolas, monospace; font-size:12px; }
-.preview { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px; border-radius:12px;
-  background:linear-gradient(160deg, #1e293b, #334155); }
-.app-icon { width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center; overflow:hidden;
-  box-shadow:0 2px 6px rgba(0,0,0,.35); }
-.app-icon img { width:78%; height:78%; object-fit:contain; }
-.app-letter { color:#fff; font-size:28px; font-weight:700; }
-.app-label { color:#fff; font-size:12px; max-width:90px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.hints { margin:0; padding-left:18px; display:flex; flex-direction:column; gap:2px; }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 </style>

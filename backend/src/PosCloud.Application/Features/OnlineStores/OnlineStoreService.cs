@@ -126,10 +126,76 @@ public class OnlineStoreService : IOnlineStoreService
         settings.AllowCardOnDelivery = r.AllowCardOnDelivery;
         settings.AllowPayme = r.AllowPayme;
         settings.AllowClick = r.AllowClick;
-        if (r.IsEnabled) settings.IsRequested = false; // so'rov ko'rib chiqildi
+        if (r.IsEnabled)
+        {
+            settings.IsRequested = false; // so'rov ko'rib chiqildi
+            await FillAppDefaultsAsync(settings, settings.DisplayName ?? org.Name, ct);
+        }
 
         await _db.SaveChangesAsync(ct);
         return ToDto(org, settings);
+    }
+
+    private const string DefaultBrandColor = "#2563EB";
+
+    /// <summary>
+    /// Mobil ilova (white-label) maydonlarini do'kon nomidan avtomatik to'ldiradi — faqat bo'sh bo'lganlarini.
+    /// Superadmin bularni qo'lda kiritmaydi; alohida ilova kerak bo'lsa dasturchi mobile/stores/&lt;slug&gt;/ orqali chiqaradi.
+    /// </summary>
+    private async Task FillAppDefaultsAsync(OnlineStoreSettings settings, string name, CancellationToken ct)
+    {
+        if (settings.Slug is null)
+        {
+            var baseSlug = Slugify(name);
+            if (baseSlug.Length < 3) baseSlug = ("store-" + baseSlug).TrimEnd('-');
+            var slug = baseSlug;
+            for (var i = 2; await _db.OnlineStoreSettings.IgnoreQueryFilters()
+                     .AnyAsync(s => s.Slug == slug && s.OrganizationId != settings.OrganizationId, ct); i++)
+            {
+                var suffix = "-" + i;
+                slug = baseSlug[..Math.Min(baseSlug.Length, 40 - suffix.Length)].TrimEnd('-') + suffix;
+            }
+            settings.Slug = slug;
+        }
+
+        if (settings.AppPackageId is null)
+        {
+            var part = settings.Slug.Replace('-', '_');
+            if (!char.IsAsciiLetterLower(part[0])) part = "s" + part;
+            var pkg = "uz.poscloud." + part;
+            var candidate = pkg;
+            for (var i = 2; await _db.OnlineStoreSettings.IgnoreQueryFilters()
+                     .AnyAsync(s => s.AppPackageId == candidate && s.OrganizationId != settings.OrganizationId, ct); i++)
+                candidate = pkg + "_" + i;
+            settings.AppPackageId = candidate;
+        }
+
+        settings.AppName ??= name.Trim() is { Length: > 30 } n ? n[..30].TrimEnd() : name.Trim();
+        settings.BrandColor ??= DefaultBrandColor;
+    }
+
+    private static readonly Dictionary<char, string> Cyrillic = new()
+    {
+        ['а'] = "a", ['б'] = "b", ['в'] = "v", ['г'] = "g", ['д'] = "d", ['е'] = "e", ['ё'] = "yo", ['ж'] = "j",
+        ['з'] = "z", ['и'] = "i", ['й'] = "y", ['к'] = "k", ['л'] = "l", ['м'] = "m", ['н'] = "n", ['о'] = "o",
+        ['п'] = "p", ['р'] = "r", ['с'] = "s", ['т'] = "t", ['у'] = "u", ['ф'] = "f", ['х'] = "x", ['ц'] = "ts",
+        ['ч'] = "ch", ['ш'] = "sh", ['щ'] = "sh", ['ъ'] = "", ['ы'] = "i", ['ь'] = "", ['э'] = "e", ['ю'] = "yu",
+        ['я'] = "ya", ['ў'] = "o", ['қ'] = "q", ['ғ'] = "g", ['ҳ'] = "h"
+    };
+
+    /// <summary>Lotin/kirill nomni slugga aylantiradi (frontend'dagi slugify bilan bir xil qoida).</summary>
+    private static string Slugify(string name)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in name.ToLowerInvariant())
+            sb.Append(Cyrillic.TryGetValue(c, out var t) ? t : c.ToString());
+        var s = Regex.Replace(sb.ToString(), "([og])['`ʻʼ‘’]", "$1");
+        s = new string(s.Normalize(System.Text.NormalizationForm.FormD)
+            .Where(ch => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch)
+                         != System.Globalization.UnicodeCategory.NonSpacingMark).ToArray());
+        s = Regex.Replace(s, "[^a-z0-9]+", "-").Trim('-');
+        if (s.Length > 40) s = s[..40].TrimEnd('-');
+        return s;
     }
 
     public async Task<OnlineStoreSettingsDto> UpdateAppAsync(Guid organizationId, UpdateStoreAppRequest r,
