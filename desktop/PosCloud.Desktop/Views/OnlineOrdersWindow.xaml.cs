@@ -166,7 +166,8 @@ public partial class OnlineOrdersWindow : Window
     private void OnConnectionChanged(bool connected) => Dispatcher.InvokeAsync(() =>
     {
         ConnectionText.Text = connected ? "● Real vaqt ulangan" : "● Real vaqt uzilgan — \"Yangilash\"ni bosing";
-        ConnectionText.Foreground = connected ? Brushes.LightGreen : Brushes.Orange;
+        ConnectionText.Foreground = new SolidColorBrush(connected ? Color.FromRgb(0x04, 0x78, 0x57) : Color.FromRgb(0xC2, 0x41, 0x0C));
+        ConnectionBadge.Background = new SolidColorBrush(connected ? Color.FromRgb(0xEC, 0xFD, 0xF5) : Color.FromRgb(0xFF, 0xF7, 0xED));
     });
 
     private async Task LoadSettingsAsync()
