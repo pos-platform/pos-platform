@@ -10,6 +10,9 @@ public class ProductDto
     public ProductType ProductType { get; set; }
     public int? PrepMinutes { get; set; }
     public string MxikCode { get; set; } = string.Empty;
+    /// <summary>Taxminiy MXIK taklifi (chekka yozilmaydi) va manbasi.</summary>
+    public string? MxikSuggestion { get; set; }
+    public string? MxikSuggestionSource { get; set; }
     public string? Barcode { get; set; }
     public decimal CostPrice { get; set; }
     public decimal Price { get; set; }
@@ -51,6 +54,8 @@ public class ProductDto
         ProductType = p.ProductType,
         PrepMinutes = p.PrepMinutes,
         MxikCode = p.MxikCode,
+        MxikSuggestion = p.MxikSuggestion,
+        MxikSuggestionSource = p.MxikSuggestionSource,
         Barcode = p.Barcode,
         CostPrice = p.CostPrice,
         Price = p.Price,

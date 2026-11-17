@@ -43,3 +43,26 @@ public class BulkImageItem
     [MaxLength(512)]
     public string ImageUrl { get; set; } = string.Empty;
 }
+
+/// <summary>Taxminiy MXIK TAKLIFLARINI ommaviy yozish (ko'pi bilan 1000 ta). MxikCode (chekka tushadigan) o'zgarmaydi.</summary>
+public class BulkMxikRequest
+{
+    [Required]
+    [MaxLength(1000)]
+    public List<BulkMxikItem> Items { get; set; } = [];
+
+    /// <summary>true — faqat hozirgi MXIK yaroqsiz bo'lganlarga taklif yoziladi.</summary>
+    public bool OnlyIfInvalid { get; set; } = true;
+}
+
+public class BulkMxikItem
+{
+    public Guid ProductId { get; set; }
+
+    [Required]
+    public string MxikCode { get; set; } = string.Empty;
+
+    /// <summary>Taklif manbasi (masalan "tasnif", "brend").</summary>
+    [MaxLength(64)]
+    public string? Source { get; set; }
+}

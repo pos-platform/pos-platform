@@ -29,6 +29,18 @@ const filterQtyOp = ref('')
 const filterQtyVal = ref('')
 const filterUnit = ref('') // '' = hammasi, 'Kilogram' = kg, 'Piece' = dona
 const filterOnline = ref('') // '' = hammasi, 'yes' = ilovada, 'no' = ilovada emas
+const filterMxik = ref('') // '' = hammasi, 'check' = MXIK yaroqsiz (hammasi), 'suggest' = taklif bor, 'none' = taklif ham yo'q
+const mxikValid = (code) => /^\d{17}$/.test(code || '')
+// Kategoriya filtri daraxt ko'rinishida: asosiy bo'lim, ostida ichki bo'limlari.
+const categoryOptions = computed(() => {
+  const all = categories.value
+  const ids = new Set(all.map((c) => c.id))
+  const bySort = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name)
+  return all.filter((c) => !c.parentId || !ids.has(c.parentId)).sort(bySort).flatMap((r) => [
+    { id: r.id, label: r.name },
+    ...all.filter((c) => c.parentId === r.id).sort(bySort).map((c) => ({ id: c.id, label: ' ↳ ' + c.name }))
+  ])
+})
 
 // Ommaviy tanlash ("Ilovada ko'rsatish / yashirish")
 const selectedIds = ref(new Set())
@@ -196,6 +208,8 @@ function exportFenixTxt() {
 const blankForm = () => ({
   name: '',
   mxikCode: '',
+  mxikSuggestion: '',
+  mxikSuggestionSource: '',
   barcode: '',
   description: '',
   costPrice: 0,
@@ -228,7 +242,18 @@ const filteredProducts = computed(() => {
   }
 
   if (filterCategory.value) {
-    list = list.filter((p) => p.categoryId === filterCategory.value)
+    // Asosiy bo'lim tanlansa — ichki bo'limlaridagi mahsulotlar ham.
+    const ids = new Set([filterCategory.value,
+      ...categories.value.filter((c) => c.parentId === filterCategory.value).map((c) => c.id)])
+    list = list.filter((p) => ids.has(p.categoryId))
+  }
+
+  if (filterMxik.value) {
+    list = list.filter((p) =>
+      !mxikValid(p.mxikCode) && (
+        filterMxik.value === 'suggest' ? !!p.mxikSuggestion
+          : filterMxik.value === 'none' ? !p.mxikSuggestion
+            : true))
   }
 
   if (filterUnit.value) {
@@ -314,7 +339,7 @@ function setPage(p) {
   if (typeof p === 'number') currentPage.value = Math.min(Math.max(1, p), totalPages.value)
 }
 
-watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit, filterOnline], () => {
+watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit, filterOnline, filterMxik], () => {
   currentPage.value = 1
 })
 
@@ -449,6 +474,8 @@ function openEdit(p) {
   Object.assign(form, {
     name: p.name,
     mxikCode: p.mxikCode,
+    mxikSuggestion: p.mxikSuggestion || '',
+    mxikSuggestionSource: p.mxikSuggestionSource || '',
     barcode: p.barcode || '',
     description: p.description || '',
     costPrice: p.costPrice,
@@ -744,7 +771,13 @@ function printBarcode(product) {
       </div>
       <select v-model="filterCategory" class="select" style="flex:1; min-width:150px">
         <option value="">Barcha kategoriyalar</option>
-        <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+        <option v-for="c in categoryOptions" :key="c.id" :value="c.id">{{ c.label }}</option>
+      </select>
+      <select v-model="filterMxik" class="select" style="width:190px" title="MXIK holati">
+        <option value="">MXIK: hammasi</option>
+        <option value="check">MXIK: yo'q / yaroqsiz</option>
+        <option value="suggest">MXIK: taklif bor</option>
+        <option value="none">MXIK: taklif ham yo'q</option>
       </select>
       <select v-model="filterUnit" class="select" style="width:130px">
         <option value="">Barcha birlik</option>
@@ -867,6 +900,8 @@ function printBarcode(product) {
               <span v-if="p.showOnline !== false" class="online-mark" title="Mobil ilovada ko'rinadi">📱</span>
             </div>
             <div v-if="p.mxikCode && p.mxikCode !== '00000000'" class="muted" style="font-size:12px">MXIK: {{ p.mxikCode }}</div>
+            <span v-if="!mxikValid(p.mxikCode)" class="pill pill-red" style="margin-top:2px; display:inline-block">MXIK yo'q</span>
+            <span v-if="!mxikValid(p.mxikCode) && p.mxikSuggestion" class="pill pill-amber" style="margin-top:2px; margin-left:4px; display:inline-block" title="Taxminiy — formada tekshirib qo'llang">taklif: {{ p.mxikSuggestion }}</span>
             <span v-if="p.isWeighed" class="pill pill-amber" style="margin-top:2px; display:inline-block">tarozi</span>
           </td>
           <td>{{ categoryName(p.categoryId) }}</td>
@@ -1068,6 +1103,12 @@ function printBarcode(product) {
         <div class="field">
           <label>MXIK (ИКПУ)</label>
           <input v-model="form.mxikCode" class="input" placeholder="Soliq uchun majburiy" />
+          <div v-if="form.mxikSuggestion && !mxikValid(form.mxikCode)" class="mxik-suggest">
+            ⚠️ Taxminiy MXIK taklifi: <strong>{{ form.mxikSuggestion }}</strong>
+            <span class="muted">({{ form.mxikSuggestionSource || 'avto' }})</span>
+            <button type="button" class="btn btn-sm" style="margin-left:8px" @click="form.mxikCode = form.mxikSuggestion">Qo'llash</button>
+            <div class="muted" style="margin-top:4px">Taklif chekka yozilmaydi — tasnif.soliq.uz da tekshirib, qo'llang va saqlang.</div>
+          </div>
         </div>
 
         <!-- Qadoq kodi | Markirovka kodi -->
@@ -1154,6 +1195,15 @@ function printBarcode(product) {
 </template>
 
 <style scoped>
+/* Taxminiy MXIK taklifi (mahsulot formasida) */
+.mxik-suggest {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--warning-soft);
+  font-size: 13px;
+}
+
 /* Ommaviy amallar paneli */
 .bulk-bar {
   display: flex;

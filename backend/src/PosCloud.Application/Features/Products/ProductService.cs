@@ -259,6 +259,38 @@ public class ProductService : IProductService
         return new BulkShowOnlineResult(changed);
     }
 
+    public async Task<BulkShowOnlineResult> SetMxikGuessesAsync(BulkMxikRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.Items.Count > 1000)
+            throw new ValidationException("Bir so'rovda ko'pi bilan 1000 ta mahsulot.");
+        var bad = request.Items.FirstOrDefault(i => !Mxik.IsValid(i.MxikCode?.Trim()));
+        if (bad is not null)
+            throw new ValidationException($"MXIK kodi {Mxik.Length} ta raqam bo'lishi shart: '{bad.MxikCode}'.");
+
+        var map = request.Items.GroupBy(i => i.ProductId).ToDictionary(g => g.Key, g => g.Last());
+        if (map.Count == 0) return new BulkShowOnlineResult(0);
+
+        var ids = map.Keys.ToList();
+        var products = await _db.Products.Where(p => ids.Contains(p.Id)).ToListAsync(cancellationToken);
+
+        // Faqat TAKLIF yoziladi — MxikCode (chekka tushadigan) o'zgarmaydi.
+        var changed = 0;
+        foreach (var p in products)
+        {
+            if (request.OnlyIfInvalid && Mxik.IsValid(p.MxikCode)) continue;
+            var item = map[p.Id];
+            p.MxikSuggestion = item.MxikCode.Trim();
+            p.MxikSuggestionSource = string.IsNullOrWhiteSpace(item.Source) ? null : item.Source.Trim();
+            changed++;
+        }
+
+        if (changed > 0)
+            await _db.SaveChangesAsync(cancellationToken);
+
+        return new BulkShowOnlineResult(changed);
+    }
+
     public async Task<ProductDto> UpdateAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default)
     {
         var product = await _db.Products
@@ -279,6 +311,9 @@ public class ProductService : IProductService
         product.ProductType = dto.ProductType;
         product.PrepMinutes = dto.PrepMinutes;
         product.MxikCode = Mxik.Require(dto.MxikCode, dto.Name.Trim());
+        // To'g'ri MXIK saqlandi — taklif endi kerak emas.
+        product.MxikSuggestion = null;
+        product.MxikSuggestionSource = null;
         product.Barcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim();
         product.CostPrice = dto.CostPrice;
         product.Price = dto.Price;

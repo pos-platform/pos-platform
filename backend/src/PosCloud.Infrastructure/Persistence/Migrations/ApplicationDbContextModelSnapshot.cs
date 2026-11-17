@@ -2017,6 +2017,12 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("MxikSuggestion")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MxikSuggestionSource")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)

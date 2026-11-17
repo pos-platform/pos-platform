@@ -98,6 +98,14 @@ public class ProductsController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _productService.SetImagesAsync(request, cancellationToken));
 
+    /// <summary>Taxminiy MXIK takliflarini ommaviy yozadi (chekka tushmaydi). Javob: { updated: n }.</summary>
+    [HttpPut("bulk-mxik")]
+    [HasPermission(Permissions.ProductsEdit)]
+    [ProducesResponseType(typeof(BulkShowOnlineResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BulkShowOnlineResult>> SetMxikGuesses(BulkMxikRequest request,
+        CancellationToken cancellationToken)
+        => Ok(await _productService.SetMxikGuessesAsync(request, cancellationToken));
+
     /// <summary>Mahsulotni o'chiradi (ishlatilmagan bo'lsa).</summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

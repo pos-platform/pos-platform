@@ -32,6 +32,9 @@ public interface IProductService
     /// <summary>Mahsulot rasmlarini ommaviy yozadi (faqat ImageUrl).</summary>
     Task<BulkShowOnlineResult> SetImagesAsync(BulkImageRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Taxminiy MXIK takliflarini ommaviy yozadi (MxikCode o'zgarmaydi — chekka tushmaydi).</summary>
+    Task<BulkShowOnlineResult> SetMxikGuessesAsync(BulkMxikRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Noyob shtrix-kod (kod tovara) generatsiya qiladi.</summary>
     Task<string> GenerateBarcodeAsync(CancellationToken cancellationToken = default);
 

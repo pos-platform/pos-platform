@@ -25,6 +25,15 @@ public class Product : BaseEntity
     /// </summary>
     public string MxikCode { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Avtomatik topilgan TAXMINIY MXIK — faqat taklif, chekka yozilmaydi (chekka faqat MxikCode).
+    /// Odam formada tekshirib MxikCode'ga qo'llaydi; to'g'ri MxikCode saqlansa tozalanadi.
+    /// </summary>
+    public string? MxikSuggestion { get; set; }
+
+    /// <summary>Taklif qayerdan olingan (masalan "tasnif", "brend").</summary>
+    public string? MxikSuggestionSource { get; set; }
+
     /// <summary>Shtrix-kod / kod tovara (ixtiyoriy).</summary>
     public string? Barcode { get; set; }
 
