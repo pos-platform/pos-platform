@@ -9,6 +9,7 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
       agent: ${{ steps.filter.outputs.agent }}
+      desktop: ${{ steps.filter.outputs.desktop }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -21,6 +22,75 @@ jobs:
               - 'backend/**'
             agent:
               - 'agent/**'
+            desktop:
+              - 'desktop/**'
+  release-desktop:
+    # desktop/ o'zgarsa: versiya avtomatik oshadi, Velopack paket yasaladi va serverga yuklanadi.
+    # Kassalarda ⚙ chiqadi, kassir Sozlamalar → "Yangilash" ni bosadi.
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: windows-latest
+    concurrency: desktop-release
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Versiyani aniqlash (serverdagi oxirgi + 1)
+        id: ver
+        run: |
+          [xml]$x = Get-Content desktop/PosCloud.Desktop/PosCloud.Desktop.csproj
+          $csproj = [version](@($x.Project.PropertyGroup.Version) | Where-Object { $_ } | Select-Object -First 1)
+          $server = $null
+          try {
+            $feed = Invoke-RestMethod "https://poscloud.uz/updates/velopack/releases.win.json" -TimeoutSec 30
+            $server = @($feed.Assets | ForEach-Object { [version]$_.Version }) | Sort-Object | Select-Object -Last 1
+          } catch { Write-Host "Serverda hali Velopack versiyasi yo'q: $($_.Exception.Message)" }
+          # csproj'da qo'lda kattaroq versiya qo'yilgan bo'lsa (masalan 1.1.0) — o'sha olinadi,
+          # aks holda serverdagi oxirgi versiyaning patch'i 1 ga oshiriladi.
+          # Server bo'sh bo'lsa — csproj versiyasi allaqachon chiqqan deb hisoblanib, +1 qilinadi.
+          if (-not $server) {
+            $v = "$($csproj.Major).$($csproj.Minor).$($csproj.Build + 1)"
+          } elseif ($server -ge $csproj) {
+            $v = "$($server.Major).$($server.Minor).$($server.Build + 1)"
+          } else {
+            $v = "$($csproj.Major).$($csproj.Minor).$($csproj.Build)"
+          }
+          Write-Host "Server: $server | csproj: $csproj | yangi: $v"
+          "version=$v" >> $env:GITHUB_OUTPUT
+      - name: SSH sozlash
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          $dir = Join-Path $HOME ".ssh"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $key = Join-Path $dir "id_ed25519"
+          [IO.File]::WriteAllText($key, ($env:SSH_KEY -replace "`r", "").Trim() + "`n")
+          icacls $key /inheritance:r /grant:r "$($env:USERNAME):(R)" | Out-Null
+          $cfg = "Host poscloud-server`n  HostName $env:SERVER_HOST`n  User $env:SERVER_USER`n  IdentityFile $key`n  StrictHostKeyChecking no`n"
+          [IO.File]::WriteAllText((Join-Path $dir "config"), $cfg)
+          ssh poscloud-server "echo SSH OK"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Build + pack + serverga yuklash
+        working-directory: desktop
+        run: |
+          ./publish-desktop-update.ps1 -Version "${{ steps.ver.outputs.version }}" -Upload `
+            -Server poscloud-server `
+            -VelopackPath /opt/posplatform/updates/velopack `
+            -RemotePath /opt/posplatform/updates/desktop `
+            -FeedUrl https://poscloud.uz/updates/velopack
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Setup.exe ni saqlash (yangi kassaga o'rnatish uchun)
+        uses: actions/upload-artifact@v4
+        with:
+          name: PosCloud-Desktop-${{ steps.ver.outputs.version }}
+          path: desktop/publish/releases/PosCloud-win-Setup.exe
+          retention-days: 30
   build-frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
