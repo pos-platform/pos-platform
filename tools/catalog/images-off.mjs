@@ -8,6 +8,7 @@
 // PUT /api/products/bulk-images bilan faqat rasmi bo'sh mahsulotga yoziladi (boshqa maydonlarga tegmaydi).
 // Rasmlar Open Food Facts'dan (CC BY-SA) — ilovada manba ko'rsatilishi tavsiya etiladi.
 import fs from 'node:fs';
+import { execFile } from 'node:child_process';
 
 const args = process.argv.slice(2);
 const apiBase = (args.find((a) => !a.startsWith('--')) || 'http://localhost:5080').replace(/\/$/, '');
@@ -45,15 +46,26 @@ const SOURCES = [
   'https://world.openproductsfacts.org',
 ];
 
+// OFF serverlariga ulanish ba'zan 10+ soniya oladi — Node fetch 10 s da ulanishni uzadi (UND_ERR_CONNECT_TIMEOUT).
+// Shuning uchun tashqi so'rovlar curl orqali: ulanishga 30 s, jami 60 s.
+function curl(url) {
+  return new Promise((resolve, reject) => {
+    execFile('curl', ['-sL', '--connect-timeout', '30', '-m', '60', '-A', UA, '-w', '%{http_code}', url],
+      { encoding: 'buffer', maxBuffer: 30 * 1024 * 1024 }, (err, stdout) => {
+        if (err) return reject(new Error(`curl ${err.code}`));
+        resolve({ status: Number(stdout.subarray(stdout.length - 3).toString()), body: stdout.subarray(0, stdout.length - 3) });
+      });
+  });
+}
+
 const found = [];
 let i = 0, done = 0, attached = 0;
 async function lookupIn(base, bc) {
   for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await fetch(`${base}/api/v2/product/${bc}.json?fields=product_name,brands,image_front_url,image_url`,
-      { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(20000) });
+    const res = await curl(`${base}/api/v2/product/${bc}.json?fields=product_name,brands,image_front_url,image_url`);
     if (res.status === 404) return null;
-    if (res.status === 429 || res.status >= 500) { await new Promise((s) => setTimeout(s, 5000 * (attempt + 1))); continue; }
-    const j = await res.json();
+    if (res.status === 429 || res.status >= 500 || res.status === 0) { await new Promise((s) => setTimeout(s, 5000 * (attempt + 1))); continue; }
+    const j = JSON.parse(res.body.toString('utf8'));
     const img = j.product?.image_front_url || j.product?.image_url;
     return j.status === 1 && img ? { img, offName: [j.product.brands, j.product.product_name].filter(Boolean).join(' · ') } : null;
   }
@@ -73,9 +85,14 @@ async function lookup(bc) {
 let tokenAt = Date.now();
 async function attach(p, img) {
   if (Date.now() - tokenAt > 30 * 60 * 1000) { token = await login(); tokenAt = Date.now(); }
-  const res = await fetch(img, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(30000) });
-  if (!res.ok) throw new Error(`rasm ${res.status}`);
-  const blob = await res.blob();
+  let res;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await curl(img).catch(() => ({ status: 0 }));
+    if (res.status === 200) break;
+    await new Promise((s) => setTimeout(s, 3000));
+  }
+  if (res.status !== 200) throw new Error(`rasm ${res.status}`);
+  const blob = new Blob([res.body]);
   const ext = img.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
   const fd = new FormData();
   fd.append('file', blob, `${p.barcode.trim()}.${ext}`);
