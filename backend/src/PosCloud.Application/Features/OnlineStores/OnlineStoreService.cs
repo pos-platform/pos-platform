@@ -22,6 +22,9 @@ public interface IOnlineStoreService
     Task<OnlineStoreSettingsDto> UpdateMineAsync(UpdateOnlineStoreSettingsRequest request, CancellationToken ct = default);
     Task<OnlineStoreSettingsDto> RequestListingAsync(CancellationToken ct = default);
     Task<OnlineStoreSettingsDto> SetAcceptingOrdersAsync(bool isAccepting, CancellationToken ct = default);
+
+    /// <summary>Ilovada yoqilgan, lekin slug/ilova maydonlari bo'sh do'konlarni standart qiymat bilan to'ldiradi (ishga tushishda).</summary>
+    Task<int> FillMissingAppDefaultsAsync(CancellationToken ct = default);
 }
 
 /// <summary>
@@ -134,6 +137,21 @@ public class OnlineStoreService : IOnlineStoreService
 
         await _db.SaveChangesAsync(ct);
         return ToDto(org, settings);
+    }
+
+    public async Task<int> FillMissingAppDefaultsAsync(CancellationToken ct = default)
+    {
+        var rows = await _db.OnlineStoreSettings.IgnoreQueryFilters()
+            .Where(s => s.IsEnabled && (s.Slug == null || s.AppName == null || s.AppPackageId == null || s.BrandColor == null))
+            .Join(_db.Organizations.IgnoreQueryFilters(), s => s.OrganizationId, o => o.Id, (s, o) => new { s, o.Name })
+            .ToListAsync(ct);
+
+        foreach (var r in rows)
+        {
+            await FillAppDefaultsAsync(r.s, string.IsNullOrWhiteSpace(r.s.DisplayName) ? r.Name : r.s.DisplayName, ct);
+            await _db.SaveChangesAsync(ct); // keyingi do'kon unikallik tekshiruvi buni ko'rsin
+        }
+        return rows.Count;
     }
 
     private const string DefaultBrandColor = "#2563EB";

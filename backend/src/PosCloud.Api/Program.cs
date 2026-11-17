@@ -266,6 +266,18 @@ using (var scope = app.Services.CreateScope())
     var initializer = scope.ServiceProvider.GetRequiredService<ApplicationDbContextInitializer>();
     await initializer.MigrateAsync();
     await initializer.SeedAsync();
+
+    // Ilovadagi do'konlarning mobil ilova maydonlari (slug, nom, paket ID, rang) — bo'shlari avtomatik to'ldiriladi.
+    try
+    {
+        var filled = await scope.ServiceProvider.GetRequiredService<PosCloud.Application.Features.OnlineStores.IOnlineStoreService>()
+            .FillMissingAppDefaultsAsync();
+        if (filled > 0) app.Logger.LogInformation("Online do'konlar: {Count} tasining ilova maydonlari to'ldirildi", filled);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Online do'kon ilova maydonlarini to'ldirib bo'lmadi");
+    }
 }
 
 // Reverse proxy header'larini eng birinchi o'qiymiz (qolgan middleware to'g'ri sxema/IP ko'rishi uchun).
