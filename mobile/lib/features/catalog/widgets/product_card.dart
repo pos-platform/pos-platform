@@ -42,7 +42,7 @@ class ProductCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                   child: Opacity(
                     opacity: p.inStock ? 1 : 0.5,
-                    child: ProductImage(url: p.imageUrl, fit: BoxFit.cover),
+                    child: ProductImage(url: p.imageUrl, iconSize: 44, fit: BoxFit.cover, onTint: true),
                   ),
                 ),
               ),

@@ -314,7 +314,7 @@ class _BuyAgainTile extends ConsumerWidget {
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
                       onTap: () => context.push('/home/product/${p.id}'),
-                      child: ProductImage(url: p.imageUrl, fit: BoxFit.cover),
+                      child: ProductImage(url: p.imageUrl, fit: BoxFit.cover, onTint: true),
                     ),
                   ),
                 ),

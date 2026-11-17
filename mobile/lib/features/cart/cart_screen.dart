@@ -359,7 +359,7 @@ class _CartLineTile extends ConsumerWidget {
               height: 62,
               decoration: BoxDecoration(color: AppColors.tintFor(line.productId), borderRadius: BorderRadius.circular(18)),
               clipBehavior: Clip.antiAlias,
-              child: ProductImage(url: line.imageUrl, iconSize: 24, fit: BoxFit.cover),
+              child: ProductImage(url: line.imageUrl, iconSize: 24, fit: BoxFit.cover, onTint: true),
             ),
           ),
           const SizedBox(width: 12),

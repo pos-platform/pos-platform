@@ -128,7 +128,7 @@ class _ProductBodyState extends ConsumerState<_ProductBody> {
                       aspectRatio: 1,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(28),
-                        child: ProductImage(url: p.imageUrl, iconSize: 72, fit: BoxFit.cover),
+                        child: ProductImage(url: p.imageUrl, iconSize: 72, fit: BoxFit.cover, onTint: true),
                       ),
                     ),
                   ),

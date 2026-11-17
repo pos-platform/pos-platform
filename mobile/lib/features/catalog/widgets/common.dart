@@ -26,22 +26,30 @@ String unitLabel(BuildContext context, bool isKg) {
 
 /// Mahsulot rasmi: nisbiy manzil API manziliga ulanadi; yo'q yoki xato bo'lsa — belgi.
 class ProductImage extends StatelessWidget {
-  const ProductImage({super.key, required this.url, this.iconSize = 36, this.fit = BoxFit.contain});
+  const ProductImage({super.key, required this.url, this.iconSize = 36, this.fit = BoxFit.contain, this.onTint = false});
 
   final String? url;
   final double iconSize;
   final BoxFit fit;
 
+  /// Rangli karta ustida (dizayn v3): rasm yo'q bo'lsa kulrang quti emas — karta rangi va xira savat belgisi.
+  final bool onTint;
+
   @override
   Widget build(BuildContext context) {
     final full = AppConfig.imageUrl(url);
-    final placeholder = ColoredBox(
-      color: AppColors.chipSurface,
-      child: Center(child: Icon(Icons.image_outlined, size: iconSize, color: AppColors.textSecondary)),
-    );
+    final placeholder = onTint
+        ? Center(
+            child: Icon(Icons.shopping_basket_outlined,
+                size: iconSize * 1.3, color: AppColors.ink.withValues(alpha: 0.16)),
+          )
+        : ColoredBox(
+            color: AppColors.chipSurface,
+            child: Center(child: Icon(Icons.image_outlined, size: iconSize, color: AppColors.textSecondary)),
+          );
     if (full == null) return placeholder;
     return ColoredBox(
-      color: AppColors.chipSurface,
+      color: onTint ? Colors.transparent : AppColors.chipSurface,
       child: Image.network(
         full,
         fit: fit,
