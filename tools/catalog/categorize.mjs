@@ -164,7 +164,47 @@ const KEYWORDS = [
   [/daftar|ruchka|qalam|kley/i, 'Kanselyariya'],
   [/olma|banan|apelsin|limon|uzum|nok\b/i, 'Mevalar'],
   [/kartoshka|piyoz|sabzi|savzi|pomidor|pamidor|bodring|karam/i, 'Sabzavotlar'],
+  [/bl[ao]knot|papka|fayl|flamaster|kraska|puzl|albom/i, 'Kanselyariya'],
+  [/plombir|eskimo|morojnoe/i, 'Muzqaymoq'],
+  [/kasha|nutrila|nestogen|bellakt|fruto|nyanya|\bnan\b|semper|hipp|agusha/i, 'Bolalar ovqati'],
+  [/soska|butilka/i, "Butilka va so'rg'ichlar"],
+  [/shotka|zubachistka|parodont/i, 'Tish parvarishi'],
+  [/rexona|deodorant|dezodorant|axe\b|atir/i, 'Dezodorant va atir'],
+  [/garnier|nivea|dove|loreal|lorein|krem/i, 'Tana va yuz parvarishi'],
+  [/uxochistka|vatniy|prokladka/i, "Salfetka va qog'oz"],
+  [/domestos|domestis|fairy|aos\b|gupka|machalka/i, 'Idish va uy tozalash'],
+  [/perchatka/i, 'Tozalash anjomlari'],
+  [/mentos|chupa|chupy|tic tac|\btic\b|konfet|halvo|chak chak|harribo|haribo/i, 'Konfetlar'],
+  [/milka|kinder|snickers|mars\b|twix|bounty|alpen/i, 'Shokolad'],
+  [/\blays\b|pringles|cheers|crispy/i, 'Chips va suxariki'],
+  [/felix|kitekat|whiskas|pedigree/i, 'Hayvon ozuqasi'],
+  [/zajigalka|gugurt/i, "Gugurt, zajigalka, ko'mir"],
+  [/strech|falga|folga|paket/i, 'Folga, paket va plyonka'],
+  [/\besse\b|marlbo|camel|\bld\b/i, 'Sigaretlar'],
+  [/moxito|mojito|chernogolovka|fanta|sprite|\bburn\b|flash|gorilla/i, 'Gazli ichimliklar'],
+  [/chortoq|hydrolife|aquella|bonaqua/i, 'Suv'],
+  [/smetana|sirok|tvorog|lactel|bulichka/i, 'Sut va kefir'],
+  [/tushonka|kippers|shproti|sardina/i, "Go'sht va baliq konservalari"],
+  [/jele|djem|jem\b|marmelad/i, 'Marmelad va jem'],
+  [/lapsha|barilla|vermishel/i, 'Makaron va tez tayyor'],
+  [/karkade|lipton|ahmad|greenfield/i, 'Choy'],
+  [/heinz|karnishon|kornishon/i, 'Sabzavot konservalari'],
 ];
+
+// Brend (nomning birinchi so'zi) va ishlab chiqaruvchi (shtrix-kodning 7 raqami) bo'yicha qo'shnilar:
+// MXIK'siz mahsulot o'sha brend/ishlab chiqaruvchining boshqa mahsulotlari ko'p tushgan bo'limga tushadi.
+const brandKey = (name) => (norm(name).match(/[a-z'ʻʼа-яё]{3,}/i) || [])[0];
+const makerKey = (bc) => (/^\d{12,14}$/.test(String(bc || '').trim()) ? String(bc).trim().slice(0, 7) : null);
+// 18+ (yashirin) bo'limlar kalit so'zi MXIK va qo'shnilardan ustun — sigaret/pivo ochiq bo'limga tushib qolmasin.
+const adultLeaf = (name) => KEYWORDS.find(([re, l]) => (l === 'Sigaretlar' || l === 'Pivo') && re.test(name))?.[1];
+
+function majority(votes) {
+  if (!votes) return null;
+  const entries = Object.entries(votes).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((s, [, n]) => s + n, 0);
+  const [leaf, n] = entries[0];
+  return n >= 2 && n / total >= 0.6 ? leaf : null; // kamida 2 ta va 60% ustunlik
+}
 
 const prefixToLeaf = new Map();
 for (const [, , children] of TREE)
@@ -202,10 +242,23 @@ for (const p of products) {
   if (catById.get(p.categoryId)?.parentId) continue; // allaqachon daraxtda — tegmaymiz
   if (KEEP_HIDDEN.includes(oldName)) continue;
   let leaf = OLD[oldName], how = 'eski kategoriya';
+  if (!leaf) { leaf = adultLeaf(p.name); how = "kalit so'z (18+)"; }
   if (!leaf) { leaf = prefixToLeaf.get(String(p.mxikCode || '').slice(0, 5)); how = 'MXIK'; }
+  plan.push({ p, leaf, how });
+}
+
+// 2-o'tish: aniq usullar bilan topilganlardan brend/ishlab chiqaruvchi "ovozlari" — keyin qolganlarga.
+const brandVotes = {}, makerVotes = {};
+const vote = (store, key, leaf) => { if (key) ((store[key] ||= {})[leaf] = (store[key][leaf] || 0) + 1); };
+for (const x of plan) if (x.leaf) { vote(brandVotes, brandKey(x.p.name), x.leaf); vote(makerVotes, makerKey(x.p.barcode), x.leaf); }
+for (const x of plan) {
+  if (x.leaf) continue;
+  const p = x.p;
+  let leaf = majority(brandVotes[brandKey(p.name)]), how = 'brend';
+  if (!leaf) { leaf = majority(makerVotes[makerKey(p.barcode)]); how = 'ishlab chiqaruvchi'; }
   if (!leaf) { leaf = KEYWORDS.find(([re]) => re.test(p.name))?.[1]; how = "kalit so'z"; }
   if (!leaf) { leaf = 'Boshqa'; how = 'topilmadi'; }
-  plan.push({ p, leaf, how });
+  x.leaf = leaf; x.how = how;
 }
 
 // Hisobot

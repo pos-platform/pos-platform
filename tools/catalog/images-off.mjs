@@ -27,9 +27,10 @@ async function api(method, path, token, body, raw) {
   return text ? JSON.parse(text) : null;
 }
 
-const { token } = await api('POST', '/api/auth/login', null, {
+const login = async () => (await api('POST', '/api/auth/login', null, {
   username: process.env.POS_USER || 'admin', password: process.env.POS_PASS || 'Admin12345!',
-});
+})).token;
+let token = await login();
 const products = await api('GET', '/api/products', token);
 // Tizim yaratgan ichki kodlar (04...) va tarozi kodlari (2...) — xalqaro bazada yo'q.
 const isEan = (b) => /^\d{8}$|^\d{12,14}$/.test(b) && !b.startsWith('04') && !b.startsWith('2');
@@ -67,6 +68,7 @@ fs.writeFileSync('images-off-report.csv', '﻿' + ['Mahsulot;Shtrix-kod;OFF nomi
 if (!APPLY || found.length === 0) process.exit(0);
 
 // Yuklab olish → serverga joylash → bulk-images.
+token = await login(); // qidiruv soatlab davom etadi — token eskirgan bo'lishi mumkin
 const items = [];
 for (const { p, img } of found) {
   try {
