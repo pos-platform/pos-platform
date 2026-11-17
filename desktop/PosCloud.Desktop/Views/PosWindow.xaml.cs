@@ -1198,11 +1198,28 @@ public partial class PosWindow : Window
     {
         var line = _cart.FirstOrDefault(l => l.Product.Id == product.Id);
         if (line is null)
+        {
             _cart.Insert(0, new CartLine(product, weightKg));
+            WarnIfBadMxik(product);
+        }
         else
             line.Quantity += weightKg;
         RecalcTotals();
         SearchBox.Focus();
+    }
+
+    /// <summary>
+    /// MXIK (ИКПУ) kodi 17 xonali raqam bo'lmasa — backend chekni fiskal modulga yubormaydi
+    /// (Failed). Tovar savatga baribir qo'shiladi (nofiskal "Chop etish" mumkin), lekin kassir
+    /// oldindan ogohlantiriladi.
+    /// </summary>
+    private void WarnIfBadMxik(ProductDto product)
+    {
+        var code = product.MxikCode?.Trim() ?? "";
+        if (code.Length == 17 && code.All(char.IsAsciiDigit)) return;
+        ShowNotFound(string.IsNullOrEmpty(code)
+            ? $"{product.Name}: MXIK kodi kiritilmagan — fiskal chek o'tmaydi"
+            : $"{product.Name}: MXIK kodi xato ({code}) — fiskal chek o'tmaydi");
     }
 
     private void ProductCard_Click(object sender, RoutedEventArgs e)
@@ -1233,6 +1250,7 @@ public partial class PosWindow : Window
                 return;
             }
             _cart.Insert(0, new CartLine(product, 1, markingCode.Trim()));
+            WarnIfBadMxik(product);
             RecalcTotals();
             SearchBox.Focus();
             return;
@@ -1244,6 +1262,7 @@ public partial class PosWindow : Window
         {
             // Oxirgi qo'shilgan tovar ro'yxatning boshida (tepada) tursin.
             _cart.Insert(0, new CartLine(product, 1));
+            WarnIfBadMxik(product);
         }
         else
         {

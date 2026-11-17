@@ -398,6 +398,8 @@ public class ReceiptInfo
     public string? FiscalRegistrationNumber { get; set; }
     public string? FiscalReceiptNumber { get; set; }
     public string? QrCodeUrl { get; set; }
+    /// <summary>Failed bo'lganda sabab (masalan: MXIK xato yoki modul xatosi).</summary>
+    public string? ErrorMessage { get; set; }
 
     public bool IsRegistered => FiscalStatus == "Registered" && !string.IsNullOrEmpty(QrCodeUrl);
 }
