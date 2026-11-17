@@ -162,6 +162,9 @@ public class CategoryDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = "";
+
+    /// <summary>To'g'ridan-to'g'ri mahsulotlar soni (bo'sh ota bo'limlar kassada ko'rsatilmaydi). Eski keshda null.</summary>
+    public int? ProductCount { get; set; }
 }
 
 /// <summary>

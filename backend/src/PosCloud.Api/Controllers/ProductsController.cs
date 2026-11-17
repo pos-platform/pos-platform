@@ -82,6 +82,22 @@ public class ProductsController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _productService.SetShowOnlineAsync(request, cancellationToken));
 
+    /// <summary>Mahsulotlarni ommaviy boshqa kategoriyaga ko'chiradi. Javob: { updated: n }.</summary>
+    [HttpPut("bulk-category")]
+    [HasPermission(Permissions.ProductsEdit)]
+    [ProducesResponseType(typeof(BulkShowOnlineResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BulkShowOnlineResult>> SetCategory(BulkCategoryRequest request,
+        CancellationToken cancellationToken)
+        => Ok(await _productService.SetCategoryAsync(request, cancellationToken));
+
+    /// <summary>Mahsulot rasmlarini ommaviy yozadi (faqat ImageUrl). Javob: { updated: n }.</summary>
+    [HttpPut("bulk-images")]
+    [HasPermission(Permissions.ProductsEdit)]
+    [ProducesResponseType(typeof(BulkShowOnlineResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BulkShowOnlineResult>> SetImages(BulkImageRequest request,
+        CancellationToken cancellationToken)
+        => Ok(await _productService.SetImagesAsync(request, cancellationToken));
+
     /// <summary>Mahsulotni o'chiradi (ishlatilmagan bo'lsa).</summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

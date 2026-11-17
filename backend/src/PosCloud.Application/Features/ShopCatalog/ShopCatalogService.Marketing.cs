@@ -227,9 +227,9 @@ public partial class ShopCatalogService
         var visible = VisibleProducts(orgId, branchId)
             .Where(p => p.Stocks.Any(s => s.BranchId == branchId && s.Quantity - s.Reserved > 0));
         result.Categories = await _db.Categories.IgnoreQueryFilters().AsNoTracking()
-            .Where(c => c.OrganizationId == orgId)
+            .Where(c => c.OrganizationId == orgId && c.ShowOnline)
             .Where(ShopSearch.Match<Category>(c => c.Name, terms))
-            .Where(c => visible.Any(p => p.CategoryId == c.Id))
+            .Where(c => visible.Any(p => p.CategoryId == c.Id || p.Category!.ParentId == c.Id))
             .OrderBy(c => c.Name.Length).ThenBy(c => c.Name)
             .Take(SuggestCategories)
             .Select(c => new ShopCategoryBriefDto { Id = c.Id, Name = c.Name })

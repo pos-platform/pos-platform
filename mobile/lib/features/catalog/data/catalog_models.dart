@@ -171,16 +171,32 @@ class ShopStore {
 }
 
 class ShopCategory {
-  const ShopCategory({required this.id, required this.name, required this.productCount});
+  const ShopCategory({
+    required this.id,
+    required this.name,
+    required this.productCount,
+    this.parentId,
+    this.imageUrl,
+  });
 
   final String id;
   final String name;
+
+  /// Asosiy bo'limda — ichki bo'limlari bilan birga.
   final int productCount;
+
+  /// Ota bo'lim (null — asosiy bo'lim).
+  final String? parentId;
+  final String? imageUrl;
+
+  bool get isRoot => parentId == null;
 
   factory ShopCategory.fromJson(Map<String, dynamic> j) => ShopCategory(
         id: j['id'] as String,
         name: j['name'] as String? ?? '',
         productCount: (j['productCount'] as num?)?.toInt() ?? 0,
+        parentId: j['parentId'] as String?,
+        imageUrl: j['imageUrl'] as String?,
       );
 }
 

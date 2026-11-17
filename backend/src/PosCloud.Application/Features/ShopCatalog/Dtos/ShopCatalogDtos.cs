@@ -92,7 +92,14 @@ public class ShopCategoryDto
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Hozir sotuvda bor mahsulotlar soni.</summary>
+    /// <summary>Ota bo'lim (null — asosiy bo'lim).</summary>
+    public Guid? ParentId { get; set; }
+
+    public string? ImageUrl { get; set; }
+
+    public int SortOrder { get; set; }
+
+    /// <summary>Hozir sotuvda bor mahsulotlar soni (asosiy bo'limda — ichki bo'limlari bilan).</summary>
     public int ProductCount { get; set; }
 }
 

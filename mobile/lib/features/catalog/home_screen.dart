@@ -210,6 +210,11 @@ class _CatalogState extends ConsumerState<_Catalog> {
     final t = AppLocalizations.of(context);
     final store = widget.store;
     final categories = ref.watch(categoriesProvider(_branchId)).value ?? const <ShopCategory>[];
+    // Ikki darajali daraxt: asosiy bo'limlar va tanlangan asosiy bo'limning ichki bo'limlari.
+    final roots = categories.where((c) => c.isRoot).toList();
+    final selected = categories.where((c) => c.id == _categoryId).firstOrNull;
+    final rootId = selected == null ? null : (selected.parentId ?? selected.id);
+    final children = rootId == null ? const <ShopCategory>[] : categories.where((c) => c.parentId == rootId).toList();
     final cart = ref.watch(cartControllerProvider);
     final showCartBar = !cart.isEmpty && cart.branchId == _branchId;
     // Qidiruv yoki kategoriya tanlanmagan bo'lsa — marketing bloklari (bannerlar, Top 10, kolleksiyalar...).
@@ -321,10 +326,10 @@ class _CatalogState extends ConsumerState<_Catalog> {
                   branchId: _branchId,
                   fallbackBanner:
                       store.deliveryEnabled && store.freeDeliveryFrom != null ? _PromoBanner(store: store) : null,
-                  middle: categories.isEmpty
+                  middle: roots.isEmpty
                       ? null
                       : _CategoryTiles(
-                          categories: categories,
+                          categories: roots,
                           onTap: (id) {
                             _categoryId = id;
                             _reset();
@@ -350,10 +355,10 @@ class _CatalogState extends ConsumerState<_Catalog> {
                         _reset();
                       },
                     ),
-                    for (final c in categories)
+                    for (final c in roots)
                       _CategoryChip(
                         label: c.name,
-                        selected: _categoryId == c.id,
+                        selected: rootId == c.id,
                         onTap: () {
                           if (_categoryId == c.id) return;
                           _categoryId = c.id;
@@ -364,6 +369,41 @@ class _CatalogState extends ConsumerState<_Catalog> {
                 ),
               ),
             ),
+            // Ichki bo'limlar: asosiy bo'lim tanlanganda uning ostida ikkinchi qator.
+            if (children.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: SizedBox(
+                    height: 38,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: [
+                        _CategoryChip(
+                          label: t.catAll,
+                          selected: _categoryId == rootId,
+                          onTap: () {
+                            if (_categoryId == rootId) return;
+                            _categoryId = rootId;
+                            _reset();
+                          },
+                        ),
+                        for (final c in children)
+                          _CategoryChip(
+                            label: c.name,
+                            selected: _categoryId == c.id,
+                            onTap: () {
+                              if (_categoryId == c.id) return;
+                              _categoryId = c.id;
+                              _reset();
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
               sliver: SliverToBoxAdapter(

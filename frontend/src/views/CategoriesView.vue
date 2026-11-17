@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { categoriesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
@@ -12,6 +12,22 @@ const showModal = ref(false)
 const editId = ref(null)
 const formName = ref('')
 const formNote = ref('')
+const formParentId = ref('')
+const formSortOrder = ref(0)
+const formImageUrl = ref('')
+const formShowOnline = ref(true)
+
+// Daraxt tartibida: asosiy bo'lim, ostida ichki bo'limlari.
+const rows = computed(() => {
+  const all = categories.value
+  const ids = new Set(all.map((c) => c.id))
+  const bySort = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name)
+  const roots = all.filter((c) => !c.parentId || !ids.has(c.parentId)).sort(bySort)
+  return roots.flatMap((r) => [r, ...all.filter((c) => c.parentId === r.id).sort(bySort)])
+})
+// Ota bo'lim faqat asosiy bo'lim bo'ladi; ichki bo'limi bor bo'limni boshqasiga ko'chirib bo'lmaydi.
+const parentOptions = computed(() => categories.value.filter((c) => !c.parentId && c.id !== editId.value))
+const editHasChildren = computed(() => !!editId.value && categories.value.some((c) => c.parentId === editId.value))
 const saving = ref(false)
 
 const deleteTarget = ref(null)
@@ -33,6 +49,10 @@ function openCreate() {
   editId.value = null
   formName.value = ''
   formNote.value = ''
+  formParentId.value = ''
+  formSortOrder.value = 0
+  formImageUrl.value = ''
+  formShowOnline.value = true
   error.value = ''
   showModal.value = true
 }
@@ -41,6 +61,10 @@ function openEdit(cat) {
   editId.value = cat.id
   formName.value = cat.name
   formNote.value = cat.note || ''
+  formParentId.value = cat.parentId || ''
+  formSortOrder.value = cat.sortOrder ?? 0
+  formImageUrl.value = cat.imageUrl || ''
+  formShowOnline.value = cat.showOnline !== false
   error.value = ''
   showModal.value = true
 }
@@ -49,7 +73,14 @@ async function submit() {
   saving.value = true
   error.value = ''
   try {
-    const payload = { name: formName.value.trim(), note: formNote.value.trim() || null }
+    const payload = {
+      name: formName.value.trim(),
+      note: formNote.value.trim() || null,
+      parentId: formParentId.value || null,
+      sortOrder: Number(formSortOrder.value) || 0,
+      imageUrl: formImageUrl.value.trim() || null,
+      showOnline: formShowOnline.value
+    }
     if (editId.value) {
       const updated = await categoriesApi.update(editId.value, payload)
       const idx = categories.value.findIndex((c) => c.id === updated.id)
@@ -112,17 +143,20 @@ onMounted(load)
         <tr>
           <th>Nomi</th>
           <th>Izoh</th>
+          <th>Ilovada</th>
           <th class="text-right">Mahsulotlar soni</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="!categories.length">
-          <td colspan="4" class="muted" style="text-align:center; padding:32px">Kategoriya yo'q</td>
+          <td colspan="5" class="muted" style="text-align:center; padding:32px">Kategoriya yo'q</td>
         </tr>
-        <tr v-for="cat in categories" :key="cat.id">
-          <td><strong>{{ cat.name }}</strong></td>
+        <tr v-for="cat in rows" :key="cat.id">
+          <td v-if="cat.parentId" style="padding-left:32px">↳ {{ cat.name }}</td>
+          <td v-else><strong>{{ cat.name }}</strong></td>
           <td class="muted" style="font-size:13px">{{ cat.note || '—' }}</td>
+          <td style="font-size:13px">{{ cat.showOnline === false ? '🚫 yashirin' : '✓' }}</td>
           <td class="text-right muted" style="font-size:13px">{{ cat.productCount }}</td>
           <td class="text-right" style="white-space:nowrap">
             <button class="btn btn-ghost btn-sm" @click="openEdit(cat)">✏️</button>
@@ -154,6 +188,25 @@ onMounted(load)
           <label>Izoh (ixtiyoriy)</label>
           <input v-model="formNote" class="input" />
         </div>
+        <div class="field">
+          <label>Ota bo'lim</label>
+          <select v-model="formParentId" class="input" :disabled="editHasChildren">
+            <option value="">— Asosiy bo'lim —</option>
+            <option v-for="p in parentOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+          <small v-if="editHasChildren" class="muted">Ichki bo'limlari bor — asosiy bo'lim bo'lib qoladi.</small>
+        </div>
+        <div class="field">
+          <label>Tartib (kichigi oldin)</label>
+          <input v-model.number="formSortOrder" type="number" class="input" />
+        </div>
+        <div class="field">
+          <label>Rasm URL (ixtiyoriy)</label>
+          <input v-model="formImageUrl" class="input" placeholder="/uploads/..." />
+        </div>
+        <label style="display:flex; gap:8px; align-items:center; margin:8px 0">
+          <input v-model="formShowOnline" type="checkbox" /> Mijoz ilovasida ko'rsatish
+        </label>
         <button class="btn" style="width:100%; margin-top:8px" :disabled="saving || !formName.trim()">
           {{ saving ? 'Saqlanmoqda...' : (editId ? 'Saqlash' : 'Qo\'shish') }}
         </button>

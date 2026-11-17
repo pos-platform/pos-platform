@@ -26,6 +26,12 @@ public interface IProductService
     /// <summary>Mahsulotlarni ommaviy ilovada ko'rsatish/yashirish (joriy tashkilot ichida).</summary>
     Task<BulkShowOnlineResult> SetShowOnlineAsync(BulkShowOnlineRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Mahsulotlarni ommaviy boshqa kategoriyaga ko'chiradi (qoldiq va boshqa maydonlarga tegmaydi).</summary>
+    Task<BulkShowOnlineResult> SetCategoryAsync(BulkCategoryRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Mahsulot rasmlarini ommaviy yozadi (faqat ImageUrl).</summary>
+    Task<BulkShowOnlineResult> SetImagesAsync(BulkImageRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Noyob shtrix-kod (kod tovara) generatsiya qiladi.</summary>
     Task<string> GenerateBarcodeAsync(CancellationToken cancellationToken = default);
 

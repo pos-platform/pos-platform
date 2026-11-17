@@ -143,17 +143,37 @@ public partial class ShopCatalogService : IShopCatalogService
     {
         var orgId = await RequireStoreOrganization(branchId, ct);
 
-        return await VisibleProducts(orgId, branchId)
+        // Sotuvda bor mahsulotlar soni har bir (barg) kategoriya bo'yicha.
+        var counts = await VisibleProducts(orgId, branchId)
             .Where(p => p.Stocks.Any(s => s.BranchId == branchId && s.Quantity - s.Reserved > 0))
-            .GroupBy(p => new { p.CategoryId, p.Category!.Name })
-            .Select(g => new ShopCategoryDto
-            {
-                Id = g.Key.CategoryId,
-                Name = g.Key.Name,
-                ProductCount = g.Count()
-            })
-            .OrderBy(c => c.Name)
+            .GroupBy(p => p.CategoryId)
+            .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CategoryId, x => x.Count, ct);
+
+        var categories = await _db.Categories.IgnoreQueryFilters().AsNoTracking()
+            .Where(c => c.OrganizationId == orgId && c.ShowOnline)
+            .Select(c => new { c.Id, c.Name, c.ParentId, c.SortOrder, c.ImageUrl })
             .ToListAsync(ct);
+        var visibleIds = categories.Select(c => c.Id).ToHashSet();
+
+        // Asosiy bo'lim soni = o'zi + ichki bo'limlari. Yashirin otaning ichki bo'limi ko'rinmaydi.
+        return categories
+            .Where(c => c.ParentId == null || visibleIds.Contains(c.ParentId.Value))
+            .Select(c => new ShopCategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                ParentId = c.ParentId,
+                ImageUrl = c.ImageUrl,
+                SortOrder = c.SortOrder,
+                ProductCount = counts.GetValueOrDefault(c.Id)
+                               + (c.ParentId == null
+                                   ? categories.Where(x => x.ParentId == c.Id).Sum(x => counts.GetValueOrDefault(x.Id))
+                                   : 0),
+            })
+            .Where(c => c.ProductCount > 0)
+            .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
+            .ToList();
     }
 
     public async Task<PagedResult<ShopProductDto>> GetProductsAsync(Guid branchId, ShopProductQuery query,
@@ -166,7 +186,7 @@ public partial class ShopCatalogService : IShopCatalogService
         var products = VisibleProducts(orgId, branchId);
 
         if (query.CategoryId is { } categoryId)
-            products = products.Where(p => p.CategoryId == categoryId);
+            products = products.Where(p => p.CategoryId == categoryId || p.Category!.ParentId == categoryId);
 
         var term = query.Search?.Trim();
         if (!string.IsNullOrEmpty(term))
@@ -275,7 +295,9 @@ public partial class ShopCatalogService : IShopCatalogService
             .Where(p => p.OrganizationId == orgId
                         && p.ShowOnline
                         && p.ProductType == ProductType.Good
-                        && (p.BranchId == null || p.BranchId == branchId));
+                        && (p.BranchId == null || p.BranchId == branchId)
+                        && p.Category!.ShowOnline
+                        && (p.Category.ParentId == null || p.Category.Parent!.ShowOnline));
 
     /// <summary>Ilovada ko'rinadigan do'konlar: filial va tashkilot faol, Store, yoqilgan, bloklanmagan, tarif amal qiladi.</summary>
     internal static async Task<List<StoreRow>> LoadVisibleStoresAsync(IApplicationDbContext db, Guid? branchId,

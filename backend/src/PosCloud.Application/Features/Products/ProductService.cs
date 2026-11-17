@@ -202,6 +202,63 @@ public class ProductService : IProductService
         return new BulkShowOnlineResult(products.Count);
     }
 
+    public async Task<BulkShowOnlineResult> SetCategoryAsync(BulkCategoryRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = request.ProductIds.Distinct().ToList();
+        if (ids.Count == 0) return new BulkShowOnlineResult(0);
+        if (ids.Count > 1000)
+            throw new ValidationException("Bir so'rovda ko'pi bilan 1000 ta mahsulot.");
+
+        // Tenant filtri — boshqa tashkilot kategoriyasi/mahsuloti topilmaydi.
+        if (!await _db.Categories.AnyAsync(c => c.Id == request.CategoryId, cancellationToken))
+            throw new NotFoundException($"Kategoriya topilmadi: {request.CategoryId}");
+
+        var categoryId = request.CategoryId;
+        var products = await _db.Products
+            .Where(p => ids.Contains(p.Id) && p.CategoryId != categoryId)
+            .ToListAsync(cancellationToken);
+        foreach (var p in products)
+            p.CategoryId = categoryId;
+
+        if (products.Count > 0)
+            await _db.SaveChangesAsync(cancellationToken);
+
+        return new BulkShowOnlineResult(products.Count);
+    }
+
+    public async Task<BulkShowOnlineResult> SetImagesAsync(BulkImageRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.Items.Count > 1000)
+            throw new ValidationException("Bir so'rovda ko'pi bilan 1000 ta mahsulot.");
+        var map = request.Items
+            .Where(i => !string.IsNullOrWhiteSpace(i.ImageUrl))
+            .GroupBy(i => i.ProductId)
+            .ToDictionary(g => g.Key, g => g.Last().ImageUrl.Trim());
+        if (map.Count == 0) return new BulkShowOnlineResult(0);
+
+        var ids = map.Keys.ToList();
+        var query = _db.Products.Where(p => ids.Contains(p.Id));
+        if (request.OnlyIfEmpty)
+            query = query.Where(p => p.ImageUrl == null || p.ImageUrl == "");
+        var products = await query.ToListAsync(cancellationToken);
+
+        var changed = 0;
+        foreach (var p in products)
+        {
+            var url = map[p.Id];
+            if (p.ImageUrl == url) continue;
+            p.ImageUrl = url;
+            changed++;
+        }
+
+        if (changed > 0)
+            await _db.SaveChangesAsync(cancellationToken);
+
+        return new BulkShowOnlineResult(changed);
+    }
+
     public async Task<ProductDto> UpdateAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default)
     {
         var product = await _db.Products
@@ -314,7 +371,10 @@ public class ProductService : IProductService
         if (rows.Count == 0) return result;
 
         var categories = await _db.Categories.ToListAsync(cancellationToken);
-        var byName = categories.ToDictionary(c => c.Name.ToLowerInvariant(), c => c);
+        // Turli bo'limlarda bir xil nomli ichki bo'lim bo'lishi mumkin — mahsulot ichki bo'limga (bargga) tushsin.
+        var byName = categories
+            .GroupBy(c => c.Name.ToLowerInvariant())
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.ParentId == null).First());
 
         // Filiallar — importda BranchName ustuni orqali topish uchun
         var branches = await _db.Branches.ToListAsync(cancellationToken);
