@@ -194,6 +194,11 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
                 title: Text(a.label.isEmpty ? a.addressLine : a.label,
                     style: const TextStyle(fontWeight: FontWeight.w700)),
                 subtitle: Text(a.addressLine),
+                trailing: IconButton(
+                  tooltip: t.addressEditTitle,
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  onPressed: () => Navigator.pop(ctx, 'edit:${a.id}'),
+                ),
                 onTap: () => Navigator.pop(ctx, a.id),
               ),
             ListTile(
@@ -209,6 +214,11 @@ class _CheckoutFormState extends ConsumerState<_CheckoutForm> {
     if (!mounted || result == null) return;
     if (result.isEmpty) {
       await _addAddress();
+    } else if (result.startsWith('edit:')) {
+      final id = result.substring(5);
+      setState(() => _addressId = id);
+      await context.push('/address-edit/$id');
+      if (mounted) ref.invalidate(addressesProvider);
     } else {
       setState(() => _addressId = result);
     }

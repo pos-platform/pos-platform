@@ -27,29 +27,51 @@ class HomeShell extends ConsumerWidget {
     final t = AppLocalizations.of(context);
     return Scaffold(
       body: shell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: shell.currentIndex,
-        onDestinationSelected: (i) {
-          // Mehmon "Bonus"ni bossa — kirish taklifi (karta telefon raqamiga bog'langan).
-          if (i == AppTab.bonus.index && !ref.read(authControllerProvider).isSignedIn) {
-            ref.read(authControllerProvider.notifier).requestSignIn();
-            return;
-          }
-          shell.goBranch(i, initialLocation: i == shell.currentIndex);
-        },
-        destinations: [
-          NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: t.navHome),
-          NavigationDestination(
-              icon: const Icon(Icons.shopping_cart_outlined), selectedIcon: const Icon(Icons.shopping_cart), label: t.navCart),
-          NavigationDestination(
-            icon: const _BonusTabIcon(selected: false),
-            selectedIcon: const _BonusTabIcon(selected: true),
-            label: t.navBonus,
-          ),
-          NavigationDestination(
-              icon: const Icon(Icons.receipt_long_outlined), selectedIcon: const Icon(Icons.receipt_long), label: t.navOrders),
-          NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: t.navProfile),
-        ],
+      // Telefonda katta shrift tanlangan bo'lsa ham yozuvlar ("Buyurtmalar") bir qatorga sig'sin.
+      bottomNavigationBar: MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: MediaQuery.textScalerOf(context)
+              .clamp(maxScaleFactor: 1.0),
+        ),
+        child: NavigationBar(
+          selectedIndex: shell.currentIndex,
+          onDestinationSelected: (i) {
+            // Mehmon "Bonus"ni bossa — kirish taklifi (karta telefon raqamiga bog'langan).
+            if (i == AppTab.bonus.index &&
+                !ref.read(authControllerProvider).isSignedIn) {
+              ref.read(authControllerProvider.notifier).requestSignIn();
+              return;
+            }
+            shell.goBranch(i, initialLocation: i == shell.currentIndex);
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home),
+              label: t.navHome,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.shopping_cart_outlined),
+              selectedIcon: const Icon(Icons.shopping_cart),
+              label: t.navCart,
+            ),
+            NavigationDestination(
+              icon: const _BonusTabIcon(selected: false),
+              selectedIcon: const _BonusTabIcon(selected: true),
+              label: t.navBonus,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.receipt_long_outlined),
+              selectedIcon: const Icon(Icons.receipt_long),
+              label: t.navOrders,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline),
+              selectedIcon: const Icon(Icons.person),
+              label: t.navProfile,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -63,15 +85,19 @@ class _BonusTabIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primaryPressed : AppColors.primary,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
-          ],
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: selected ? AppColors.primaryPressed : AppColors.primary,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.primary.withValues(alpha: 0.3),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
-        child: const Icon(Icons.qr_code_2, color: Colors.white, size: 22),
-      );
+      ],
+    ),
+    child: const Icon(Icons.qr_code_2, color: Colors.white, size: 22),
+  );
 }

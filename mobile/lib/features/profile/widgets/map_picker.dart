@@ -16,8 +16,8 @@ import '../data/geocoding_repository.dart';
 const osmTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const osmUserAgentPackage = 'uz.poscloud.poscloud_market';
 
-/// Standart markaz — Toshkent.
-const tashkentCenter = LatLng(41.311, 69.279);
+/// Standart markaz — Nurota (do'kon joylashgan shahar).
+const defaultMapCenter = LatLng(40.5636, 65.6886);
 
 TileLayer osmTileLayer() => TileLayer(urlTemplate: osmTileUrl, userAgentPackageName: osmUserAgentPackage);
 
@@ -67,7 +67,7 @@ class _MapPickerScreenState extends ConsumerState<MapPickerScreen> {
   final _search = TextEditingController();
   final _distance = const Distance();
 
-  late LatLng _center = widget.initial ?? tashkentCenter;
+  late LatLng _center = widget.initial ?? defaultMapCenter;
   Timer? _timer;
   int _requestSeq = 0;
 

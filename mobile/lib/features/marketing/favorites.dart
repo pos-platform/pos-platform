@@ -21,12 +21,20 @@ class FavoritesController extends Notifier<FavState> {
   }
 
   Future<void> reload() async {
-    final gen = ++_generation;
-    try {
-      final ids = await ref.read(marketingRepositoryProvider).favoriteIds();
-      if (gen == _generation) state = FavState(ids: ids, loaded: true);
-    } catch (_) {
-      // Kesh olinmadi — mahsulotdagi `isFavorite` ishlatiladi.
+    // Ilova ochilishida tarmoq/token hali tayyor bo'lmasligi mumkin — bir necha marta qayta urinamiz.
+    // Aks holda yurakchalar faqat mahsulotdagi `isFavorite`ga tayanib, "o'chib ketgandek" ko'rinardi.
+    for (var attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) await Future<void>.delayed(Duration(seconds: 2 * attempt));
+      final gen = ++_generation;
+      try {
+        if (!ref.read(authControllerProvider).isSignedIn) return;
+        final ids = await ref.read(marketingRepositoryProvider).favoriteIds();
+        if (gen == _generation) state = FavState(ids: ids, removed: state.removed, loaded: true);
+        return;
+      } catch (_) {
+        // Notifier yopilgan yoki tarmoq xatosi — keyingi urinish (yopilgan bo'lsa ref.read yana xato beradi).
+        if (gen != _generation) return; // foydalanuvchi bu orada bosdi — uning tanlovi ustun
+      }
     }
   }
 

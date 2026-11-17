@@ -134,6 +134,10 @@ public static class OnlineOrderPricing
         if (s.DeliveryRadiusKm is not { } radius)
             return (true, null, distance);
 
+        // Filial xaritada belgilanmagan — tekshirib bo'lmaydi; bu mijozning xatosi emas, ogohlantirmaymiz.
+        if (branch.Latitude is null || branch.Longitude is null)
+            return (true, null, null);
+
         if (distance is null)
             return (true, "Manzil xaritada belgilanmagan — yetkazish hududi tekshirilmadi. Do'kon siz bilan bog'lanishi mumkin.", null);
 

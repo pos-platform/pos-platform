@@ -82,6 +82,8 @@ class AppTheme {
         indicatorColor: AppColors.primarySoft,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => textTheme.labelSmall?.copyWith(
+            fontSize: 11,
+            overflow: TextOverflow.ellipsis,
             fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w600,
             color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.textSecondary,
           ),

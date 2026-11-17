@@ -90,6 +90,14 @@ class CartState {
   /// Tarozi tovari 0.1 kg qadam bilan, dona — butun son.
   static double stepFor(bool isKg) => isKg ? 0.1 : 1;
 
+  /// Birinchi qo'shishdagi miqdor: tarozi tovari ham 1 kg dan boshlanadi (keyin 0.1 qadam bilan
+  /// o'zgartiriladi). Qoldiq 1 kg dan kam bo'lsa — borini (0.1 ga yaxlitlab).
+  static double firstQuantity(ShopProduct p) {
+    if (!p.isKg) return 1;
+    final avail = ((p.available + 1e-9) * 10).floorToDouble() / 10;
+    return avail >= 1 ? 1 : (avail >= 0.1 ? round(avail) : 0.1);
+  }
+
   /// Kasrdagi xatolarni yo'qotish (0.1 + 0.2 = 0.30000000000000004).
   static double round(double v) => (v * 1000).roundToDouble() / 1000;
 }
@@ -193,7 +201,7 @@ class CartController extends Notifier<CartState> {
   void increment(String branchId, ShopProduct product) {
     final step = CartState.stepFor(product.isKg);
     final current = state.branchId == branchId ? state.quantityOf(product.id) : 0.0;
-    setQuantity(branchId, product, current + step);
+    setQuantity(branchId, product, current > 0 ? current + step : CartState.firstQuantity(product));
   }
 
   void decrement(String branchId, ShopProduct product) {

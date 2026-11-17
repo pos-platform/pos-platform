@@ -75,7 +75,7 @@ class _ProductBodyState extends ConsumerState<_ProductBody> {
     super.initState();
     final cart = ref.read(cartControllerProvider);
     final inCart = cart.branchId == widget.branchId ? cart.quantityOf(_p.id) : 0.0;
-    _qty = inCart > 0 ? inCart : _step;
+    _qty = inCart > 0 ? inCart : CartState.firstQuantity(_p);
   }
 
   void _change(double delta) {

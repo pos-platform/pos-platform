@@ -22,7 +22,9 @@ class ProductCard extends ConsumerWidget {
     final t = AppLocalizations.of(context);
     final qty = ref.watch(cartControllerProvider.select((c) => c.branchId == branchId ? c.quantityOf(product.id) : 0.0));
     final cart = ref.read(cartControllerProvider.notifier);
-    final canAdd = product.inStock && qty + CartState.stepFor(product.isKg) <= product.available + 1e-9;
+    final canAdd = product.inStock &&
+        (qty > 0 ? qty + CartState.stepFor(product.isKg) : CartState.firstQuantity(product)) <=
+            product.available + 1e-9;
     void open() => context.push('/home/product/${product.id}');
 
     return Container(

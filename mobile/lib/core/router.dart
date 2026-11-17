@@ -132,6 +132,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const AddressEditScreen(),
       ),
+      // Checkout'dan mavjud manzilni tahrirlash.
+      GoRoute(
+        path: '/address-edit/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => AddressEditScreen(addressId: s.pathParameters['id']),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(shell: shell),
         branches: [
