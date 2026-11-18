@@ -7,11 +7,11 @@
     "sales": "Savdolar",
     "shifts": "Smena",
     "suppliers": "Yetkazib beruvchilar",
-    "stockReceipts": "Накладная",
+    "stockReceipts": "Tovar kirimi",
     "debtors": "Qarzdorlar",
     "expenses": "Xarajatlar",
     "payments": "Платежи",
-    "writeOffs": "Списание",
+    "writeOffs": "Hisobdan chiqarish",
     "inventories": "Inventarizatsiya",
     "stockTurnover": "Tovar aylanmasi",
     "analytics": "Аналитика",
@@ -120,5 +120,14 @@
   "language": {
     "uz": "O'zbekcha",
     "ru": "Русский"
+  },
+  "stockReceipts": {
+    "title": "Tovar kirimi (nakladnoy)",
+    "newBtn": "+ Yangi kirim",
+    "hintTitle": "Bu bo‘lim nima uchun?",
+    "hint1": "Do‘konga tovar kelganda shu yerda kirim qilinadi. Qoldiqdagi tovar yana kelsa ham shu yerda kiritiladi — yangi miqdor bor qoldiq ustiga qo‘shiladi (masalan: 10 ta bor edi, 30 ta keldi → 40 ta).",
+    "hint2": "Tovar ro‘yxatda yo‘q bo‘lsa, avval «Mahsulotlar» bo‘limida yarating, keyin shu yerda kirim qiling.",
+    "hint3": "Mahsulot kartochkasida qoldiqni qo‘lda o‘zgartirib bo‘lmaydi — qoldiq faqat kirim, sotuv, hisobdan chiqarish, transfer va inventarizatsiya orqali o‘zgaradi.",
+    "hint4": "Xato kirim qilinsa, «Bekor qilish» tugmasi bilan qaytaring — tovar ombordan ayiriladi."
   }
 }

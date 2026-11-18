@@ -96,7 +96,7 @@ async function submit() {
         expiryDate: l.expiryDate || null
       }))
     })
-    success.value = `Накладная ${r.number} yaratildi — ombor yangilandi`
+    success.value = `Kirim ${r.number} saqlandi — ombor yangilandi`
     requestId = newRequestId()
     form.supplierId = ''
     form.comment = ''
@@ -131,8 +131,18 @@ onMounted(load)
 
 <template>
   <div class="page-head">
-    <h1>Накладная (tovar kirimi)</h1>
-    <button class="btn" @click="showForm = !showForm">+ Yangi kirim</button>
+    <h1>{{ $t('stockReceipts.title') }}</h1>
+    <button class="btn" @click="showForm = !showForm">{{ $t('stockReceipts.newBtn') }}</button>
+  </div>
+
+  <div class="card hint-card">
+    <strong>ℹ️ {{ $t('stockReceipts.hintTitle') }}</strong>
+    <ul>
+      <li>{{ $t('stockReceipts.hint1') }}</li>
+      <li>{{ $t('stockReceipts.hint2') }}</li>
+      <li>{{ $t('stockReceipts.hint3') }}</li>
+      <li>{{ $t('stockReceipts.hint4') }}</li>
+    </ul>
   </div>
 
   <div v-if="err" class="alert alert-error">{{ err }}</div>
@@ -253,6 +263,9 @@ onMounted(load)
 </template>
 
 <style scoped>
+.hint-card { margin-bottom: 16px; background: #f0f7ff; border: 1px solid #cfe3ff; font-size: 14px; }
+.hint-card ul { margin: 8px 0 0; padding-left: 20px; }
+.hint-card li { margin: 4px 0; }
 .search-pop {
   position: absolute; top: 100%; left: 0; right: 0; z-index: 5;
   background: #fff; border: 1px solid var(--border); border-radius: 8px;

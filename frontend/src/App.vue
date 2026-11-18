@@ -92,10 +92,10 @@ const navItems = [
 
   // 2) Katalog va ombor
   { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view', group: 'catalog' },
+  { name: 'stock-receipts', key: 'nav.stockReceipts', icon: '📥', admin: true, perm: 'inventory.view', group: 'catalog' },
   { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true, perm: 'categories.view', group: 'catalog' },
   { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true, perm: 'branches.view', group: 'catalog' },
   { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true, perm: 'suppliers.view', group: 'catalog' },
-  { name: 'stock-receipts', key: 'nav.stockReceipts', icon: '📥', admin: true, perm: 'inventory.view', group: 'catalog' },
   { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔄', admin: true, perm: 'inventory.view', group: 'catalog' },
   { name: 'write-offs', key: 'nav.writeOffs', icon: '🗑️', admin: true, perm: 'inventory.view', group: 'catalog' },
   { name: 'inventories', key: 'nav.inventories', icon: '🔢', admin: true, perm: 'inventory.view', group: 'catalog' },
