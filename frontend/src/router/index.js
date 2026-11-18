@@ -82,6 +82,12 @@ const routes = [
     meta: { adminOnly: true, perm: 'settings.manage' }
   },
   {
+    path: '/loyalty/settings',
+    name: 'loyalty-settings',
+    component: () => import('../views/loyalty/LoyaltySettingsEditView.vue'),
+    meta: { adminOnly: true, perm: 'settings.manage' }
+  },
+  {
     path: '/stores',
     name: 'stores',
     component: () => import('../views/StoresView.vue'),
