@@ -164,7 +164,6 @@ async function load() {
   try {
     // Backend 'to' kunini o'zi qamrab oladi (shu kun ham kiradi) — tugash sanasi o'zgarishsiz yuboriladi.
     const params = { active: false, from: dateFrom.value, to: dateTo.value }
-    if (status.value) params.status = status.value
     if (storeFilter.selectedBranchId) params.branchId = storeFilter.selectedBranchId
     const list = await onlineOrdersApi.list(params)
     orders.value = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -212,7 +211,8 @@ function clearColFilter() {
 const norm = (s) => String(s ?? '').toLowerCase()
 const has = (val, q) => !q || norm(val).includes(norm(q).trim())
 
-const shownOrders = computed(() => {
+// Holatdan tashqari barcha filterlar — holat tablaridagi sonlar shundan hisoblanadi
+const baseOrders = computed(() => {
   const f = colFilter.value
   const phoneQ = f.phone.replace(/\D/g, '')
   const sumQ = f.sum.replace(/\s/g, '')
@@ -225,13 +225,20 @@ const shownOrders = computed(() => {
     if (f.type && o.fulfillmentType !== f.type) return false
     if (!has(payText(o), f.pay)) return false
     if (sumQ && !String(Math.round(Number(o.totalAmount) || 0)).includes(sumQ)) return false
-    if (f.status && o.status !== f.status) return false
     if (!has(o.courierName, f.courier)) return false
     if (f.rating === 'none' && o.rating) return false
     if (f.rating && f.rating !== 'none' && Number(o.rating) !== Number(f.rating)) return false
     return true
   })
 })
+const statusCounts = computed(() => {
+  const c = {}
+  for (const o of baseOrders.value) c[o.status] = (c[o.status] || 0) + 1
+  return c
+})
+const shownOrders = computed(() =>
+  status.value ? baseOrders.value.filter((o) => o.status === status.value) : baseOrders.value
+)
 
 // Taqsimot: { "1": n, ..., "5": n } (yoki massiv) → 5..1 qatorlar
 const distRows = computed(() => {
@@ -320,7 +327,7 @@ const timeline = computed(() => {
   ].filter((t) => t[1])
 })
 
-watch([dateFrom, dateTo, status], () => reload())
+watch([dateFrom, dateTo], () => reload())
 watch(() => storeFilter.selectedBranchId, () => reload())
 watch(tab, (v) => { if (v !== 'returns') reload() })
 
@@ -357,10 +364,6 @@ onMounted(async () => {
       <span class="muted">—</span>
       <input v-model="dateTo" type="date" class="input date-in" :min="dateFrom" />
     </div>
-    <select v-if="tab === 'orders'" v-model="status" class="select" style="width:200px">
-      <option value="">Barcha holatlar</option>
-      <option v-for="(v, k) in STATUS" :key="k" :value="k">{{ v.text }}</option>
-    </select>
     <label v-if="tab === 'orders'" class="field-inline small" style="cursor:pointer">
       <input v-model="preorderOnly" type="checkbox" /> 🌙 Oldindan buyurtmalar
     </label>
@@ -418,6 +421,23 @@ onMounted(async () => {
   </template>
 
   <template v-else>
+  <!-- Holat bo'yicha tablar -->
+  <div class="status-tabs">
+    <button type="button" class="stab" :class="{ on: !status }" @click="status = ''">
+      Barchasi <span class="stab-n">{{ baseOrders.length }}</span>
+    </button>
+    <button
+      v-for="(v, k) in STATUS"
+      :key="k"
+      type="button"
+      class="stab"
+      :class="{ on: status === k, empty: !statusCounts[k] }"
+      @click="status = k"
+    >
+      <span class="stab-dot" :class="v.cls"></span>{{ v.text }} <span class="stab-n">{{ statusCounts[k] || 0 }}</span>
+    </button>
+  </div>
+
   <div class="summary">
     <div class="card stat">
       <div class="stat-label">Buyurtmalar</div>
@@ -464,12 +484,7 @@ onMounted(async () => {
             </th>
             <th><input v-model="colFilter.pay" class="input f-in" placeholder="Naqd..." /></th>
             <th><input v-model="colFilter.sum" class="input f-in" style="width:90px" placeholder="Summa" /></th>
-            <th>
-              <select v-model="colFilter.status" class="select f-in">
-                <option value="">Barchasi</option>
-                <option v-for="(v, k) in STATUS" :key="k" :value="k">{{ v.text }}</option>
-              </select>
-            </th>
+            <th></th>
             <th><input v-model="colFilter.courier" class="input f-in" placeholder="Kuryer" /></th>
             <th>
               <div class="row" style="gap:4px; flex-wrap:nowrap">
@@ -622,6 +637,17 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.status-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px; margin-bottom: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; scrollbar-width: thin; }
+.stab { flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border: none; border-radius: 7px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.stab:hover { background: var(--surface-2, #f1f5f9); color: var(--text); }
+.stab.on { background: var(--primary); color: #fff; }
+.stab.empty:not(.on) { opacity: .55; }
+.stab-n { min-width: 20px; padding: 0 6px; border-radius: 999px; background: #eef2f7; color: var(--text); font-size: 11.5px; line-height: 18px; text-align: center; }
+.stab.on .stab-n { background: rgba(255,255,255,.22); color: #fff; }
+.stab-dot { width: 8px; height: 8px; border-radius: 50%; padding: 0; }
+.stab-dot.st-new { background: #f97316; } .stab-dot.st-work { background: #f59e0b; } .stab-dot.st-ready { background: #3b82f6; }
+.stab-dot.st-done { background: #22c55e; } .stab-dot.st-bad { background: #ef4444; }
+.stab.on .stab-dot { box-shadow: 0 0 0 2px rgba(255,255,255,.7); }
 .small { font-size: 12px; }
 .nowrap { white-space: nowrap; }
 .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
