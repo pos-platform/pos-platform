@@ -190,6 +190,12 @@ const routes = [
     meta: { adminOnly: true, perm: 'settings.manage' }
   },
   {
+    path: '/online-store/edit',
+    name: 'online-store-edit',
+    component: () => import('../views/online/OnlineStoreEditView.vue'),
+    meta: { adminOnly: true, perm: 'settings.manage' }
+  },
+  {
     path: '/online-marketing',
     name: 'online-marketing',
     component: () => import('../views/OnlineMarketingView.vue'),

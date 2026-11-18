@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { categoriesApi } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
 import AppIcon from '../components/AppIcon.vue'
@@ -20,13 +20,20 @@ const formImageUrl = ref('')
 const formShowOnline = ref(true)
 
 // Daraxt tartibida: asosiy bo'lim, ostida ichki bo'limlari.
-const rows = computed(() => {
+const groups = computed(() => {
   const all = categories.value
   const ids = new Set(all.map((c) => c.id))
   const bySort = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name)
   const roots = all.filter((c) => !c.parentId || !ids.has(c.parentId)).sort(bySort)
-  return roots.flatMap((r) => [r, ...all.filter((c) => c.parentId === r.id).sort(bySort)])
+  return roots.map((r) => [r, ...all.filter((c) => c.parentId === r.id).sort(bySort)])
 })
+
+// Pagination — asosiy bo'lim ichki bo'limlari bilan birga bitta sahifada qoladi.
+const PAGE_SIZE = 10
+const page = ref(1)
+const pages = computed(() => Math.max(1, Math.ceil(groups.value.length / PAGE_SIZE)))
+const rows = computed(() => groups.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE).flat())
+watch(pages, (p) => { if (page.value > p) page.value = p })
 // Ota bo'lim faqat asosiy bo'lim bo'ladi; ichki bo'limi bor bo'limni boshqasiga ko'chirib bo'lmaydi.
 const parentOptions = computed(() => categories.value.filter((c) => !c.parentId && c.id !== editId.value))
 const editHasChildren = computed(() => !!editId.value && categories.value.some((c) => c.parentId === editId.value))
@@ -45,6 +52,24 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+// Barcha kategoriyalar ro'yxati — CSV (Excel ochadi), daraxt tartibida.
+function exportCsv() {
+  const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const byId = new Map(categories.value.map((c) => [c.id, c]))
+  const lines = [['Asosiy bo\'lim', 'Ichki bo\'lim', 'Ilovada', 'Mahsulotlar', 'Rasm'].map(q).join(';')]
+  for (const c of groups.value.flat()) {
+    const parent = c.parentId ? byId.get(c.parentId)?.name : c.name
+    lines.push([parent, c.parentId ? c.name : '', c.showOnline === false ? 'yashirin' : 'ha',
+      c.productCount, c.imageUrl ? 'bor' : 'yo\'q'].map(q).join(';'))
+  }
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'kategoriyalar.csv'
+  a.click()
+  URL.revokeObjectURL(a.href)
 }
 
 function openCreate() {
@@ -132,7 +157,10 @@ onMounted(load)
   <div class="page-head">
     <h1>Kategoriyalar</h1>
     <span class="muted">{{ categories.length }} ta</span>
-    <button class="btn" style="margin-left:auto" @click="openCreate">+ Kategoriya qo'shish</button>
+    <button class="btn btn-ghost" style="margin-left:auto" :disabled="!categories.length" @click="exportCsv">
+      <AppIcon name="download" :size="15" /> Ro'yxatni yuklab olish
+    </button>
+    <button class="btn" @click="openCreate">+ Kategoriya qo'shish</button>
   </div>
 
   <div v-if="error && !showModal" class="alert alert-error">{{ error }}</div>
@@ -179,6 +207,11 @@ onMounted(load)
         </tr>
       </tbody>
     </table>
+    <div v-if="!loading && pages > 1" class="pager">
+      <button class="btn btn-ghost btn-sm" :disabled="page === 1" @click="page--">‹</button>
+      <span class="muted">{{ page }} / {{ pages }}</span>
+      <button class="btn btn-ghost btn-sm" :disabled="page === pages" @click="page++">›</button>
+    </div>
   </div>
 
   <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
@@ -244,3 +277,7 @@ onMounted(load)
     </div>
   </div>
 </template>
+
+<style scoped>
+.pager { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 12px; }
+</style>
