@@ -172,24 +172,6 @@ const routes = [
     meta: { adminOnly: true, perm: 'cashbox.view' }
   },
   {
-    path: '/tables',
-    name: 'tables',
-    component: () => import('../views/TablesView.vue'),
-    meta: { adminOnly: true }
-  },
-  {
-    path: '/dishes',
-    name: 'dishes',
-    component: () => import('../views/DishesView.vue'),
-    meta: { adminOnly: true }
-  },
-  {
-    path: '/kitchen-issues',
-    name: 'kitchen-issues',
-    component: () => import('../views/KitchenIssuesView.vue'),
-    meta: { adminOnly: true }
-  },
-  {
     path: '/online-store',
     name: 'online-store',
     component: () => import('../views/OnlineStoreView.vue'),

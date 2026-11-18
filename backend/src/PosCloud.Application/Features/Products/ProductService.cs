@@ -127,7 +127,10 @@ public class ProductService : IProductService
     {
         // Xizmat turi faqat avtomatik ("Yetkazib berish xizmati") — qo'lda yaratilmaydi.
         if (dto.ProductType == ProductType.Service)
-            throw new ValidationException("Xizmat turidagi mahsulot avtomatik yaratiladi — tovar yoki taom tanlang.");
+            throw new ValidationException("Xizmat turidagi mahsulot avtomatik yaratiladi — tovar tanlang.");
+        // Tizim faqat do'konlar uchun — taom (Dish) turi yaratilmaydi.
+        if (dto.ProductType == ProductType.Dish)
+            throw new ValidationException("Taom turi qo'llab-quvvatlanmaydi — tovar tanlang.");
 
         var categoryExists = await _db.Categories.AnyAsync(c => c.Id == dto.CategoryId, cancellationToken);
         if (!categoryExists)
@@ -327,7 +330,10 @@ public class ProductService : IProductService
 
         // Xizmat turi faqat avtomatik ("Yetkazib berish xizmati") — qo'lda yaratilmaydi.
         if (dto.ProductType == ProductType.Service)
-            throw new ValidationException("Xizmat turidagi mahsulot avtomatik yaratiladi — tovar yoki taom tanlang.");
+            throw new ValidationException("Xizmat turidagi mahsulot avtomatik yaratiladi — tovar tanlang.");
+        // Tizim faqat do'konlar uchun — taom (Dish) turi yaratilmaydi.
+        if (dto.ProductType == ProductType.Dish)
+            throw new ValidationException("Taom turi qo'llab-quvvatlanmaydi — tovar tanlang.");
 
         var categoryExists = await _db.Categories.AnyAsync(c => c.Id == dto.CategoryId, cancellationToken);
         if (!categoryExists)

@@ -94,21 +94,13 @@ public partial class LoginWindow : Window
             AppState.OrgStir = resp.OrganizationStir;
             AppState.BranchAddress = resp.BranchAddress;
             AppState.Role = resp.Role;
-            AppState.BusinessType = string.IsNullOrWhiteSpace(resp.BusinessType) ? "Store" : resp.BusinessType;
             AppState.LicensedUntil = resp.LicensedUntil;
             AppState.IsLifetime = resp.IsLifetime;
             // Server tasdiqlagan kassa ID — yozilishi bir xil bo'lishi uchun (KASSA-1 / kassa-1)
             // sozlamadagi qiymatni serverdagisi bilan almashtiramiz.
             if (!string.IsNullOrWhiteSpace(resp.TerminalId)) AppState.TerminalId = resp.TerminalId;
 
-            if (AppState.IsRestaurant)
-            {
-                new TablesWindow().Show();
-            }
-            else
-            {
-                new PosWindow().Show();
-            }
+            new PosWindow().Show();
             Close();
         }
         catch (Exception ex)

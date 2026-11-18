@@ -109,7 +109,7 @@ public class OrganizationService : IOrganizationService
             Phone = request.Phone?.Trim(),
             Stir = request.Stir?.Trim(),
             Note = request.Note?.Trim(),
-            BusinessType = request.BusinessType,
+            BusinessType = BusinessType.Store, // faqat do'kon
             IsActive = true
         };
         _db.Organizations.Add(org);
@@ -124,7 +124,7 @@ public class OrganizationService : IOrganizationService
             _db.Branches.Add(new Branch
             {
                 Name = i == 1 ? "Do'kon 1" : $"Do'kon {i}",
-                BusinessType = request.BusinessType,
+                BusinessType = BusinessType.Store, // faqat do'kon
                 IsActive = true,
                 OrganizationId = org.Id
             });
@@ -159,7 +159,7 @@ public class OrganizationService : IOrganizationService
         org.Phone = request.Phone?.Trim();
         org.Stir = request.Stir?.Trim();
         org.Note = request.Note?.Trim();
-        org.BusinessType = request.BusinessType;
+        org.BusinessType = BusinessType.Store; // faqat do'kon
         await _db.SaveChangesAsync(ct);
         return await ToDtoWithStats(org, ct);
     }
@@ -173,7 +173,7 @@ public class OrganizationService : IOrganizationService
     public async Task<OrganizationDto> SetBusinessTypeAsync(Guid id, BusinessType type, CancellationToken ct = default)
     {
         var org = await GetOrgAsync(id, ct);
-        org.BusinessType = type;
+        org.BusinessType = BusinessType.Store; // faqat do'kon
         await _db.SaveChangesAsync(ct);
         await _audit.LogAsync("org.businessType", $"name={org.Name}, type={type}", organizationId: org.Id, ct: ct);
         return await ToDtoWithStats(org, ct);

@@ -235,8 +235,7 @@ const blankForm = () => ({
 const form = reactive(blankForm())
 
 const filteredProducts = computed(() => {
-  // Ovqatlar (Dish) alohida "Ovqatlar" sahifasida boshqariladi — bu yerda faqat tovarlar/xom-ashyo.
-  let list = products.value.filter((p) => p.productType !== 'Dish')
+  let list = products.value
 
   if (filterBranch.value) {
     list = list.filter((p) => p.branchId === filterBranch.value)

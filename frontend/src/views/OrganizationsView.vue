@@ -372,22 +372,6 @@ async function assignRole(u, roleId) {
   }
 }
 
-// Filial faoliyat turini (Do'kon/Restoran) o'zgartirish — faqat SuperAdmin.
-const savingStoreId = ref(null)
-async function setStoreType(store, type) {
-  if (savingStoreId.value || store.businessType === type) return
-  savingStoreId.value = store.id
-  err.value = ''
-  try {
-    const updated = await organizationsApi.setStoreBusinessType(store.id, type)
-    store.businessType = updated.businessType
-  } catch (e) {
-    err.value = errorMessage(e)
-  } finally {
-    savingStoreId.value = null
-  }
-}
-
 function statusOf(u) {
   if (!u.isActive) return { text: 'Passiv (kira olmaydi)', cls: 'st-blocked' }
   if (u.isLifetime) return { text: '♾ Doimiy litsenziya', cls: 'st-ok' }
@@ -493,30 +477,6 @@ onMounted(load)
             {{ savingStir ? '...' : 'Saqlash' }}
           </button>
         </div>
-      </div>
-
-      <!-- Filiallar — faoliyat turi (Do'kon / Restoran) -->
-      <div class="panel-section">
-        <div class="panel-section-head">
-          <span class="panel-label">Filiallar — faoliyat turi</span>
-        </div>
-        <p class="panel-hint">Restoran filialida stol boshqaruvi, ovqat menyusi (retsept) va ombordan oshpazga berish modullari yoqiladi. Bitta tashkilotda do'kon ham, restoran ham bo'lishi mumkin.</p>
-
-        <div v-for="s in orgStores" :key="s.id" class="user-row">
-          <div class="user-main">
-            <div class="user-name">
-              🏪 {{ s.name }}
-              <span v-if="!s.isActive" class="status-pill sp-off">Passiv</span>
-            </div>
-          </div>
-          <div class="user-acts">
-            <div class="seg">
-              <button :class="['seg-btn', { active: s.businessType === 'Store' }]" :disabled="savingStoreId === s.id" @click="setStoreType(s, 'Store')">🏪 Do'kon</button>
-              <button :class="['seg-btn', { active: s.businessType === 'Restaurant' }]" :disabled="savingStoreId === s.id" @click="setStoreType(s, 'Restaurant')">🍽️ Restoran</button>
-            </div>
-          </div>
-        </div>
-        <p v-if="!orgStores.length" class="muted empty-msg">Filial yo'q</p>
       </div>
 
       <!-- Admin panel logini -->
@@ -946,10 +906,4 @@ onMounted(load)
 .checkbox-row input { width: 16px; height: 16px; cursor: pointer; }
 
 .empty-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 240px; }
-
-/* Faoliyat turi tanlagichi (Do'kon / Restoran) */
-.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.seg-btn { padding: 5px 12px; border: 0; background: transparent; cursor: pointer; font-size: 12px; color: var(--muted); }
-.seg-btn.active { background: var(--primary); color: #fff; }
-.seg-btn:disabled { opacity: 0.6; cursor: default; }
 </style>

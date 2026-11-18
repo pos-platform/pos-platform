@@ -44,7 +44,6 @@ public static class AppState
     public static string? TransferCardType { get; set; }
     public static string Role { get; set; } = "";
     public static string Token { get; set; } = "";
-    public static string BusinessType { get; set; } = "Store";
 
     /// <summary>Joriy kassir obunasi shu sanagacha amal qiladi. null = faollashtirilmagan.</summary>
     public static DateTime? LicensedUntil { get; set; }
@@ -61,12 +60,10 @@ public static class AppState
     /// <summary>Chekda ko'rsatiladigan kassir nomi (to'liq ism bo'lsa o'sha, aks holda login).</summary>
     public static string CashierDisplay => string.IsNullOrWhiteSpace(CashierName) ? Username : CashierName;
 
-    public static bool IsRestaurant => BusinessType == "Restaurant";
-
     /// <summary>Skaner (COM) kodini vaqtincha boshqa oynaga yo'naltirish (online buyurtma yig'ish). Null — kassa savatchasiga.</summary>
     public static Action<string>? ScanOverride { get; set; }
 
-    /// <summary>Online buyurtmalar SignalR ulanishi (faqat do'kon rejimida).</summary>
+    /// <summary>Online buyurtmalar SignalR ulanishi.</summary>
     public static OnlineOrdersHub? OnlineHub { get; set; }
 
     public static bool IsOnline { get; set; } = true;

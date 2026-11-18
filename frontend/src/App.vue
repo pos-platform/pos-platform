@@ -79,19 +79,16 @@ const navItems = [
   // 1) Savdo va kassa
   { name: 'dashboard', key: 'nav.dashboard', icon: '📊', admin: true, group: 'sales' },
   { name: 'pos', key: 'nav.pos', icon: '🛒', cashierOnly: true, group: 'sales' },
-  { name: 'tables', key: 'nav.tables', icon: '🍽️', admin: true, restaurantOnly: true, group: 'sales' },
-  { name: 'dishes', key: 'nav.dishes', icon: '🍲', admin: true, restaurantOnly: true, group: 'sales' },
-  { name: 'kitchen-issues', key: 'nav.kitchenIssues', icon: '👨‍🍳', admin: true, restaurantOnly: true, group: 'sales' },
   { name: 'sales', key: 'nav.sales', icon: '🧾', perm: 'sales.view', group: 'sales' },
   { name: 'shifts', key: 'nav.shifts', icon: '⏱️', group: 'sales' },
   { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true, perm: 'customers.view', group: 'sales' },
   { name: 'debtors', key: 'nav.debtors', icon: '📕', admin: true, perm: 'debtors.view', group: 'sales' },
   { name: 'promotions', key: 'nav.promotions', icon: '🎉', admin: true, group: 'sales' },
   { name: 'loyalty', key: 'nav.loyalty', icon: '💳', admin: true, perm: 'settings.manage', group: 'sales' },
-  { name: 'online-orders', key: 'nav.onlineOrders', icon: '📦', admin: true, perm: 'sales.view', storeOnly: true, group: 'sales' },
-  { name: 'promo-codes', key: 'nav.promoCodes', icon: '🎟️', admin: true, perm: 'settings.manage', storeOnly: true, group: 'sales' },
-  { name: 'online-store', key: 'nav.onlineStore', icon: '📱', admin: true, perm: 'settings.manage', storeOnly: true, group: 'sales' },
-  { name: 'online-marketing', key: 'nav.onlineMarketing', icon: '📣', admin: true, perm: 'settings.manage', storeOnly: true, group: 'sales' },
+  { name: 'online-orders', key: 'nav.onlineOrders', icon: '📦', admin: true, perm: 'sales.view', group: 'sales' },
+  { name: 'promo-codes', key: 'nav.promoCodes', icon: '🎟️', admin: true, perm: 'settings.manage', group: 'sales' },
+  { name: 'online-store', key: 'nav.onlineStore', icon: '📱', admin: true, perm: 'settings.manage', group: 'sales' },
+  { name: 'online-marketing', key: 'nav.onlineMarketing', icon: '📣', admin: true, perm: 'settings.manage', group: 'sales' },
 
   // 2) Katalog va ombor
   { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view', group: 'catalog' },
@@ -170,8 +167,6 @@ onBeforeUnmount(() => {
 function canSee(i) {
   if (i.admin && auth.role !== 'Admin') return false
   if (i.cashierOnly && auth.role === 'Admin') return false
-  if (i.restaurantOnly && !auth.isRestaurant) return false
-  if (i.storeOnly && auth.isRestaurant) return false
   if (i.perm && !auth.hasPermission(i.perm)) return false
   return true
 }

@@ -73,8 +73,6 @@ export const organizationsApi = {
     http.post(`/api/organizations/users/${userId}/deactivate`).then((r) => r.data),
   getRoles: (id) => http.get(`/api/organizations/${id}/roles`).then((r) => r.data),
   getStores: (id) => http.get(`/api/organizations/${id}/stores`).then((r) => r.data),
-  setStoreBusinessType: (storeId, businessType) =>
-    http.put(`/api/organizations/stores/${storeId}/business-type`, { businessType }).then((r) => r.data),
   assignAppRole: (userId, roleId) =>
     http.put(`/api/organizations/users/${userId}/app-role`, { roleId: roleId ?? null }).then((r) => r.data),
   getAlerts: () => http.get('/api/organizations/alerts').then((r) => r.data),
@@ -269,44 +267,8 @@ export const labelsApi = {
   print: (payload) => http.post('/api/labels/print', payload).then((r) => r.data)
 }
 
-// ===================== Restoran moduli =====================
-
-export const dishesApi = {
-  list: () => http.get('/api/dishes').then((r) => r.data),
-  get: (id) => http.get(`/api/dishes/${id}`).then((r) => r.data),
-  setRecipe: (id, items) => http.put(`/api/dishes/${id}/recipe`, { items }).then((r) => r.data)
-}
-
-export const tablesApi = {
-  list: (branchId) => http.get('/api/tables', { params: { branchId } }).then((r) => r.data),
-  create: (payload) => http.post('/api/tables', payload).then((r) => r.data),
-  update: (id, payload) => http.put(`/api/tables/${id}`, payload).then((r) => r.data),
-  remove: (id) => http.delete(`/api/tables/${id}`).then((r) => r.data)
-}
-
-export const kitchenIssuesApi = {
-  list: () => http.get('/api/kitchen-issues').then((r) => r.data),
-  create: (payload) => http.post('/api/kitchen-issues', payload).then((r) => r.data),
-  suggested: (dishId, portions) =>
-    http.get('/api/kitchen-issues/suggested', { params: { dishId, portions } }).then((r) => r.data),
-  consumption: (params) => http.get('/api/kitchen-issues/consumption', { params }).then((r) => r.data)
-}
-
-export const ordersApi = {
-  open: (payload) => http.post('/api/sales/orders/open', payload).then((r) => r.data),
-  listOpen: (branchId) => http.get('/api/sales/orders/open', { params: { branchId } }).then((r) => r.data),
-  byTable: (tableId) =>
-    http.get(`/api/sales/orders/by-table/${tableId}`).then((r) => (r.status === 204 ? null : r.data)),
-  saveItems: (id, items) => http.put(`/api/sales/orders/${id}/items`, { items }).then((r) => r.data),
-  sendToKitchen: (id) => http.post(`/api/sales/orders/${id}/send-to-kitchen`).then((r) => r.data),
-  pay: (id, payload) => http.post(`/api/sales/orders/${id}/pay`, payload).then((r) => r.data),
-  cancel: (id) => http.post(`/api/sales/orders/${id}/cancel`).then((r) => r.data)
-}
-
 export const myOrganizationApi = {
-  get: () => http.get('/api/my-organization').then((r) => r.data),
-  setBusinessType: (businessType) =>
-    http.put('/api/my-organization/business-type', { businessType }).then((r) => r.data)
+  get: () => http.get('/api/my-organization').then((r) => r.data)
 }
 
 export const onlinePaymentsApi = {

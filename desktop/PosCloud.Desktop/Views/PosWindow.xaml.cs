@@ -97,10 +97,9 @@ public partial class PosWindow : Window
 
     // ─── Online buyurtmalar (mobil ilova) ─────────────────────────────────────
 
-    /// <summary>Do'kon rejimida SignalR'ga ulanadi: yangi buyurtmada ovoz va badge.</summary>
+    /// <summary>SignalR'ga ulanadi: yangi buyurtmada ovoz va badge.</summary>
     private async Task StartOnlineOrdersAsync()
     {
-        if (AppState.IsRestaurant) return;
         try
         {
             var settings = await AppState.Backend.GetOnlineStoreSettingsAsync();

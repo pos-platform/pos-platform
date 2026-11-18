@@ -41,7 +41,7 @@ public class StoreService : IStoreService
         {
             Name = name,
             Address = request.Address?.Trim(),
-            BusinessType = request.BusinessType,
+            BusinessType = Domain.Enums.BusinessType.Store, // faqat do'kon
             IsActive = true
         };
 
@@ -58,7 +58,7 @@ public class StoreService : IStoreService
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Do'kon topilmadi: {id}");
 
-        store.BusinessType = type;
+        store.BusinessType = Domain.Enums.BusinessType.Store; // faqat do'kon
         await _db.SaveChangesAsync(cancellationToken);
 
         return StoreDto.FromEntity(store);

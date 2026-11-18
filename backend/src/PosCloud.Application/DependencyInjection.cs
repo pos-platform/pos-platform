@@ -6,10 +6,6 @@ using PosCloud.Application.Features.CashMovements;
 using PosCloud.Application.Features.Categories;
 using PosCloud.Application.Features.Customers;
 using PosCloud.Application.Features.Dashboard;
-using PosCloud.Application.Features.Dishes;
-using PosCloud.Application.Features.KitchenIssues;
-using PosCloud.Application.Features.KitchenTickets;
-using PosCloud.Application.Features.Tables;
 using PosCloud.Application.Features.Debtors;
 using PosCloud.Application.Features.Expenses;
 using PosCloud.Application.Features.Fiscal;
@@ -97,10 +93,6 @@ public static class DependencyInjection
         services.AddScoped<PosCloud.Application.Features.PromoCodes.IPromoCodeService, PosCloud.Application.Features.PromoCodes.PromoCodeService>();
 
         // Restoran moduli
-        services.AddScoped<IDishService, DishService>();
-        services.AddScoped<ITableService, TableService>();
-        services.AddScoped<IKitchenIssueService, KitchenIssueService>();
-        services.AddScoped<IKitchenTicketService, KitchenTicketService>();
 
         return services;
     }

@@ -313,7 +313,7 @@ onMounted(load)
         <div v-if="err" class="alert alert-error">{{ err }}</div>
         <div class="field" style="margin-bottom:14px">
           <label>Rol nomi *</label>
-          <input v-model="createForm.name" class="input" required placeholder="Masalan: Ofitsiant, Oshpaz..." />
+          <input v-model="createForm.name" class="input" required placeholder="Masalan: Kassir, Omborchi..." />
         </div>
 
         <div class="perm-toolbar">
