@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, computed, watch, nextTick } from 'vue'
-import { productsApi, categoriesApi, suppliersApi, storesApi, downloadBlob } from '../api/catalog'
+import { productsApi, categoriesApi, suppliersApi, storesApi, stockReceiptsApi, newRequestId, downloadBlob } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
 import { useAuthStore } from '../stores/auth'
 import JsBarcode from 'jsbarcode'
@@ -233,9 +233,101 @@ const blankForm = () => ({
   pluNumber: null,
   tare: null,
   categoryId: '',
-  branchId: ''
+  branchId: '',
+  // Tahrirlashda: qo'shimcha kirim (qoldiqqa qo'shiladi, Kirim hujjati yaratiladi)
+  addQty: '',
+  addCost: ''
 })
 const form = reactive(blankForm())
+
+// ───── Tez kirim (mavjud tovarga qoldiq qo'shish → Kirim hujjati) ─────
+const restockTarget = ref(null)
+const restockSaving = ref(false)
+const restockError = ref('')
+const restock = reactive({ quantity: '', costPrice: 0, supplierId: '', branchId: '' })
+let restockRequestId = newRequestId()
+
+const activeSuppliers = computed(() => suppliers.value.filter((s) => s.isActive !== false))
+
+function defaultBranchFor(p) {
+  return p?.branchId || filterBranch.value || (stores.value.length === 1 ? stores.value[0].id : '')
+}
+
+function openRestock(p) {
+  restockTarget.value = p
+  restockError.value = ''
+  restockRequestId = newRequestId()
+  Object.assign(restock, {
+    quantity: '',
+    costPrice: Number(p.costPrice) || 0,
+    supplierId: p.supplierId || '',
+    branchId: defaultBranchFor(p)
+  })
+  nextTick(() => document.getElementById('restock-qty')?.focus())
+}
+
+function closeRestock() {
+  if (restockSaving.value) return
+  restockTarget.value = null
+}
+
+// Bitta tovar uchun Kirim hujjati yaratadi (ombor, partiya, yetkazib beruvchi qarzi yangilanadi).
+function createReceiptFor(productId, { quantity, costPrice, supplierId, branchId }, requestId) {
+  return stockReceiptsApi.create({
+    supplierId,
+    branchId: branchId || null,
+    comment: 'Mahsulotlar sahifasidan tez kirim',
+    clientRequestId: requestId,
+    items: [{ productId, quantity: Number(quantity), costPrice: Number(costPrice) || 0 }]
+  })
+}
+
+function validateReceipt({ quantity, supplierId, branchId }) {
+  if (!(Number(quantity) > 0)) return 'Kirim sonini kiriting'
+  if (!supplierId) return 'Kirim uchun yetkazib beruvchini tanlang'
+  if (stores.value.length > 1 && !branchId) return 'Kirim uchun do\'konni tanlang'
+  return ''
+}
+
+async function submitRestock() {
+  restockError.value = validateReceipt(restock)
+  if (restockError.value) return
+  restockSaving.value = true
+  try {
+    const p = restockTarget.value
+    const r = await createReceiptFor(p.id, restock, restockRequestId)
+    success.value = `"${p.name}" ga ${Number(restock.quantity).toLocaleString()} ${p.unit === 'Kilogram' ? 'kg' : 'dona'} kirim qilindi (${r.number})`
+    restockTarget.value = null
+    await loadAll()
+  } catch (e) {
+    restockError.value = errorMessage(e)
+  } finally {
+    restockSaving.value = false
+  }
+}
+
+// ───── Takrorni aniqlash (yangi mahsulot qo'shishda) ─────
+const duplicateProduct = computed(() => {
+  if (!showModal.value || editId.value) return null
+  const bc = (form.barcode || '').trim().toLowerCase()
+  const nm = (form.name || '').trim().toLowerCase()
+  if (!bc && !nm) return null
+  return products.value.find((p) =>
+    (bc && (p.barcode || '').trim().toLowerCase() === bc) ||
+    (nm && p.name.trim().toLowerCase() === nm)) || null
+})
+
+function restockDuplicate() {
+  const p = duplicateProduct.value
+  if (!p) return
+  showModal.value = false
+  openRestock(p)
+}
+
+function editDuplicate() {
+  const p = duplicateProduct.value
+  if (p) openEdit(p)
+}
 
 const filteredProducts = computed(() => {
   let list = products.value
@@ -523,8 +615,11 @@ function openEdit(p) {
     pluNumber: p.pluNumber,
     tare: p.tare,
     categoryId: p.categoryId,
-    branchId: p.branchId || (stores.value.length === 1 ? stores.value[0].id : '')
+    branchId: p.branchId || (stores.value.length === 1 ? stores.value[0].id : ''),
+    addQty: '',
+    addCost: Number(p.costPrice) || 0
   })
+  restockRequestId = newRequestId()
   editId.value = p.id
   error.value = ''
   modalSuccess.value = ''
@@ -572,6 +667,14 @@ async function submit() {
     return
   }
 
+  // Tahrirlashda qo'shimcha kirim kiritilgan bo'lsa — oldindan tekshiramiz
+  const addQty = editId.value ? Number(form.addQty) || 0 : 0
+  const receipt = { quantity: addQty, costPrice: form.addCost, supplierId: form.supplierId, branchId: form.branchId || defaultBranchFor(null) }
+  if (addQty > 0) {
+    const msg = validateReceipt(receipt)
+    if (msg) { error.value = msg; return }
+  }
+
   saving.value = true
   try {
     const payload = {
@@ -600,6 +703,11 @@ async function submit() {
     if (editId.value) {
       await productsApi.update(editId.value, payload)
       success.value = `"${payload.name}" yangilandi`
+      if (addQty > 0) {
+        const r = await createReceiptFor(editId.value, receipt, restockRequestId)
+        restockRequestId = newRequestId()
+        success.value += ` va ${addQty.toLocaleString()} ${payload.unit === 'Kilogram' ? 'kg' : 'dona'} kirim qilindi (${r.number})`
+      }
       showModal.value = false
       modalSuccess.value = ''
     } else {
@@ -959,6 +1067,7 @@ function printBarcode(product) {
                   <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
                 </svg>
               </button>
+              <button class="btn btn-ghost btn-sm restock-btn" title="Kirim qilish (qoldiq qo'shish)" @click="openRestock(p)">＋</button>
               <button class="btn btn-ghost btn-sm" @click="openEdit(p)">✏️</button>
               <button class="btn btn-ghost btn-sm" @click="removeProduct(p)">🗑️</button>
             </div>
@@ -1000,6 +1109,18 @@ function printBarcode(product) {
         <div class="pm-body">
           <div v-if="error" class="alert alert-error">{{ error }}</div>
           <div v-if="modalSuccess" class="alert alert-success">{{ modalSuccess }}</div>
+          <div v-if="duplicateProduct" class="dup-warn">
+            <div>
+              ⚠️ Bu mahsulot allaqachon mavjud: <strong>{{ duplicateProduct.name }}</strong>
+              <span class="muted">
+                (qoldiq: {{ Number(duplicateProduct.quantity).toLocaleString() }}<template v-if="duplicateProduct.branchName">, {{ duplicateProduct.branchName }}</template>)
+              </span>
+            </div>
+            <div class="dup-actions">
+              <button type="button" class="btn btn-sm" @click="restockDuplicate">＋ Kirim qilish</button>
+              <button type="button" class="btn btn-ghost btn-sm" @click="editDuplicate">Ochish</button>
+            </div>
+          </div>
 
           <div class="pm-grid">
             <!-- ===== Chap ustun: asosiy ma'lumotlar ===== -->
@@ -1171,9 +1292,25 @@ function printBarcode(product) {
                   </select>
                 </div>
               </div>
-              <div v-if="editId" class="muted" style="font-size:12px; margin:-6px 0 12px">
-                Qoldiq kirim / hisobdan chiqarish / inventarizatsiya orqali o'zgaradi
-              </div>
+              <template v-if="editId">
+                <div class="pm-row2">
+                  <div class="field">
+                    <label>＋ Kirim soni</label>
+                    <input v-model="form.addQty" type="number" min="0" step="0.001" class="input" placeholder="0" />
+                  </div>
+                  <div class="field">
+                    <label>Kirim tannarxi</label>
+                    <input v-model="form.addCost" type="number" min="0" step="0.01" class="input" />
+                  </div>
+                </div>
+                <div class="muted" style="font-size:12px; margin:-6px 0 12px">
+                  <template v-if="Number(form.addQty) > 0">
+                    Yangi qoldiq: <strong>{{ (Number(form.quantity) + Number(form.addQty)).toLocaleString() }}</strong>.
+                    Kirim hujjati yaratiladi (yetkazib beruvchi majburiy).
+                  </template>
+                  <template v-else>Qo'shimcha tovar kelgan bo'lsa, sonini kiriting. Kirim hujjati avtomatik yaratiladi.</template>
+                </div>
+              </template>
 
               <div class="pm-title" style="margin-top:4px">Soliq va markirovka</div>
 
@@ -1227,6 +1364,57 @@ function printBarcode(product) {
     </div>
   </div>
 
+  <!-- Tez kirim modali -->
+  <div v-if="restockTarget" class="modal-overlay" @click.self="closeRestock">
+    <div class="modal-box" style="max-width:440px">
+      <div class="modal-head">
+        <h3>Kirim qilish</h3>
+        <button class="modal-x" @click="closeRestock">×</button>
+      </div>
+      <form class="modal-body" @submit.prevent="submitRestock">
+        <div v-if="restockError" class="alert alert-error">{{ restockError }}</div>
+        <div style="margin-bottom:12px">
+          <strong>{{ restockTarget.name }}</strong>
+          <div class="muted" style="font-size:13px">
+            Hozirgi qoldiq: {{ Number(restockTarget.quantity).toLocaleString() }}
+            {{ restockTarget.unit === 'Kilogram' ? 'kg' : 'dona' }}
+            <template v-if="Number(restock.quantity) > 0">
+              → <strong>{{ (Number(restockTarget.quantity) + Number(restock.quantity)).toLocaleString() }}</strong>
+            </template>
+          </div>
+        </div>
+        <div class="pm-row2">
+          <div class="field">
+            <label>Soni <span class="req-star">*</span></label>
+            <input id="restock-qty" v-model="restock.quantity" type="number" min="0.001" step="0.001" class="input" required />
+          </div>
+          <div class="field">
+            <label>Tannarx</label>
+            <input v-model="restock.costPrice" type="number" min="0" step="0.01" class="input" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Yetkazib beruvchi <span class="req-star">*</span></label>
+          <select v-model="restock.supplierId" class="select" required>
+            <option value="" disabled>Yetkazib beruvchini tanlang</option>
+            <option v-for="s in activeSuppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+        </div>
+        <div v-if="stores.length > 1" class="field">
+          <label>Do'kon <span class="req-star">*</span></label>
+          <select v-model="restock.branchId" class="select" required>
+            <option value="" disabled>Do'kon tanlang</option>
+            <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+        </div>
+        <div class="del-actions">
+          <button type="button" class="btn btn-ghost" :disabled="restockSaving" @click="closeRestock">Bekor qilish</button>
+          <button class="btn" :disabled="restockSaving">{{ restockSaving ? 'Saqlanmoqda...' : 'Kirim qilish' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- O'chirishni tasdiqlash modali -->
   <div v-if="deleteTarget" class="modal-overlay" @click.self="cancelDelete">
     <div class="modal-box" style="max-width:420px">
@@ -1254,6 +1442,13 @@ function printBarcode(product) {
 </template>
 
 <style scoped>
+.restock-btn { font-weight: 700; color: var(--primary, #2563eb); }
+.dup-warn {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px; margin-bottom: 12px; border-radius: 8px;
+  background: #FEF3C7; border: 1px solid #FCD34D; font-size: 13px;
+}
+.dup-actions { display: flex; gap: 6px; }
 /* Taxminiy MXIK taklifi (mahsulot formasida) */
 .mxik-suggest {
   margin-top: 6px;
