@@ -1,4 +1,5 @@
 using PosCloud.Application.Features.Sales.Dtos;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Application.Features.Sales;
 
@@ -10,6 +11,13 @@ public interface ISaleService
     Task<SaleDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<SaleDto> CreateAsync(CreateSaleRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Kassa (POS) savdosi: <see cref="CreateAsync"/> + parallel savdo to'qnashuvida (boshqa kassa
+    /// ayni paytda shu tovar qoldig'ini o'zgartirgan) avtomatik qayta urinish. Faqat mustaqil
+    /// so'rovda chaqiriladi — kontekstdagi kuzatilayotgan o'zgarishlar tozalanadi.
+    /// </summary>
+    Task<SaleDto> CreateWithRetryAsync(CreateSaleRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Savdoni to'liq qaytaradi (refund) — fiskal return cheki yaratiladi.</summary>
     Task<SaleDto> RefundAsync(Guid saleId, CancellationToken cancellationToken = default);
@@ -26,5 +34,6 @@ public interface ISaleService
 
     /// <summary>Tovarni filial qoldig'iga va eng yangi FIFO qatlamiga qaytaradi (SaveChanges chaqirmaydi).</summary>
     Task ReturnToStockAsync(Guid branchId, IReadOnlyCollection<(Guid ProductId, decimal Quantity)> lines,
+        StockMovementType movementType, Guid? documentId, string? documentNumber,
         CancellationToken cancellationToken = default);
 }

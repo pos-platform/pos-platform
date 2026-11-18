@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
+using PosCloud.Application.Features.Stock;
 using PosCloud.Application.Features.Transfers.Dtos;
 using PosCloud.Domain.Entities;
 using PosCloud.Domain.Enums;
@@ -10,8 +11,13 @@ namespace PosCloud.Application.Features.Transfers;
 public class StockTransferService : IStockTransferService
 {
     private readonly IApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
-    public StockTransferService(IApplicationDbContext db) => _db = db;
+    public StockTransferService(IApplicationDbContext db, ICurrentUser currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     public async Task<IReadOnlyList<StockTransferDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -34,6 +40,15 @@ public class StockTransferService : IStockTransferService
 
     public async Task<StockTransferDto> CreateAsync(CreateStockTransferRequest request, CancellationToken cancellationToken = default)
     {
+        // Ikki marta saqlanishdan himoya: shu kalit bilan transfer bo'lsa — o'shani qaytaramiz.
+        var clientRequestId = string.IsNullOrWhiteSpace(request.ClientRequestId) ? null : request.ClientRequestId.Trim();
+        if (clientRequestId is not null)
+        {
+            var existingId = await _db.StockTransfers.Where(t => t.ClientRequestId == clientRequestId)
+                .Select(t => (Guid?)t.Id).FirstOrDefaultAsync(cancellationToken);
+            if (existingId is { } eid) return await GetByIdAsync(eid, cancellationToken);
+        }
+
         if (request.FromBranchId == request.ToBranchId)
             throw new ValidationException("Manba va maqsad filial bir xil bo'lmasligi kerak.");
 
@@ -56,8 +71,10 @@ public class StockTransferService : IStockTransferService
             ToBranchId = request.ToBranchId,
             Comment = request.Comment?.Trim(),
             Status = TransferStatus.Pending,
+            ClientRequestId = clientRequestId,
             Number = await GenerateNumberAsync(cancellationToken)
         };
+        var doc = new StockDoc(transfer.Id, transfer.Number, _currentUser.UserId);
 
         foreach (var line in request.Items)
         {
@@ -66,11 +83,15 @@ public class StockTransferService : IStockTransferService
             if (line.Quantity <= 0)
                 throw new ValidationException($"'{product.Name}' uchun miqdor 0 dan katta bo'lishi kerak.");
 
-            if (!fromStocks.TryGetValue(line.ProductId, out var fromStock) || fromStock.Quantity < line.Quantity)
-                throw new ValidationException($"'{product.Name}' uchun qoldiq yetarli emas (mavjud: {fromStock?.Quantity ?? 0}).");
+            // Online buyurtmalarga band qilingan tovar boshqa filialga jo'natilmaydi.
+            fromStocks.TryGetValue(line.ProductId, out var fromStock);
+            if (fromStock is null || StockLedger.Available(fromStock) < line.Quantity)
+                throw new ValidationException(
+                    $"'{product.Name}' uchun qoldiq yetarli emas (mavjud: {StockLedger.Available(fromStock):0.###}" +
+                    (fromStock is { Reserved: > 0 } ? $", online buyurtmalarga band: {fromStock.Reserved:0.###}" : "") + ").");
 
             // Manba filialdan ayiramiz
-            fromStock.Quantity -= line.Quantity;
+            StockLedger.Apply(_db, fromStock, -line.Quantity, StockMovementType.TransferOut, doc, product.CostPrice);
 
             transfer.Items.Add(new StockTransferItem
             {
@@ -108,15 +129,11 @@ public class StockTransferService : IStockTransferService
             .Where(s => s.BranchId == transfer.ToBranchId && productIds.Contains(s.ProductId))
             .ToDictionaryAsync(s => s.ProductId, cancellationToken);
 
+        var doc = new StockDoc(transfer.Id, transfer.Number, _currentUser.UserId);
         foreach (var item in transfer.Items)
         {
-            if (!toStocks.TryGetValue(item.ProductId, out var toStock))
-            {
-                toStock = new BranchStock { BranchId = transfer.ToBranchId, ProductId = item.ProductId };
-                _db.BranchStocks.Add(toStock);
-                toStocks[item.ProductId] = toStock;
-            }
-            toStock.Quantity += item.Quantity;
+            var toStock = StockLedger.GetOrCreate(_db, toStocks, transfer.ToBranchId, item.ProductId);
+            StockLedger.Apply(_db, toStock, item.Quantity, StockMovementType.TransferIn, doc, item.CostPrice);
         }
 
         transfer.Status = TransferStatus.Received;
@@ -146,15 +163,11 @@ public class StockTransferService : IStockTransferService
                 .Where(s => s.BranchId == transfer.FromBranchId && productIds.Contains(s.ProductId))
                 .ToDictionaryAsync(s => s.ProductId, cancellationToken);
 
+            var doc = new StockDoc(transfer.Id, transfer.Number, _currentUser.UserId);
             foreach (var item in transfer.Items)
             {
-                if (!fromStocks.TryGetValue(item.ProductId, out var fromStock))
-                {
-                    fromStock = new BranchStock { BranchId = transfer.FromBranchId, ProductId = item.ProductId };
-                    _db.BranchStocks.Add(fromStock);
-                    fromStocks[item.ProductId] = fromStock;
-                }
-                fromStock.Quantity += item.Quantity;
+                var fromStock = StockLedger.GetOrCreate(_db, fromStocks, transfer.FromBranchId, item.ProductId);
+                StockLedger.Apply(_db, fromStock, item.Quantity, StockMovementType.TransferCancel, doc, item.CostPrice);
             }
         }
 

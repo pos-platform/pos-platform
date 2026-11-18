@@ -28,7 +28,10 @@ public class InventoryItem : BaseEntity
     public Guid ProductId { get; set; }
     public Product? Product { get; set; }
 
-    /// <summary>Inventarizatsiya yaratilgan paytdagi tizim qoldig'i (snapshot).</summary>
+    /// <summary>
+    /// Tizim qoldig'i (snapshot): hujjat yaratilganda olinadi va sanalgan miqdor kiritilganda
+    /// O'SHA paytdagi qoldiq bilan yangilanadi. Qo'llashda farq = ActualQty − ExpectedQty.
+    /// </summary>
     public decimal ExpectedQty { get; set; }
 
     /// <summary>Jismoniy sanaydagi haqiqiy miqdor.</summary>

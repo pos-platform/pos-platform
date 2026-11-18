@@ -178,12 +178,31 @@ export const suppliersApi = {
 export const stockReceiptsApi = {
   list: () => http.get('/api/stock-receipts').then((r) => r.data),
   get: (id) => http.get(`/api/stock-receipts/${id}`).then((r) => r.data),
-  create: (payload) => http.post('/api/stock-receipts', payload).then((r) => r.data)
+  create: (payload) => http.post('/api/stock-receipts', payload).then((r) => r.data),
+  // Kirimni bekor qilish (storno): qoldiq, partiya va yetkazib beruvchi qarzi teskari o'zgaradi
+  cancel: (id) => http.post(`/api/stock-receipts/${id}/cancel`).then((r) => r.data)
 }
 
 export const writeOffsApi = {
   list: () => http.get('/api/write-offs').then((r) => r.data),
-  create: (payload) => http.post('/api/write-offs', payload).then((r) => r.data)
+  create: (payload) => http.post('/api/write-offs', payload).then((r) => r.data),
+  cancel: (id) => http.post(`/api/write-offs/${id}/cancel`).then((r) => r.data)
+}
+
+// Ombor harakati jurnali: tovar aylanmasi va tovar qoldig'i tarixi
+export const stockMovementsApi = {
+  // params: { from, to, branchId, productId, search, includeIdle } → { from, to, branchId, rows }
+  turnover: (params) => http.get('/api/reports/stock-turnover', { params }).then((r) => r.data),
+  // params: { branchId, from, to } → [{ createdAt, type, quantity, balanceAfter, documentNumber, ... }]
+  productHistory: (productId, params) =>
+    http.get(`/api/products/${productId}/movements`, { params }).then((r) => r.data)
+}
+
+// Ikki marta saqlanishdan himoya: forma ochilganda bitta kalit, saqlangach yangisi
+export function newRequestId() {
+  return (globalThis.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 export const inventoriesApi = {

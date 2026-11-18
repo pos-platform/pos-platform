@@ -3,6 +3,7 @@ using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Features.Loyalty;
 using PosCloud.Application.Features.OnlineOrders;
 using PosCloud.Application.Features.Sales.Dtos;
+using PosCloud.Application.Features.Stock;
 using PosCloud.Domain.Entities;
 using PosCloud.Domain.Enums;
 
@@ -163,6 +164,7 @@ public partial class SaleService
             await ReturnToStockAsync(branchId,
                 plan.Lines.Where(l => ctx.TypeOf(l.Item.ProductId) is not (ProductType.Service or ProductType.Dish))
                     .Select(l => (l.Item.ProductId, l.Quantity)).ToList(),
+                StockMovementType.Refund, refund.Id, refund.ReceiptNumber,
                 cancellationToken);
 
         _db.Sales.Add(refund);
@@ -181,6 +183,7 @@ public partial class SaleService
     /// SaveChanges chaqirmaydi. Online "rejected-received" ham shundan foydalanadi.
     /// </summary>
     public async Task ReturnToStockAsync(Guid branchId, IReadOnlyCollection<(Guid ProductId, decimal Quantity)> lines,
+        StockMovementType movementType, Guid? documentId, string? documentNumber,
         CancellationToken cancellationToken = default)
     {
         var perProduct = lines.Where(l => l.Quantity > 0)
@@ -198,15 +201,13 @@ public partial class SaleService
         var newest = layers.GroupBy(li => li.ProductId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(li => li.CreatedAt).First());
 
+        var doc = new StockDoc(documentId, documentNumber, _currentUser.UserId);
         foreach (var (productId, qty) in perProduct)
         {
-            if (!stocks.TryGetValue(productId, out var stock))
-            {
-                stock = new BranchStock { BranchId = branchId, ProductId = productId };
-                _db.BranchStocks.Add(stock);
-            }
-            stock.Quantity += qty;
-            if (newest.TryGetValue(productId, out var layer))
+            var stock = StockLedger.GetOrCreate(_db, stocks, branchId, productId);
+            newest.TryGetValue(productId, out var layer);
+            StockLedger.Apply(_db, stock, qty, movementType, doc, layer?.CostPrice);
+            if (layer is not null)
                 layer.RemainingQuantity += qty;
         }
     }

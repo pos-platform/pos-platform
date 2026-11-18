@@ -94,6 +94,10 @@ public class BackendClient
     public async Task<List<CategoryDto>> GetCategoriesAsync()
         => (await _http.GetFromJsonAsync<List<CategoryDto>>("api/categories", Json)) ?? new();
 
+    /// <summary>Hozir amal qilayotgan aksiyalar — server savdoda aynan shularni qo'llaydi.</summary>
+    public async Task<List<PromotionDto>> GetActivePromotionsAsync()
+        => (await _http.GetFromJsonAsync<List<PromotionDto>>("api/promotions/active", Json)) ?? new();
+
     public async Task<ShiftDto?> GetCurrentShiftAsync()
     {
         var resp = await _http.GetAsync("api/shifts/current");

@@ -39,4 +39,11 @@ public class StockReceiptsController : ControllerBase
         var receipt = await _receipts.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = receipt.Id }, receipt);
     }
+
+    /// <summary>Kirimni bekor qiladi (storno). Partiyadan sotilgan bo'lsa — 400.</summary>
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType(typeof(StockReceiptDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<StockReceiptDto>> Cancel(Guid id, CancellationToken cancellationToken)
+        => Ok(await _receipts.CancelAsync(id, cancellationToken));
 }

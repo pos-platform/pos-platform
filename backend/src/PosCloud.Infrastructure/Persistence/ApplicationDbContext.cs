@@ -45,6 +45,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Inventory> Inventories => Set<Inventory>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<BranchStock> BranchStocks => Set<BranchStock>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
     public DbSet<StockTransferItem> StockTransferItems => Set<StockTransferItem>();
     public DbSet<CashMovement> CashMovements => Set<CashMovement>();
@@ -135,6 +136,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<TEntity>()
             .HasQueryFilter(e => _organizationId == null || e.OrganizationId == _organizationId);
     }
+
+    public void ClearChangeTracker() => ChangeTracker.Clear();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

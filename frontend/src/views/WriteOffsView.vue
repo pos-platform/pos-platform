@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { writeOffsApi, productsApi, storesApi } from '../api/catalog'
+import { writeOffsApi, productsApi, storesApi, newRequestId } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const writeOffs = ref([])
@@ -16,6 +16,9 @@ const form = reactive({ reason: '', branchId: '' })
 const lines = ref([]) // { product, quantity }
 const productSearch = ref('')
 const expanded = ref(null)
+// Ikki marta saqlanishdan himoya: bitta forma = bitta kalit
+let requestId = newRequestId()
+const cancellingId = ref(null)
 
 const searchResults = computed(() => {
   const q = productSearch.value.trim().toLowerCase()
@@ -63,9 +66,11 @@ async function submit() {
     const w = await writeOffsApi.create({
       branchId: form.branchId || null,
       reason: form.reason.trim() || null,
+      clientRequestId: requestId,
       items: lines.value.map((l) => ({ productId: l.product.id, quantity: Number(l.quantity) }))
     })
     success.value = `${w.number} — ${lines.value.length} ta tovar hisobdan chiqarildi`
+    requestId = newRequestId()
     form.reason = ''
     lines.value = []
     showForm.value = false
@@ -74,6 +79,22 @@ async function submit() {
     err.value = errorMessage(e)
   } finally {
     saving.value = false
+  }
+}
+
+async function cancelWriteOff(w) {
+  if (!confirm(`${w.number} bekor qilinsinmi?\n\nTovarlar omborga qaytariladi.`)) return
+  err.value = ''
+  success.value = ''
+  cancellingId.value = w.id
+  try {
+    await writeOffsApi.cancel(w.id)
+    success.value = `${w.number} bekor qilindi — tovarlar omborga qaytdi`
+    await load()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    cancellingId.value = null
   }
 }
 
@@ -133,17 +154,26 @@ onMounted(load)
 
   <div class="card">
     <table class="table">
-      <thead><tr><th>№</th><th>Sabab</th><th>Sana</th><th class="text-right">Tannarx</th></tr></thead>
+      <thead><tr><th>№</th><th>Sabab</th><th>Sana</th><th class="text-right">Tannarx</th><th></th></tr></thead>
       <tbody>
         <template v-for="w in writeOffs" :key="w.id">
-          <tr style="cursor:pointer" @click="expanded = expanded === w.id ? null : w.id">
-            <td><strong>{{ w.number }}</strong></td>
+          <tr style="cursor:pointer" :class="{ cancelled: w.status === 'Cancelled' }" @click="expanded = expanded === w.id ? null : w.id">
+            <td>
+              <strong>{{ w.number }}</strong>
+              <span v-if="w.status === 'Cancelled'" class="pill pill-red" style="margin-left:6px">Bekor qilingan</span>
+            </td>
             <td class="muted">{{ w.reason || '—' }}</td>
             <td class="muted">{{ fmtDate(w.createdAt) }}</td>
-            <td class="text-right" style="color:var(--danger)">− {{ fmt(w.totalCost) }}</td>
+            <td class="text-right amount" style="color:var(--danger)">− {{ fmt(w.totalCost) }}</td>
+            <td class="text-right">
+              <button v-if="w.status !== 'Cancelled'" type="button" class="btn btn-ghost btn-sm"
+                :disabled="cancellingId === w.id" @click.stop="cancelWriteOff(w)">
+                {{ cancellingId === w.id ? '...' : 'Bekor qilish' }}
+              </button>
+            </td>
           </tr>
           <tr v-if="expanded === w.id">
-            <td colspan="4" style="background:#fafbfc">
+            <td colspan="5" style="background:#fafbfc">
               <table class="table">
                 <tbody>
                   <tr v-for="(i, idx) in w.items" :key="idx">
@@ -156,7 +186,7 @@ onMounted(load)
             </td>
           </tr>
         </template>
-        <tr v-if="!writeOffs.length && !loading"><td colspan="4" class="muted" style="text-align:center;padding:24px">Yozuv yo'q</td></tr>
+        <tr v-if="!writeOffs.length && !loading"><td colspan="5" class="muted" style="text-align:center;padding:24px">Yozuv yo'q</td></tr>
       </tbody>
     </table>
   </div>
@@ -166,4 +196,6 @@ onMounted(load)
 .search-pop { position:absolute; top:100%; left:0; right:0; z-index:5; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow); max-height:260px; overflow:auto; }
 .search-item { padding:9px 12px; cursor:pointer; }
 .search-item:hover { background:var(--bg); }
+.cancelled td { color: var(--muted, #94a3b8); }
+.cancelled .amount { text-decoration: line-through; }
 </style>

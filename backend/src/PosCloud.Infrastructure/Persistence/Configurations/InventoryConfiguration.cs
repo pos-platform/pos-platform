@@ -13,6 +13,9 @@ public class InventoryConfiguration : IEntityTypeConfiguration<Inventory>
         builder.HasIndex(i => i.CreatedAt);
         builder.Property(i => i.Notes).HasMaxLength(512);
 
+        // Ikki marta "Qo'llash" (parallel) — ikkinchisi rad etiladi.
+        builder.UseXminConcurrency();
+
         builder.HasOne(i => i.Branch)
             .WithMany()
             .HasForeignKey(i => i.BranchId)

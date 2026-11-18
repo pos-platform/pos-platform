@@ -10,6 +10,10 @@ public class WriteOffDto
     public string? Reason { get; set; }
     public decimal TotalCost { get; set; }
     public DateTime CreatedAt { get; set; }
+    public Guid? BranchId { get; set; }
+    /// <summary>"Active" | "Cancelled".</summary>
+    public string Status { get; set; } = "Active";
+    public DateTime? CancelledAt { get; set; }
     public List<WriteOffItemDto> Items { get; set; } = new();
 
     public static WriteOffDto FromEntity(WriteOff w) => new()
@@ -19,6 +23,9 @@ public class WriteOffDto
         Reason = w.Reason,
         TotalCost = w.TotalCost,
         CreatedAt = w.CreatedAt,
+        BranchId = w.BranchId,
+        Status = w.Status.ToString(),
+        CancelledAt = w.CancelledAt,
         Items = w.Items.Select(WriteOffItemDto.FromEntity).ToList()
     };
 }
@@ -45,6 +52,10 @@ public class CreateWriteOffRequest
 {
     public Guid? BranchId { get; set; }
     public string? Reason { get; set; }
+
+    /// <summary>Ikki marta saqlanishdan himoya (forma ochilganda yaratiladigan noyob kalit).</summary>
+    [MaxLength(64)]
+    public string? ClientRequestId { get; set; }
 
     [Required]
     [MinLength(1)]

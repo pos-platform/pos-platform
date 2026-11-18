@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using PosCloud.Desktop.Services;
 
 namespace PosCloud.Desktop.Models;
 
@@ -31,13 +32,27 @@ public class CartLine : INotifyPropertyChanged
             _quantity = value;
             Raise(nameof(Quantity));
             Raise(nameof(QtyLabel));
-            Raise(nameof(LineTotal));
-            Raise(nameof(LineTotalLabel));
+            RaisePricing();
         }
     }
 
-    public decimal LineTotal => Product.Price * _quantity;
+    /// <summary>Aksiya chegirmasi — server bilan bir xil formula (<see cref="PromotionCalculator"/>).</summary>
+    public decimal Discount => PromotionCalculator.LineDiscount(Product, _quantity);
+    public bool HasDiscount => Discount > 0;
+    public string DiscountLabel => HasDiscount ? $"Aksiya: −{Discount:N0}" : "";
+
+    public decimal LineTotal => PromotionCalculator.LineTotal(Product, _quantity);
     public string LineTotalLabel => LineTotal.ToString("N0");
+
+    /// <summary>Aksiyalar ro'yxati o'zgarganda narx ko'rinishini yangilaydi.</summary>
+    public void RaisePricing()
+    {
+        Raise(nameof(Discount));
+        Raise(nameof(HasDiscount));
+        Raise(nameof(DiscountLabel));
+        Raise(nameof(LineTotal));
+        Raise(nameof(LineTotalLabel));
+    }
     public string QtyLabel => _quantity.ToString("0.###");
 
     public event PropertyChangedEventHandler? PropertyChanged;

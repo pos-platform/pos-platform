@@ -11,6 +11,10 @@ public class BranchStockConfiguration : IEntityTypeConfiguration<BranchStock>
         builder.Property(s => s.Quantity).HasColumnType("numeric(18,3)");
         builder.Property(s => s.Reserved).HasColumnType("numeric(18,3)");
 
+        // Optimistik bloklash: ikki kassa bir vaqtda oxirgi donani sotsa, ikkinchisining
+        // UPDATE'i (eskirgan xmin bilan) rad etiladi — qoldiq "yo'qolmaydi" va manfiy bo'lmaydi.
+        builder.UseXminConcurrency();
+
         // Bir filial + bir mahsulot = bitta yozuv (tashkilot bo'yicha)
         builder.HasIndex(s => new { s.BranchId, s.ProductId, s.OrganizationId }).IsUnique();
 

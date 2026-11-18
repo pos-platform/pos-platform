@@ -119,6 +119,9 @@ async function onImportFile(event) {
   try {
     importResult.value = await productsApi.importExcel(file)
     success.value = `Import: ${importResult.value.created} ta qo'shildi, ${importResult.value.updated} ta yangilandi, ${importResult.value.failed} ta xato`
+      + (importResult.value.stockSkipped
+        ? `. ${importResult.value.stockSkipped} ta mavjud tovarning soni o'zgartirilmadi — qoldiq kirim hujjati orqali kiritiladi`
+        : '')
     await loadAll()
   } catch (e) {
     error.value = errorMessage(e)
@@ -558,7 +561,8 @@ async function submit() {
   modalSuccess.value = ''
 
   // Agar soni > 0 va do'kon tanlanmagan bo'lsa, yagona do'konni avtomatik tanlash
-  const qty = Number(form.quantity) || 0
+  // (tahrirlashda qoldiq o'zgarmaydi — tekshiruv faqat yangi mahsulot uchun)
+  const qty = editId.value ? 0 : Number(form.quantity) || 0
   if (qty > 0 && !form.branchId && stores.value.length === 1) {
     form.branchId = stores.value[0].id
   }
@@ -1087,8 +1091,17 @@ function printBarcode(product) {
         <!-- Qoldiq + НДС/Маркировка toggles -->
         <div style="display:flex; gap:12px; align-items:flex-end; margin-bottom:12px">
           <div class="field" style="flex:1; margin:0">
-            <label>Soni <span class="req-star">*</span></label>
-            <input v-model="form.quantity" type="number" min="0" step="0.001" class="input" />
+            <template v-if="!editId">
+              <label>Boshlang'ich soni</label>
+              <input v-model="form.quantity" type="number" min="0" step="0.001" class="input" />
+            </template>
+            <template v-else>
+              <label>Qoldiq</label>
+              <input :value="form.quantity" type="number" class="input" disabled />
+              <div class="muted" style="font-size:12px; margin-top:4px">
+                Qoldiq kirim / hisobdan chiqarish / inventarizatsiya orqali o'zgaradi
+              </div>
+            </template>
           </div>
           <div style="display:flex; gap:20px; padding-bottom:6px">
             <div class="toggle-col" title="Mobil ilovada (online do'konda) ko'rsatilsinmi">
@@ -1178,7 +1191,7 @@ function printBarcode(product) {
 
         <!-- Do'kon (faqat bir nechta do'kon bo'lsa ko'rinadi) -->
         <div v-if="stores.length > 1" class="field">
-          <label>Do'kon <span v-if="Number(form.quantity) > 0" class="req-star">*</span></label>
+          <label>Do'kon <span v-if="!editId && Number(form.quantity) > 0" class="req-star">*</span></label>
           <select v-model="form.branchId" class="select">
             <option value="">— Umumiy (do'konga bog'lanmagan) —</option>
             <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>

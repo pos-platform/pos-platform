@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
+using PosCloud.Application.Features.Stock;
 using PosCloud.Application.Features.WriteOffs.Dtos;
 using PosCloud.Domain.Entities;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Application.Features.WriteOffs;
 
@@ -30,6 +32,14 @@ public class WriteOffService : IWriteOffService
 
     public async Task<WriteOffDto> CreateAsync(CreateWriteOffRequest request, CancellationToken cancellationToken = default)
     {
+        // Ikki marta saqlanishdan himoya: shu kalit bilan hujjat bo'lsa — o'shani qaytaramiz.
+        var clientRequestId = string.IsNullOrWhiteSpace(request.ClientRequestId) ? null : request.ClientRequestId.Trim();
+        if (clientRequestId is not null)
+        {
+            var existing = await LoadAsync(w => w.ClientRequestId == clientRequestId, cancellationToken);
+            if (existing is not null) return existing;
+        }
+
         if (request.Items.Count == 0)
             throw new ValidationException("Hisobdan chiqarishda kamida bitta tovar bo'lishi kerak.");
 
@@ -49,8 +59,10 @@ public class WriteOffService : IWriteOffService
         {
             BranchId = branchId,
             Reason = request.Reason?.Trim(),
+            ClientRequestId = clientRequestId,
             Number = await GenerateNumberAsync(cancellationToken)
         };
+        var doc = new StockDoc(writeOff.Id, writeOff.Number, _currentUser.UserId);
 
         foreach (var line in request.Items)
         {
@@ -59,11 +71,15 @@ public class WriteOffService : IWriteOffService
             if (line.Quantity <= 0)
                 throw new ValidationException($"'{product.Name}' uchun miqdor 0 dan katta bo'lishi kerak.");
 
-            if (!stocks.TryGetValue(line.ProductId, out var stock) || stock.Quantity < line.Quantity)
-                throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
+            // Online buyurtmalarga band qilingan tovar hisobdan chiqarilmaydi.
+            stocks.TryGetValue(line.ProductId, out var stock);
+            if (stock is null || StockLedger.Available(stock) < line.Quantity)
+                throw new ValidationException(
+                    $"'{product.Name}' qoldig'i yetarli emas (mavjud: {StockLedger.Available(stock):0.###}" +
+                    (stock is { Reserved: > 0 } ? $", online buyurtmalarga band: {stock.Reserved:0.###}" : "") + ").");
 
             var lineTotal = Round2(line.Quantity * product.CostPrice);
-            stock.Quantity -= line.Quantity;
+            StockLedger.Apply(_db, stock, -line.Quantity, StockMovementType.WriteOff, doc, product.CostPrice);
 
             writeOff.Items.Add(new WriteOffItem
             {
@@ -79,7 +95,49 @@ public class WriteOffService : IWriteOffService
         _db.WriteOffs.Add(writeOff);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return WriteOffDto.FromEntity(writeOff);
+        return (await LoadAsync(w => w.Id == writeOff.Id, cancellationToken))!;
+    }
+
+    /// <summary>Hisobdan chiqarishni bekor qiladi (storno): tovar omborga qaytadi.</summary>
+    public async Task<WriteOffDto> CancelAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var writeOff = await _db.WriteOffs
+            .Include(w => w.Items)
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Hisobdan chiqarish topilmadi: {id}");
+
+        if (writeOff.Status == StockDocumentStatus.Cancelled)
+            throw new ValidationException("Hujjat allaqachon bekor qilingan.");
+        var branchId = writeOff.BranchId
+            ?? throw new ValidationException("Hujjat filialga biriktirilmagan — bekor qilib bo'lmaydi.");
+
+        var productIds = writeOff.Items.Select(i => i.ProductId).Distinct().ToList();
+        var stocks = await _db.BranchStocks
+            .Where(s => s.BranchId == branchId && productIds.Contains(s.ProductId))
+            .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+
+        var doc = new StockDoc(writeOff.Id, writeOff.Number, _currentUser.UserId);
+        foreach (var item in writeOff.Items)
+        {
+            var stock = StockLedger.GetOrCreate(_db, stocks, branchId, item.ProductId);
+            StockLedger.Apply(_db, stock, item.Quantity, StockMovementType.WriteOffCancel, doc, item.CostPrice);
+        }
+
+        writeOff.Status = StockDocumentStatus.Cancelled;
+        writeOff.CancelledAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return (await LoadAsync(w => w.Id == writeOff.Id, cancellationToken))!;
+    }
+
+    private async Task<WriteOffDto?> LoadAsync(System.Linq.Expressions.Expression<Func<WriteOff, bool>> predicate,
+        CancellationToken cancellationToken)
+    {
+        var w = await _db.WriteOffs
+            .AsNoTracking()
+            .Include(x => x.Items).ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(predicate, cancellationToken);
+        return w is null ? null : WriteOffDto.FromEntity(w);
     }
 
     private async Task<string> GenerateNumberAsync(CancellationToken cancellationToken)

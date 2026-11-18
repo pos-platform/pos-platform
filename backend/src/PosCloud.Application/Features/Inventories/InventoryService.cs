@@ -1,15 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
+using PosCloud.Application.Features.Stock;
 using PosCloud.Domain.Entities;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Application.Features.Inventories;
 
 public class InventoryService : IInventoryService
 {
     private readonly IApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
-    public InventoryService(IApplicationDbContext db) => _db = db;
+    public InventoryService(IApplicationDbContext db, ICurrentUser currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     public async Task<IReadOnlyList<InventoryDto>> GetAllAsync(CancellationToken ct = default)
     {
@@ -97,11 +104,27 @@ public class InventoryService : IInventoryService
 
         var itemMap = inv.Items.ToDictionary(i => i.Id);
 
+        // Sanalgan miqdor o'zgargan qatorlar uchun tizim qoldig'ini AYNAN HOZIR qayta olamiz:
+        // hujjat ochilgandan beri sotilgan tovar farqqa ikkinchi marta tushmasin.
+        var changed = req.Items
+            .Where(u => itemMap.TryGetValue(u.ItemId, out var it) && it.ActualQty != u.ActualQty)
+            .Select(u => itemMap[u.ItemId].ProductId)
+            .Distinct()
+            .ToList();
+        var current = inv.BranchId.HasValue && changed.Count > 0
+            ? await _db.BranchStocks.AsNoTracking()
+                .Where(s => s.BranchId == inv.BranchId && changed.Contains(s.ProductId))
+                .ToDictionaryAsync(s => s.ProductId, s => s.Quantity, ct)
+            : new Dictionary<Guid, decimal>();
+
         foreach (var upd in req.Items)
         {
             if (!itemMap.TryGetValue(upd.ItemId, out var item))
                 throw new NotFoundException($"InventoryItem {upd.ItemId} topilmadi.");
+            if (item.ActualQty == upd.ActualQty) continue;
 
+            if (inv.BranchId.HasValue)
+                item.ExpectedQty = current.TryGetValue(item.ProductId, out var q) ? q : 0m;
             item.ActualQty = upd.ActualQty;
         }
 
@@ -129,18 +152,16 @@ public class InventoryService : IInventoryService
             .Where(s => s.BranchId == inv.BranchId && productIds.Contains(s.ProductId))
             .ToDictionaryAsync(s => s.ProductId, ct);
 
+        // Farq = sanalgan miqdor − SANASH paytidagi tizim qoldig'i (UpdateActualQtyAsync'da olinadi).
+        // Sanashdan keyingi sotuvlar qoldiqda allaqachon aks etgan — farq ularning ustiga qo'shiladi.
+        var doc = new StockDoc(inv.Id, inv.Number, _currentUser.UserId);
         foreach (var item in inv.Items)
         {
             var discrepancy = item.ActualQty - item.ExpectedQty;
             if (discrepancy == 0) continue;
 
-            if (!stocks.TryGetValue(item.ProductId, out var stock))
-            {
-                stock = new BranchStock { BranchId = inv.BranchId.Value, ProductId = item.ProductId };
-                _db.BranchStocks.Add(stock);
-                stocks[item.ProductId] = stock;
-            }
-            stock.Quantity += discrepancy;
+            var stock = StockLedger.GetOrCreate(_db, stocks, inv.BranchId.Value, item.ProductId);
+            StockLedger.Apply(_db, stock, discrepancy, StockMovementType.Inventory, doc);
         }
 
         inv.Status = InventoryStatus.Completed;

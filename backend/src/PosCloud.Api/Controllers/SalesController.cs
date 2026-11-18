@@ -48,7 +48,7 @@ public class SalesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SaleDto>> Create(CreateSaleRequest request, CancellationToken cancellationToken)
     {
-        var sale = await _saleService.CreateAsync(request, cancellationToken);
+        var sale = await _saleService.CreateWithRetryAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = sale.Id }, sale);
     }
 

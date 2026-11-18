@@ -74,7 +74,7 @@ public partial class PosWindow : Window
             // Teskari tartibda (avval ro'yxat, keyin tamg'a) o'sha o'zgarish tushib qolardi.
             _catalogStamp = await TryGetCatalogStampAsync();
             // Uchala so'rov bir-biriga bog'liq emas — parallel yuklaymiz (startni tezlashtiradi).
-            await Task.WhenAll(LoadShiftAsync(), LoadCategoriesAsync(), LoadProductsAsync());
+            await Task.WhenAll(LoadShiftAsync(), LoadCategoriesAsync(), LoadProductsAsync(), LoadPromotionsAsync());
             StartSyncTimer();
             UpdateCatalogStatus();
             AppState.Scanner.BarcodeReceived += OnBarcodeScanned;
@@ -308,6 +308,9 @@ public partial class PosWindow : Window
             if (force) await LoadProductsAsync();
             return;
         }
+
+        // Aksiyalar katalog tamg'asiga kirmaydi va ro'yxati juda kichik — har tekshiruvda olamiz.
+        await LoadPromotionsAsync();
 
         var prev = _catalogStamp;
         // prev == null — startda oflayn edik: nima o'zgargani noma'lum, to'liq yuklaymiz.
@@ -810,6 +813,35 @@ public partial class PosWindow : Window
         SearchBox.Focus();
         SearchBox.SelectAll();
         ShowMessage("Mijoz ilovasidagi bonus karta QR kodini skanerlang (QR 90 soniya amal qiladi)", error: false);
+    }
+
+    /// <summary>
+    /// Amaldagi aksiyalarni yuklaydi (oflaynda — keshdan). Server savdoda aksiyani o'zi qo'llaydi,
+    /// kassa ham xuddi shunday hisoblashi kerak: aks holda kassir to'liq narxni olib, server
+    /// chegirmali summani yozardi (karta/naqd/chek mos kelmasdi).
+    /// </summary>
+    private async Task LoadPromotionsAsync()
+    {
+        List<PromotionDto> promos;
+        try
+        {
+            promos = await AppState.Backend.GetActivePromotionsAsync();
+            AppState.Offline.SavePromotions(promos);
+        }
+        catch
+        {
+            promos = AppState.Offline.LoadPromotions();
+        }
+
+        var before = System.Text.Json.JsonSerializer.Serialize(PromotionCalculator.Active);
+        PromotionCalculator.SetActive(promos);
+        if (before == System.Text.Json.JsonSerializer.Serialize(PromotionCalculator.Active)) return;
+
+        // Aksiyalar o'zgardi — barcha ochiq savatlardagi qator summalari qayta hisoblanadi.
+        foreach (var session in _sessions)
+            foreach (var line in session.Cart)
+                line.RaisePricing();
+        if (!_checkoutBusy) RecalcTotals();
     }
 
     /// <summary>Kategoriyalarni yuklaydi. Qaytaradi: serverdan olindimi.</summary>
@@ -1623,6 +1655,8 @@ public partial class PosWindow : Window
                 // ball yetmasa server sync paytida o'zi cheklaydi.
                 CustomerId = customer?.CustomerId,
                 RedeemPoints = redeem > 0 ? redeem : null,
+                // Savdo yakunlangan haqiqiy vaqt — oflayn navbatdan kech yuborilsa ham shu vaqt bilan yoziladi.
+                ClientCreatedAt = DateTime.UtcNow,
                 Items =soldLines.Select(l => new SaleItemRequest { ProductId = l.Product.Id, Quantity = l.Quantity, MarkingCode = l.MarkingCode }).ToList()
             };
             var receipt = new ReceiptData
@@ -1642,7 +1676,7 @@ public partial class PosWindow : Window
                 LoyaltyPointsRedeemed = redeem,
                 Lines = soldLines.Select(l => new ReceiptLine
                 {
-                    Name = l.Product.Name, Quantity = l.Quantity, Price = l.Product.Price, LineTotal = l.LineTotal,
+                    Name = l.Product.Name, Quantity = l.Quantity, Price = l.Product.Price, LineTotal = l.LineTotal, Discount = l.Discount,
                     MxikCode = l.Product.MxikCode, Barcode = l.Product.Barcode, MarkingCode = l.MarkingCode, IsVat = l.Product.IsVat,
                     Unit = l.Product.Unit, CommitentTin = l.Product.CommitentTin
                 }).ToList()
@@ -1678,7 +1712,8 @@ public partial class PosWindow : Window
                 receipt.ReceiptNumber = sale.ReceiptNumber;
                 receipt.Change = sale.ChangeAmount;
                 receipt.SaleId = sale.Id; // fiskal QR'ni keyin so'rab olish uchun
-                if (customer is not null) ApplyServerLoyalty(receipt, sale, soldLines);
+                // Server — yagona haqiqat manbai: aksiya/ball chegirmalari va jami chekka o'shandan.
+                ApplyServerLoyalty(receipt, sale, soldLines);
 
                 // Savatni SHU ZAHOTI tozalaymiz. Keyingi ishlar (qoldiq keshi, filtr, chek)
                 // savatga bog'liq emas va ulardagi xato savatni to'la qoldirmasligi kerak:

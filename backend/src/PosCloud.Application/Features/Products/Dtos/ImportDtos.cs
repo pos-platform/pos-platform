@@ -57,5 +57,7 @@ public class ImportResultDto
     public int Created { get; set; }
     public int Updated { get; set; }
     public int Failed { get; set; }
+    /// <summary>Mavjud tovarlar: importdagi "soni" e'tiborsiz qoldirildi (qoldiq kirim hujjati orqali o'zgaradi).</summary>
+    public int StockSkipped { get; set; }
     public List<string> Errors { get; set; } = new();
 }

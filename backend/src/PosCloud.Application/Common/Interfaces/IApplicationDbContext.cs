@@ -42,6 +42,9 @@ public interface IApplicationDbContext
 
     DbSet<BranchStock> BranchStocks { get; }
 
+    // Ombor harakati jurnali (qoldiq har o'zgarganda bitta yozuv)
+    DbSet<StockMovement> StockMovements { get; }
+
     // Task 4: Branch transfers
     DbSet<StockTransfer> StockTransfers { get; }
     DbSet<StockTransferItem> StockTransferItems { get; }
@@ -108,4 +111,7 @@ public interface IApplicationDbContext
     DbSet<KitchenTicketItem> KitchenTicketItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Kuzatilayotgan (tracked) entitylarni unutadi — optimistik bloklash xatosidan keyin qayta urinish uchun.</summary>
+    void ClearChangeTracker();
 }

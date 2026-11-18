@@ -13,6 +13,9 @@ public class StockReceiptDto
     public string? Comment { get; set; }
     public decimal TotalAmount { get; set; }
     public DateTime CreatedAt { get; set; }
+    /// <summary>"Active" | "Cancelled".</summary>
+    public string Status { get; set; } = "Active";
+    public DateTime? CancelledAt { get; set; }
     public List<StockReceiptItemDto> Items { get; set; } = new();
 
     public static StockReceiptDto FromEntity(StockReceipt r) => new()
@@ -25,6 +28,8 @@ public class StockReceiptDto
         Comment = r.Comment,
         TotalAmount = r.TotalAmount,
         CreatedAt = r.CreatedAt,
+        Status = r.Status.ToString(),
+        CancelledAt = r.CancelledAt,
         Items = r.Items.Select(StockReceiptItemDto.FromEntity).ToList()
     };
 }
@@ -59,6 +64,10 @@ public class CreateStockReceiptRequest
     public Guid? BranchId { get; set; }
 
     public string? Comment { get; set; }
+
+    /// <summary>Ikki marta saqlanishdan himoya (forma ochilganda yaratiladigan noyob kalit).</summary>
+    [MaxLength(64)]
+    public string? ClientRequestId { get; set; }
 
     [Required]
     [MinLength(1)]

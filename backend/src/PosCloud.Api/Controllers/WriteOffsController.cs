@@ -29,4 +29,11 @@ public class WriteOffsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<WriteOffDto>> Create(CreateWriteOffRequest request, CancellationToken cancellationToken)
         => Ok(await _writeOffs.CreateAsync(request, cancellationToken));
+
+    /// <summary>Hisobdan chiqarishni bekor qiladi (tovar omborga qaytadi).</summary>
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType(typeof(WriteOffDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<WriteOffDto>> Cancel(Guid id, CancellationToken cancellationToken)
+        => Ok(await _writeOffs.CancelAsync(id, cancellationToken));
 }

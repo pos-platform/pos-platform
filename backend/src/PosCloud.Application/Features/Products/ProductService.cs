@@ -3,6 +3,7 @@ using PosCloud.Application.Common;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.Products.Dtos;
+using PosCloud.Application.Features.Stock;
 using PosCloud.Domain.Entities;
 using PosCloud.Domain.Enums;
 
@@ -166,17 +167,12 @@ public class ProductService : IProductService
             BranchId = productBranchId
         };
 
-        // Boshlang'ich qoldiq — faqat filial ko'rsatilgan bo'lsa
-        if (dto.Quantity > 0 && productBranchId.HasValue)
-        {
-            product.Stocks.Add(new BranchStock
-            {
-                BranchId = productBranchId.Value,
-                Quantity = dto.Quantity
-            });
-        }
-
         _db.Products.Add(product);
+
+        // Boshlang'ich qoldiq — faqat filial ko'rsatilgan bo'lsa (ombor harakati jurnaliga "Initial" bo'lib yoziladi).
+        // Keyin qoldiq faqat hujjatlar (kirim, hisobdan chiqarish, inventarizatsiya...) orqali o'zgaradi.
+        if (dto.Quantity > 0 && productBranchId.HasValue)
+            AddInitialStock(product, productBranchId.Value, dto.Quantity);
         await _db.SaveChangesAsync(cancellationToken);
 
         return ProductDto.FromEntity(product, _currentUser.BranchId);
@@ -368,17 +364,9 @@ public class ProductService : IProductService
 
         product.BranchId = dto.BranchId;
 
-        // Soni (qoldiq) yangilash — faqat filial ko'rsatilgan mahsulotlar uchun
-        var effectiveBranchId = dto.BranchId ?? _currentUser.BranchId;
-        if (effectiveBranchId.HasValue)
-        {
-            var stock = await _db.BranchStocks
-                .FirstOrDefaultAsync(s => s.ProductId == id && s.BranchId == effectiveBranchId.Value, cancellationToken);
-            if (stock is not null)
-                stock.Quantity = dto.Quantity;
-            else if (dto.Quantity > 0)
-                _db.BranchStocks.Add(new BranchStock { ProductId = id, BranchId = effectiveBranchId.Value, Quantity = dto.Quantity });
-        }
+        // Qoldiq bu yerda O'ZGARMAYDI (dto.Quantity e'tiborsiz): forma ochilgandan beri bo'lgan
+        // sotuvlar ustidan yozib yuborilmasin. Qoldiq faqat kirim / hisobdan chiqarish /
+        // inventarizatsiya hujjatlari orqali o'zgaradi va har biri harakat jurnaliga yoziladi.
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -574,13 +562,17 @@ public class ProductService : IProductService
                     if (!string.IsNullOrWhiteSpace(row.PackageCode)) existing.PackageCode = row.PackageCode!.Trim();
                     existing.CategoryId = category.Id;
 
-                    // Qoldiq — faqat importda soni ko'rsatilgan bo'lsa yangilanadi (o'rniga qo'yiladi)
-                    if (row.Quantity.HasValue && importBranchId.HasValue)
+                    // Mavjud tovar qoldig'i importda ALMASHTIRILMAYDI (sotuvlar ustidan yozilib
+                    // ketmasin) — kelgan tovar kirim hujjati bilan kiritiladi. Faqat shu filialda
+                    // hali umuman qoldiq yozuvi bo'lmagan tovarga boshlang'ich qoldiq qo'yiladi.
+                    if (row.Quantity is > 0 && importBranchId.HasValue
+                        && existing.Stocks.All(s => s.BranchId != importBranchId.Value))
                     {
-                        var st = existing.Stocks.FirstOrDefault(s => s.BranchId == importBranchId.Value);
-                        if (st is not null) st.Quantity = row.Quantity.Value;
-                        else if (row.Quantity.Value != 0)
-                            existing.Stocks.Add(new BranchStock { BranchId = importBranchId.Value, Quantity = row.Quantity.Value });
+                        AddInitialStock(existing, importBranchId.Value, row.Quantity.Value);
+                    }
+                    else if (row.Quantity.HasValue && importBranchId.HasValue)
+                    {
+                        result.StockSkipped++;
                     }
 
                     result.Updated++;
@@ -610,17 +602,11 @@ public class ProductService : IProductService
                         CategoryId = category.Id
                     };
 
+                    _db.Products.Add(importProduct);
+
                     var importQty = row.Quantity ?? 0;
                     if (importQty > 0 && importBranchId.HasValue)
-                    {
-                        importProduct.Stocks.Add(new BranchStock
-                        {
-                            BranchId = importBranchId.Value,
-                            Quantity = importQty
-                        });
-                    }
-
-                    _db.Products.Add(importProduct);
+                        AddInitialStock(importProduct, importBranchId.Value, importQty);
                     if (newBarcode != null) byBarcode[newBarcode] = importProduct;
                     if (importProduct.PluNumber is > 0) byPlu.TryAdd(importProduct.PluNumber.Value, importProduct);
                     result.Created++;
@@ -692,4 +678,13 @@ public class ProductService : IProductService
     // Faqat harf va raqamlarni qoldiradi: "Xo’ja Market" → "xojamarket"
     private static string NormalizeBranchKey(string s) =>
         new string(s.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+
+    /// <summary>Yangi qoldiq yozuvi + "Initial" harakati (mahsulot yaratish / import).</summary>
+    private void AddInitialStock(Product product, Guid branchId, decimal quantity)
+    {
+        var stock = new BranchStock { BranchId = branchId, ProductId = product.Id };
+        product.Stocks.Add(stock);
+        StockLedger.Apply(_db, stock, quantity, StockMovementType.Initial,
+            new StockDoc(product.Id, null, _currentUser.UserId), product.CostPrice);
+    }
 }

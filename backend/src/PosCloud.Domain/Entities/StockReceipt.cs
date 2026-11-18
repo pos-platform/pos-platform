@@ -1,4 +1,5 @@
 using PosCloud.Domain.Common;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Domain.Entities;
 
@@ -20,6 +21,13 @@ public class StockReceipt : BaseEntity
 
     /// <summary>Kirim umumiy summasi (qatorlar tannarx*miqdor yig'indisi).</summary>
     public decimal TotalAmount { get; set; }
+
+    /// <summary>Holat: bekor qilingan kirim qoldiq va qarzga ta'sir qilmaydi.</summary>
+    public StockDocumentStatus Status { get; set; } = StockDocumentStatus.Active;
+    public DateTime? CancelledAt { get; set; }
+
+    /// <summary>Ikki marta saqlanishdan himoya: forma ochilganda yaratiladigan kalit.</summary>
+    public string? ClientRequestId { get; set; }
 
     public ICollection<StockReceiptItem> Items { get; set; } = new List<StockReceiptItem>();
 }

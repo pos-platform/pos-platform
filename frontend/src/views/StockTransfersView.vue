@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { stockTransfersApi, storesApi } from '../api/catalog'
+import { stockTransfersApi, storesApi, newRequestId } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const transfers = ref([])
@@ -12,6 +12,9 @@ const showForm = ref(false)
 
 const form = ref({ fromBranchId: '', toBranchId: '', comment: '', items: [] })
 const productLine = ref({ productId: '', name: '', quantity: 1 })
+const saving = ref(false)
+// Ikki marta yuborishdan himoya: bitta forma = bitta kalit
+let requestId = newRequestId()
 
 const statusLabel = (s) => ({ Pending: 'Kutilmoqda', Sent: 'Yuborildi', Received: 'Qabul qilindi', Cancelled: 'Bekor' })[s] || s
 const statusClass = (s) => ({ Sent: 'badge-info', Received: 'badge-success', Cancelled: 'badge-danger', Pending: 'badge-warn' })[s] || ''
@@ -41,18 +44,23 @@ async function create() {
   err.value = ''; success.value = ''
   if (!form.value.fromBranchId || !form.value.toBranchId) { err.value = "Manba va maqsad filialni tanlang"; return }
   if (!form.value.items.length) { err.value = 'Kamida bitta mahsulot qo\'shing'; return }
+  if (saving.value) return
+  saving.value = true
   try {
     await stockTransfersApi.create({
       fromBranchId: form.value.fromBranchId,
       toBranchId: form.value.toBranchId,
       comment: form.value.comment || null,
+      clientRequestId: requestId,
       items: form.value.items
     })
     success.value = 'Transfer yaratildi va yuborildi'
+    requestId = newRequestId()
     showForm.value = false
     form.value = { fromBranchId: '', toBranchId: '', comment: '', items: [] }
     await load()
   } catch (e) { err.value = errorMessage(e) }
+  finally { saving.value = false }
 }
 
 async function receive(id) {
@@ -119,7 +127,7 @@ onMounted(load)
       </tbody>
     </table>
 
-    <button class="btn" @click="create">Yuborish</button>
+    <button class="btn" :disabled="saving" @click="create">{{ saving ? '...' : 'Yuborish' }}</button>
     <button class="btn btn-ghost" style="margin-left:8px" @click="showForm=false">Bekor</button>
   </div>
 

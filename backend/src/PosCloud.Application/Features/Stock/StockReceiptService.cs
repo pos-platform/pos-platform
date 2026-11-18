@@ -3,6 +3,7 @@ using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.Stock.Dtos;
 using PosCloud.Domain.Entities;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Application.Features.Stock;
 
@@ -47,6 +48,15 @@ public class StockReceiptService : IStockReceiptService
 
     public async Task<StockReceiptDto> CreateAsync(CreateStockReceiptRequest request, CancellationToken cancellationToken = default)
     {
+        // Ikki marta saqlanishdan himoya: shu kalit bilan kirim allaqachon bo'lsa — o'shani qaytaramiz.
+        var clientRequestId = string.IsNullOrWhiteSpace(request.ClientRequestId) ? null : request.ClientRequestId.Trim();
+        if (clientRequestId is not null)
+        {
+            var existingId = await _db.StockReceipts.Where(r => r.ClientRequestId == clientRequestId)
+                .Select(r => (Guid?)r.Id).FirstOrDefaultAsync(cancellationToken);
+            if (existingId is { } eid) return await GetByIdAsync(eid, cancellationToken);
+        }
+
         if (request.Items.Count == 0)
             throw new ValidationException("Kirimda kamida bitta tovar bo'lishi kerak.");
 
@@ -71,8 +81,10 @@ public class StockReceiptService : IStockReceiptService
             SupplierId = supplier.Id,
             BranchId = branchId,
             Comment = request.Comment?.Trim(),
+            ClientRequestId = clientRequestId,
             Number = await GenerateNumberAsync(cancellationToken)
         };
+        var doc = new StockDoc(receipt.Id, receipt.Number, _currentUser.UserId);
 
         foreach (var line in request.Items)
         {
@@ -83,14 +95,9 @@ public class StockReceiptService : IStockReceiptService
 
             var lineTotal = Round2(line.Quantity * line.CostPrice);
 
-            // Filial qoldig'ini oshiramiz
-            if (!stocks.TryGetValue(line.ProductId, out var stock))
-            {
-                stock = new BranchStock { BranchId = branchId, ProductId = product.Id };
-                _db.BranchStocks.Add(stock);
-                stocks[line.ProductId] = stock;
-            }
-            stock.Quantity += line.Quantity;
+            // Filial qoldig'ini oshiramiz (harakat jurnaliga yoziladi)
+            var stock = StockLedger.GetOrCreate(_db, stocks, branchId, product.Id);
+            StockLedger.Apply(_db, stock, line.Quantity, StockMovementType.Receipt, doc, line.CostPrice);
 
             if (line.CostPrice > 0)
                 product.CostPrice = line.CostPrice;
@@ -100,7 +107,7 @@ public class StockReceiptService : IStockReceiptService
                 ProductId = product.Id,
                 Quantity = line.Quantity,
                 CostPrice = line.CostPrice,
-                RemainingQuantity = line.Quantity, // FIFO qatlami — boshида to'liq qoldiq
+                RemainingQuantity = line.Quantity, // FIFO qatlami — boshida to'liq qoldiq
                 LineTotal = lineTotal,
                 BatchNumber = line.BatchNumber?.Trim(),
                 ExpiryDate = line.ExpiryDate
@@ -111,6 +118,60 @@ public class StockReceiptService : IStockReceiptService
         supplier.Balance += receipt.TotalAmount;
 
         _db.StockReceipts.Add(receipt);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return await GetByIdAsync(receipt.Id, cancellationToken);
+    }
+
+    /// <summary>
+    /// Kirimni bekor qiladi (storno): tovar ombordan ayiriladi, partiya yopiladi,
+    /// yetkazib beruvchi qarzi kamayadi. Partiyadan sotilgan yoki qoldiq yetmasa — rad etiladi.
+    /// </summary>
+    public async Task<StockReceiptDto> CancelAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var receipt = await _db.StockReceipts
+            .Include(r => r.Items).ThenInclude(i => i.Product)
+            .Include(r => r.Supplier)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Накладная topilmadi: {id}");
+
+        if (receipt.Status == StockDocumentStatus.Cancelled)
+            throw new ValidationException("Kirim allaqachon bekor qilingan.");
+        var branchId = receipt.BranchId
+            ?? throw new ValidationException("Kirim filialga biriktirilmagan — bekor qilib bo'lmaydi.");
+
+        var consumed = receipt.Items.FirstOrDefault(i => i.RemainingQuantity < i.Quantity);
+        if (consumed is not null)
+            throw new ValidationException(
+                $"'{consumed.Product?.Name}' bu kirim partiyasidan allaqachon sotilgan — kirimni bekor qilib bo'lmaydi. " +
+                "Ortiqcha tovarni hisobdan chiqarish orqali to'g'rilang.");
+
+        var productIds = receipt.Items.Select(i => i.ProductId).Distinct().ToList();
+        var stocks = await _db.BranchStocks
+            .Where(s => s.BranchId == branchId && productIds.Contains(s.ProductId))
+            .ToDictionaryAsync(s => s.ProductId, cancellationToken);
+
+        foreach (var g in receipt.Items.GroupBy(i => i.ProductId))
+        {
+            var qty = g.Sum(i => i.Quantity);
+            stocks.TryGetValue(g.Key, out var stock);
+            if (StockLedger.Available(stock) < qty)
+                throw new ValidationException(
+                    $"'{g.First().Product?.Name}' qoldig'i yetarli emas (mavjud: {StockLedger.Available(stock):0.###}, kerak: {qty:0.###}) — kirimni bekor qilib bo'lmaydi.");
+        }
+
+        var doc = new StockDoc(receipt.Id, receipt.Number, _currentUser.UserId);
+        foreach (var item in receipt.Items)
+        {
+            StockLedger.Apply(_db, stocks[item.ProductId], -item.Quantity, StockMovementType.ReceiptCancel, doc, item.CostPrice);
+            item.RemainingQuantity = 0;
+        }
+
+        if (receipt.Supplier is not null)
+            receipt.Supplier.Balance -= receipt.TotalAmount;
+
+        receipt.Status = StockDocumentStatus.Cancelled;
+        receipt.CancelledAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
 
         return await GetByIdAsync(receipt.Id, cancellationToken);

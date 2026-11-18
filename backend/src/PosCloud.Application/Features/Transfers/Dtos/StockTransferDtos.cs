@@ -68,6 +68,10 @@ public class CreateStockTransferRequest
 
     public string? Comment { get; set; }
 
+    /// <summary>Ikki marta saqlanishdan himoya (forma ochilganda yaratiladigan noyob kalit).</summary>
+    [MaxLength(64)]
+    public string? ClientRequestId { get; set; }
+
     [Required]
     [MinLength(1)]
     public List<CreateStockTransferItemRequest> Items { get; set; } = new();

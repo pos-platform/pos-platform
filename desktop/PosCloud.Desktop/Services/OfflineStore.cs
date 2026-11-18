@@ -74,6 +74,10 @@ public class OfflineStore : IDisposable
                 CreatedAt TEXT NOT NULL,
                 Attempts  INTEGER NOT NULL DEFAULT 0
             );
+            CREATE TABLE IF NOT EXISTS PromotionCache (
+                Key     TEXT PRIMARY KEY,
+                Payload TEXT NOT NULL
+            );
             INSERT OR IGNORE INTO ShiftCache(Key, Payload) VALUES('current', NULL);
         ");
 
@@ -167,6 +171,24 @@ public class OfflineStore : IDisposable
     {
         using var cmd = Cmd("SELECT COUNT(*) FROM ProductCache");
         return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
+    }
+
+    // ─── Aksiyalar ──────────────────────────────────────────────────────────
+
+    public void SavePromotions(IEnumerable<PromotionDto> promotions)
+    {
+        var cmd = Cmd("INSERT OR REPLACE INTO PromotionCache(Key, Payload) VALUES('active', @Payload)");
+        cmd.Parameters.AddWithValue("@Payload", JsonSerializer.Serialize(promotions, _json));
+        cmd.ExecuteNonQuery();
+    }
+
+    public List<PromotionDto> LoadPromotions()
+    {
+        using var cmd = Cmd("SELECT Payload FROM PromotionCache WHERE Key = 'active'");
+        var payload = cmd.ExecuteScalar() as string;
+        if (string.IsNullOrEmpty(payload)) return new();
+        try { return JsonSerializer.Deserialize<List<PromotionDto>>(payload, _json) ?? new(); }
+        catch { return new(); }
     }
 
     // ─── Kategoriyalar ──────────────────────────────────────────────────────
@@ -276,11 +298,15 @@ public class OfflineStore : IDisposable
     public List<(string Id, CreateSaleRequest Request)> GetPendingSales()
     {
         var list = new List<(string, CreateSaleRequest)>();
-        using var cmd = Cmd("SELECT Id, Payload FROM PendingSales WHERE Blocked = 0 ORDER BY CreatedAt");
+        using var cmd = Cmd("SELECT Id, Payload, CreatedAt FROM PendingSales WHERE Blocked = 0 ORDER BY CreatedAt");
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
             var req = JsonSerializer.Deserialize<CreateSaleRequest>(r.GetString(1), _json)!;
+            // Eski versiyada navbatga tushgan savdoda vaqt yo'q — navbatga qo'yilgan vaqtni olamiz.
+            if (req.ClientCreatedAt is null
+                && DateTime.TryParse(r.GetString(2), null, System.Globalization.DateTimeStyles.RoundtripKind, out var queuedAt))
+                req.ClientCreatedAt = queuedAt.ToUniversalTime();
             list.Add((r.GetString(0), req));
         }
         return list;

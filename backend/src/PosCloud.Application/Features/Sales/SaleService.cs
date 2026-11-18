@@ -6,6 +6,7 @@ using PosCloud.Application.Features.Loyalty;
 using PosCloud.Application.Features.OnlineOrders;
 using PosCloud.Application.Features.Promotions;
 using PosCloud.Application.Features.Sales.Dtos;
+using PosCloud.Application.Features.Stock;
 using PosCloud.Domain.Entities;
 using PosCloud.Domain.Enums;
 
@@ -95,6 +96,23 @@ public partial class SaleService : ISaleService
         return SaleDto.FromEntity(sale);
     }
 
+    public async Task<SaleDto> CreateWithRetryAsync(CreateSaleRequest request, CancellationToken cancellationToken = default)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await CreateAsync(request, cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < 3)
+            {
+                // Boshqa kassa shu tovar qoldig'ini ayni paytda o'zgartirdi — hech narsa saqlanmagan,
+                // eskirgan entitylarni unutib, yangi qoldiq bilan qaytadan hisoblaymiz.
+                _db.ClearChangeTracker();
+            }
+        }
+    }
+
     public async Task<SaleDto> CreateAsync(CreateSaleRequest request, CancellationToken cancellationToken = default)
     {
         var cashierId = _currentUser.UserId
@@ -181,6 +199,7 @@ public partial class SaleService : ISaleService
 
         // Ball hisoblash uchun: qator, mahsulot va narxi pasaytirilganmi (online aksiya narxi qotirilgan).
         var earnSource = new List<(SaleItem Item, Product Product, bool PriceReduced)>();
+        var stockMovements = new List<StockMovement>();
 
         foreach (var line in request.Items)
         {
@@ -236,10 +255,13 @@ public partial class SaleService : ISaleService
             {
                 if (!branchStocks.TryGetValue(product.Id, out var stock) || stock.Quantity < line.Quantity)
                     throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
-                stock.Quantity -= line.Quantity;
 
                 layersByProduct.TryGetValue(product.Id, out var prodLayers);
                 costPrice = ConsumeFifoCost(prodLayers, line.Quantity, product.CostPrice);
+
+                // Qoldiq ombor harakati jurnali orqali kamayadi (chek raqami pastda, raqam berilgach yoziladi).
+                stockMovements.Add(StockLedger.Apply(_db, stock, -line.Quantity, StockMovementType.Sale,
+                    new StockDoc(sale.Id, null, cashierId), costPrice));
             }
             else
             {
@@ -331,6 +353,7 @@ public partial class SaleService : ISaleService
         ApplyCardAmount(sale, request.PaymentMethod, request.CardAmount);
 
         sale.ReceiptNumber = await GenerateReceiptNumberAsync("R", cancellationToken);
+        foreach (var m in stockMovements) m.DocumentNumber = sale.ReceiptNumber;
 
         sale.Receipt = new Receipt { FiscalStatus = FiscalStatus.NotSent };
 

@@ -23,5 +23,8 @@ public class StockTransfer : BaseEntity
     public DateTime? SentAt { get; set; }
     public DateTime? ReceivedAt { get; set; }
 
+    /// <summary>Ikki marta saqlanishdan himoya: forma ochilganda yaratiladigan kalit.</summary>
+    public string? ClientRequestId { get; set; }
+
     public ICollection<StockTransferItem> Items { get; set; } = new List<StockTransferItem>();
 }

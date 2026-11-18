@@ -132,6 +132,12 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Reserved")
                         .HasColumnType("numeric(18,3)");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -666,6 +672,12 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -3611,6 +3623,60 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.ToTable("StaffDeviceTokens");
                 });
 
+            modelBuilder.Entity("PosCloud.Domain.Entities.StockMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BalanceAfter")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("CostPrice")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DocumentNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("BranchId", "CreatedAt");
+
+                    b.HasIndex("ProductId", "BranchId", "CreatedAt");
+
+                    b.ToTable("StockMovements");
+                });
+
             modelBuilder.Entity("PosCloud.Domain.Entities.StockReceipt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3619,6 +3685,13 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ClientRequestId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("Comment")
                         .HasMaxLength(512)
@@ -3635,6 +3708,15 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uuid");
 
@@ -3647,6 +3729,10 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("ClientRequestId")
+                        .IsUnique()
+                        .HasFilter("\"ClientRequestId\" IS NOT NULL");
 
                     b.HasIndex("CreatedAt");
 
@@ -3712,6 +3798,10 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ClientRequestId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("Comment")
                         .HasColumnType("text");
 
@@ -3731,6 +3821,12 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("ReceivedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<DateTime?>("SentAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -3747,6 +3843,10 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClientRequestId")
+                        .IsUnique()
+                        .HasFilter("\"ClientRequestId\" IS NOT NULL");
 
                     b.HasIndex("FromBranchId");
 
@@ -4052,6 +4152,13 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ClientRequestId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -4067,6 +4174,15 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("TotalCost")
                         .HasColumnType("numeric(18,2)");
 
@@ -4076,6 +4192,10 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("ClientRequestId")
+                        .IsUnique()
+                        .HasFilter("\"ClientRequestId\" IS NOT NULL");
 
                     b.HasIndex("CreatedAt");
 
@@ -4932,6 +5052,25 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PosCloud.Domain.Entities.StockMovement", b =>
+                {
+                    b.HasOne("PosCloud.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PosCloud.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("PosCloud.Domain.Entities.StockReceipt", b =>

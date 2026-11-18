@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { stockReceiptsApi, suppliersApi, productsApi, labelsApi, storesApi } from '../api/catalog'
+import { stockReceiptsApi, suppliersApi, productsApi, labelsApi, storesApi, newRequestId } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const receipts = ref([])
@@ -17,6 +17,9 @@ const form = reactive({ supplierId: '', comment: '', branchId: '' })
 const lines = ref([]) // { product, quantity, costPrice }
 const productSearch = ref('')
 const expanded = ref(null)
+// Ikki marta saqlanishdan himoya: bitta forma = bitta kalit (javob kelmay qayta bosilsa ham kirim bitta bo'ladi)
+let requestId = newRequestId()
+const cancellingId = ref(null)
 
 const searchResults = computed(() => {
   const q = productSearch.value.trim().toLowerCase()
@@ -84,6 +87,7 @@ async function submit() {
       supplierId: form.supplierId,
       branchId: form.branchId || null,
       comment: form.comment.trim() || null,
+      clientRequestId: requestId,
       items: lines.value.map((l) => ({
         productId: l.product.id,
         quantity: Number(l.quantity),
@@ -93,6 +97,7 @@ async function submit() {
       }))
     })
     success.value = `Накладная ${r.number} yaratildi — ombor yangilandi`
+    requestId = newRequestId()
     form.supplierId = ''
     form.comment = ''
     lines.value = []
@@ -102,6 +107,22 @@ async function submit() {
     err.value = errorMessage(e)
   } finally {
     saving.value = false
+  }
+}
+
+async function cancelReceipt(r) {
+  if (!confirm(`${r.number} kirimi bekor qilinsinmi?\n\nTovar ombordan ayiriladi va yetkazib beruvchi qarzi ${fmt(r.totalAmount)} so'mga kamayadi.`)) return
+  err.value = ''
+  success.value = ''
+  cancellingId.value = r.id
+  try {
+    await stockReceiptsApi.cancel(r.id)
+    success.value = `${r.number} kirimi bekor qilindi`
+    await load()
+  } catch (e) {
+    err.value = errorMessage(e)
+  } finally {
+    cancellingId.value = null
   }
 }
 
@@ -187,19 +208,28 @@ onMounted(load)
   <div class="card">
     <table class="table">
       <thead>
-        <tr><th>№</th><th>Yetkazib beruvchi</th><th>Sana</th><th class="text-right">Summa</th><th>Izoh</th></tr>
+        <tr><th>№</th><th>Yetkazib beruvchi</th><th>Sana</th><th class="text-right">Summa</th><th>Izoh</th><th></th></tr>
       </thead>
       <tbody>
         <template v-for="r in receipts" :key="r.id">
-          <tr style="cursor:pointer" @click="expanded = expanded === r.id ? null : r.id">
-            <td><strong>{{ r.number }}</strong></td>
+          <tr style="cursor:pointer" :class="{ cancelled: r.status === 'Cancelled' }" @click="expanded = expanded === r.id ? null : r.id">
+            <td>
+              <strong>{{ r.number }}</strong>
+              <span v-if="r.status === 'Cancelled'" class="pill pill-red" style="margin-left:6px">Bekor qilingan</span>
+            </td>
             <td>{{ r.supplierName }}</td>
             <td class="muted">{{ fmtDate(r.createdAt) }}</td>
-            <td class="text-right">{{ fmt(r.totalAmount) }}</td>
+            <td class="text-right amount">{{ fmt(r.totalAmount) }}</td>
             <td class="muted">{{ r.comment || '—' }}</td>
+            <td class="text-right">
+              <button v-if="r.status !== 'Cancelled'" type="button" class="btn btn-ghost btn-sm"
+                :disabled="cancellingId === r.id" @click.stop="cancelReceipt(r)">
+                {{ cancellingId === r.id ? '...' : 'Bekor qilish' }}
+              </button>
+            </td>
           </tr>
           <tr v-if="expanded === r.id">
-            <td colspan="5" style="background:#fafbfc">
+            <td colspan="6" style="background:#fafbfc">
               <table class="table">
                 <thead><tr><th>Tovar</th><th class="text-right">Miqdor</th><th class="text-right">Tannarx</th><th>Partiya</th><th>Muddati</th><th class="text-right">Summa</th></tr></thead>
                 <tbody>
@@ -216,7 +246,7 @@ onMounted(load)
             </td>
           </tr>
         </template>
-        <tr v-if="!receipts.length && !loading"><td colspan="5" class="muted" style="text-align:center;padding:24px">Kirim yo'q</td></tr>
+        <tr v-if="!receipts.length && !loading"><td colspan="6" class="muted" style="text-align:center;padding:24px">Kirim yo'q</td></tr>
       </tbody>
     </table>
   </div>
@@ -230,4 +260,6 @@ onMounted(load)
 }
 .search-item { padding: 9px 12px; cursor: pointer; }
 .search-item:hover { background: var(--bg); }
+.cancelled td { color: var(--muted, #94a3b8); }
+.cancelled .amount { text-decoration: line-through; }
 </style>

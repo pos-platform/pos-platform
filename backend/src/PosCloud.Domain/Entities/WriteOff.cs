@@ -1,4 +1,5 @@
 using PosCloud.Domain.Common;
+using PosCloud.Domain.Enums;
 
 namespace PosCloud.Domain.Entities;
 
@@ -18,6 +19,13 @@ public class WriteOff : BaseEntity
 
     /// <summary>Chiqarilgan tovarlarning umumiy tannarxi.</summary>
     public decimal TotalCost { get; set; }
+
+    /// <summary>Holat: bekor qilinganda tovar omborga qaytariladi.</summary>
+    public StockDocumentStatus Status { get; set; } = StockDocumentStatus.Active;
+    public DateTime? CancelledAt { get; set; }
+
+    /// <summary>Ikki marta saqlanishdan himoya: forma ochilganda yaratiladigan kalit.</summary>
+    public string? ClientRequestId { get; set; }
 
     public ICollection<WriteOffItem> Items { get; set; } = new List<WriteOffItem>();
 }

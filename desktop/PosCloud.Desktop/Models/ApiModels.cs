@@ -222,7 +222,24 @@ public class CreateSaleRequest
     /// maxRedeemPercent bo'yicha cheklaydi; null — ball ishlatilmaydi.</summary>
     public decimal? RedeemPoints { get; set; }
 
+    /// <summary>Savdo kassada yakunlangan haqiqiy vaqt (UTC). Oflayn navbatdagi savdo kech
+    /// yuborilsa ham server uni shu vaqt bilan yozadi.</summary>
+    public DateTime? ClientCreatedAt { get; set; }
+
     public List<SaleItemRequest> Items { get; set; } = new();
+}
+
+/// <summary>Aksiya (GET api/promotions/active). Chegirma <see cref="PromotionCalculator"/> da hisoblanadi.</summary>
+public class PromotionDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = "";
+    public decimal DiscountPercent { get; set; }
+    public Guid? ProductId { get; set; }
+    public Guid? CategoryId { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public bool IsActive { get; set; }
 }
 
 public class SaleDto

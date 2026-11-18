@@ -99,6 +99,7 @@ const navItems = [
   { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔄', admin: true, perm: 'inventory.view', group: 'catalog' },
   { name: 'write-offs', key: 'nav.writeOffs', icon: '🗑️', admin: true, perm: 'inventory.view', group: 'catalog' },
   { name: 'inventories', key: 'nav.inventories', icon: '🔢', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'stock-turnover', key: 'nav.stockTurnover', icon: '🔄', admin: true, perm: 'inventory.view', group: 'catalog' },
 
   // 3) Moliya va boshqaruv
   { name: 'expenses', key: 'nav.expenses', icon: '💸', admin: true, perm: 'expenses.view', group: 'finance' },

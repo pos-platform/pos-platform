@@ -14,6 +14,12 @@ public class WriteOffConfiguration : IEntityTypeConfiguration<WriteOff>
         builder.Property(w => w.Reason).HasMaxLength(512);
         builder.Property(w => w.TotalCost).HasColumnType("numeric(18,2)");
 
+        builder.Property(w => w.ClientRequestId).HasMaxLength(64);
+        builder.HasIndex(w => w.ClientRequestId)
+            .IsUnique()
+            .HasFilter("\"ClientRequestId\" IS NOT NULL");
+        builder.UseXminConcurrency(); // parallel ikki marta bekor qilishdan himoya
+
         builder.HasOne(w => w.Branch)
             .WithMany()
             .HasForeignKey(w => w.BranchId)

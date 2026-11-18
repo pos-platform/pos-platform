@@ -15,6 +15,12 @@ public class StockReceiptConfiguration : IEntityTypeConfiguration<StockReceipt>
         builder.Property(r => r.Comment).HasMaxLength(512);
         builder.Property(r => r.TotalAmount).HasColumnType("numeric(18,2)");
 
+        builder.Property(r => r.ClientRequestId).HasMaxLength(64);
+        builder.HasIndex(r => r.ClientRequestId)
+            .IsUnique()
+            .HasFilter("\"ClientRequestId\" IS NOT NULL");
+        builder.UseXminConcurrency(); // parallel ikki marta bekor qilishdan himoya
+
         builder.HasOne(r => r.Supplier)
             .WithMany()
             .HasForeignKey(r => r.SupplierId)

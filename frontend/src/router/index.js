@@ -124,6 +124,12 @@ const routes = [
     meta: { adminOnly: true, perm: 'inventory.view' }
   },
   {
+    path: '/stock-turnover',
+    name: 'stock-turnover',
+    component: () => import('../views/StockTurnoverView.vue'),
+    meta: { adminOnly: true, perm: 'inventory.view' }
+  },
+  {
     path: '/payments',
     name: 'payments',
     component: () => import('../views/PaymentsView.vue'),

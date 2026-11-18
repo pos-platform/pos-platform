@@ -156,7 +156,8 @@ public class OnlineOrderService : IOnlineOrderService
         if (order.RejectedReturnedAt is not null) throw new ValidationException("Rad etilgan tovarlar allaqachon qabul qilingan.");
 
         // Eshik oldidagi qisman refund ombor qoldig'ini qaytarmagan — tovar shu yerda (do'konga kelganda) qaytadi.
-        await _sales.ReturnToStockAsync(order.BranchId, lines, ct);
+        await _sales.ReturnToStockAsync(order.BranchId, lines, StockMovementType.OnlineReturn,
+            order.Id, $"Online #{order.Number}", ct);
         order.RejectedReturnedAt = DateTime.UtcNow;
         await SaveAndNotify(order, ct);
         return await GetAsync(id, ct);
