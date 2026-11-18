@@ -103,7 +103,7 @@ public static class LoyaltyRules
     }
 
     /// <summary>
-    /// Savdodan topiladigan ball (butun so'm, pastga yaxlitlanadi). Baza — qatorning chegirmadan keyingi summasi;
+    /// Savdodan topiladigan ball (0.01 gacha pastga yaxlitlanadi — kichik foizlar, masalan 0.001%, ham ishlaydi). Baza — qatorning chegirmadan keyingi summasi;
     /// Service qatorlari va (sozlamaga ko'ra) chegirmali qatorlar hisobga olinmaydi; jami minSaleAmount'dan kam bo'lsa — 0.
     /// Foiz: kategoriya stavkasi (bo'lmasa bazaviy) va mijoz darajasi foizining eng kattasi.
     /// </summary>
@@ -122,7 +122,7 @@ public static class LoyaltyRules
             if (percent <= 0) continue;
             sum += l.LineTotal * percent / 100m;
         }
-        return Math.Max(0, Math.Floor(sum));
+        return Math.Max(0, Math.Floor(sum * 100m) / 100m);
     }
 
     /// <summary>Savdo manbai: online buyurtma kaliti bo'lsa — Online, aks holda — Store.</summary>

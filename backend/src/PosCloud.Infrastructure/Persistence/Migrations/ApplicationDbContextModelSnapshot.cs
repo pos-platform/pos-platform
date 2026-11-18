@@ -991,7 +991,7 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Percent")
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("numeric(8,4)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1013,7 +1013,7 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("CashbackPercent")
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("numeric(8,4)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1102,7 +1102,7 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("CashbackPercent")
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("numeric(8,4)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");

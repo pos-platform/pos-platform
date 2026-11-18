@@ -10,7 +10,7 @@ public class LoyaltySettingsConfiguration : IEntityTypeConfiguration<LoyaltySett
     {
         builder.ToTable("LoyaltySettings");
         builder.HasIndex(s => s.OrganizationId).IsUnique();
-        builder.Property(s => s.CashbackPercent).HasColumnType("numeric(5,2)");
+        builder.Property(s => s.CashbackPercent).HasColumnType("numeric(8,4)");
         builder.Property(s => s.MaxRedeemPercent).HasColumnType("numeric(5,2)");
         builder.Property(s => s.MinSaleAmount).HasColumnType("numeric(18,2)");
         builder.Property(s => s.SignupBonus).HasColumnType("numeric(18,2)");
@@ -23,7 +23,7 @@ public class LoyaltyCategoryRateConfiguration : IEntityTypeConfiguration<Loyalty
     {
         builder.ToTable("LoyaltyCategoryRates");
         builder.HasIndex(r => new { r.OrganizationId, r.CategoryId }).IsUnique();
-        builder.Property(r => r.Percent).HasColumnType("numeric(5,2)");
+        builder.Property(r => r.Percent).HasColumnType("numeric(8,4)");
         builder.HasOne(r => r.Category).WithMany().HasForeignKey(r => r.CategoryId).OnDelete(DeleteBehavior.Cascade);
     }
 }

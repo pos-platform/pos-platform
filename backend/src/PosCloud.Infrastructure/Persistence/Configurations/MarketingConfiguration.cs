@@ -132,7 +132,7 @@ public class LoyaltyTierConfiguration : IEntityTypeConfiguration<LoyaltyTier>
         builder.ToTable("LoyaltyTiers");
         builder.Property(t => t.Name).IsRequired().HasMaxLength(30);
         builder.Property(t => t.MinSpend).HasColumnType("numeric(18,2)");
-        builder.Property(t => t.CashbackPercent).HasColumnType("numeric(5,2)");
+        builder.Property(t => t.CashbackPercent).HasColumnType("numeric(8,4)");
         builder.HasIndex(t => t.OrganizationId);
     }
 }

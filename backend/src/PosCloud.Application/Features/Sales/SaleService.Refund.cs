@@ -389,7 +389,11 @@ public partial class SaleService
         if (ctx.Customer is not null)
         {
             plan.RedeemReturned = Math.Max(0, Target(ctx.RedeemBase) - ctx.PriorRedeemReturned);
-            plan.PointsToReverse = Math.Max(0, Target(original.LoyaltyPointsEarned) - ctx.PriorReversed);
+            // Yozilgan ball kasr bo'lishi mumkin (0.01 aniqlikda) — qaytarishda ham shu aniqlikda hisoblanadi.
+            var earnedTarget = original.LoyaltyPointsEarned <= 0 ? 0
+                : goodsFinal ? original.LoyaltyPointsEarned
+                : baseTotal > 0 ? Math.Floor(original.LoyaltyPointsEarned * Math.Min(1, cumAfter / baseTotal) * 100m) / 100m : 0;
+            plan.PointsToReverse = Math.Max(0, earnedTarget - ctx.PriorReversed);
             plan.PointsAvailable = Math.Floor(Math.Max(0, ctx.Customer.LoyaltyPoints)) + plan.RedeemReturned;
             plan.Reversed = Math.Min(plan.PointsToReverse, plan.PointsAvailable);
             plan.Withheld = Math.Min(plan.PointsToReverse - plan.Reversed,

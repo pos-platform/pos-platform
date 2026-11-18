@@ -267,7 +267,7 @@ onMounted(() => {
       <div class="row">
         <div class="field">
           <label>Cashback (%)</label>
-          <input v-model="form.cashbackPercent" type="number" min="0" max="100" step="0.1" class="input" />
+          <input v-model="form.cashbackPercent" type="number" min="0" max="100" step="any" class="input" />
           <span class="hint">Xarid summasidan qancha foiz ball yoziladi (kategoriya stavkasi bo'lmasa)</span>
         </div>
         <div class="field">
@@ -313,7 +313,7 @@ onMounted(() => {
         <tbody>
           <tr v-for="(r, i) in rates" :key="r.categoryId">
             <td>{{ r.categoryName }}</td>
-            <td class="text-right"><input v-model="r.percent" type="number" min="0" max="100" step="0.1" class="input" style="width:110px; text-align:right" /></td>
+            <td class="text-right"><input v-model="r.percent" type="number" min="0" max="100" step="any" class="input" style="width:110px; text-align:right" /></td>
             <td class="text-right"><button class="btn btn-ghost btn-sm" @click="removeRate(i)">✕</button></td>
           </tr>
           <tr v-if="!rates.length">
@@ -331,7 +331,7 @@ onMounted(() => {
         </div>
         <div class="field" style="margin:0; max-width:140px">
           <label>Foiz (%)</label>
-          <input v-model="newPercent" type="number" min="0" max="100" step="0.1" class="input" />
+          <input v-model="newPercent" type="number" min="0" max="100" step="any" class="input" />
         </div>
         <button class="btn btn-ghost" :disabled="!newCategoryId" @click="addRate">+ Qo'shish</button>
       </div>
@@ -355,7 +355,7 @@ onMounted(() => {
           <tr v-for="(t, i) in tiers" :key="i">
             <td><input v-model="t.name" class="input" maxlength="30" placeholder="Gold" /></td>
             <td class="text-right"><input v-model="t.minSpend" type="number" min="0" step="1000" class="input" style="width:180px; text-align:right" /></td>
-            <td class="text-right"><input v-model="t.cashbackPercent" type="number" min="0" max="100" step="0.1" class="input" style="width:110px; text-align:right" /></td>
+            <td class="text-right"><input v-model="t.cashbackPercent" type="number" min="0" max="100" step="any" class="input" style="width:110px; text-align:right" /></td>
             <td class="text-right"><button class="btn btn-ghost btn-sm" @click="removeTier(i)">✕</button></td>
           </tr>
           <tr v-if="!tiers.length">

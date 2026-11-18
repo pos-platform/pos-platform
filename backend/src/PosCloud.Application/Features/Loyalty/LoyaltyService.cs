@@ -80,6 +80,8 @@ public partial class LoyaltyService : ILoyaltyService
         var before = await GetSettingsAsync(ct);
 
         if (r.CashbackPercent is < 0 or > 100) throw new ValidationException("Cashback foizi 0..100 oralig'ida bo'lishi kerak.");
+        static bool TooPrecise(decimal p) => decimal.Round(p, 4) != p;
+        if (TooPrecise(r.CashbackPercent)) throw new ValidationException("Cashback foizi ko'pi bilan 4 xona kasr bo'lishi mumkin (masalan 0.001).");
         if (r.MaxRedeemPercent is < 0 or > 100) throw new ValidationException("Ball bilan to'lash foizi 0..100 oralig'ida bo'lishi kerak.");
         if (r.MinSaleAmount < 0) throw new ValidationException("Minimal savdo summasi manfiy bo'lmasligi kerak.");
         if (r.SignupBonus < 0) throw new ValidationException("Ro'yxatdan o'tish bonusi manfiy bo'lmasligi kerak.");
@@ -89,6 +91,8 @@ public partial class LoyaltyService : ILoyaltyService
         var rates = r.CategoryRates ?? new();
         if (rates.Any(x => x.Percent is < 0 or > 100))
             throw new ValidationException("Kategoriya foizi 0..100 oralig'ida bo'lishi kerak.");
+        if (rates.Any(x => TooPrecise(x.Percent)))
+            throw new ValidationException("Kategoriya foizi ko'pi bilan 4 xona kasr bo'lishi mumkin.");
         if (rates.Select(x => x.CategoryId).Distinct().Count() != rates.Count)
             throw new ValidationException("Kategoriya ro'yxatda takrorlangan.");
 
@@ -104,6 +108,8 @@ public partial class LoyaltyService : ILoyaltyService
             if (tiers.Any(t => t.MinSpend < 0)) throw new ValidationException("Minimal xarid summasi manfiy bo'lmasligi kerak.");
             if (tiers.Any(t => t.CashbackPercent is < 0 or > 100))
                 throw new ValidationException("Daraja foizi 0..100 oralig'ida bo'lishi kerak.");
+            if (tiers.Any(t => TooPrecise(t.CashbackPercent)))
+                throw new ValidationException("Daraja foizi ko'pi bilan 4 xona kasr bo'lishi mumkin.");
             if (tiers.Select(t => t.MinSpend).Distinct().Count() != tiers.Count)
                 throw new ValidationException("Darajalarning minimal xarid summasi takrorlanmasligi kerak.");
             if (tiers.Select(t => t.Name.ToLowerInvariant()).Distinct().Count() != tiers.Count)

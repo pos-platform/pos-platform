@@ -213,7 +213,7 @@ public partial class LoyaltyService
             });
     }
 
-    private static string Fmt(decimal v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+    private static string Fmt(decimal v) => v.ToString("0.####", CultureInfo.InvariantCulture);
     private static string Fmt(bool v) => v ? "true" : "false";
     private static string? Cut(string? s, int max) => s is { Length: > 0 } && s.Length > max ? s[..max] : s;
 
