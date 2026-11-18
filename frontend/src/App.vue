@@ -73,51 +73,63 @@ watch(
   { immediate: true }
 )
 
-// Sidebar menyu 3 ta mantiqiy tipga bo'lingan.
+// Sidebar: chapda bo'limlar (ikonka), yonida tanlangan bo'lim sahifalari.
 // admin: true bo'lsa faqat Admin ko'radi. group — qaysi bo'limga tegishli.
 const navItems = [
-  // 1) Savdo va kassa
+  // 1) Savdo
   { name: 'dashboard', key: 'nav.dashboard', icon: '📊', admin: true, group: 'sales' },
   { name: 'pos', key: 'nav.pos', icon: '🛒', cashierOnly: true, group: 'sales' },
   { name: 'sales', key: 'nav.sales', icon: '🧾', perm: 'sales.view', group: 'sales' },
   { name: 'shifts', key: 'nav.shifts', icon: '⏱️', group: 'sales' },
   { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true, perm: 'customers.view', group: 'sales' },
   { name: 'debtors', key: 'nav.debtors', icon: '📕', admin: true, perm: 'debtors.view', group: 'sales' },
-  { name: 'promotions', key: 'nav.promotions', icon: '🎉', admin: true, group: 'sales' },
-  { name: 'loyalty', key: 'nav.loyalty', icon: '💳', admin: true, perm: 'settings.manage', group: 'sales' },
-  { name: 'online-orders', key: 'nav.onlineOrders', icon: '📦', admin: true, perm: 'sales.view', group: 'sales' },
-  { name: 'promo-codes', key: 'nav.promoCodes', icon: '🎟️', admin: true, perm: 'settings.manage', group: 'sales' },
-  { name: 'online-store', key: 'nav.onlineStore', icon: '📱', admin: true, perm: 'settings.manage', group: 'sales' },
-  { name: 'online-marketing', key: 'nav.onlineMarketing', icon: '📣', admin: true, perm: 'settings.manage', group: 'sales' },
 
-  // 2) Katalog va ombor
+  // 2) Ombor
   { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view', group: 'catalog' },
   { name: 'stock-receipts', key: 'nav.stockReceipts', icon: '📥', admin: true, perm: 'inventory.view', group: 'catalog' },
-  { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true, perm: 'categories.view', group: 'catalog' },
-  { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true, perm: 'branches.view', group: 'catalog' },
-  { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true, perm: 'suppliers.view', group: 'catalog' },
-  { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔄', admin: true, perm: 'inventory.view', group: 'catalog' },
   { name: 'write-offs', key: 'nav.writeOffs', icon: '🗑️', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔁', admin: true, perm: 'inventory.view', group: 'catalog' },
   { name: 'inventories', key: 'nav.inventories', icon: '🔢', admin: true, perm: 'inventory.view', group: 'catalog' },
-  { name: 'stock-turnover', key: 'nav.stockTurnover', icon: '🔄', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'stock-turnover', key: 'nav.stockTurnover', icon: '📋', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true, perm: 'categories.view', group: 'catalog' },
+  { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true, perm: 'suppliers.view', group: 'catalog' },
 
-  // 3) Moliya va boshqaruv
-  { name: 'expenses', key: 'nav.expenses', icon: '💸', admin: true, perm: 'expenses.view', group: 'finance' },
-  { name: 'payments', key: 'nav.payments', icon: '💳', admin: true, perm: 'cashbox.view', group: 'finance' },
+  // 3) Marketing
+  { name: 'promotions', key: 'nav.promotions', icon: '🎉', admin: true, group: 'marketing' },
+  { name: 'promo-codes', key: 'nav.promoCodes', icon: '🎟️', admin: true, perm: 'settings.manage', group: 'marketing' },
+  { name: 'loyalty', key: 'nav.loyalty', icon: '💳', admin: true, perm: 'settings.manage', group: 'marketing' },
+
+  // 4) Mobil ilova (onlayn do'kon)
+  { name: 'online-orders', key: 'nav.onlineOrders', icon: '🛍️', admin: true, perm: 'sales.view', group: 'mobile' },
+  { name: 'online-store', key: 'nav.onlineStore', icon: '📱', admin: true, perm: 'settings.manage', group: 'mobile' },
+  { name: 'online-marketing', key: 'nav.onlineMarketing', icon: '📣', admin: true, perm: 'settings.manage', group: 'mobile' },
+
+  // 4) Moliya
+  { name: 'payments', key: 'nav.payments', icon: '💰', admin: true, perm: 'cashbox.view', group: 'finance' },
   { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true, perm: 'cashbox.view', group: 'finance' },
-  { name: 'analytics', key: 'nav.analytics', icon: '📈', admin: true, perm: 'reports.view', group: 'finance' },
-  { name: 'reports', key: 'nav.reports', icon: '📊', admin: true, perm: 'reports.view', group: 'finance' },
-  { name: 'sold-items', key: 'nav.soldItems', icon: '📜', admin: true, perm: 'reports.view', group: 'finance' },
-  { name: 'users', key: 'nav.users', icon: '👥', admin: true, perm: 'users.view', group: 'finance' },
+  { name: 'expenses', key: 'nav.expenses', icon: '💸', admin: true, perm: 'expenses.view', group: 'finance' },
+
+  // 5) Hisobotlar
+  { name: 'reports', key: 'nav.reports', icon: '📊', admin: true, perm: 'reports.view', group: 'reports' },
+  { name: 'analytics', key: 'nav.analytics', icon: '📈', admin: true, perm: 'reports.view', group: 'reports' },
+  { name: 'sold-items', key: 'nav.soldItems', icon: '📜', admin: true, perm: 'reports.view', group: 'reports' },
+
+  // 6) Sozlamalar
+  { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true, perm: 'branches.view', group: 'settings' },
+  { name: 'users', key: 'nav.users', icon: '👥', admin: true, perm: 'users.view', group: 'settings' },
   // Rollar boshqaruvi faqat SuperAdmin'da (superNavItems → admin-roles). Org admin ko'rmaydi.
-  { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage', group: 'finance' }
+  { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage', group: 'settings' }
 ]
 
-// Bo'lim tartibi, sarlavhalari va vizual belgilari (ikonka)
+// Bo'limlar: to'liq nom (panel sarlavhasi), qisqa nom (chap ustun) va ikonka
 const navGroups = [
-  { id: 'sales', label: 'nav.groupSales', icon: '🛒' },
-  { id: 'catalog', label: 'nav.groupCatalog', icon: '📦' },
-  { id: 'finance', label: 'nav.groupFinance', icon: '📊' }
+  { id: 'sales', label: 'nav.groupSales', short: 'nav.railSales', icon: '🛒' },
+  { id: 'catalog', label: 'nav.groupCatalog', short: 'nav.railCatalog', icon: '📦' },
+  { id: 'marketing', label: 'nav.groupMarketing', short: 'nav.railMarketing', icon: '🎉' },
+  { id: 'mobile', label: 'nav.groupMobile', short: 'nav.railMobile', icon: '📱' },
+  { id: 'finance', label: 'nav.groupFinance', short: 'nav.railFinance', icon: '💰' },
+  { id: 'reports', label: 'nav.groupReports', short: 'nav.railReports', icon: '📈' },
+  { id: 'settings', label: 'nav.groupSettings', short: 'nav.railSettings', icon: '⚙️' }
 ]
 
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
@@ -172,24 +184,70 @@ function canSee(i) {
   return true
 }
 
-// Guruhlangan, ruxsatga qarab filtrlangan menyu. Bo'sh guruhlar ko'rsatilmaydi.
+// Bo'limlar (SuperAdmin uchun bitta "Platforma" bo'limi), ruxsatga qarab filtrlangan.
 const visibleGroups = computed(() => {
+  if (auth.isSuperAdmin) {
+    return [{ id: 'platform', label: 'nav.groupPlatform', short: 'nav.railPlatform', icon: '🛡️', items: superNavItems }]
+  }
   return navGroups
     .map((g) => ({ ...g, items: navItems.filter((i) => i.group === g.id && canSee(i)) }))
     .filter((g) => g.items.length > 0)
 })
+const allVisibleItems = computed(() => visibleGroups.value.flatMap((g) => g.items))
 
-// Bo'limlarni ochib-yopish (akkordeon). Holati localStorage'da saqlanadi.
-const COLLAPSE_KEY = 'pos_nav_collapsed'
-function loadCollapsed() {
-  try { return JSON.parse(localStorage.getItem(COLLAPSE_KEY)) || {} } catch { return {} }
+// Sevimli sahifalar (yulduzcha) — localStorage'da saqlanadi
+const FAV_KEY = 'pos_nav_favorites'
+function loadFavs() {
+  try { return JSON.parse(localStorage.getItem(FAV_KEY)) || [] } catch { return [] }
 }
-const collapsedGroups = ref(loadCollapsed())
-function isCollapsed(id) { return !!collapsedGroups.value[id] }
-function toggleGroup(id) {
-  collapsedGroups.value = { ...collapsedGroups.value, [id]: !collapsedGroups.value[id] }
-  localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsedGroups.value))
+const favorites = ref(loadFavs())
+function isFav(name) { return favorites.value.includes(name) }
+function toggleFav(name) {
+  favorites.value = isFav(name) ? favorites.value.filter((n) => n !== name) : [...favorites.value, name]
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(favorites.value)) } catch { /* jim */ }
 }
+const favoriteItems = computed(() =>
+  favorites.value.map((n) => allVisibleItems.value.find((i) => i.name === n)).filter(Boolean)
+)
+
+// Tanlangan bo'lim: joriy sahifa qaysi bo'limda bo'lsa, o'sha avtomatik ochiladi
+const activeGroupId = ref('')
+watch(
+  [() => route.name, visibleGroups],
+  () => {
+    const g = visibleGroups.value.find((x) => x.items.some((i) => i.name === route.name))
+    if (g) activeGroupId.value = g.id
+    else if (activeGroupId.value !== 'fav' && !visibleGroups.value.some((x) => x.id === activeGroupId.value))
+      activeGroupId.value = visibleGroups.value[0]?.id || ''
+  },
+  { immediate: true }
+)
+
+// Ikkinchi panelni yig'ish (faqat ikonka ustuni qoladi)
+const PANEL_KEY = 'pos_nav_panel_hidden'
+const panelHidden = ref((() => { try { return localStorage.getItem(PANEL_KEY) === '1' } catch { return false } })())
+function setPanelHidden(v) {
+  panelHidden.value = v
+  try { localStorage.setItem(PANEL_KEY, v ? '1' : '0') } catch { /* jim */ }
+}
+
+// Qidiruv: yozilsa barcha bo'limlar bo'yicha qidiradi
+const navSearch = ref('')
+function selectGroup(id) {
+  if (activeGroupId.value === id && !panelHidden.value) { setPanelHidden(true); return }
+  activeGroupId.value = id
+  navSearch.value = ''
+  setPanelHidden(false)
+}
+const activeGroup = computed(() => {
+  if (activeGroupId.value === 'fav') return { id: 'fav', label: 'nav.favorites', items: favoriteItems.value }
+  return visibleGroups.value.find((g) => g.id === activeGroupId.value) || visibleGroups.value[0] || { items: [] }
+})
+const panelItems = computed(() => {
+  const q = navSearch.value.trim().toLowerCase()
+  if (!q) return activeGroup.value.items
+  return allVisibleItems.value.filter((i) => t(i.key).toLowerCase().includes(q))
+})
 
 function logout() {
   storeFilter.reset()
@@ -212,82 +270,93 @@ function logout() {
     <!-- Drawer ochiq bo'lganda orqa fon -->
     <div v-if="showNav && mobileNavOpen" class="nav-backdrop" @click="mobileNavOpen = false"></div>
 
-    <aside v-if="showNav" class="sidebar">
-      <div class="sidebar-brand">
-        <img src="/logo.png" alt="Logo" class="brand-img" />
-        <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosCloud' }}</span>
-        <button class="sidebar-close" aria-label="Yopish" @click="mobileNavOpen = false">×</button>
-      </div>
-
-      <nav class="side-nav">
-        <!-- SuperAdmin: guruhsiz oddiy ro'yxat -->
-        <template v-if="auth.isSuperAdmin">
-          <RouterLink
-            v-for="item in superNavItems"
-            :key="item.name"
-            :to="{ name: item.name }"
-            class="side-link"
+    <aside v-if="showNav" class="sidebar" :class="{ 'panel-hidden': panelHidden }">
+      <!-- 1-ustun: bo'limlar -->
+      <div class="rail">
+        <div class="rail-logo"><img src="/logo.png" alt="Logo" /></div>
+        <div class="rail-groups">
+          <button
+            v-if="favoriteItems.length"
+            type="button"
+            class="rail-btn"
+            :class="{ active: activeGroupId === 'fav' && !panelHidden }"
+            :title="t('nav.favorites')"
+            @click="selectGroup('fav')"
           >
-            <span class="side-ico">{{ item.icon }}</span>
-            <span class="side-label">{{ t(item.key) }}</span>
-            <span v-if="badgeCount(item)" class="side-badge">{{ badgeCount(item) > 99 ? '99+' : badgeCount(item) }}</span>
-          </RouterLink>
-        </template>
-
-        <!-- Admin/kassir: 3 ta tipga bo'lingan, ochilib-yopiladigan menyu -->
-        <template v-else>
-          <div
+            <span class="rail-ico">⭐</span>
+            <span class="rail-text">{{ t('nav.railFavorites') }}</span>
+          </button>
+          <button
             v-for="g in visibleGroups"
             :key="g.id"
-            class="side-group"
-            :class="{ collapsed: isCollapsed(g.id) }"
+            type="button"
+            class="rail-btn"
+            :class="{ active: activeGroupId === g.id && !panelHidden, current: g.items.some((i) => i.name === route.name) }"
+            :title="t(g.label)"
+            @click="selectGroup(g.id)"
           >
-            <button type="button" class="side-group-label" @click="toggleGroup(g.id)">
-              <span class="side-group-ico">{{ g.icon }}</span>
-              <span class="side-group-text">{{ t(g.label) }}</span>
-              <span class="side-group-chevron">▾</span>
-            </button>
-            <div v-show="!isCollapsed(g.id)" class="side-group-items">
-              <RouterLink
-                v-for="item in g.items"
-                :key="item.name"
-                :to="{ name: item.name }"
-                class="side-link"
-              >
-                <span class="side-ico">{{ item.icon }}</span>
-                <span class="side-label">{{ t(item.key) }}</span>
-              </RouterLink>
-            </div>
-          </div>
-        </template>
-      </nav>
-
-      <!-- Ko'p filiali bo'lgan Admin uchun global do'kon filtri -->
-      <div v-if="!auth.isSuperAdmin && storeFilter.multiStore" class="sidebar-store-filter">
-        <div class="side-filter-label">Do'kon</div>
-        <select
-          :value="storeFilter.selectedBranchId"
-          class="side-store-select"
-          @change="storeFilter.select($event.target.value)"
-        >
-          <option value="">Barcha do'konlar</option>
-          <option v-for="s in storeFilter.stores" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
+            <span class="rail-ico">{{ g.icon }}</span>
+            <span class="rail-text">{{ t(g.short) }}</span>
+          </button>
+        </div>
+        <div class="rail-foot">
+          <button type="button" class="rail-lang" @click="setLang(locale === 'uz' ? 'ru' : 'uz')" :title="locale === 'uz' ? 'Русский' : 'O‘zbekcha'">
+            {{ locale === 'uz' ? 'UZ' : 'RU' }}
+          </button>
+          <div class="rail-avatar" :title="`${auth.username} · ${auth.role}`">{{ (auth.username || '?').charAt(0).toUpperCase() }}</div>
+          <button type="button" class="rail-btn rail-logout" :title="t('common.logout')" @click="logout">
+            <span class="rail-ico">🚪</span>
+            <span class="rail-text">{{ t('nav.railLogout') }}</span>
+          </button>
+        </div>
       </div>
 
-      <div class="sidebar-foot">
-        <div class="side-lang">
-          <button :class="['lang-btn', { active: locale === 'uz' }]" @click="setLang('uz')">UZ</button>
-          <button :class="['lang-btn', { active: locale === 'ru' }]" @click="setLang('ru')">RU</button>
-        </div>
-        <div class="side-user">
-          <div class="side-avatar">{{ (auth.username || '?').charAt(0).toUpperCase() }}</div>
-          <div class="side-user-meta">
-            <div class="side-username">{{ auth.username }}</div>
-            <span class="badge">{{ auth.role }}</span>
+      <!-- 2-ustun: tanlangan bo'lim sahifalari -->
+      <div v-show="!panelHidden" class="nav-panel">
+        <div class="panel-head">
+          <div class="panel-title-wrap">
+            <div class="panel-title">{{ navSearch.trim() ? t('nav.searchResults') : t(activeGroup.label) }}</div>
+            <div class="panel-sub">{{ auth.isSuperAdmin ? 'Platforma' : 'PosCloud' }} · {{ auth.username }}</div>
           </div>
+          <button type="button" class="panel-collapse" :title="t('nav.hidePanel')" @click="setPanelHidden(true)">‹</button>
+          <button class="sidebar-close" aria-label="Yopish" @click="mobileNavOpen = false">×</button>
         </div>
-        <button class="btn btn-ghost btn-sm" style="width:100%; margin-top:8px" @click="logout">{{ t('common.logout') }}</button>
+
+        <div class="panel-search">
+          <span class="ps-ico">🔍</span>
+          <input v-model="navSearch" type="search" :placeholder="t('nav.searchPlaceholder')" />
+        </div>
+
+        <nav class="side-nav">
+          <div v-for="item in panelItems" :key="item.name" class="side-row">
+            <RouterLink :to="{ name: item.name }" class="side-link">
+              <span class="side-ico">{{ item.icon }}</span>
+              <span class="side-label">{{ t(item.key) }}</span>
+              <span v-if="badgeCount(item)" class="side-badge">{{ badgeCount(item) > 99 ? '99+' : badgeCount(item) }}</span>
+            </RouterLink>
+            <button
+              type="button"
+              class="fav-btn"
+              :class="{ on: isFav(item.name) }"
+              :title="isFav(item.name) ? t('nav.unfavorite') : t('nav.favorite')"
+              @click="toggleFav(item.name)"
+            >★</button>
+          </div>
+          <div v-if="!panelItems.length" class="panel-empty">{{ t('nav.nothingFound') }}</div>
+        </nav>
+
+        <!-- Ko'p filiali bo'lgan Admin uchun global do'kon filtri -->
+        <div v-if="!auth.isSuperAdmin && storeFilter.multiStore" class="sidebar-store-filter">
+          <div class="side-filter-label">{{ t('nav.storeFilter') }}</div>
+          <select
+            :value="storeFilter.selectedBranchId"
+            class="side-store-select"
+            @change="storeFilter.select($event.target.value)"
+          >
+            <option value="">{{ t('nav.allStores') }}</option>
+            <option v-for="s in storeFilter.stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+        </div>
       </div>
     </aside>
 
