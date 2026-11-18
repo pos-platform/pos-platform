@@ -25,18 +25,58 @@ public class ProductService : IProductService
     public async Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         // Xizmat (yetkazish) mahsuloti yashirin — avtomatik boshqariladi.
-        IQueryable<Product> query = _db.Products.Where(p => p.ProductType != ProductType.Service)
-            .AsNoTracking()
-            .Include(p => p.Supplier)
-            .Include(p => p.Branch)
-            .Include(p => p.Stocks);
+        var branchId = _currentUser.BranchId;
+        IQueryable<Product> query = _db.Products.AsNoTracking().Where(p => p.ProductType != ProductType.Service);
 
         // Agar foydalanuvchi do'konga biriktirilgan bo'lsa (kassir/menejer), faqat shu do'kon mahsulotlarini ko'rsin.
-        if (_currentUser.BranchId is not null)
-            query = query.Where(p => p.BranchId == _currentUser.BranchId || p.BranchId == null);
+        if (branchId is not null)
+            query = query.Where(p => p.BranchId == branchId || p.BranchId == null);
 
-        var products = await query.OrderBy(p => p.Name).ToListAsync(cancellationToken);
-        return products.Select(p => ProductDto.FromEntity(p, _currentUser.BranchId)).ToList();
+        // SQL proyeksiyasi: Include(Stocks) bilan butun entity'larni yuklash o'rniga faqat
+        // kerakli ustunlar o'qiladi, qoldiq esa subquery orqali SQL'da yig'iladi —
+        // o'n minglab mahsulotda bu ancha tez va kam xotira oladi.
+        var list = await query
+            .OrderBy(p => p.Name)
+            .Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                ProductType = p.ProductType,
+                PrepMinutes = p.PrepMinutes,
+                MxikCode = p.MxikCode,
+                MxikSuggestion = p.MxikSuggestion,
+                MxikSuggestionSource = p.MxikSuggestionSource,
+                Barcode = p.Barcode,
+                CostPrice = p.CostPrice,
+                Price = p.Price,
+                Quantity = p.Stocks
+                    .Where(s => branchId == null || s.BranchId == branchId)
+                    .Sum(s => s.Quantity),
+                ImageUrl = p.ImageUrl,
+                ShowOnline = p.ShowOnline,
+                Description = p.Description,
+                IsVat = p.IsVat,
+                IsMarked = p.IsMarked,
+                MarkingCode = p.MarkingCode,
+                PackageCode = p.PackageCode,
+                CommitentTin = p.CommitentTin,
+                SupplierId = p.SupplierId,
+                SupplierName = p.Supplier != null ? p.Supplier.Name : null,
+                Unit = p.Unit,
+                IsWeighed = p.IsWeighed,
+                PluNumber = p.PluNumber,
+                Tare = p.Tare,
+                CategoryId = p.CategoryId,
+                BranchId = p.BranchId,
+                BranchName = p.Branch != null ? p.Branch.Name : null,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        foreach (var d in list)
+            d.MarkupPercent = d.CostPrice > 0 ? Math.Round((d.Price - d.CostPrice) / d.CostPrice * 100m, 2) : 0m;
+        return list;
     }
 
     public async Task<IReadOnlyList<PosProductDto>> GetForPosAsync(CancellationToken cancellationToken = default)

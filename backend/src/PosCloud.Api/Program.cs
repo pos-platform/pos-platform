@@ -258,6 +258,18 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 
+// Katta JSON javoblar (masalan, 10k+ mahsulot ro'yxati) uchun gzip/brotli siqish.
+builder.Services.AddResponseCompression(o =>
+{
+    o.EnableForHttps = true;
+    o.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    o.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+});
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(
+    o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(
+    o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+
 var app = builder.Build();
 
 // --- Migratsiya + boshlang'ich ma'lumot (admin, standart kategoriya) ---
@@ -282,6 +294,8 @@ using (var scope = app.Services.CreateScope())
 
 // Reverse proxy header'larini eng birinchi o'qiymiz (qolgan middleware to'g'ri sxema/IP ko'rishi uchun).
 app.UseForwardedHeaders();
+
+app.UseResponseCompression();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
