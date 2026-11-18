@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from './stores/auth'
 import { useStoreFilterStore } from './stores/storeFilter'
 import { usersApi, adminErrorsApi } from './api/catalog'
+import AppIcon from './components/AppIcon.vue'
 
 const auth = useAuthStore()
 const storeFilter = useStoreFilterStore()
@@ -77,69 +78,69 @@ watch(
 // admin: true bo'lsa faqat Admin ko'radi. group — qaysi bo'limga tegishli.
 const navItems = [
   // 1) Savdo
-  { name: 'dashboard', key: 'nav.dashboard', icon: '📊', admin: true, group: 'sales' },
-  { name: 'pos', key: 'nav.pos', icon: '🛒', cashierOnly: true, group: 'sales' },
-  { name: 'sales', key: 'nav.sales', icon: '🧾', perm: 'sales.view', group: 'sales' },
-  { name: 'shifts', key: 'nav.shifts', icon: '⏱️', group: 'sales' },
-  { name: 'customers', key: 'nav.customers', icon: '🙋', admin: true, perm: 'customers.view', group: 'sales' },
-  { name: 'debtors', key: 'nav.debtors', icon: '📕', admin: true, perm: 'debtors.view', group: 'sales' },
+  { name: 'dashboard', key: 'nav.dashboard', icon: 'dashboard', admin: true, group: 'sales' },
+  { name: 'pos', key: 'nav.pos', icon: 'cart', cashierOnly: true, group: 'sales' },
+  { name: 'sales', key: 'nav.sales', icon: 'receipt', perm: 'sales.view', group: 'sales' },
+  { name: 'shifts', key: 'nav.shifts', icon: 'clock', group: 'sales' },
+  { name: 'customers', key: 'nav.customers', icon: 'users', admin: true, perm: 'customers.view', group: 'sales' },
+  { name: 'debtors', key: 'nav.debtors', icon: 'book', admin: true, perm: 'debtors.view', group: 'sales' },
 
   // 2) Ombor
-  { name: 'products', key: 'nav.products', icon: '📦', perm: 'products.view', group: 'catalog' },
-  { name: 'stock-receipts', key: 'nav.stockReceipts', icon: '📥', admin: true, perm: 'inventory.view', group: 'catalog' },
-  { name: 'write-offs', key: 'nav.writeOffs', icon: '🗑️', admin: true, perm: 'inventory.view', group: 'catalog' },
-  { name: 'stock-transfers', key: 'nav.stockTransfers', icon: '🔁', admin: true, perm: 'inventory.view', group: 'catalog' },
-  { name: 'inventories', key: 'nav.inventories', icon: '🔢', admin: true, perm: 'inventory.view', group: 'catalog' },
-  { name: 'stock-turnover', key: 'nav.stockTurnover', icon: '📋', admin: true, perm: 'inventory.view', group: 'catalog' },
-  { name: 'categories', key: 'nav.categories', icon: '🏷️', admin: true, perm: 'categories.view', group: 'catalog' },
-  { name: 'suppliers', key: 'nav.suppliers', icon: '🚚', admin: true, perm: 'suppliers.view', group: 'catalog' },
+  { name: 'products', key: 'nav.products', icon: 'package', perm: 'products.view', group: 'catalog' },
+  { name: 'stock-receipts', key: 'nav.stockReceipts', icon: 'inbox', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'write-offs', key: 'nav.writeOffs', icon: 'trash', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'stock-transfers', key: 'nav.stockTransfers', icon: 'transfer', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'inventories', key: 'nav.inventories', icon: 'clipboardCheck', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'stock-turnover', key: 'nav.stockTurnover', icon: 'list', admin: true, perm: 'inventory.view', group: 'catalog' },
+  { name: 'categories', key: 'nav.categories', icon: 'tag', admin: true, perm: 'categories.view', group: 'catalog' },
+  { name: 'suppliers', key: 'nav.suppliers', icon: 'truck', admin: true, perm: 'suppliers.view', group: 'catalog' },
 
   // 3) Marketing
-  { name: 'promotions', key: 'nav.promotions', icon: '🎉', admin: true, group: 'marketing' },
-  { name: 'promo-codes', key: 'nav.promoCodes', icon: '🎟️', admin: true, perm: 'settings.manage', group: 'marketing' },
-  { name: 'loyalty', key: 'nav.loyalty', icon: '💳', admin: true, perm: 'settings.manage', group: 'marketing' },
+  { name: 'promotions', key: 'nav.promotions', icon: 'percent', admin: true, group: 'marketing' },
+  { name: 'promo-codes', key: 'nav.promoCodes', icon: 'ticket', admin: true, perm: 'settings.manage', group: 'marketing' },
+  { name: 'loyalty', key: 'nav.loyalty', icon: 'star', admin: true, perm: 'settings.manage', group: 'marketing' },
 
   // 4) Mobil ilova (onlayn do'kon)
-  { name: 'online-orders', key: 'nav.onlineOrders', icon: '🛍️', admin: true, perm: 'sales.view', group: 'mobile' },
-  { name: 'online-store', key: 'nav.onlineStore', icon: '📱', admin: true, perm: 'settings.manage', group: 'mobile' },
-  { name: 'online-marketing', key: 'nav.onlineMarketing', icon: '📣', admin: true, perm: 'settings.manage', group: 'mobile' },
+  { name: 'online-orders', key: 'nav.onlineOrders', icon: 'bag', admin: true, perm: 'sales.view', group: 'mobile' },
+  { name: 'online-store', key: 'nav.onlineStore', icon: 'phone', admin: true, perm: 'settings.manage', group: 'mobile' },
+  { name: 'online-marketing', key: 'nav.onlineMarketing', icon: 'megaphone', admin: true, perm: 'settings.manage', group: 'mobile' },
 
   // 4) Moliya
-  { name: 'payments', key: 'nav.payments', icon: '💰', admin: true, perm: 'cashbox.view', group: 'finance' },
-  { name: 'cash-movements', key: 'nav.cashMovements', icon: '💵', admin: true, perm: 'cashbox.view', group: 'finance' },
-  { name: 'expenses', key: 'nav.expenses', icon: '💸', admin: true, perm: 'expenses.view', group: 'finance' },
+  { name: 'payments', key: 'nav.payments', icon: 'wallet', admin: true, perm: 'cashbox.view', group: 'finance' },
+  { name: 'cash-movements', key: 'nav.cashMovements', icon: 'banknote', admin: true, perm: 'cashbox.view', group: 'finance' },
+  { name: 'expenses', key: 'nav.expenses', icon: 'trendDown', admin: true, perm: 'expenses.view', group: 'finance' },
 
   // 5) Hisobotlar
-  { name: 'reports', key: 'nav.reports', icon: '📊', admin: true, perm: 'reports.view', group: 'reports' },
-  { name: 'analytics', key: 'nav.analytics', icon: '📈', admin: true, perm: 'reports.view', group: 'reports' },
-  { name: 'sold-items', key: 'nav.soldItems', icon: '📜', admin: true, perm: 'reports.view', group: 'reports' },
+  { name: 'reports', key: 'nav.reports', icon: 'barChart', admin: true, perm: 'reports.view', group: 'reports' },
+  { name: 'analytics', key: 'nav.analytics', icon: 'trendUp', admin: true, perm: 'reports.view', group: 'reports' },
+  { name: 'sold-items', key: 'nav.soldItems', icon: 'fileText', admin: true, perm: 'reports.view', group: 'reports' },
 
   // 6) Sozlamalar
-  { name: 'stores', key: 'nav.stores', icon: '🏪', admin: true, perm: 'branches.view', group: 'settings' },
-  { name: 'users', key: 'nav.users', icon: '👥', admin: true, perm: 'users.view', group: 'settings' },
+  { name: 'stores', key: 'nav.stores', icon: 'store', admin: true, perm: 'branches.view', group: 'settings' },
+  { name: 'users', key: 'nav.users', icon: 'user', admin: true, perm: 'users.view', group: 'settings' },
   // Rollar boshqaruvi faqat SuperAdmin'da (superNavItems → admin-roles). Org admin ko'rmaydi.
-  { name: 'settings', key: 'nav.settings', icon: '⚙️', admin: true, perm: 'settings.manage', group: 'settings' }
+  { name: 'settings', key: 'nav.settings', icon: 'settings', admin: true, perm: 'settings.manage', group: 'settings' }
 ]
 
 // Bo'limlar: to'liq nom (panel sarlavhasi), qisqa nom (chap ustun) va ikonka
 const navGroups = [
-  { id: 'sales', label: 'nav.groupSales', short: 'nav.railSales', icon: '🛒' },
-  { id: 'catalog', label: 'nav.groupCatalog', short: 'nav.railCatalog', icon: '📦' },
-  { id: 'marketing', label: 'nav.groupMarketing', short: 'nav.railMarketing', icon: '🎉' },
-  { id: 'mobile', label: 'nav.groupMobile', short: 'nav.railMobile', icon: '📱' },
-  { id: 'finance', label: 'nav.groupFinance', short: 'nav.railFinance', icon: '💰' },
-  { id: 'reports', label: 'nav.groupReports', short: 'nav.railReports', icon: '📈' },
-  { id: 'settings', label: 'nav.groupSettings', short: 'nav.railSettings', icon: '⚙️' }
+  { id: 'sales', label: 'nav.groupSales', short: 'nav.railSales', icon: 'cart' },
+  { id: 'catalog', label: 'nav.groupCatalog', short: 'nav.railCatalog', icon: 'package' },
+  { id: 'marketing', label: 'nav.groupMarketing', short: 'nav.railMarketing', icon: 'percent' },
+  { id: 'mobile', label: 'nav.groupMobile', short: 'nav.railMobile', icon: 'phone' },
+  { id: 'finance', label: 'nav.groupFinance', short: 'nav.railFinance', icon: 'wallet' },
+  { id: 'reports', label: 'nav.groupReports', short: 'nav.railReports', icon: 'trendUp' },
+  { id: 'settings', label: 'nav.groupSettings', short: 'nav.railSettings', icon: 'settings' }
 ]
 
 // SuperAdmin (platforma egasi) faqat tashkilotlarni boshqaradi.
 const superNavItems = [
-  { name: 'organizations', key: 'nav.organizations', icon: '🏢' },
-  { name: 'admin-roles', key: 'nav.roles', icon: '🔑' },
-  { name: 'audit', key: 'nav.audit', icon: '🛡️' },
-  { name: 'fiscal-audit', key: 'nav.fiscalAudit', icon: '🧾' },
-  { name: 'admin-online-stores', key: 'nav.onlineStores', icon: '📱' },
-  { name: 'admin-errors', key: 'nav.systemErrors', icon: '🐞', badge: 'errors' }
+  { name: 'organizations', key: 'nav.organizations', icon: 'building' },
+  { name: 'admin-roles', key: 'nav.roles', icon: 'key' },
+  { name: 'audit', key: 'nav.audit', icon: 'shield' },
+  { name: 'fiscal-audit', key: 'nav.fiscalAudit', icon: 'fileText' },
+  { name: 'admin-online-stores', key: 'nav.onlineStores', icon: 'phone' },
+  { name: 'admin-errors', key: 'nav.systemErrors', icon: 'bug', badge: 'errors' }
 ]
 
 // Bosqich 10.4: SuperAdmin menyusida ochiq xatoliklar soni (60 soniyada yangilanadi).
@@ -187,7 +188,7 @@ function canSee(i) {
 // Bo'limlar (SuperAdmin uchun bitta "Platforma" bo'limi), ruxsatga qarab filtrlangan.
 const visibleGroups = computed(() => {
   if (auth.isSuperAdmin) {
-    return [{ id: 'platform', label: 'nav.groupPlatform', short: 'nav.railPlatform', icon: '🛡️', items: superNavItems }]
+    return [{ id: 'platform', label: 'nav.groupPlatform', short: 'nav.railPlatform', icon: 'shield', items: superNavItems }]
   }
   return navGroups
     .map((g) => ({ ...g, items: navItems.filter((i) => i.group === g.id && canSee(i)) }))
@@ -283,7 +284,7 @@ function logout() {
             :title="t('nav.favorites')"
             @click="selectGroup('fav')"
           >
-            <span class="rail-ico">⭐</span>
+            <span class="rail-ico"><AppIcon name="star" :size="20" /></span>
             <span class="rail-text">{{ t('nav.railFavorites') }}</span>
           </button>
           <button
@@ -295,7 +296,7 @@ function logout() {
             :title="t(g.label)"
             @click="selectGroup(g.id)"
           >
-            <span class="rail-ico">{{ g.icon }}</span>
+            <span class="rail-ico"><AppIcon :name="g.icon" :size="20" /></span>
             <span class="rail-text">{{ t(g.short) }}</span>
           </button>
         </div>
@@ -305,7 +306,7 @@ function logout() {
           </button>
           <div class="rail-avatar" :title="`${auth.username} · ${auth.role}`">{{ (auth.username || '?').charAt(0).toUpperCase() }}</div>
           <button type="button" class="rail-btn rail-logout" :title="t('common.logout')" @click="logout">
-            <span class="rail-ico">🚪</span>
+            <span class="rail-ico"><AppIcon name="logout" :size="17" /></span>
             <span class="rail-text">{{ t('nav.railLogout') }}</span>
           </button>
         </div>
@@ -323,14 +324,14 @@ function logout() {
         </div>
 
         <div class="panel-search">
-          <span class="ps-ico">🔍</span>
+          <span class="ps-ico"><AppIcon name="search" :size="15" /></span>
           <input v-model="navSearch" type="search" :placeholder="t('nav.searchPlaceholder')" />
         </div>
 
         <nav class="side-nav">
           <div v-for="item in panelItems" :key="item.name" class="side-row">
             <RouterLink :to="{ name: item.name }" class="side-link">
-              <span class="side-ico">{{ item.icon }}</span>
+              <span class="side-ico"><AppIcon :name="item.icon" :size="17" /></span>
               <span class="side-label">{{ t(item.key) }}</span>
               <span v-if="badgeCount(item)" class="side-badge">{{ badgeCount(item) > 99 ? '99+' : badgeCount(item) }}</span>
             </RouterLink>
