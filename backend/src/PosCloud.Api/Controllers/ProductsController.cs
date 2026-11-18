@@ -106,6 +106,14 @@ public class ProductsController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _productService.SetMxikGuessesAsync(request, cancellationToken));
 
+    /// <summary>Tasdiqlangan MXIK takliflarini haqiqiy MXIK kodga o'tkazadi. Javob: { updated: n }.</summary>
+    [HttpPost("mxik-suggestions/apply")]
+    [HasPermission(Permissions.ProductsEdit)]
+    [ProducesResponseType(typeof(BulkShowOnlineResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BulkShowOnlineResult>> ApplyMxikSuggestions(ApplyMxikSuggestionsRequest request,
+        CancellationToken cancellationToken)
+        => Ok(await _productService.ApplyMxikSuggestionsAsync(request, cancellationToken));
+
     /// <summary>Mahsulotni o'chiradi (ishlatilmagan bo'lsa).</summary>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

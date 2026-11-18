@@ -291,6 +291,34 @@ public class ProductService : IProductService
         return new BulkShowOnlineResult(changed);
     }
 
+    public async Task<BulkShowOnlineResult> ApplyMxikSuggestionsAsync(ApplyMxikSuggestionsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Products.Where(p => p.MxikSuggestion != null);
+        if (request.ProductIds.Count > 0)
+        {
+            var ids = request.ProductIds.Distinct().ToList();
+            query = query.Where(p => ids.Contains(p.Id));
+        }
+
+        var products = await query.ToListAsync(cancellationToken);
+        var changed = 0;
+        foreach (var p in products)
+        {
+            // To'g'ri MXIK bor bo'lsa ustidan yozilmaydi; yaroqsiz taklif qo'llanmaydi.
+            if (Mxik.IsValid(p.MxikCode) || !Mxik.IsValid(p.MxikSuggestion)) continue;
+            p.MxikCode = p.MxikSuggestion!;
+            p.MxikSuggestion = null;
+            p.MxikSuggestionSource = null;
+            changed++;
+        }
+
+        if (changed > 0)
+            await _db.SaveChangesAsync(cancellationToken);
+
+        return new BulkShowOnlineResult(changed);
+    }
+
     public async Task<ProductDto> UpdateAsync(Guid id, UpdateProductDto dto, CancellationToken cancellationToken = default)
     {
         var product = await _db.Products

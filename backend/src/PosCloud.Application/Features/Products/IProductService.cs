@@ -35,6 +35,9 @@ public interface IProductService
     /// <summary>Taxminiy MXIK takliflarini ommaviy yozadi (MxikCode o'zgarmaydi — chekka tushmaydi).</summary>
     Task<BulkShowOnlineResult> SetMxikGuessesAsync(BulkMxikRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Tasdiqlangan MXIK takliflarini haqiqiy MxikCode ga o'tkazadi (faqat MXIK yaroqsiz mahsulotlarda).</summary>
+    Task<BulkShowOnlineResult> ApplyMxikSuggestionsAsync(ApplyMxikSuggestionsRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Noyob shtrix-kod (kod tovara) generatsiya qiladi.</summary>
     Task<string> GenerateBarcodeAsync(CancellationToken cancellationToken = default);
 

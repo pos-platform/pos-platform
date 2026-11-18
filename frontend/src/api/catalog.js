@@ -18,6 +18,9 @@ export const productsApi = {
     fd.append('file', file)
     return http.post('/api/products/import', fd).then((r) => r.data) // { created, failed, errors }
   },
+  // MXIK takliflarini haqiqiy kodga o'tkazish (bo'sh ro'yxat = hammasi) → { updated }
+  applyMxikSuggestions: (productIds = []) =>
+    http.post('/api/products/mxik-suggestions/apply', { productIds }).then((r) => r.data),
   // Ommaviy "ilovada ko'rsatish/yashirish" → { updated }
   setShowOnline: (productIds, showOnline) =>
     http.put('/api/products/show-online', { productIds, showOnline }).then((r) => r.data),

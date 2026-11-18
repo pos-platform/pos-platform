@@ -55,6 +55,12 @@ public class BulkMxikRequest
     public bool OnlyIfInvalid { get; set; } = true;
 }
 
+/// <summary>MXIK takliflarini haqiqiy kodga o'tkazish. ProductIds bo'sh bo'lsa — taklifi bor barcha mahsulotlar.</summary>
+public class ApplyMxikSuggestionsRequest
+{
+    public List<Guid> ProductIds { get; set; } = [];
+}
+
 public class BulkMxikItem
 {
     public Guid ProductId { get; set; }

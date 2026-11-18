@@ -419,6 +419,26 @@ function recalcMarkup() {
   form.markupPercent = cost > 0 ? round2(((price - cost) / cost) * 100) : 0
 }
 
+// Filtrlangan ("taklif bor") mahsulotlarning MXIK taklifini haqiqiy MXIK kodga o'tkazadi
+const applyingMxik = ref(false)
+async function applyMxikSuggestions() {
+  const ids = filteredProducts.value.map((p) => p.id)
+  if (!ids.length) return
+  if (!confirm(`${ids.length} ta mahsulotga taklif qilingan MXIK kod asosiy MXIK sifatida yozilsinmi?`)) return
+  applyingMxik.value = true
+  error.value = ''
+  success.value = ''
+  try {
+    const r = await productsApi.applyMxikSuggestions(ids)
+    success.value = `${r.updated} ta mahsulotga MXIK kod yozildi`
+    await loadAll()
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    applyingMxik.value = false
+  }
+}
+
 async function loadAll() {
   loading.value = true
   error.value = ''
@@ -785,6 +805,10 @@ function printBarcode(product) {
         <option value="suggest">MXIK: taklif bor</option>
         <option value="none">MXIK: taklif ham yo'q</option>
       </select>
+      <button v-if="filterMxik === 'suggest' && filteredProducts.length" type="button" class="btn btn-sm"
+        :disabled="applyingMxik" @click="applyMxikSuggestions">
+        {{ applyingMxik ? '...' : `Takliflarni qo'llash (${filteredProducts.length})` }}
+      </button>
       <select v-model="filterImage" class="select" style="width:140px" title="Mahsulot rasmi">
         <option value="">Rasm: hammasi</option>
         <option value="yes">Rasm: bor</option>
