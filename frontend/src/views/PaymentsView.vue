@@ -61,11 +61,11 @@ onMounted(load)
   <!-- Filters -->
   <div class="card" style="margin-bottom:14px; padding:14px 18px">
     <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center">
-      <select v-model="filterStore" class="select" style="min-width:180px">
+      <select v-model="filterStore" class="select" style="width:220px">
         <option value="">Barcha do'konlar</option>
         <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
       </select>
-      <select v-model="filterStatus" class="select" style="min-width:160px">
+      <select v-model="filterStatus" class="select" style="width:180px">
         <option value="">Barcha holat</option>
         <option value="active">Aktiv</option>
         <option value="inactive">O'chiq</option>

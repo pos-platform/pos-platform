@@ -727,22 +727,39 @@ class _CategoryTile extends StatelessWidget {
           onTap: onTap,
           child: SizedBox(
             height: 104,
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(category.name,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, height: 1.2)),
-                  if (category.productCount > 0)
-                    Text(AppLocalizations.of(context).homeProductsCount(category.productCount),
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text.withValues(alpha: 0.5))),
-                ],
-              ),
+            child: Stack(
+              children: [
+                // Bo'lim rasmi (admin panel → Kategoriyalar) — pastki o'ng burchakda.
+                if (AppConfig.imageUrl(category.imageUrl) != null)
+                  Positioned(
+                    right: 6,
+                    bottom: 6,
+                    width: 64,
+                    height: 64,
+                    child: Image.network(
+                      AppConfig.imageUrl(category.imageUrl)!,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(category.name,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, height: 1.2)),
+                      if (category.productCount > 0)
+                        Text(AppLocalizations.of(context).homeProductsCount(category.productCount),
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text.withValues(alpha: 0.5))),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),

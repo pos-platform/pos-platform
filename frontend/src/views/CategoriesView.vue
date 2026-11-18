@@ -1,8 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { categoriesApi } from '../api/catalog'
-import { errorMessage } from '../api/http'
+import { errorMessage, mediaUrl } from '../api/http'
 import AppIcon from '../components/AppIcon.vue'
+import ImageInput from './marketing/ImageInput.vue'
 
 const categories = ref([])
 const loading = ref(false)
@@ -154,8 +155,13 @@ onMounted(load)
           <td colspan="5" class="muted" style="text-align:center; padding:32px">Kategoriya yo'q</td>
         </tr>
         <tr v-for="cat in rows" :key="cat.id">
-          <td v-if="cat.parentId" style="padding-left:32px">↳ {{ cat.name }}</td>
-          <td v-else><strong>{{ cat.name }}</strong></td>
+          <td :style="cat.parentId ? 'padding-left:32px' : ''">
+            <span style="display:inline-flex; align-items:center; gap:8px">
+              <img v-if="cat.imageUrl" :src="mediaUrl(cat.imageUrl)" alt="" style="width:28px; height:28px; border-radius:6px; object-fit:cover" />
+              <template v-if="cat.parentId">↳ {{ cat.name }}</template>
+              <strong v-else>{{ cat.name }}</strong>
+            </span>
+          </td>
           <td class="muted" style="font-size:13px">{{ cat.note || '—' }}</td>
           <td style="font-size:13px">{{ cat.showOnline === false ? 'yashirin' : '✓' }}</td>
           <td class="text-right muted" style="font-size:13px">{{ cat.productCount }}</td>
@@ -204,8 +210,8 @@ onMounted(load)
           <input v-model.number="formSortOrder" type="number" class="input" />
         </div>
         <div class="field">
-          <label>Rasm URL (ixtiyoriy)</label>
-          <input v-model="formImageUrl" class="input" placeholder="/uploads/..." />
+          <label>Rasm (ilovadagi bo'lim plitkasi uchun, ixtiyoriy)</label>
+          <ImageInput v-model="formImageUrl" @error="(m) => (error = m)" />
         </div>
         <label style="display:flex; gap:8px; align-items:center; margin:8px 0">
           <input v-model="formShowOnline" type="checkbox" /> Mijoz ilovasida ko'rsatish
