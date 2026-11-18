@@ -4,6 +4,7 @@ import { onlineOrdersApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useStoreFilterStore } from '../stores/storeFilter'
 import ReturnsTab from './online/ReturnsTab.vue'
+import AppIcon from '../components/AppIcon.vue'
 
 // Online (mobil ilova) buyurtmalar — faqat ko'rish va hisobot. Amallar kassada (desktop) bajariladi.
 
@@ -58,22 +59,22 @@ const stars = (n) => '★'.repeat(n || 0) + '☆'.repeat(5 - (n || 0))
 
 const statusOf = (s) => STATUS[s] || { text: s, cls: 'st-work' }
 
-// Bosqich 10.1: "🌙 Oldindan · 09:00" (UTC → lokal vaqt; bugun bo'lmasa sana ham)
+// Bosqich 10.1: "Oldindan · 09:00" (UTC → lokal vaqt; bugun bo'lmasa sana ham)
 function preorderText(o) {
   if (!o?.isPreorder) return ''
-  if (!o.scheduledFor) return '🌙 Oldindan'
+  if (!o.scheduledFor) return 'Oldindan'
   const d = new Date(o.scheduledFor)
   const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
   const sameDay = d.toDateString() === new Date().toDateString()
   const date = sameDay ? '' : `${d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })} `
-  return `🌙 Oldindan · ${date}${time}`
+  return `Oldindan · ${date}${time}`
 }
 
 // Bosqich 10.6: kuryerga taklif holati
 const OFFER = {
-  Pending: { text: '⏳ Kuryer kutilmoqda', cls: 'st-work' },
-  Accepted: { text: '✅ Qabul qildi', cls: 'st-done' },
-  NoCourier: { text: '⚠ Kuryer topilmadi', cls: 'st-bad' }
+  Pending: { text: 'Kuryer kutilmoqda', cls: 'st-work' },
+  Accepted: { text: 'Qabul qildi', cls: 'st-done' },
+  NoCourier: { text: 'Kuryer topilmadi', cls: 'st-bad' }
 }
 const OFFER_ITEM = { Pending: 'Kutilmoqda', Accepted: 'Qabul qildi', Declined: 'Rad etdi', Expired: "Vaqti o'tdi", Cancelled: 'Bekor (boshqasi oldi)' }
 const offerOf = (o) => OFFER[o.courierOfferStatus] || null
@@ -365,7 +366,7 @@ onMounted(async () => {
       <input v-model="dateTo" type="date" class="input date-in" :min="dateFrom" />
     </div>
     <label v-if="tab === 'orders'" class="field-inline small" style="cursor:pointer">
-      <input v-model="preorderOnly" type="checkbox" /> 🌙 Oldindan buyurtmalar
+      <input v-model="preorderOnly" type="checkbox" /> Oldindan buyurtmalar
     </label>
     <span v-if="storeFilter.selectedStore" class="muted small">Do'kon: {{ storeFilter.selectedStore.name }}</span>
   </div>
@@ -538,7 +539,7 @@ onMounted(async () => {
         <div><b>{{ selected.customerName }}</b> · {{ selected.customerPhone }}</div>
         <div>{{ typeText(selected) }}: {{ addressText(selected) }}<span v-if="selected.contactless"> · kontaktsiz</span></div>
         <div v-if="hasPoint(selected)" class="map-links small">
-          📍 <a :href="yandexUrl(selected)" target="_blank" rel="noopener">Yandex xaritada ochish</a>
+          <AppIcon name="mapPin" :size="13" style="display:inline-block; vertical-align:-2px" /> <a :href="yandexUrl(selected)" target="_blank" rel="noopener">Yandex xaritada ochish</a>
           · <a :href="googleUrl(selected)" target="_blank" rel="noopener">Google Maps</a>
           <span class="muted"> · {{ selected.latitude.toFixed(5) }}, {{ selected.longitude.toFixed(5) }}</span>
         </div>

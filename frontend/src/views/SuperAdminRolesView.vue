@@ -300,7 +300,6 @@ onMounted(load)
     </div>
 
     <div v-else class="card edit-panel empty-panel">
-      <div style="font-size:36px">👈</div>
       <p class="muted" style="margin:8px 0 0;text-align:center">Tahrirlash uchun<br />shablonni tanlang</p>
     </div>
   </div>

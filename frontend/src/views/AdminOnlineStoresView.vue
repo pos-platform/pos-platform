@@ -2,6 +2,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { onlineStoresAdminApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 // SuperAdmin: mobil ilovadagi do'konlar — yoqish (tasdiqlash), bloklash, to'lov usullari, tavsiya, tarif muddati.
 const filter = ref('all')
@@ -162,7 +163,7 @@ onMounted(load)
               <div style="font-weight:600">{{ r.displayName || r.organizationName }}</div>
               <div v-if="r.displayName" class="muted small">{{ r.organizationName }}</div>
               <div v-if="r.slug || r.appName" class="muted small">
-                📱 {{ r.appName || '—' }}<span v-if="r.slug"> · {{ r.slug }}</span>
+                <AppIcon name="phone" :size="12" style="display:inline-block; vertical-align:-2px" /> {{ r.appName || '—' }}<span v-if="r.slug"> · {{ r.slug }}</span>
               </div>
               <div v-if="!r.organizationActive" class="small" style="color:#dc2626">tashkilot bloklangan</div>
             </td>

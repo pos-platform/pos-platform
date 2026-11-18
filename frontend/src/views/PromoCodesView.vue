@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { promoCodesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 // Online do'kon promokodlari (mobil ilovada checkout'da kiritiladi).
 // Chegirma faqat serverda hisoblanadi — bu yerda faqat sozlash.
@@ -190,8 +191,10 @@ onMounted(load)
           <td class="text-right muted">{{ p.perUserLimit > 0 ? `${p.perUserLimit} marta` : 'cheklovsiz' }}</td>
           <td><span class="pill" :class="stateOf(p).cls">{{ stateOf(p).text }}</span></td>
           <td class="text-right nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openEdit(p)">Tahrirlash</button>
-            <button class="btn btn-ghost btn-sm" @click="deleteTarget = p">✕</button>
+            <div class="row-actions">
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(p)"><AppIcon name="edit" :size="15" /></button>
+              <button class="btn btn-icon danger" title="O'chirish" @click="deleteTarget = p"><AppIcon name="trash" :size="15" /></button>
+            </div>
           </td>
         </tr>
         <tr v-if="!loading && !codes.length">

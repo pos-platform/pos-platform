@@ -4,6 +4,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { reportsApi, downloadBlob } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useStoreFilterStore } from '../stores/storeFilter'
+import AppIcon from '../components/AppIcon.vue'
 
 const storeFilter = useStoreFilterStore()
 
@@ -94,9 +95,9 @@ onMounted(load)
   <div class="page-head">
     <h1>Hisobotlar</h1>
     <div style="display:flex; gap:8px">
-      <button v-if="tab === 'sales'" class="btn btn-ghost btn-sm" @click="exportSales">📥 Excel</button>
-      <button v-if="tab === 'stock'" class="btn btn-ghost btn-sm" @click="exportStock">📥 Excel</button>
-      <button class="btn btn-ghost btn-sm" @click="printPage">🖨 Chop etish</button>
+      <button v-if="tab === 'sales'" class="btn btn-ghost btn-sm" @click="exportSales"><AppIcon name="sheet" :size="15" />Excel</button>
+      <button v-if="tab === 'stock'" class="btn btn-ghost btn-sm" @click="exportStock"><AppIcon name="sheet" :size="15" />Excel</button>
+      <button class="btn btn-ghost btn-sm" @click="printPage"><AppIcon name="printer" :size="15" />Chop etish</button>
     </div>
   </div>
 

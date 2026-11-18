@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { customersApi, loyaltyApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const customers = ref([])
 const loading = ref(false)
@@ -192,16 +193,18 @@ onMounted(load)
       <thead><tr><th>Ism</th><th>Telefon</th><th class="text-right">Ball</th><th class="text-right">Chegirma</th><th>Sana</th><th></th></tr></thead>
       <tbody>
         <tr v-for="c in filtered" :key="c.id">
-          <td><strong>{{ c.name }}</strong><span v-if="c.shopUserId" title="Mobil ilovadan foydalanadi" style="margin-left:6px">📱</span><span v-if="!c.isActive" class="badge badge-danger" style="margin-left:6px">Faol emas</span></td>
+          <td><strong>{{ c.name }}</strong><span v-if="c.shopUserId" title="Mobil ilovadan foydalanadi" style="margin-left:6px"><AppIcon name="phone" :size="13" style="display:inline-block; vertical-align:-2px" /></span><span v-if="!c.isActive" class="badge badge-danger" style="margin-left:6px">Faol emas</span></td>
           <td class="muted">{{ c.phone || '—' }}</td>
           <td class="text-right" style="color:var(--success)">{{ fmt(c.loyaltyPoints) }}</td>
           <td class="text-right">{{ c.discountPercent }}%</td>
           <td class="muted">{{ fmtDate(c.createdAt) }}</td>
           <td class="text-right" style="white-space:nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openHistory(c)">Bonus tarixi</button>
-            <button class="btn btn-ghost btn-sm" style="margin-left:4px" @click="adjustItem=c; adjustPoints=0; adjustComment=''; adjustErr=''">Ball tuzatish</button>
-            <button class="btn btn-ghost btn-sm" @click="openEdit(c)" style="margin:0 4px">✎</button>
-            <button class="btn btn-ghost btn-sm" @click="remove(c)">✕</button>
+            <div class="row-actions">
+              <button class="btn btn-ghost btn-sm" @click="openHistory(c)">Bonus tarixi</button>
+              <button class="btn btn-ghost btn-sm" @click="adjustItem=c; adjustPoints=0; adjustComment=''; adjustErr=''">Ball tuzatish</button>
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(c)"><AppIcon name="edit" :size="15" /></button>
+              <button class="btn btn-icon danger" title="O'chirish" @click="remove(c)"><AppIcon name="trash" :size="15" /></button>
+            </div>
           </td>
         </tr>
         <tr v-if="!filtered.length && !loading">

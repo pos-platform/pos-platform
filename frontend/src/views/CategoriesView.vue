@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { categoriesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const categories = ref([])
 const loading = ref(false)
@@ -156,16 +157,18 @@ onMounted(load)
           <td v-if="cat.parentId" style="padding-left:32px">↳ {{ cat.name }}</td>
           <td v-else><strong>{{ cat.name }}</strong></td>
           <td class="muted" style="font-size:13px">{{ cat.note || '—' }}</td>
-          <td style="font-size:13px">{{ cat.showOnline === false ? '🚫 yashirin' : '✓' }}</td>
+          <td style="font-size:13px">{{ cat.showOnline === false ? 'yashirin' : '✓' }}</td>
           <td class="text-right muted" style="font-size:13px">{{ cat.productCount }}</td>
           <td class="text-right" style="white-space:nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openEdit(cat)">✏️</button>
-            <button
-              class="btn btn-ghost btn-sm"
-              :disabled="cat.productCount > 0"
-              :title="cat.productCount > 0 ? 'Mahsulotlar mavjud — o\'chirib bo\'lmaydi' : 'O\'chirish'"
-              @click="confirmDelete(cat)"
-            >🗑️</button>
+            <div class="row-actions">
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(cat)"><AppIcon name="edit" :size="15" /></button>
+              <button
+                class="btn btn-icon danger"
+                :disabled="cat.productCount > 0"
+                :title="cat.productCount > 0 ? 'Mahsulotlar mavjud — o\'chirib bo\'lmaydi' : 'O\'chirish'"
+                @click="confirmDelete(cat)"
+              ><AppIcon name="trash" :size="15" /></button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -221,7 +224,7 @@ onMounted(load)
         <button class="modal-x" @click="cancelDelete">×</button>
       </div>
       <div class="modal-body">
-        <div class="del-warn">⚠️</div>
+        <div class="del-warn"><AppIcon name="alert" :size="44" /></div>
         <p style="text-align:center; margin:0 0 6px">
           <strong>"{{ deleteTarget.name }}"</strong> kategoriyasini o'chirmoqchimisiz?
         </p>

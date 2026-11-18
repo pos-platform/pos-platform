@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { organizationsApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const orgs = ref([])
 const totalCount = ref(0)
@@ -519,7 +520,7 @@ onMounted(load)
           <span class="panel-label">Desktop panel logini</span>
           <button class="btn btn-xs btn-outline" @click="showDesktopForm = true">+ Qo'shish</button>
         </div>
-        <p class="panel-hint">Kassir va menejerlar uchun. Oylik to'lov qilsa <b>«💵 +1 oy»</b> bosing.</p>
+        <p class="panel-hint">Kassir va menejerlar uchun. Oylik to'lov qilsa <b>«+1 oy»</b> bosing.</p>
 
         <div v-for="u in desktopUsers" :key="u.id" class="user-row" :class="{ 'row-off': !u.isActive }">
           <div class="user-main">
@@ -527,9 +528,9 @@ onMounted(load)
               {{ u.username }}
               <span v-if="u.fullName" class="muted" style="font-weight:500">· {{ u.fullName }}</span>
               <span class="pill pill-gray">{{ roleLabel[u.role] || u.role }}</span>
-              <span v-if="u.branchName" class="store-tag">🏪 {{ u.branchName }}</span>
-              <span v-if="u.terminalId" class="store-tag" title="Faqat shu kassadan kira oladi">🖥 {{ u.terminalId }}</span>
-              <span v-if="u.isDeviceBound" class="store-tag" title="Login shu kompyuterga bog'langan — boshqa kompyuterdan kira olmaydi">🔒 {{ u.deviceName || 'Qurilma' }}</span>
+              <span v-if="u.branchName" class="store-tag"><AppIcon name="store" :size="11" style="display:inline-block; vertical-align:-2px" /> {{ u.branchName }}</span>
+              <span v-if="u.terminalId" class="store-tag" title="Faqat shu kassadan kira oladi"><AppIcon name="monitor" :size="11" style="display:inline-block; vertical-align:-2px" /> {{ u.terminalId }}</span>
+              <span v-if="u.isDeviceBound" class="store-tag" title="Login shu kompyuterga bog'langan — boshqa kompyuterdan kira olmaydi"><AppIcon name="lock" :size="11" style="display:inline-block; vertical-align:-2px" /> {{ u.deviceName || 'Qurilma' }}</span>
               <span class="status-pill" :class="u.isActive ? 'sp-on' : 'sp-off'">
                 {{ u.isActive ? 'Faol' : 'Passiv' }}
               </span>
@@ -537,7 +538,7 @@ onMounted(load)
             <div class="user-status">
               <span class="st-dot" :class="statusOf(u).cls"></span>
               <span>{{ statusOf(u).text }}</span>
-              <span v-if="u.phone" class="muted" style="margin-left:6px">📞 {{ u.phone }}</span>
+              <span v-if="u.phone" class="muted" style="margin-left:6px"><AppIcon name="phone" :size="12" style="display:inline-block; vertical-align:-2px" /> {{ u.phone }}</span>
               <span v-if="u.licensedUntil" class="muted" style="margin-left:6px">({{ fmtDate(u.licensedUntil) }} gacha)</span>
             </div>
           </div>
@@ -547,13 +548,13 @@ onMounted(load)
               <button class="btn btn-ghost btn-xs" :disabled="busy" title="Doimiy litsenziyani bekor qilish" @click="unsetLifetime(u)">Bekor</button>
             </template>
             <template v-else>
-              <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)">💵 +1 oy</button>
+              <button class="btn btn-success btn-xs" :disabled="busy" @click="extend(u, 1)">+1 oy</button>
               <button class="btn btn-ghost btn-xs" :disabled="busy" @click="extend(u, 3)">+3 oy</button>
               <button class="btn btn-ghost btn-xs" :disabled="busy" title="Doimiy (bir martalik to'liq sotib olish)" @click="setLifetime(u)">♾ Doimiy</button>
               <button v-if="u.licensedUntil" class="btn btn-ghost btn-xs" :disabled="busy" @click="revoke(u)">⨯</button>
             </template>
-            <button v-if="u.isDeviceBound" class="btn btn-ghost btn-xs" :disabled="busy" title="Login bog'langan kompyuterni bekor qilish — keyingi kirishda yangi kompyuter biriktiriladi" @click="resetDevice(u)">🔓 Qurilmani ajratish</button>
-            <button class="btn btn-ghost btn-xs" :disabled="busy" title="Tahrirlash" @click="openEdit(u)">✎ Tahrirlash</button>
+            <button v-if="u.isDeviceBound" class="btn btn-ghost btn-xs" :disabled="busy" title="Login bog'langan kompyuterni bekor qilish — keyingi kirishda yangi kompyuter biriktiriladi" @click="resetDevice(u)"><AppIcon name="unlock" :size="13" />Qurilmani ajratish</button>
+            <button class="btn btn-ghost btn-xs" :disabled="busy" title="Tahrirlash" @click="openEdit(u)"><AppIcon name="edit" :size="13" />Tahrirlash</button>
             <button
               class="btn btn-xs"
               :class="u.isActive ? 'btn-danger' : 'btn-success'"
@@ -567,13 +568,12 @@ onMounted(load)
         </div>
         <p v-if="!desktopUsers.length" class="muted empty-msg">Desktop login yo'q</p>
         <p v-if="!selected.isActive && desktopUsers.length" class="muted" style="font-size:12px; margin:6px 0 0; color:var(--danger)">
-          ⚠️ Tashkilot bloklangan — kassirlarni faollashtirish uchun avval tashkilotni faollashtiring.
+          <AppIcon name="alert" :size="13" style="display:inline-block; vertical-align:-2px" /> Tashkilot bloklangan — kassirlarni faollashtirish uchun avval tashkilotni faollashtiring.
         </p>
       </div>
     </div>
 
     <div v-else class="card detail-card empty-detail">
-      <div style="font-size:42px">👈</div>
       <p class="muted" style="margin:8px 0 0; text-align:center">Boshqarish uchun<br />tashkilotni tanlang</p>
     </div>
   </div>

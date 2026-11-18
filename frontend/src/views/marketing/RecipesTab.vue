@@ -5,6 +5,7 @@ import { errorMessage, mediaUrl } from '../../api/http'
 import ImageInput from './ImageInput.vue'
 import ProductSearch from './ProductSearch.vue'
 import { fmtNum, moved } from './marketingUtil'
+import AppIcon from '../../components/AppIcon.vue'
 
 // Retseptlar (bosqich 11.8, docs/mobile/CONTRACT-11.md §1): ilovada "Bugun nima pishiramiz?" va "hammasini savatga".
 defineProps({
@@ -199,8 +200,10 @@ onMounted(load)
           <td class="small">{{ r.branchName || (r.branchId ? '—' : 'Barcha filiallar') }}</td>
           <td><span class="pill" :class="r.isActive ? 'pill-green' : 'pill-gray'">{{ r.isActive ? 'Faol' : 'O\'chirilgan' }}</span></td>
           <td class="text-right nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openEdit(r)">Tahrirlash</button>
-            <button class="btn btn-ghost btn-sm" @click="deleteTarget = r">✕</button>
+            <div class="row-actions">
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(r)"><AppIcon name="edit" :size="15" /></button>
+              <button class="btn btn-icon danger" title="O'chirish" @click="deleteTarget = r"><AppIcon name="trash" :size="15" /></button>
+            </div>
           </td>
         </tr>
         <tr v-if="!loading && !items.length"><td colspan="8" class="muted center">Retsept yo'q</td></tr>
@@ -272,7 +275,7 @@ onMounted(load)
               <input v-model="p.note" class="input note" maxlength="80" placeholder="izoh: 1 stakan" />
               <button type="button" class="btn btn-ghost btn-sm" :disabled="i === 0" @click="moveItem(i, -1)">↑</button>
               <button type="button" class="btn btn-ghost btn-sm" :disabled="i === form.items.length - 1" @click="moveItem(i, 1)">↓</button>
-              <button type="button" class="btn btn-ghost btn-sm" @click="form.items.splice(i, 1)">✕</button>
+              <button type="button" class="btn btn-icon danger" title="Olib tashlash" @click="form.items.splice(i, 1)"><AppIcon name="x" :size="15" /></button>
             </div>
             <div v-if="!form.items.length" class="muted small" style="padding:8px 0">Mahsulot qo'shilmagan</div>
           </div>
@@ -286,7 +289,7 @@ onMounted(load)
             <div class="step-btns">
               <button type="button" class="btn btn-ghost btn-sm" :disabled="i === 0" @click="moveStep(i, -1)">↑</button>
               <button type="button" class="btn btn-ghost btn-sm" :disabled="i === form.steps.length - 1" @click="moveStep(i, 1)">↓</button>
-              <button type="button" class="btn btn-ghost btn-sm" :disabled="form.steps.length === 1" @click="form.steps.splice(i, 1)">✕</button>
+              <button type="button" class="btn btn-icon danger" title="Olib tashlash" :disabled="form.steps.length === 1" @click="form.steps.splice(i, 1)"><AppIcon name="x" :size="15" /></button>
             </div>
           </div>
           <button type="button" class="btn btn-ghost btn-sm" :disabled="form.steps.length >= 30" @click="form.steps.push('')">+ Qadam</button>

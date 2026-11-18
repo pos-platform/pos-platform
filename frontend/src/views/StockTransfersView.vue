@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { stockTransfersApi, storesApi, newRequestId } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const transfers = ref([])
 const branches = ref([])
@@ -122,7 +123,7 @@ onMounted(load)
         <tr v-for="(item, i) in form.items" :key="i">
           <td class="muted" style="font-size:12px">{{ item.productId }}</td>
           <td>{{ item.quantity }}</td>
-          <td><button class="btn btn-ghost btn-sm" @click="removeItem(i)">✕</button></td>
+          <td><button class="btn btn-icon danger" title="Olib tashlash" @click="removeItem(i)"><AppIcon name="x" :size="15" /></button></td>
         </tr>
       </tbody>
     </table>

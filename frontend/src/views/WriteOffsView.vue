@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { writeOffsApi, productsApi, storesApi, newRequestId } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const writeOffs = ref([])
 const products = ref([])
@@ -140,7 +141,7 @@ onMounted(load)
           <td>{{ l.product.name }} <span class="muted">(qoldiq {{ fmt(l.product.quantity) }})</span></td>
           <td><input v-model="l.quantity" type="number" min="0" step="0.001" class="input" /></td>
           <td class="text-right">{{ fmt(Number(l.quantity) * Number(l.product.costPrice)) }}</td>
-          <td class="text-right"><button type="button" class="btn btn-ghost btn-sm" @click="removeLine(l.product.id)">✕</button></td>
+          <td class="text-right"><button type="button" class="btn btn-icon danger" title="Olib tashlash" @click="removeLine(l.product.id)"><AppIcon name="x" :size="15" /></button></td>
         </tr>
         <tr v-if="!lines.length"><td colspan="4" class="muted">Tovar qo'shilmagan</td></tr>
       </tbody>

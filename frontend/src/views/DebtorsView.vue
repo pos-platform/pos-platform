@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { debtorsApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const debtors = ref([])
 const loading = ref(false)
@@ -151,7 +152,7 @@ onMounted(load)
     <!-- Ro'yxat -->
     <div class="card list-card">
       <div class="list-search">
-        <input v-model="search" class="input" placeholder="🔍 Ism yoki telefon bo'yicha qidirish" />
+        <input v-model="search" class="input" placeholder="Ism yoki telefon bo'yicha qidirish" />
       </div>
       <table class="table">
         <thead><tr><th>Mijoz</th><th>Telefon</th><th class="text-right">Qarzi</th><th></th></tr></thead>
@@ -191,9 +192,9 @@ onMounted(load)
       <!-- Amal tanlash -->
       <div class="seg">
         <button type="button" class="seg-btn" :class="{ 'seg-pay': txn.type === 'Payment' }"
-                @click="txn.type = 'Payment'">➖ To'lov qabul qilish</button>
+                @click="txn.type = 'Payment'"><AppIcon name="minus" :size="14" style="display:inline-block; vertical-align:-2px" /> To'lov qabul qilish</button>
         <button type="button" class="seg-btn" :class="{ 'seg-debt': txn.type === 'Debt' }"
-                @click="txn.type = 'Debt'">➕ Qarz qo'shish</button>
+                @click="txn.type = 'Debt'"><AppIcon name="plus" :size="14" style="display:inline-block; vertical-align:-2px" /> Qarz qo'shish</button>
       </div>
 
       <div class="field" style="margin-top:12px">
@@ -239,7 +240,6 @@ onMounted(load)
 
     <!-- Tanlanmagan holat -->
     <div v-else class="card detail-card empty-detail">
-      <div style="font-size:42px">👈</div>
       <p class="muted" style="margin:8px 0 0; text-align:center">Tafsilotlarni ko'rish va<br />to'lov qabul qilish uchun<br />ro'yxatdan qarzdorni tanlang</p>
     </div>
   </div>

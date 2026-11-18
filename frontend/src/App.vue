@@ -261,7 +261,7 @@ function logout() {
   <div class="app-shell" :class="{ 'no-nav': !showNav, 'nav-open': mobileNavOpen }">
     <!-- Mobil yuqori panel: hamburger + brend (faqat kichik ekranda ko'rinadi) -->
     <header v-if="showNav" class="mobile-topbar">
-      <button class="hamb" aria-label="Menyu" @click="mobileNavOpen = true">☰</button>
+      <button class="hamb" aria-label="Menyu" @click="mobileNavOpen = true"><AppIcon name="menu" :size="20" /></button>
       <div class="mt-brand">
         <img src="/logo.png" alt="" />
         <span>{{ auth.isSuperAdmin ? 'Platforma' : 'PosCloud' }}</span>

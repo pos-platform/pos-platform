@@ -4,6 +4,7 @@ import { salesApi, fiscalModulesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useStoreFilterStore } from '../stores/storeFilter'
 import SaleDetailModal from './sales/SaleDetailModal.vue'
+import AppIcon from '../components/AppIcon.vue'
 
 const storeFilter = useStoreFilterStore()
 
@@ -645,7 +646,7 @@ function openReceiptWindow(sale) {
             <td>
               <strong>{{ moduleOwner(m.module) || moduleLabel(m.module) }}</strong>
               <button class="name-btn" title="Ism-sharifni kiritish/o'zgartirish"
-                      @click="renameModule(m.module)">✎</button>
+                      @click="renameModule(m.module)"><AppIcon name="edit" :size="13" style="display:inline-block; vertical-align:-2px" /></button>
               <div v-if="moduleOwner(m.module)" class="mod-note">{{ moduleLabel(m.module) }}</div>
             </td>
             <td class="muted">{{ m.rs || '—' }}</td>
@@ -708,7 +709,7 @@ function openReceiptWindow(sale) {
             <td colspan="2">
               <strong>{{ moduleOwner(g.module) || moduleLabel(g.module) }}</strong>
               <button class="name-btn" title="Ism-sharifni kiritish/o'zgartirish"
-                      @click="renameModule(g.module)">✎</button>
+                      @click="renameModule(g.module)"><AppIcon name="edit" :size="13" style="display:inline-block; vertical-align:-2px" /></button>
               <span class="muted mod-meta">
                 modul: {{ moduleLabel(g.module) }}<template v-if="g.rs"> · RS: {{ g.rs }}</template>
               </span>
@@ -800,13 +801,15 @@ function openReceiptWindow(sale) {
             </div>
           </td>
           <td class="text-right" style="white-space: nowrap">
+            <div class="row-actions">
             <button
-              class="btn btn-ghost btn-sm"
+              class="btn btn-icon"
               :disabled="printingId === s.id"
               @click="printReceipt(s)"
               title="Chekni chop etish"
             >
-              {{ printingId === s.id ? '...' : '🖨 Chek' }}
+              <span v-if="printingId === s.id">...</span>
+              <AppIcon name="printer" :size="15" v-else />
             </button>
             <button
               v-if="canRefundRow(s)"
@@ -816,6 +819,7 @@ function openReceiptWindow(sale) {
             >
               {{ refundingId === s.id ? '...' : 'Qaytarish' }}
             </button>
+            </div>
           </td>
         </tr>
         <tr v-if="!shownSales.length && !loading">

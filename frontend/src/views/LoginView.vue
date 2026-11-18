@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -69,7 +70,7 @@ async function submit() {
             />
             <button type="button" class="eye" @click="showPassword = !showPassword"
                     :title="showPassword ? 'Yashirish' : 'Ko\'rsatish'">
-              {{ showPassword ? '🙈' : '👁' }}
+              <AppIcon :name="showPassword ? 'eyeOff' : 'eye'" :size="18" />
             </button>
           </div>
         </div>
@@ -124,6 +125,7 @@ async function submit() {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   width: 34px; height: 34px; border: none; background: transparent;
   font-size: 17px; cursor: pointer; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; color: #64748b;
 }
 .eye:hover { background: #f1f5f9; }
 

@@ -4,6 +4,7 @@ import { productsApi, categoriesApi, suppliersApi, storesApi, stockReceiptsApi, 
 import { errorMessage, mediaUrl } from '../api/http'
 import { useAuthStore } from '../stores/auth'
 import JsBarcode from 'jsbarcode'
+import AppIcon from '../components/AppIcon.vue'
 
 const auth = useAuthStore()
 
@@ -856,19 +857,19 @@ function printBarcode(product) {
     <h1>Mahsulotlar</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
       <!-- Hozircha yashirilgan (kerak bo'lsa qaytariladi): Shablon, TXT shablon, TXT import
-      <button class="btn btn-ghost btn-sm" @click="downloadTemplate">📄 Shablon</button>
-      <button class="btn btn-ghost btn-sm" @click="downloadTxtTemplate">📄 TXT shablon</button>
+      <button class="btn btn-ghost btn-sm" @click="downloadTemplate">Shablon</button>
+      <button class="btn btn-ghost btn-sm" @click="downloadTxtTemplate">TXT shablon</button>
       -->
       <button class="btn btn-ghost btn-sm" :disabled="importing" @click="triggerImport">
-        {{ importing ? '⏳ Import...' : '📥 Excel import' }}
+        <AppIcon name="upload" :size="15" />{{ importing ? 'Import...' : 'Excel import' }}
       </button>
       <!--
       <button class="btn btn-ghost btn-sm" :disabled="importing" @click="triggerTxtImport">
-        {{ importing ? '⏳ Import...' : '📄 TXT import' }}
+        {{ importing ? 'Import...' : 'TXT import' }}
       </button>
       -->
-      <button class="btn btn-ghost btn-sm" @click="exportFenixTxt">📤 Eksport (.txt)</button>
-      <button class="btn btn-ghost btn-sm" @click="exportExcel">📊 Excel</button>
+      <button class="btn btn-ghost btn-sm" @click="exportFenixTxt"><AppIcon name="download" :size="15" />Eksport (.txt)</button>
+      <button class="btn btn-ghost btn-sm" @click="exportExcel"><AppIcon name="sheet" :size="15" />Excel</button>
       <button class="btn" @click="openCreate">+ Mahsulot qo'shish</button>
       <input ref="importInput" type="file" accept=".xlsx" style="display:none" @change="onImportFile" />
       <input ref="txtImportInput" type="file" accept=".txt,.csv,.tsv" style="display:none" @change="onImportFile" />
@@ -1003,7 +1004,7 @@ function printBarcode(product) {
     <!-- Ommaviy amallar: tanlov bo'sh bo'lmasa -->
     <div v-if="selectedIds.size" class="bulk-bar">
       <span>Tanlandi: <b>{{ selectedIds.size }}</b></span>
-      <button class="btn btn-sm" :disabled="bulkBusy" @click="bulkShowOnline(true)">📱 Ilovada ko'rsatish</button>
+      <button class="btn btn-sm" :disabled="bulkBusy" @click="bulkShowOnline(true)"><AppIcon name="phone" :size="15" />Ilovada ko'rsatish</button>
       <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="bulkShowOnline(false)">Ilovadan yashirish</button>
       <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="clearSelection">Tanlovni bekor qilish</button>
     </div>
@@ -1043,7 +1044,7 @@ function printBarcode(product) {
           <td>
             <div style="font-weight:500">
               {{ p.name }}
-              <span v-if="p.showOnline !== false" class="online-mark" title="Mobil ilovada ko'rinadi">📱</span>
+              <span v-if="p.showOnline !== false" class="online-mark" title="Mobil ilovada ko'rinadi"><AppIcon name="phone" :size="13" /></span>
             </div>
             <div v-if="p.mxikCode && p.mxikCode !== '00000000'" class="muted" style="font-size:12px">MXIK: {{ p.mxikCode }}</div>
             <span v-if="!mxikValid(p.mxikCode)" class="pill pill-red" style="margin-top:2px; display:inline-block">MXIK yo'q</span>
@@ -1058,18 +1059,14 @@ function printBarcode(product) {
             {{ Number(p.quantity).toLocaleString() }}
           </td>
           <td class="text-right muted">{{ Number(p.costPrice).toLocaleString() }}</td>
-          <td class="text-right"><span class="pill pill-green">{{ Number(p.markupPercent).toFixed(1) }}%</span></td>
+          <td class="text-right"><span class="pill pill-gray">{{ Number(p.markupPercent).toFixed(1) }}%</span></td>
           <td class="text-right" style="font-weight:500">{{ Number(p.price).toLocaleString() }}</td>
           <td class="text-right" style="white-space:nowrap">
-            <div style="display:inline-flex; gap:6px; align-items:center">
-              <button class="btn btn-print btn-sm" title="Barcode chop etish" @click="printBarcode(p)">
-                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
-                </svg>
-              </button>
-              <button class="btn btn-ghost btn-sm restock-btn" title="Kirim qilish (qoldiq qo'shish)" @click="openRestock(p)">＋</button>
-              <button class="btn btn-ghost btn-sm" @click="openEdit(p)">✏️</button>
-              <button class="btn btn-ghost btn-sm" @click="removeProduct(p)">🗑️</button>
+            <div class="row-actions">
+              <button class="btn btn-icon" title="Barcode chop etish" @click="printBarcode(p)"><AppIcon name="printer" :size="15" /></button>
+              <button class="btn btn-icon" title="Kirim qilish (qoldiq qo'shish)" @click="openRestock(p)"><AppIcon name="plus" :size="15" /></button>
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(p)"><AppIcon name="edit" :size="15" /></button>
+              <button class="btn btn-icon danger" title="O'chirish" @click="removeProduct(p)"><AppIcon name="trash" :size="15" /></button>
             </div>
           </td>
         </tr>
@@ -1111,13 +1108,13 @@ function printBarcode(product) {
           <div v-if="modalSuccess" class="alert alert-success">{{ modalSuccess }}</div>
           <div v-if="duplicateProduct" class="dup-warn">
             <div>
-              ⚠️ Bu mahsulot allaqachon mavjud: <strong>{{ duplicateProduct.name }}</strong>
+              Bu mahsulot allaqachon mavjud: <strong>{{ duplicateProduct.name }}</strong>
               <span class="muted">
                 (qoldiq: {{ Number(duplicateProduct.quantity).toLocaleString() }}<template v-if="duplicateProduct.branchName">, {{ duplicateProduct.branchName }}</template>)
               </span>
             </div>
             <div class="dup-actions">
-              <button type="button" class="btn btn-sm" @click="restockDuplicate">＋ Kirim qilish</button>
+              <button type="button" class="btn btn-sm" @click="restockDuplicate"><AppIcon name="plus" :size="14" />Kirim qilish</button>
               <button type="button" class="btn btn-ghost btn-sm" @click="editDuplicate">Ochish</button>
             </div>
           </div>
@@ -1295,7 +1292,7 @@ function printBarcode(product) {
               <template v-if="editId">
                 <div class="pm-row2">
                   <div class="field">
-                    <label>＋ Kirim soni</label>
+                    <label>Kirim soni (+)</label>
                     <input v-model="form.addQty" type="number" min="0" step="0.001" class="input" placeholder="0" />
                   </div>
                   <div class="field">
@@ -1326,7 +1323,7 @@ function printBarcode(product) {
                 </div>
               </div>
               <div v-if="form.mxikSuggestion && !mxikValid(form.mxikCode)" class="mxik-suggest" style="margin:-4px 0 12px">
-                ⚠️ Taxminiy MXIK taklifi: <strong>{{ form.mxikSuggestion }}</strong>
+                Taxminiy MXIK taklifi: <strong>{{ form.mxikSuggestion }}</strong>
                 <span class="muted">({{ form.mxikSuggestionSource || 'avto' }})</span>
                 <button type="button" class="btn btn-sm" style="margin-left:8px" @click="form.mxikCode = form.mxikSuggestion">Qo'llash</button>
                 <div class="muted" style="margin-top:4px">Taklif chekka yozilmaydi — tasnif.soliq.uz da tekshirib, qo'llang va saqlang.</div>
@@ -1423,7 +1420,7 @@ function printBarcode(product) {
         <button class="modal-x" @click="cancelDelete">×</button>
       </div>
       <div class="modal-body">
-        <div class="del-warn">⚠️</div>
+        <div class="del-warn"><AppIcon name="alert" :size="40" /></div>
         <p style="text-align:center; margin:0 0 6px">
           <strong>"{{ deleteTarget.name }}"</strong> mahsulotini o'chirmoqchimisiz?
         </p>
@@ -1442,11 +1439,11 @@ function printBarcode(product) {
 </template>
 
 <style scoped>
-.restock-btn { font-weight: 700; color: var(--primary, #2563eb); }
+
 .dup-warn {
   display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
   padding: 10px 12px; margin-bottom: 12px; border-radius: 8px;
-  background: #FEF3C7; border: 1px solid #FCD34D; font-size: 13px;
+  background: var(--surface-2); border: 1px solid var(--border-strong); border-left: 3px solid var(--warning); font-size: 13px;
 }
 .dup-actions { display: flex; gap: 6px; }
 /* Taxminiy MXIK taklifi (mahsulot formasida) */
@@ -1469,7 +1466,7 @@ function printBarcode(product) {
   font-size: 13px;
 }
 .bulk-ok { color: var(--success, #0b6b45); }
-.online-mark { font-size: 12px; margin-left: 4px; opacity: 0.8; }
+.online-mark { display: inline-flex; vertical-align: -2px; margin-left: 4px; color: var(--muted-2); }
 
 /* Umumiy qiymat kartochkalari */
 .stats-row {

@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { onlineMarketingApi } from '../../api/catalog'
 import { errorMessage } from '../../api/http'
 import LinkPicker from './LinkPicker.vue'
+import AppIcon from '../../components/AppIcon.vue'
 import {
   toLocalInput, fromLocalInput, fmtDateTime, fmtNum, linkText, validateLink, linkValueFor
 } from './marketingUtil'
@@ -189,9 +190,11 @@ onMounted(load)
           <td class="text-right">{{ c.status === 'Sent' || c.sentCount ? fmtNum(c.sentCount) : '—' }}</td>
           <td class="text-right nowrap">
             <template v-if="editable(c)">
-              <button class="btn btn-sm" @click="sendTarget = c">Hozir yuborish</button>
-              <button class="btn btn-ghost btn-sm" @click="openEdit(c)">Tahrirlash</button>
-              <button class="btn btn-ghost btn-sm" @click="deleteTarget = c">✕</button>
+              <div class="row-actions">
+                <button class="btn btn-sm" @click="sendTarget = c">Hozir yuborish</button>
+                <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(c)"><AppIcon name="edit" :size="15" /></button>
+                <button class="btn btn-icon danger" title="O'chirish" @click="deleteTarget = c"><AppIcon name="trash" :size="15" /></button>
+              </div>
             </template>
           </td>
         </tr>

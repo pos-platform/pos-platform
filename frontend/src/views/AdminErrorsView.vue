@@ -232,7 +232,7 @@ onMounted(async () => {
       </thead>
       <tbody>
         <tr v-if="loading"><td colspan="9" class="muted" style="text-align:center; padding:24px">Yuklanmoqda...</td></tr>
-        <tr v-else-if="!data.items.length"><td colspan="9" class="muted" style="text-align:center; padding:24px">Xato yo'q 🎉</td></tr>
+        <tr v-else-if="!data.items.length"><td colspan="9" class="muted" style="text-align:center; padding:24px">Xato yo'q</td></tr>
         <tr v-for="e in data.items" v-else :key="e.id" class="clickable" @click="open(e)">
           <td @click.stop><input type="checkbox" :checked="checked.has(e.id)" :disabled="!!e.resolvedAt" @change="toggle(e.id)" /></td>
           <td><span class="pill" :class="LEVELS[e.level] || 'pill-gray'">{{ e.level }}</span></td>

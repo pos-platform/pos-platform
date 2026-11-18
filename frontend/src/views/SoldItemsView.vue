@@ -4,6 +4,7 @@ import { reportsApi, categoriesApi, usersApi, downloadBlob } from '../api/catalo
 import { errorMessage } from '../api/http'
 import { useStoreFilterStore } from '../stores/storeFilter'
 import SaleDetailModal from './sales/SaleDetailModal.vue'
+import AppIcon from '../components/AppIcon.vue'
 
 // Bosqich 10.3: sotilgan tovarlar logi — har bir chek qatori (SaleItem) alohida.
 const storeFilter = useStoreFilterStore()
@@ -105,7 +106,7 @@ onMounted(async () => {
       <h1>Sotuvlar logi</h1>
       <div class="muted small">Har bir sotilgan va qaytarilgan tovar qatori: kim, qachon, qaysi chekda, foyda va keshbek.</div>
     </div>
-    <button class="btn btn-ghost btn-sm" :disabled="exporting" @click="exportExcel">{{ exporting ? '...' : '⬇ Excel' }}</button>
+    <button class="btn btn-ghost btn-sm" :disabled="exporting" @click="exportExcel"><AppIcon name="sheet" :size="15" />{{ exporting ? '...' : 'Excel' }}</button>
   </div>
 
   <div v-if="err" class="alert alert-error">{{ err }}</div>

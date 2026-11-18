@@ -259,7 +259,7 @@ onMounted(() => { load(); loadOptions() })
         </tr>
         <tr v-if="!shown.length && !loading">
           <td colspan="7" class="muted" style="text-align:center;padding:28px">
-            Tanlangan filtrlar bo'yicha fiskalizatsiya xatosi yo'q 🎉
+            Tanlangan filtrlar bo'yicha fiskalizatsiya xatosi yo'q
           </td>
         </tr>
         <tr v-if="loading">

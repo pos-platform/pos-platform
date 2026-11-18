@@ -3,6 +3,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { loyaltyApi } from '../../api/catalog'
 import { errorMessage } from '../../api/http'
 import { exportCsv } from '../../utils/exportCsv'
+import AppIcon from '../../components/AppIcon.vue'
 
 // Bosqich 10.2: barcha mijozlar bo'yicha bonus harakatlari jurnali.
 const TYPE_LABELS = {
@@ -114,7 +115,7 @@ onMounted(load)
         <input v-model="f.search" class="input" @keyup.enter="apply" />
       </div>
       <button class="btn" :disabled="loading" @click="apply">{{ loading ? '...' : 'Ko\'rsatish' }}</button>
-      <button class="btn btn-ghost" :disabled="exporting" @click="exportExcel">{{ exporting ? '...' : '⬇ Excel' }}</button>
+      <button class="btn btn-ghost" :disabled="exporting" @click="exportExcel"><AppIcon name="sheet" :size="15" />{{ exporting ? '...' : 'Excel' }}</button>
     </div>
 
     <div v-if="data.totals" class="kpi-grid">

@@ -3,6 +3,7 @@ import { localDateStr } from '../utils/date'
 import { ref, reactive, onMounted } from 'vue'
 import { promotionsApi, productsApi, categoriesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const promotions = ref([])
 const products = ref([])
@@ -200,10 +201,12 @@ onMounted(load)
               <span v-else class="pill pill-gray">O'chiq</span>
             </td>
             <td class="text-right">
-              <button class="btn btn-ghost btn-sm" @click="toggle(p)">
-                {{ p.isActive ? 'O\'chirish' : 'Yoqish' }}
-              </button>
-              <button class="btn btn-ghost btn-sm" @click="remove(p)">✕</button>
+              <div class="row-actions">
+                <button class="btn btn-ghost btn-sm" @click="toggle(p)">
+                  {{ p.isActive ? 'O\'chirish' : 'Yoqish' }}
+                </button>
+                <button class="btn btn-icon danger" title="O'chirish" @click="remove(p)"><AppIcon name="trash" :size="15" /></button>
+              </div>
             </td>
           </tr>
           <tr v-if="!promotions.length && !loading">

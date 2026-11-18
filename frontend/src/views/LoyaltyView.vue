@@ -5,6 +5,7 @@ import { loyaltyApi, categoriesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import TransactionsTab from './loyalty/TransactionsTab.vue'
 import HistoryTab from './loyalty/HistoryTab.vue'
+import AppIcon from '../components/AppIcon.vue'
 
 // Bosqich 10.2: tablar — Sozlamalar · Bonus harakatlari · O'zgarishlar tarixi
 const TABS = [
@@ -314,7 +315,7 @@ onMounted(() => {
           <tr v-for="(r, i) in rates" :key="r.categoryId">
             <td>{{ r.categoryName }}</td>
             <td class="text-right"><input v-model="r.percent" type="number" min="0" max="100" step="any" class="input" style="width:110px; text-align:right" /></td>
-            <td class="text-right"><button class="btn btn-ghost btn-sm" @click="removeRate(i)">✕</button></td>
+            <td class="text-right"><button class="btn btn-icon danger" title="Olib tashlash" @click="removeRate(i)"><AppIcon name="x" :size="15" /></button></td>
           </tr>
           <tr v-if="!rates.length">
             <td colspan="3" class="muted" style="text-align:center; padding:16px">Barcha kategoriyalarga umumiy foiz qo'llanadi</td>
@@ -356,7 +357,7 @@ onMounted(() => {
             <td><input v-model="t.name" class="input" maxlength="30" placeholder="Gold" /></td>
             <td class="text-right"><input v-model="t.minSpend" type="number" min="0" step="1000" class="input" style="width:180px; text-align:right" /></td>
             <td class="text-right"><input v-model="t.cashbackPercent" type="number" min="0" max="100" step="any" class="input" style="width:110px; text-align:right" /></td>
-            <td class="text-right"><button class="btn btn-ghost btn-sm" @click="removeTier(i)">✕</button></td>
+            <td class="text-right"><button class="btn btn-icon danger" title="Olib tashlash" @click="removeTier(i)"><AppIcon name="x" :size="15" /></button></td>
           </tr>
           <tr v-if="!tiers.length">
             <td colspan="4" class="muted" style="text-align:center; padding:16px">Darajalar yo'q — barcha mijozlarga bir xil foiz</td>

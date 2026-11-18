@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import { productsApi, categoriesApi, salesApi, shiftsApi, promotionsApi, storesApi, discountPercentFor } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const products = ref([])
 const categories = ref([])
@@ -569,7 +570,7 @@ onUnmounted(() => {
         <span class="text-right" style="width: 86px; font-size:13px">
           {{ lineTotal(line).toLocaleString() }}
         </span>
-        <button class="btn btn-ghost btn-sm" title="O'chirish" @click="removeLine(line.product.id)">✕</button>
+        <button class="btn btn-icon danger" title="O'chirish" @click="removeLine(line.product.id)"><AppIcon name="x" :size="15" /></button>
       </div>
 
       <div class="totals">
@@ -595,10 +596,10 @@ onUnmounted(() => {
       <div class="field" style="margin-top: 14px">
         <label>To'lov turi</label>
         <select v-model="paymentMethod" class="select">
-          <option value="Card">💳 Karta</option>
-          <option value="Cash">💵 Naqd</option>
-          <option value="Transfer">📱 O'tkazma (Payme/Click)</option>
-          <option value="Mixed">🔀 Aralash</option>
+          <option value="Card">Karta</option>
+          <option value="Cash">Naqd</option>
+          <option value="Transfer">O'tkazma (Payme/Click)</option>
+          <option value="Mixed">Aralash</option>
         </select>
       </div>
 
@@ -632,7 +633,7 @@ onUnmounted(() => {
       <!-- Oxirgi chek -->
       <template v-if="lastSale">
         <button class="btn btn-ghost" style="width:100%; margin-top:8px" @click="printReceipt(lastSale)">
-          🖨 Chekni ko'rish va chop etish
+          <AppIcon name="printer" :size="15" />Chekni ko'rish va chop etish
         </button>
         <div class="last-receipt-info">
           ✓ Chek {{ lastSale.receiptNumber }} · Jami {{ Number(lastSale.totalAmount).toLocaleString() }} · Qaytim {{ Number(lastSale.changeAmount).toLocaleString() }}

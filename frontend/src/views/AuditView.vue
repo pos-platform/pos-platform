@@ -2,6 +2,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { auditApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const logs = ref([])
 const loading = ref(false)
@@ -227,7 +228,7 @@ onMounted(load)
           <td class="muted">{{ l.ipAddress || '—' }}</td>
           <td class="muted" style="font-size:13px">{{ l.detail }}</td>
           <td style="text-align:right">
-            <button class="eye-btn" title="Tafsilotni ko'rish" @click="detailLog = l">👁</button>
+            <button class="btn btn-icon" title="Tafsilotni ko'rish" @click="detailLog = l"><AppIcon name="eye" :size="15" /></button>
           </td>
         </tr>
         <tr v-if="!logs.length && !loading">
@@ -288,8 +289,6 @@ onMounted(load)
 .b-user { background: #f1f5f9; color: #475569; }
 .dot-fail { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #dc2626; margin-left: 8px; vertical-align: middle; }
 
-.eye-btn { border: 1px solid var(--border); background: #f8fafc; border-radius: 8px; padding: 4px 10px; cursor: pointer; font-size: 15px; line-height: 1; }
-.eye-btn:hover { background: #e2e8f0; }
 
 .dl { display: flex; flex-direction: column; }
 .dl-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }

@@ -4,6 +4,7 @@ import { onlineMarketingApi } from '../../api/catalog'
 import { errorMessage, mediaUrl } from '../../api/http'
 import ImageInput from './ImageInput.vue'
 import LinkPicker from './LinkPicker.vue'
+import AppIcon from '../../components/AppIcon.vue'
 import {
   toLocalInput, fromLocalInput, periodText, stateOf, linkText, validateLink, linkValueFor, moved
 } from './marketingUtil'
@@ -220,8 +221,10 @@ onMounted(load)
           <td class="muted small nowrap">{{ periodText(s.startsAt, s.endsAt) }}</td>
           <td><span class="pill" :class="stateOf(s).cls">{{ stateOf(s).text }}</span></td>
           <td class="text-right nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openEdit(s)">Tahrirlash</button>
-            <button class="btn btn-ghost btn-sm" @click="deleteTarget = s">✕</button>
+            <div class="row-actions">
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(s)"><AppIcon name="edit" :size="15" /></button>
+              <button class="btn btn-icon danger" title="O'chirish" @click="deleteTarget = s"><AppIcon name="trash" :size="15" /></button>
+            </div>
           </td>
         </tr>
         <tr v-if="!loading && !items.length"><td colspan="7" class="muted center">Story yo'q</td></tr>
@@ -274,7 +277,7 @@ onMounted(load)
             <span>
               <button type="button" class="btn btn-ghost btn-sm" :disabled="i === 0" @click="moveSlide(i, -1)">↑</button>
               <button type="button" class="btn btn-ghost btn-sm" :disabled="i === form.slides.length - 1" @click="moveSlide(i, 1)">↓</button>
-              <button type="button" class="btn btn-ghost btn-sm" @click="form.slides.splice(i, 1)">✕</button>
+              <button type="button" class="btn btn-icon danger" title="Olib tashlash" @click="form.slides.splice(i, 1)"><AppIcon name="x" :size="15" /></button>
             </span>
           </div>
           <div class="field">

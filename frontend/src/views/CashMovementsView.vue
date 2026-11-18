@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { cashMovementsApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const movements = ref([])
 const loading = ref(false)
@@ -91,7 +92,7 @@ onMounted(load)
           <td class="text-right" :style="{color: typeColor(m.type)}">
             {{ sign(m.type) }} {{ fmt(m.amount) }}
           </td>
-          <td class="text-right"><button class="btn btn-ghost btn-sm" @click="remove(m)">✕</button></td>
+          <td class="text-right"><button class="btn btn-icon danger" title="O'chirish" @click="remove(m)"><AppIcon name="trash" :size="15" /></button></td>
         </tr>
         <tr v-if="!movements.length && !loading">
           <td colspan="5" class="muted" style="text-align:center;padding:24px">Harakatlar yo'q</td>

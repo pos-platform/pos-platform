@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const router = useRouter()
 const stores = ref([])
@@ -114,7 +115,7 @@ onMounted(load)
               <button
                 class="btn btn-ghost btn-sm"
                 @click="router.push({ name: 'cashbox', params: { id: row.cashbox.id } })"
-              >📊 Ko'rish</button>
+              ><AppIcon name="barChart" :size="15" />Ko'rish</button>
             </td>
           </tr>
         </template>

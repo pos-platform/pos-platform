@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { expensesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const expenses = ref([])
 const loading = ref(false)
@@ -87,7 +88,7 @@ onMounted(load)
           <td class="muted">{{ fmtDate(e.createdAt) }}</td>
           <td class="muted">{{ e.comment || '—' }}</td>
           <td class="text-right" style="color:var(--danger)">− {{ fmt(e.amount) }}</td>
-          <td class="text-right"><button class="btn btn-ghost btn-sm" @click="remove(e)">✕</button></td>
+          <td class="text-right"><button class="btn btn-icon danger" title="O'chirish" @click="remove(e)"><AppIcon name="trash" :size="15" /></button></td>
         </tr>
         <tr v-if="!expenses.length && !loading"><td colspan="5" class="muted" style="text-align:center;padding:24px">Xarajat yo'q</td></tr>
       </tbody>

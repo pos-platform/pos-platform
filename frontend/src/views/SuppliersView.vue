@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { suppliersApi, paymentsApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const suppliers = ref([])
 const payments = ref([])
@@ -201,11 +202,13 @@ onMounted(load)
             </span>
           </td>
           <td class="text-right" style="white-space:nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openPay(s)" title="To'lov qilish">💳</button>
-            <button class="btn btn-ghost btn-sm" @click="openEdit(s)" title="Tahrirlash">✏️</button>
-            <button class="btn btn-ghost btn-sm" @click="toggle(s)" :title="s.isActive ? 'O\'chirish' : 'Yoqish'">
-              {{ s.isActive ? '🔴' : '🟢' }}
-            </button>
+            <div class="row-actions">
+              <button class="btn btn-icon" title="To'lov qilish" @click="openPay(s)"><AppIcon name="wallet" :size="15" /></button>
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(s)"><AppIcon name="edit" :size="15" /></button>
+              <button class="btn btn-icon" :class="{ danger: s.isActive }" :title="s.isActive ? 'O\'chirish' : 'Yoqish'" @click="toggle(s)">
+                <AppIcon :name="s.isActive ? 'ban' : 'check'" :size="15" />
+              </button>
+            </div>
           </td>
         </tr>
         <tr v-if="!filtered.length && !loading">

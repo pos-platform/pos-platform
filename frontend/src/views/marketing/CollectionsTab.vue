@@ -5,6 +5,7 @@ import { errorMessage, mediaUrl } from '../../api/http'
 import ImageInput from './ImageInput.vue'
 import ProductSearch from './ProductSearch.vue'
 import { toLocalInput, fromLocalInput, periodText, stateOf, fmtNum, moved } from './marketingUtil'
+import AppIcon from '../../components/AppIcon.vue'
 
 // Kolleksiyalar ("Yozgi tanlov", "Nonushta uchun" ...) — 9.1.
 defineProps({
@@ -192,8 +193,10 @@ onMounted(load)
           <td class="muted small nowrap">{{ periodText(c.startsAt, c.endsAt) }}</td>
           <td><span class="pill" :class="stateOf(c).cls">{{ stateOf(c).text }}</span></td>
           <td class="text-right nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openEdit(c)">Tahrirlash</button>
-            <button class="btn btn-ghost btn-sm" @click="deleteTarget = c">✕</button>
+            <div class="row-actions">
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(c)"><AppIcon name="edit" :size="15" /></button>
+              <button class="btn btn-icon danger" title="O'chirish" @click="deleteTarget = c"><AppIcon name="trash" :size="15" /></button>
+            </div>
           </td>
         </tr>
         <tr v-if="!loading && !items.length"><td colspan="8" class="muted center">Kolleksiya yo'q</td></tr>
@@ -264,7 +267,7 @@ onMounted(load)
               <span class="muted small">{{ p.price != null ? fmtNum(p.price) : '' }}</span>
               <button type="button" class="btn btn-ghost btn-sm" :disabled="i === 0" @click="moveProduct(i, -1)">↑</button>
               <button type="button" class="btn btn-ghost btn-sm" :disabled="i === form.products.length - 1" @click="moveProduct(i, 1)">↓</button>
-              <button type="button" class="btn btn-ghost btn-sm" @click="form.products.splice(i, 1)">✕</button>
+              <button type="button" class="btn btn-icon danger" title="Olib tashlash" @click="form.products.splice(i, 1)"><AppIcon name="x" :size="15" /></button>
             </div>
             <div v-if="!form.products.length" class="muted small" style="padding:8px 0">Mahsulot qo'shilmagan</div>
           </div>

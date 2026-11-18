@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { stockReceiptsApi, suppliersApi, productsApi, labelsApi, storesApi, newRequestId } from '../api/catalog'
 import { errorMessage } from '../api/http'
+import AppIcon from '../components/AppIcon.vue'
 
 const receipts = ref([])
 const branches = ref([])
@@ -136,7 +137,7 @@ onMounted(load)
   </div>
 
   <div class="card hint-card">
-    <strong>ℹ️ {{ $t('stockReceipts.hintTitle') }}</strong>
+    <strong>{{ $t('stockReceipts.hintTitle') }}</strong>
     <ul>
       <li>{{ $t('stockReceipts.hint1') }}</li>
       <li>{{ $t('stockReceipts.hint2') }}</li>
@@ -198,7 +199,7 @@ onMounted(load)
           <td><input v-model="l.batchNumber" class="input" placeholder="Lot/seriya" /></td>
           <td><input v-model="l.expiryDate" type="date" class="input" /></td>
           <td class="text-right">{{ fmt(Number(l.quantity) * Number(l.costPrice)) }}</td>
-          <td class="text-right"><button type="button" class="btn btn-ghost btn-sm" @click="removeLine(l.product.id)">✕</button></td>
+          <td class="text-right"><button type="button" class="btn btn-icon danger" title="Olib tashlash" @click="removeLine(l.product.id)"><AppIcon name="x" :size="15" /></button></td>
         </tr>
         <tr v-if="!lines.length"><td colspan="7" class="muted">Tovar qo'shilmagan</td></tr>
       </tbody>
@@ -208,7 +209,7 @@ onMounted(load)
     <div class="row" style="justify-content: space-between; align-items: center">
       <strong style="font-size: 16px">Jami: {{ fmt(total) }} so'm</strong>
       <div style="display:flex; gap:8px">
-        <button type="button" class="btn btn-ghost" @click="printLabels">🏷️ Yorliq chop</button>
+        <button type="button" class="btn btn-ghost" @click="printLabels"><AppIcon name="tag" :size="15" />Yorliq chop</button>
         <button class="btn btn-success" :disabled="saving">{{ saving ? 'Saqlanmoqda...' : 'Saqlash (omborga qo\'shish)' }}</button>
       </div>
     </div>

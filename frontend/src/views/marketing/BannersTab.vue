@@ -4,6 +4,7 @@ import { onlineMarketingApi } from '../../api/catalog'
 import { errorMessage, mediaUrl } from '../../api/http'
 import ImageInput from './ImageInput.vue'
 import LinkPicker from './LinkPicker.vue'
+import AppIcon from '../../components/AppIcon.vue'
 import {
   toLocalInput, fromLocalInput, periodText, stateOf, linkText, validateLink, linkValueFor, moved
 } from './marketingUtil'
@@ -208,8 +209,10 @@ onMounted(load)
             <span class="pill clickable" :class="stateOf(b).cls" title="Yoqish / o'chirish" @click="toggleActive(b)">{{ stateOf(b).text }}</span>
           </td>
           <td class="text-right nowrap">
-            <button class="btn btn-ghost btn-sm" @click="openEdit(b)">Tahrirlash</button>
-            <button class="btn btn-ghost btn-sm" @click="deleteTarget = b">✕</button>
+            <div class="row-actions">
+              <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(b)"><AppIcon name="edit" :size="15" /></button>
+              <button class="btn btn-icon danger" title="O'chirish" @click="deleteTarget = b"><AppIcon name="trash" :size="15" /></button>
+            </div>
           </td>
         </tr>
         <tr v-if="!loading && !items.length"><td colspan="7" class="muted center">Banner yo'q</td></tr>
