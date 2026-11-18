@@ -203,7 +203,35 @@ function reload() {
   else load()
 }
 
-const shownOrders = computed(() => (preorderOnly.value ? orders.value.filter((o) => o.isPreorder) : orders.value))
+// Ustun bo'yicha filterlar (jadval sarlavhasi ostida)
+const colFilter = ref({ number: '', date: '', customer: '', phone: '', type: '', pay: '', sum: '', status: '', courier: '', rating: '' })
+const hasColFilter = computed(() => Object.values(colFilter.value).some((v) => v !== ''))
+function clearColFilter() {
+  for (const k of Object.keys(colFilter.value)) colFilter.value[k] = ''
+}
+const norm = (s) => String(s ?? '').toLowerCase()
+const has = (val, q) => !q || norm(val).includes(norm(q).trim())
+
+const shownOrders = computed(() => {
+  const f = colFilter.value
+  const phoneQ = f.phone.replace(/\D/g, '')
+  const sumQ = f.sum.replace(/\s/g, '')
+  return orders.value.filter((o) => {
+    if (preorderOnly.value && !o.isPreorder) return false
+    if (!has(o.number, f.number)) return false
+    if (!has(fmtDateTime(o.createdAt), f.date)) return false
+    if (!has(o.customerName, f.customer)) return false
+    if (phoneQ && !String(o.customerPhone || '').replace(/\D/g, '').includes(phoneQ)) return false
+    if (f.type && o.fulfillmentType !== f.type) return false
+    if (!has(payText(o), f.pay)) return false
+    if (sumQ && !String(Math.round(Number(o.totalAmount) || 0)).includes(sumQ)) return false
+    if (f.status && o.status !== f.status) return false
+    if (!has(o.courierName, f.courier)) return false
+    if (f.rating === 'none' && o.rating) return false
+    if (f.rating && f.rating !== 'none' && Number(o.rating) !== Number(f.rating)) return false
+    return true
+  })
+})
 
 // Taqsimot: { "1": n, ..., "5": n } (yoki massiv) → 5..1 qatorlar
 const distRows = computed(() => {
@@ -406,7 +434,7 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div class="layout">
+  <div class="layout" :class="{ 'with-detail': selected }">
     <div class="card" style="overflow:auto">
       <table class="table">
         <thead>
@@ -421,6 +449,38 @@ onMounted(async () => {
             <th>Holat</th>
             <th>Kuryer</th>
             <th>Baho</th>
+          </tr>
+          <tr class="filter-row">
+            <th><input v-model="colFilter.number" class="input f-in" style="width:70px" placeholder="№" /></th>
+            <th><input v-model="colFilter.date" class="input f-in" placeholder="17.11" /></th>
+            <th><input v-model="colFilter.customer" class="input f-in" placeholder="Ism" /></th>
+            <th><input v-model="colFilter.phone" class="input f-in" placeholder="Raqam" /></th>
+            <th>
+              <select v-model="colFilter.type" class="select f-in">
+                <option value="">Barchasi</option>
+                <option value="Delivery">Yetkazish</option>
+                <option value="Pickup">Olib ketish</option>
+              </select>
+            </th>
+            <th><input v-model="colFilter.pay" class="input f-in" placeholder="Naqd..." /></th>
+            <th><input v-model="colFilter.sum" class="input f-in" style="width:90px" placeholder="Summa" /></th>
+            <th>
+              <select v-model="colFilter.status" class="select f-in">
+                <option value="">Barchasi</option>
+                <option v-for="(v, k) in STATUS" :key="k" :value="k">{{ v.text }}</option>
+              </select>
+            </th>
+            <th><input v-model="colFilter.courier" class="input f-in" placeholder="Kuryer" /></th>
+            <th>
+              <div class="row" style="gap:4px; flex-wrap:nowrap">
+                <select v-model="colFilter.rating" class="select f-in" style="width:80px">
+                  <option value="">—</option>
+                  <option v-for="n in [5, 4, 3, 2, 1]" :key="n" :value="String(n)">★ {{ n }}</option>
+                  <option value="none">Bahosiz</option>
+                </select>
+                <button v-if="hasColFilter" class="btn btn-ghost btn-sm" title="Filterlarni tozalash" @click="clearColFilter">✕</button>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -570,7 +630,10 @@ onMounted(async () => {
 .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
 .stat-label { font-size: 12px; color: var(--muted); font-weight: 600; }
 .stat-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 14px; align-items: start; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+.layout.with-detail { grid-template-columns: minmax(0, 1fr) 400px; }
+.filter-row th { padding-top: 4px; padding-bottom: 8px; text-transform: none; font-weight: 400; }
+.f-in { height: 30px; padding: 2px 8px; font-size: 12.5px; min-width: 70px; width: 100%; }
 .clickable { cursor: pointer; }
 .clickable.sel { background: #f1f5f9; }
 .st { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
