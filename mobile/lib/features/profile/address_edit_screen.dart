@@ -180,12 +180,7 @@ class _AddressFormState extends ConsumerState<_AddressForm> {
       children: [
         if (p != null) ...[
           MapPreview(point: p),
-          const SizedBox(height: 6),
-          Text(
-            t.addressMapCoords('${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}'),
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
         ],
         OutlinedButton.icon(
           onPressed: _busy ? null : _pickOnMap,

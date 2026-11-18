@@ -175,32 +175,28 @@ onMounted(load)
   <div v-if="loading" class="muted">Yuklanmoqda...</div>
 
   <template v-if="s">
-    <!-- Ilovadagi holat -->
-    <div class="card status" :class="{ on: s.isVisible, blocked: s.isBlocked }">
+    <!-- Holat + buyurtma qabul (bitta qator) -->
+    <div class="card top" :class="{ on: s.isVisible, blocked: s.isBlocked }">
       <div class="status-dot"></div>
-      <div class="status-body">
+      <div class="top-body">
         <div class="status-title">{{ statusText }}</div>
         <div class="status-meta">
-          <span>To'lov usullari: <b>{{ [s.allowCash && 'naqd', s.allowTransfer && 'kartaga o\'tkazma', s.allowCardOnDelivery && 'kuryer terminali', s.allowPayme && 'Payme', s.allowClick && 'Click'].filter(Boolean).join(', ') || 'yo\'q' }}</b></span>
+          <span>To'lov: <b>{{ [s.allowCash && 'naqd', s.allowTransfer && 'kartaga o\'tkazma', s.allowCardOnDelivery && 'kuryer terminali', s.allowPayme && 'Payme', s.allowClick && 'Click'].filter(Boolean).join(', ') || 'yo\'q' }}</b></span>
           <span v-if="s.paidUntil">Tarif: <b>{{ new Date(s.paidUntil).toLocaleDateString('uz-UZ') }}</b> gacha</span>
         </div>
         <div class="hint">Ilovaga chiqish, bloklash va to'lov usullarini platforma boshqaradi.</div>
       </div>
-      <button v-if="!s.isEnabled && !s.isRequested && !s.isBlocked" class="btn" :disabled="busy" @click="requestListing">
-        Ilovaga chiqish so'rovi
-      </button>
-    </div>
-
-    <!-- Buyurtma qabul: Faol / Passiv -->
-    <div class="card head-card">
-      <div class="head-left">
+      <div class="top-accept">
         <span class="pill" :class="s.isAcceptingOrders ? 'on' : 'off'">{{ s.isAcceptingOrders ? 'Faol' : 'Passiv' }}</span>
         <div>
           <div class="head-title">{{ s.isAcceptingOrders ? 'Buyurtma qabul qilinmoqda' : 'Buyurtma qabul qilinmayapti' }}</div>
-          <div class="hint">Passiv bo'lsa, do'kon ilovada ko'rinadi, lekin mijozlar yangi buyurtma bera olmaydi.</div>
+          <div class="hint">Passiv bo'lsa, ilovada ko'rinadi, lekin buyurtma berib bo'lmaydi.</div>
         </div>
       </div>
       <div class="head-actions">
+        <button v-if="!s.isEnabled && !s.isRequested && !s.isBlocked" class="btn" :disabled="busy" @click="requestListing">
+          Ilovaga chiqish so'rovi
+        </button>
         <button class="btn btn-ghost" :class="{ danger: s.isAcceptingOrders }" :disabled="busy" @click="toggleAccepting">
           {{ busy ? '...' : s.isAcceptingOrders ? 'Passiv qilish' : 'Faollashtirish' }}
         </button>
@@ -208,45 +204,43 @@ onMounted(load)
       </div>
     </div>
 
-    <!-- Joriy sozlamalar -->
-    <div class="card">
-      <div v-for="sec in sections" :key="sec.title" class="sec">
+    <!-- Joriy sozlamalar: ixcham ustunlar -->
+    <div class="grid">
+      <div v-for="sec in sections" :key="sec.title" class="card sec">
         <div class="sec-title">{{ sec.title }}</div>
-        <table class="table">
-          <tbody>
-            <tr v-for="[k, val] in sec.rows" :key="k">
-              <td class="muted" style="width:300px">{{ k }}</td>
-              <td><strong>{{ val }}</strong></td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-for="[k, val] in sec.rows" :key="k" class="kv">
+          <span class="muted">{{ k }}</span>
+          <strong>{{ val }}</strong>
+        </div>
       </div>
     </div>
   </template>
 </template>
 
 <style scoped>
-.lead { margin: -6px 0 16px; font-size: 14px; }
-.hint { display: block; font-size: 12px; color: var(--text-muted, #64748b); font-weight: 400; line-height: 1.4; }
+.lead { margin: -6px 0 12px; font-size: 14px; }
+.hint { display: block; font-size: 12px; color: var(--text-muted, #64748b); font-weight: 400; line-height: 1.35; }
 
-.status { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; border-left: 4px solid #94a3b8; }
-.status.on { border-left-color: #16a34a; }
-.status.blocked { border-left-color: #dc2626; }
+.top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; padding-top: 12px; padding-bottom: 12px; border-left: 4px solid #94a3b8; }
+.top.on { border-left-color: #16a34a; }
+.top.blocked { border-left-color: #dc2626; }
 .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #94a3b8; flex: none; }
-.status.on .status-dot { background: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,.15); }
-.status.blocked .status-dot { background: #dc2626; box-shadow: 0 0 0 4px rgba(220,38,38,.15); }
-.status-body { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 4px; }
-.status-title { font-weight: 700; font-size: 16px; }
+.top.on .status-dot { background: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,.15); }
+.top.blocked .status-dot { background: #dc2626; box-shadow: 0 0 0 4px rgba(220,38,38,.15); }
+.top-body { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 2px; }
+.status-title { font-weight: 700; font-size: 15px; }
 .status-meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; }
-
-.head-card { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.head-left { display: flex; align-items: center; gap: 12px; }
-.head-title { font-weight: 700; font-size: 15px; }
+.top-accept { display: flex; align-items: center; gap: 10px; padding-left: 14px; border-left: 1px solid var(--border, #e5e7eb); min-width: 240px; }
+.head-title { font-weight: 700; font-size: 14px; }
 .head-actions { display: flex; gap: 8px; }
 .pill { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; flex: none; }
 .pill.on { background: #dcfce7; color: #166534; }
 .pill.off { background: #fee2e2; color: #991b1b; }
 
-.sec + .sec { margin-top: 18px; }
-.sec-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted, #64748b); margin-bottom: 6px; }
+.grid { columns: 3 320px; column-gap: 12px; }
+.sec { break-inside: avoid; margin-bottom: 12px; padding-top: 12px; padding-bottom: 8px; }
+.sec-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted, #64748b); margin-bottom: 4px; }
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 13px; border-top: 1px solid var(--border, #eef0f3); }
+.kv:first-of-type { border-top: 0; }
+.kv strong { text-align: right; }
 </style>

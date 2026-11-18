@@ -250,6 +250,35 @@ let restockRequestId = newRequestId()
 
 const activeSuppliers = computed(() => suppliers.value.filter((s) => s.isActive !== false))
 
+// Kirim oynasida yangi yetkazib beruvchini joyida qo'shish
+const newSupplierOpen = ref(false)
+const newSupplierSaving = ref(false)
+const newSupplier = reactive({ name: '', phone: '' })
+
+function toggleNewSupplier() {
+  newSupplierOpen.value = !newSupplierOpen.value
+  newSupplier.name = ''
+  newSupplier.phone = ''
+  if (newSupplierOpen.value) nextTick(() => document.getElementById('new-supplier-name')?.focus())
+}
+
+async function saveNewSupplier() {
+  const name = newSupplier.name.trim()
+  if (!name) { restockError.value = 'Yetkazib beruvchi nomini kiriting'; return }
+  newSupplierSaving.value = true
+  restockError.value = ''
+  try {
+    const created = await suppliersApi.create({ name, phone: newSupplier.phone.trim() || null, contactPerson: null, address: null })
+    suppliers.value = [...suppliers.value, created]
+    restock.supplierId = created.id
+    newSupplierOpen.value = false
+  } catch (e) {
+    restockError.value = errorMessage(e)
+  } finally {
+    newSupplierSaving.value = false
+  }
+}
+
 function defaultBranchFor(p) {
   return p?.branchId || filterBranch.value || (stores.value.length === 1 ? stores.value[0].id : '')
 }
@@ -257,6 +286,7 @@ function defaultBranchFor(p) {
 function openRestock(p) {
   restockTarget.value = p
   restockError.value = ''
+  newSupplierOpen.value = false
   restockRequestId = newRequestId()
   Object.assign(restock, {
     quantity: '',
@@ -1389,10 +1419,24 @@ function printBarcode(product) {
         </div>
         <div class="field">
           <label>Yetkazib beruvchi <span class="req-star">*</span></label>
-          <select v-model="restock.supplierId" class="select" required>
-            <option value="" disabled>Yetkazib beruvchini tanlang</option>
-            <option v-for="s in activeSuppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-          </select>
+          <div style="display:flex; gap:8px">
+            <select v-model="restock.supplierId" class="select" style="flex:1" required>
+              <option value="" disabled>Yetkazib beruvchini tanlang</option>
+              <option v-for="s in activeSuppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
+            </select>
+            <button type="button" class="btn btn-ghost" style="white-space:nowrap" @click="toggleNewSupplier">
+              {{ newSupplierOpen ? 'Yopish' : '+ Yangi' }}
+            </button>
+          </div>
+          <div v-if="newSupplierOpen" style="display:flex; gap:8px; margin-top:8px">
+            <input id="new-supplier-name" v-model="newSupplier.name" class="input" style="flex:2" placeholder="Nomi *"
+              @keydown.enter.prevent="saveNewSupplier" />
+            <input v-model="newSupplier.phone" class="input" style="flex:1" placeholder="Telefon"
+              @keydown.enter.prevent="saveNewSupplier" />
+            <button type="button" class="btn" :disabled="newSupplierSaving" @click="saveNewSupplier">
+              {{ newSupplierSaving ? '...' : 'Saqlash' }}
+            </button>
+          </div>
         </div>
         <div v-if="stores.length > 1" class="field">
           <label>Do'kon <span class="req-star">*</span></label>

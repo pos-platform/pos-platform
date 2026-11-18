@@ -440,7 +440,6 @@ class MapPreview extends StatelessWidget {
                     child: Icon(Icons.location_on, size: 36, color: AppColors.primary),
                   ),
                 ]),
-                const SimpleAttributionWidget(source: Text('OpenStreetMap contributors')),
               ],
             ),
           ),
