@@ -988,7 +988,7 @@ function printBarcode(product) {
 
   <!-- Modal -->
   <div v-if="showModal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box pm-box">
       <div class="modal-head">
         <h3>
           {{ editId ? 'Mahsulotni tahrirlash' : 'Mahsulot qo\'shish' }}
@@ -996,221 +996,233 @@ function printBarcode(product) {
         </h3>
         <button class="modal-x" @click="closeModal">×</button>
       </div>
-      <form class="modal-body" @submit.prevent="submit">
-        <div v-if="error" class="alert alert-error">{{ error }}</div>
-        <div v-if="modalSuccess" class="alert alert-success">{{ modalSuccess }}</div>
+      <form class="pm-form" @submit.prevent="submit">
+        <div class="pm-body">
+          <div v-if="error" class="alert alert-error">{{ error }}</div>
+          <div v-if="modalSuccess" class="alert alert-success">{{ modalSuccess }}</div>
 
-        <!-- Shtrix-kod | PLU | Birlik -->
-        <div style="display:flex; gap:8px; margin-bottom:12px">
-          <div class="field" style="flex:2; min-width:0; margin:0">
-            <label>Shtrix-kod</label>
-            <div style="display:flex; gap:6px">
-              <input v-model="form.barcode" class="input" style="flex:1; min-width:0" />
-              <button type="button" class="btn btn-ghost icon-sq" title="Generatsiya" @click="genBarcode">
-                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="field" style="flex:2; min-width:0; margin:0">
-            <label>PLU <span v-if="form.unit === 'Kilogram'" class="req-star">*</span></label>
-            <div style="display:flex; gap:6px">
-              <input
-                v-model="form.pluNumber"
-                type="number"
-                min="0"
-                class="input"
-                style="flex:1; min-width:0"
-                :disabled="form.unit === 'Piece'"
-                :style="form.unit === 'Piece' ? 'background:var(--bg); color:var(--muted)' : ''"
-              />
-              <button
-                type="button"
-                class="btn btn-ghost icon-sq"
-                title="Keyingisi"
-                :disabled="form.unit === 'Piece'"
-                @click="genPlu"
-              >
-                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="field" style="flex:0 0 90px; margin:0">
-            <label>Birlik</label>
-            <select v-model="form.unit" class="select" @change="onUnitChange">
-              <option value="Piece">Dona</option>
-              <option value="Kilogram">Kg</option>
-            </select>
-          </div>
-        </div>
+          <div class="pm-grid">
+            <!-- ===== Chap ustun: asosiy ma'lumotlar ===== -->
+            <section class="pm-col">
+              <div class="pm-title">Asosiy ma'lumotlar</div>
 
-        <!-- Rasm | Yetkazib beruvchi + Kategoriya -->
-        <div style="display:flex; gap:12px; margin-bottom:12px">
-          <label class="img-upload-box" style="cursor:pointer; position:relative">
-            <img v-if="form.imageUrl" :src="mediaUrl(form.imageUrl)" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />
-            <template v-else>
-              <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:#cbd5e1">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/>
-              </svg>
-              <span style="margin-top:6px; font-size:11px; line-height:1.3">Rasm<br/>qo'shish</span>
-            </template>
-            <span v-if="uploading" style="position:absolute;bottom:4px;font-size:10px;color:var(--muted)">yuklanyapti...</span>
-            <input type="file" accept="image/*" style="display:none" @change="onImageChange" />
-          </label>
-          <div style="flex:1; display:flex; flex-direction:column; gap:10px">
-            <div class="field" style="margin:0">
-              <label>Yetkazib beruvchi</label>
-              <select v-model="form.supplierId" class="select">
-                <option value="">Yetkazib beruvchini tanlang</option>
-                <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-              </select>
-            </div>
-            <div class="field" style="margin:0">
-              <label>Kategoriya <span class="req-star">*</span></label>
-              <select v-model="form.categoryId" class="select" required>
-                <option value="" disabled>Kategoriya tanlang</option>
-                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-            </div>
-          </div>
-        </div>
+              <!-- Rasm | Yetkazib beruvchi + Kategoriya -->
+              <div style="display:flex; gap:12px; margin-bottom:12px">
+                <label class="img-upload-box" style="cursor:pointer; position:relative">
+                  <img v-if="form.imageUrl" :src="mediaUrl(form.imageUrl)" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />
+                  <template v-else>
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:#cbd5e1">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/>
+                    </svg>
+                    <span style="margin-top:6px; font-size:11px; line-height:1.3">Rasm<br/>qo'shish</span>
+                  </template>
+                  <span v-if="uploading" style="position:absolute;bottom:4px;font-size:10px;color:var(--muted)">yuklanyapti...</span>
+                  <input type="file" accept="image/*" style="display:none" @change="onImageChange" />
+                </label>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:10px">
+                  <div class="field" style="margin:0">
+                    <label>Kategoriya <span class="req-star">*</span></label>
+                    <select v-model="form.categoryId" class="select" required>
+                      <option value="" disabled>Kategoriya tanlang</option>
+                      <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                    </select>
+                  </div>
+                  <div class="field" style="margin:0">
+                    <label>Yetkazib beruvchi</label>
+                    <select v-model="form.supplierId" class="select">
+                      <option value="">Yetkazib beruvchini tanlang</option>
+                      <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-        <!-- Nomi + Tavsif -->
-        <div class="field">
-          <label>Nomi <span class="req-star">*</span></label>
-          <input ref="nameInput" v-model="form.name" class="input" required />
-        </div>
-        <div class="field">
-          <label>Tavsif</label>
-          <input v-model="form.description" class="input" />
-        </div>
+              <div class="field">
+                <label>Nomi <span class="req-star">*</span></label>
+                <input ref="nameInput" v-model="form.name" class="input" required />
+              </div>
+              <div class="field">
+                <label>Tavsif</label>
+                <input v-model="form.description" class="input" />
+              </div>
 
-        <!-- Qoldiq + НДС/Маркировка toggles -->
-        <div style="display:flex; gap:12px; align-items:flex-end; margin-bottom:12px">
-          <div class="field" style="flex:1; margin:0">
-            <template v-if="!editId">
-              <label>Boshlang'ich soni</label>
-              <input v-model="form.quantity" type="number" min="0" step="0.001" class="input" />
-            </template>
-            <template v-else>
-              <label>Qoldiq</label>
-              <input :value="form.quantity" type="number" class="input" disabled />
-              <div class="muted" style="font-size:12px; margin-top:4px">
+              <!-- Shtrix-kod | PLU | Birlik -->
+              <div style="display:flex; gap:8px; margin-bottom:12px">
+                <div class="field" style="flex:3; min-width:0; margin:0">
+                  <label>Shtrix-kod</label>
+                  <div style="display:flex; gap:6px">
+                    <input v-model="form.barcode" class="input" style="flex:1; min-width:0" />
+                    <button type="button" class="btn btn-ghost icon-sq" title="Generatsiya" @click="genBarcode">
+                      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="field" style="flex:2; min-width:0; margin:0">
+                  <label>PLU <span v-if="form.unit === 'Kilogram'" class="req-star">*</span></label>
+                  <div style="display:flex; gap:6px">
+                    <input
+                      v-model="form.pluNumber"
+                      type="number"
+                      min="0"
+                      class="input"
+                      style="flex:1; min-width:0"
+                      :disabled="form.unit === 'Piece'"
+                      :style="form.unit === 'Piece' ? 'background:var(--bg); color:var(--muted)' : ''"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-ghost icon-sq"
+                      title="Keyingisi"
+                      :disabled="form.unit === 'Piece'"
+                      @click="genPlu"
+                    >
+                      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="field" style="flex:0 0 90px; margin:0">
+                  <label>Birlik</label>
+                  <select v-model="form.unit" class="select" @change="onUnitChange">
+                    <option value="Piece">Dona</option>
+                    <option value="Kilogram">Kg</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Tarozi + Tara -->
+              <div class="pm-inline">
+                <div class="checkbox" style="margin:0">
+                  <input id="weighed" v-model="form.isWeighed" type="checkbox" />
+                  <label for="weighed" style="margin:0">Tarozida tortiladi</label>
+                </div>
+                <div v-if="form.isWeighed" class="pm-tara">
+                  <label>Tara (kg)</label>
+                  <input v-model="form.tare" type="number" min="0" step="0.001" class="input" />
+                </div>
+              </div>
+
+              <!-- Toggles -->
+              <div class="pm-toggles">
+                <div class="toggle-col" title="Mobil ilovada (online do'konda) ko'rsatilsinmi">
+                  <span>Ilovada</span>
+                  <label class="ios-toggle">
+                    <input v-model="form.showOnline" type="checkbox" />
+                    <span class="ios-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-col">
+                  <span>НДС</span>
+                  <label class="ios-toggle">
+                    <input v-model="form.isVat" type="checkbox" />
+                    <span class="ios-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-col">
+                  <span>Маркировка</span>
+                  <label class="ios-toggle">
+                    <input v-model="form.isMarked" type="checkbox" />
+                    <span class="ios-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== O'ng ustun: narx, qoldiq, soliq ===== -->
+            <section class="pm-col">
+              <div class="pm-title">Narx va qoldiq</div>
+
+              <div class="pm-row3">
+                <div class="field">
+                  <label>Tannarx <span class="req-star">*</span></label>
+                  <input v-model="form.costPrice" type="number" min="0" step="0.01" class="input" @input="recalcPrice" />
+                </div>
+                <div class="field">
+                  <label>Ustama % <span class="req-star">*</span></label>
+                  <input v-model="form.markupPercent" type="number" step="any" class="input" @input="recalcPrice" />
+                </div>
+                <div class="field">
+                  <label>Sotish narxi <span class="req-star">*</span></label>
+                  <input v-model="form.price" type="number" min="0" step="0.01" class="input" required @input="recalcMarkup" />
+                </div>
+              </div>
+
+              <div class="pm-row2">
+                <div class="field">
+                  <template v-if="!editId">
+                    <label>Boshlang'ich soni</label>
+                    <input v-model="form.quantity" type="number" min="0" step="0.001" class="input" />
+                  </template>
+                  <template v-else>
+                    <label>Qoldiq</label>
+                    <input :value="form.quantity" type="number" class="input" disabled
+                           title="Qoldiq kirim / hisobdan chiqarish / inventarizatsiya orqali o'zgaradi" />
+                  </template>
+                </div>
+                <!-- Do'kon (faqat bir nechta do'kon bo'lsa ko'rinadi) -->
+                <div v-if="stores.length > 1" class="field">
+                  <label>Do'kon <span v-if="!editId && Number(form.quantity) > 0" class="req-star">*</span></label>
+                  <select v-model="form.branchId" class="select">
+                    <option value="">— Umumiy —</option>
+                    <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+                  </select>
+                </div>
+              </div>
+              <div v-if="editId" class="muted" style="font-size:12px; margin:-6px 0 12px">
                 Qoldiq kirim / hisobdan chiqarish / inventarizatsiya orqali o'zgaradi
               </div>
-            </template>
-          </div>
-          <div style="display:flex; gap:20px; padding-bottom:6px">
-            <div class="toggle-col" title="Mobil ilovada (online do'konda) ko'rsatilsinmi">
-              <span>Ilovada</span>
-              <label class="ios-toggle">
-                <input v-model="form.showOnline" type="checkbox" />
-                <span class="ios-slider"></span>
-              </label>
-            </div>
-            <div class="toggle-col">
-              <span>НДС</span>
-              <label class="ios-toggle">
-                <input v-model="form.isVat" type="checkbox" />
-                <span class="ios-slider"></span>
-              </label>
-            </div>
-            <div class="toggle-col">
-              <span>Маркировка</span>
-              <label class="ios-toggle">
-                <input v-model="form.isMarked" type="checkbox" />
-                <span class="ios-slider"></span>
-              </label>
-            </div>
-          </div>
-        </div>
 
-        <!-- Tannarx -->
-        <div class="field">
-          <label>Tannarx <span class="req-star">*</span></label>
-          <input v-model="form.costPrice" type="number" min="0" step="0.01" class="input" @input="recalcPrice" />
-        </div>
+              <div class="pm-title" style="margin-top:4px">Soliq va markirovka</div>
 
-        <!-- Sotish narxi | Ustama % -->
-        <div class="row">
-          <div class="field">
-            <label>Sotish narxi <span class="req-star">*</span></label>
-            <input v-model="form.price" type="number" min="0" step="0.01" class="input" required @input="recalcMarkup" />
-          </div>
-          <div class="field">
-            <label>Ustama % <span class="req-star">*</span></label>
-            <input v-model="form.markupPercent" type="number" step="any" class="input" @input="recalcPrice" />
+              <div class="pm-row2">
+                <div class="field">
+                  <label>MXIK (ИКПУ)</label>
+                  <input v-model="form.mxikCode" class="input" placeholder="Soliq uchun majburiy" />
+                </div>
+                <div class="field">
+                  <label>Komitent STIR / JSHSHIR</label>
+                  <input v-model="form.commitentTin" class="input" inputmode="numeric" maxlength="14"
+                         placeholder="9 yoki 14 raqam" />
+                </div>
+              </div>
+              <div v-if="form.mxikSuggestion && !mxikValid(form.mxikCode)" class="mxik-suggest" style="margin:-4px 0 12px">
+                ⚠️ Taxminiy MXIK taklifi: <strong>{{ form.mxikSuggestion }}</strong>
+                <span class="muted">({{ form.mxikSuggestionSource || 'avto' }})</span>
+                <button type="button" class="btn btn-sm" style="margin-left:8px" @click="form.mxikCode = form.mxikSuggestion">Qo'llash</button>
+                <div class="muted" style="margin-top:4px">Taklif chekka yozilmaydi — tasnif.soliq.uz da tekshirib, qo'llang va saqlang.</div>
+              </div>
+
+              <div class="pm-row2">
+                <div class="field">
+                  <label>Qadoq kodi (Код на упаковке)</label>
+                  <input v-model="form.packageCode" class="input" placeholder="Ixtiyoriy" />
+                </div>
+                <div class="field">
+                  <label>Markirovka kodi (Код маркировки)</label>
+                  <input v-model="form.markingCode" class="input" placeholder="Ixtiyoriy" />
+                </div>
+              </div>
+            </section>
           </div>
         </div>
 
-        <!-- MXIK -->
-        <div class="field">
-          <label>MXIK (ИКПУ)</label>
-          <input v-model="form.mxikCode" class="input" placeholder="Soliq uchun majburiy" />
-          <div v-if="form.mxikSuggestion && !mxikValid(form.mxikCode)" class="mxik-suggest">
-            ⚠️ Taxminiy MXIK taklifi: <strong>{{ form.mxikSuggestion }}</strong>
-            <span class="muted">({{ form.mxikSuggestionSource || 'avto' }})</span>
-            <button type="button" class="btn btn-sm" style="margin-left:8px" @click="form.mxikCode = form.mxikSuggestion">Qo'llash</button>
-            <div class="muted" style="margin-top:4px">Taklif chekka yozilmaydi — tasnif.soliq.uz da tekshirib, qo'llang va saqlang.</div>
-          </div>
+        <div class="pm-foot">
+          <button
+            v-if="!editId"
+            type="button"
+            class="btn btn-ghost"
+            :disabled="saving"
+            @click="closeModal"
+          >
+            Yopish
+          </button>
+          <button class="btn" :disabled="saving || uploading">
+            {{ saving ? 'Saqlanmoqda...' : (editId ? 'Saqlash' : 'Mahsulot qo\'shish') }}
+          </button>
         </div>
-
-        <!-- Qadoq kodi | Markirovka kodi -->
-        <div class="row">
-          <div class="field">
-            <label>Qadoq kodi (Код на упаковке)</label>
-            <input v-model="form.packageCode" class="input" placeholder="Ixtiyoriy" />
-          </div>
-          <div class="field">
-            <label>Markirovka kodi (Код маркировки)</label>
-            <input v-model="form.markingCode" class="input" placeholder="Ixtiyoriy" />
-          </div>
-        </div>
-
-        <!-- Komitent STIR (komissiya tovari) -->
-        <div class="field">
-          <label>Komitent STIR / JSHSHIR</label>
-          <input v-model="form.commitentTin" class="input" inputmode="numeric" maxlength="14"
-                 placeholder="Komissiya tovari bo'lsa: 9 yoki 14 raqam" />
-        </div>
-
-        <!-- Tarozida tortiladi -->
-        <div class="checkbox" style="margin-bottom:10px">
-          <input id="weighed" v-model="form.isWeighed" type="checkbox" />
-          <label for="weighed" style="margin:0">Tarozida tortiladi</label>
-        </div>
-        <div v-if="form.isWeighed" class="row" style="margin-bottom:12px">
-          <div class="field">
-            <label>Tara (kg)</label>
-            <input v-model="form.tare" type="number" min="0" step="0.001" class="input" />
-          </div>
-        </div>
-
-        <!-- Do'kon (faqat bir nechta do'kon bo'lsa ko'rinadi) -->
-        <div v-if="stores.length > 1" class="field">
-          <label>Do'kon <span v-if="!editId && Number(form.quantity) > 0" class="req-star">*</span></label>
-          <select v-model="form.branchId" class="select">
-            <option value="">— Umumiy (do'konga bog'lanmagan) —</option>
-            <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
-          </select>
-        </div>
-
-        <button class="btn" style="width:100%; margin-top:12px" :disabled="saving || uploading">
-          {{ saving ? 'Saqlanmoqda...' : (editId ? 'Saqlash' : 'Mahsulot qo\'shish') }}
-        </button>
-        <button
-          v-if="!editId"
-          type="button"
-          class="btn btn-ghost"
-          style="width:100%; margin-top:8px"
-          :disabled="saving"
-          @click="closeModal"
-        >
-          Yopish
-        </button>
       </form>
     </div>
   </div>
@@ -1453,5 +1465,29 @@ function printBarcode(product) {
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
+}
+
+/* Mahsulot modali — keng, 2 ustunli, scrollsiz */
+.pm-box { max-width: 1120px; }
+.pm-form { display: flex; flex-direction: column; max-height: calc(100vh - 140px); }
+.pm-body { padding: 18px 22px 6px; overflow-y: auto; }
+.pm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.pm-col + .pm-col { padding-left: 28px; border-left: 1px solid var(--border); }
+.pm-title { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-2); margin-bottom: 12px; }
+.pm-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pm-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.pm-inline { display: flex; align-items: center; gap: 16px; min-height: 42px; margin-bottom: 12px; }
+.pm-tara { display: flex; align-items: center; gap: 8px; }
+.pm-tara label { font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.pm-tara .input { width: 110px; }
+.pm-toggles { display: flex; gap: 24px; padding-top: 12px; border-top: 1px solid var(--border); }
+.pm-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--border); background: #fafbfc; }
+.pm-foot .btn { min-width: 160px; }
+@media (max-width: 900px) {
+  .pm-grid { grid-template-columns: 1fr; gap: 8px; }
+  .pm-col + .pm-col { padding-left: 0; border-left: none; padding-top: 12px; border-top: 1px solid var(--border); }
+  .pm-row3 { grid-template-columns: 1fr 1fr; }
+  .pm-row2 { grid-template-columns: 1fr; }
+  .pm-foot .btn { flex: 1; min-width: 0; }
 }
 </style>
