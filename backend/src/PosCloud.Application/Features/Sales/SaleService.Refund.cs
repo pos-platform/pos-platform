@@ -90,7 +90,7 @@ public partial class SaleService
             PaidAmount = 0,
             ChangeAmount = 0,
             RefundReason = string.IsNullOrWhiteSpace(request?.Reason) ? null : request!.Reason!.Trim(),
-            ReceiptNumber = await GenerateReceiptNumberAsync("RR", cancellationToken)
+            ReceiptNumber = await GenerateReceiptNumberAsync("RR", DateTime.UtcNow, cancellationToken)
         };
 
         for (var k = 0; k < plan.Lines.Count; k++)
@@ -166,6 +166,26 @@ public partial class SaleService
                     .Select(l => (l.Item.ProductId, l.Quantity)).ToList(),
                 StockMovementType.Refund, refund.Id, refund.ReceiptNumber,
                 cancellationToken);
+
+        // Nasiya savdosi qaytarilsa — mijozga pul berilmaydi, qarzi kamayadi (qaytarilgan summa bo'yicha).
+        if (refund.PaymentMethod == PaymentMethod.Debt && original.DebtorId is { } debtorId && !options.CashAsBonus
+            && refund.TotalAmount > 0)
+        {
+            var debtor = await _db.Debtors.FirstOrDefaultAsync(d => d.Id == debtorId, cancellationToken);
+            if (debtor is not null)
+            {
+                refund.DebtorId = debtor.Id;
+                debtor.Balance -= refund.TotalAmount;
+                _db.DebtorTransactions.Add(new DebtorTransaction
+                {
+                    DebtorId = debtor.Id,
+                    Type = DebtTransactionType.Payment,
+                    Amount = refund.TotalAmount,
+                    BalanceAfter = debtor.Balance,
+                    Comment = $"Qaytarish {refund.ReceiptNumber} (savdo {original.ReceiptNumber})"
+                });
+            }
+        }
 
         _db.Sales.Add(refund);
         await _db.SaveChangesAsync(cancellationToken);

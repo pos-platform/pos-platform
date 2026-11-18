@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosCloud.Application.Common;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.Stock;
@@ -51,6 +52,11 @@ public class StockTransferService : IStockTransferService
 
         if (request.FromBranchId == request.ToBranchId)
             throw new ValidationException("Manba va maqsad filial bir xil bo'lmasligi kerak.");
+
+        // Filialga biriktirilgan foydalanuvchi faqat o'z filialidan jo'nata oladi; ikkala filial shu tashkilotniki.
+        await _currentUser.ResolveForWriteAsync(_db, request.FromBranchId, cancellationToken);
+        if (!await _db.Branches.AnyAsync(b => b.Id == request.ToBranchId, cancellationToken))
+            throw new ValidationException("Qabul qiluvchi filial topilmadi.");
 
         if (request.Items.Count == 0)
             throw new ValidationException("Transferda kamida bitta tovar bo'lishi kerak.");

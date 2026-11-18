@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosCloud.Application.Common;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.CashMovements.Dtos;
@@ -25,6 +26,7 @@ public class CashMovementService : ICashMovementService
     {
         var query = _db.CashMovements.AsNoTracking().AsQueryable();
 
+        branchId = _currentUser.ForRead(branchId);
         if (branchId.HasValue)
             query = query.Where(m => m.BranchId == branchId);
         if (shiftId.HasValue)
@@ -56,8 +58,9 @@ public class CashMovementService : ICashMovementService
             Type = request.Type,
             Amount = request.Amount,
             Comment = request.Comment?.Trim(),
-            BranchId = request.BranchId,
-            CashShiftId = shiftId
+            BranchId = _currentUser.BranchId ?? request.BranchId,
+            CashShiftId = shiftId,
+            CreatedByUserId = cashierId
         };
 
         _db.CashMovements.Add(movement);

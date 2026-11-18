@@ -172,6 +172,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
 
@@ -580,6 +583,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
@@ -2460,6 +2466,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("StockShortage")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("TableId")
                         .HasColumnType("uuid");
 
@@ -2505,9 +2514,6 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OriginalSaleId");
 
-                    b.HasIndex("ReceiptNumber")
-                        .IsUnique();
-
                     b.HasIndex("Status");
 
                     b.HasIndex("TableId");
@@ -2517,6 +2523,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.HasIndex("Type");
 
                     b.HasIndex("WaiterId");
+
+                    b.HasIndex("OrganizationId", "ReceiptNumber")
+                        .IsUnique();
 
                     b.ToTable("Sales");
                 });

@@ -126,6 +126,12 @@ public class Sale : BaseEntity
     /// </summary>
     public decimal CardAmount { get; set; }
 
+    /// <summary>
+    /// Kassa savdosi qoldiq yetmasa ham qabul qilingan (oflayn sotilgan, sinxronda qoldiq kam edi) —
+    /// ombor manfiyga tushgan. Administrator kirim/inventarizatsiya bilan tekshirishi kerak.
+    /// </summary>
+    public bool StockShortage { get; set; }
+
     public ICollection<SaleItem> Items { get; set; } = new List<SaleItem>();
 
     /// <summary>Ushbu savdoning fiskal cheki (1:1).</summary>

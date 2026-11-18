@@ -13,4 +13,7 @@ public class Expense : BaseEntity
 
     public Guid? BranchId { get; set; }
     public Branch? Branch { get; set; }
+
+    /// <summary>Kim kiritgan.</summary>
+    public Guid? CreatedByUserId { get; set; }
 }

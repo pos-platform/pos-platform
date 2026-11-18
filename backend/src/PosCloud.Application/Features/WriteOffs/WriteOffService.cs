@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosCloud.Application.Common;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.Stock;
@@ -43,7 +44,8 @@ public class WriteOffService : IWriteOffService
         if (request.Items.Count == 0)
             throw new ValidationException("Hisobdan chiqarishda kamida bitta tovar bo'lishi kerak.");
 
-        var branchId = request.BranchId ?? _currentUser.BranchId
+        // Filialga biriktirilgan foydalanuvchi faqat o'z filiali tovarini chiqaradi.
+        var branchId = await _currentUser.ResolveForWriteAsync(_db, request.BranchId, cancellationToken)
             ?? throw new ValidationException("Hisobdan chiqarish uchun filial ko'rsatilmagan.");
 
         var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();

@@ -10,6 +10,9 @@ public class DashboardSummaryDto
 
     /// <summary>Karta kirim (karta sotuv − karta qaytarish).</summary>
     public decimal CardIncome { get; set; }
+    public decimal TransferIncome { get; set; }
+    /// <summary>Sof savdo = sotuvlar − qaytarishlar.</summary>
+    public decimal NetSales { get; set; }
 
     /// <summary>Qaytarishlar (Refund turidagi savdolar summasi).</summary>
     public decimal Returns { get; set; }

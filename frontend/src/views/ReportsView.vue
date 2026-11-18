@@ -1,4 +1,5 @@
 <script setup>
+import { localDateStr } from '../utils/date'
 import { ref, computed, watch, onMounted } from 'vue'
 import { reportsApi, downloadBlob } from '../api/catalog'
 import { errorMessage } from '../api/http'
@@ -6,7 +7,7 @@ import { useStoreFilterStore } from '../stores/storeFilter'
 
 const storeFilter = useStoreFilterStore()
 
-function todayStr() { return new Date().toISOString().slice(0, 10) }
+function todayStr() { return localDateStr() }
 
 const tab = ref('sales')  // 'sales' | 'stock'
 
@@ -145,8 +146,9 @@ onMounted(load)
     <!-- KPI qatorlar -->
     <div class="kpi-row">
       <div class="card kpi-card">
-        <div class="kpi-lbl">Jami tushum</div>
+        <div class="kpi-lbl">Sof tushum</div>
         <div class="kpi-val" style="color:var(--primary)">{{ fmt(salesReport.totalRevenue) }}</div>
+        <div class="muted" style="font-size:12px">sotuv {{ fmt(salesReport.grossRevenue) }} − qaytarish {{ fmt(salesReport.refundAmount) }}</div>
       </div>
       <div class="card kpi-card">
         <div class="kpi-lbl">Tannarx</div>
@@ -175,7 +177,9 @@ onMounted(load)
       <div style="display:flex; gap:24px; flex-wrap:wrap">
         <div><span class="muted">Naqd:</span> <strong>{{ fmt(salesReport.cashAmount) }}</strong></div>
         <div><span class="muted">Karta:</span> <strong>{{ fmt(salesReport.cardAmount) }}</strong></div>
+        <div><span class="muted">O'tkazma:</span> <strong>{{ fmt(salesReport.transferAmount) }}</strong></div>
         <div><span class="muted">Nasiya:</span> <strong>{{ fmt(salesReport.debtAmount) }}</strong></div>
+        <div class="muted" style="font-size:12px; align-self:center">(qaytarishlar ayirilgan; aralash to'lov naqd va kartaga bo'lingan)</div>
       </div>
     </div>
 

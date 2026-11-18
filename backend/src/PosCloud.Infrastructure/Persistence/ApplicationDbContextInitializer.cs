@@ -148,6 +148,7 @@ public class ApplicationDbContextInitializer
             ["sales."] = "Sotuvlar",
             ["reports."] = "Hisobotlar",
             ["cashbox."] = "Kassa",
+            ["cash."] = "Kassa",
             ["inventory."] = "Inventar",
             ["suppliers."] = "Yetkazib beruvchilar",
             ["customers."] = "Mijozlar",
@@ -177,9 +178,12 @@ public class ApplicationDbContextInitializer
             [Permissions.SalesView]       = "Sotuvlarni ko'rish",
             [Permissions.SalesCreate]     = "Sotuv yaratish",
             [Permissions.SalesRefund]     = "Qaytarish",
+            [Permissions.SalesPriceOverride] = "Narxni qo'lda o'zgartirish",
+            [Permissions.SalesDiscount]   = "Qo'lda chegirma berish",
             [Permissions.ReportsView]     = "Hisobotlarni ko'rish",
             [Permissions.CashboxView]     = "Kassani ko'rish",
             [Permissions.CashboxManage]   = "Kassani boshqarish",
+            [Permissions.CashMovements]   = "Kassa harakatlari (kirim/chiqim, inkassatsiya)",
             [Permissions.InventoryView]   = "Inventarni ko'rish",
             [Permissions.InventoryManage] = "Inventarni boshqarish",
             [Permissions.SuppliersView]   = "Yetkazib beruvchilarni ko'rish",
@@ -202,6 +206,54 @@ public class ApplicationDbContextInitializer
 
         await _db.SaveChangesAsync();
         _logger.LogInformation("{Count} ta yangi permission qo'shildi.", toAdd.Count);
+
+        await GrantNewPermissionsAsync(toAdd);
+    }
+
+    /// <summary>
+    /// Yangi qo'shilgan ruxsatni mavjud rollarga beradi — shu rolda unga yaqin eski ruxsat bo'lsa
+    /// (masalan mahsulotni tahrirlay oladigan rol narxni ham o'zgartira oladi). Aks holda yangi
+    /// tekshiruv kiritilgach mavjud foydalanuvchilar to'satdan amalni bajara olmay qolardi.
+    /// Faqat ruxsat birinchi marta qo'shilganda ishlaydi — keyin administrator o'zi boshqaradi.
+    /// </summary>
+    private async Task GrantNewPermissionsAsync(IReadOnlyCollection<string> added)
+    {
+        var sources = new Dictionary<string, string[]>
+        {
+            [Permissions.SalesPriceOverride] = [Permissions.ProductsEdit],
+            [Permissions.SalesDiscount] = [Permissions.ProductsEdit],
+            [Permissions.CashMovements] = [Permissions.CashboxManage, Permissions.ExpensesManage],
+        };
+
+        var permIds = await _db.Permissions.ToDictionaryAsync(p => p.Code, p => p.Id);
+        var granted = 0;
+        foreach (var code in added)
+        {
+            if (!sources.TryGetValue(code, out var from) || !permIds.TryGetValue(code, out var newId)) continue;
+            var fromIds = from.Where(permIds.ContainsKey).Select(c => permIds[c]).ToList();
+
+            var roleIds = await _db.RolePermissions.IgnoreQueryFilters()
+                .Where(rp => fromIds.Contains(rp.PermissionId))
+                .Select(rp => rp.RoleId)
+                .Distinct()
+                .ToListAsync();
+            var already = await _db.RolePermissions.IgnoreQueryFilters()
+                .Where(rp => rp.PermissionId == newId)
+                .Select(rp => rp.RoleId)
+                .ToListAsync();
+
+            foreach (var roleId in roleIds.Except(already))
+            {
+                _db.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = newId });
+                granted++;
+            }
+        }
+
+        if (granted > 0)
+        {
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Yangi ruxsatlar mavjud rollarga berildi: {Count} ta.", granted);
+        }
     }
 
     /// <summary>

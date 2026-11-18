@@ -64,7 +64,9 @@ const PERMISSION_CATEGORIES = [
     perms: [
       { code: 'sales.view',   label: "Ko'rish" },
       { code: 'sales.create', label: 'Sotuv qilish' },
-      { code: 'sales.refund', label: 'Qaytarish' }
+      { code: 'sales.refund', label: 'Qaytarish' },
+      { code: 'sales.discount', label: "Qo'lda chegirma berish" },
+      { code: 'sales.price_override', label: "Narxni qo'lda o'zgartirish" }
     ]
   },
   {
@@ -77,7 +79,8 @@ const PERMISSION_CATEGORIES = [
     label: 'Kassa',
     perms: [
       { code: 'cashbox.view',   label: "Ko'rish" },
-      { code: 'cashbox.manage', label: 'Boshqarish' }
+      { code: 'cashbox.manage', label: 'Boshqarish' },
+      { code: 'cash.movements', label: 'Kirim/chiqim, inkassatsiya' }
     ]
   },
   {

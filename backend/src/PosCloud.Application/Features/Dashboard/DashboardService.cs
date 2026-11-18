@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosCloud.Application.Common;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.Dashboard.Dtos;
 using PosCloud.Domain.Enums;
@@ -8,10 +9,12 @@ namespace PosCloud.Application.Features.Dashboard;
 public class DashboardService : IDashboardService
 {
     private readonly IApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
-    public DashboardService(IApplicationDbContext db)
+    public DashboardService(IApplicationDbContext db, ICurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<DashboardSummaryDto> GetSummaryAsync(
@@ -20,11 +23,14 @@ public class DashboardService : IDashboardService
         Guid? branchId,
         CancellationToken cancellationToken = default)
     {
-        var fromDate = DateTime.SpecifyKind((from ?? DateTime.UtcNow).Date, DateTimeKind.Utc);
-        var toExclusive = DateTime.SpecifyKind((to ?? DateTime.UtcNow).Date.AddDays(1), DateTimeKind.Utc);
+        // Sanalar — Toshkent kuni; filialga biriktirilgan foydalanuvchi faqat o'z filialini ko'radi.
+        var (fromDate, toExclusive) = BusinessTime.LocalRangeToUtc(
+            from ?? BusinessTime.TodayLocal, to ?? BusinessTime.TodayLocal);
+        branchId = _currentUser.ForRead(branchId);
 
         var sales = _db.Sales
-            .Where(s => s.CreatedAt >= fromDate && s.CreatedAt < toExclusive)
+            .Where(s => s.CreatedAt >= fromDate && s.CreatedAt < toExclusive
+                        && s.Status != SaleStatus.Pending && s.Status != SaleStatus.Cancelled)
             .Where(s => branchId == null || s.BranchId == branchId);
 
         var saleQ = sales.Where(s => s.Type == SaleType.Sale);
@@ -33,12 +39,20 @@ public class DashboardService : IDashboardService
         async Task<decimal> Sum(IQueryable<Domain.Entities.Sale> q) =>
             await q.SumAsync(s => (decimal?)s.TotalAmount, cancellationToken) ?? 0m;
 
+        // Naqd/karta qismi: aralash (Mixed) to'lovda karta = CardAmount, naqd = qolgani.
+        async Task<decimal> Cash(IQueryable<Domain.Entities.Sale> q) =>
+            await q.SumAsync(s => (decimal?)(s.PaymentMethod == PaymentMethod.Cash ? s.TotalAmount
+                : s.PaymentMethod == PaymentMethod.Mixed ? s.TotalAmount - s.CardAmount : 0m), cancellationToken) ?? 0m;
+        async Task<decimal> Card(IQueryable<Domain.Entities.Sale> q) =>
+            await q.SumAsync(s => (decimal?)(s.PaymentMethod == PaymentMethod.Card ? s.TotalAmount
+                : s.PaymentMethod == PaymentMethod.Mixed ? s.CardAmount : 0m), cancellationToken) ?? 0m;
+
         var totalSales = await Sum(saleQ);
-        var cashSales = await Sum(saleQ.Where(s => s.PaymentMethod == PaymentMethod.Cash));
-        var cardSales = await Sum(saleQ.Where(s => s.PaymentMethod == PaymentMethod.Card));
         var returns = await Sum(refundQ);
-        var cashRefunds = await Sum(refundQ.Where(s => s.PaymentMethod == PaymentMethod.Cash));
-        var cardRefunds = await Sum(refundQ.Where(s => s.PaymentMethod == PaymentMethod.Card));
+        var cashIncome = await Cash(saleQ) - await Cash(refundQ);
+        var cardIncome = await Card(saleQ) - await Card(refundQ);
+        var transferIncome = await Sum(saleQ.Where(s => s.PaymentMethod == PaymentMethod.Transfer))
+            - await Sum(refundQ.Where(s => s.PaymentMethod == PaymentMethod.Transfer));
         var salesCount = await saleQ.CountAsync(cancellationToken);
 
         var expenses = await _db.Expenses
@@ -52,8 +66,10 @@ public class DashboardService : IDashboardService
         return new DashboardSummaryDto
         {
             TotalSales = totalSales,
-            CashIncome = cashSales - cashRefunds,
-            CardIncome = cardSales - cardRefunds,
+            NetSales = totalSales - returns,
+            CashIncome = cashIncome,
+            CardIncome = cardIncome,
+            TransferIncome = transferIncome,
             Returns = returns,
             Debts = debts,
             Expenses = expenses,

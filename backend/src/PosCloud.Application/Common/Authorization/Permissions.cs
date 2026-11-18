@@ -32,6 +32,10 @@ public static class Permissions
     public const string SalesView   = "sales.view";
     public const string SalesCreate = "sales.create";
     public const string SalesRefund = "sales.refund";
+    /// <summary>Kassada narxni qo'lda o'zgartirish.</summary>
+    public const string SalesPriceOverride = "sales.price_override";
+    /// <summary>Kassada qo'lda chegirma berish.</summary>
+    public const string SalesDiscount = "sales.discount";
 
     // Hisobotlar
     public const string ReportsView = "reports.view";
@@ -39,6 +43,8 @@ public static class Permissions
     // Kassa
     public const string CashboxView   = "cashbox.view";
     public const string CashboxManage = "cashbox.manage";
+    /// <summary>Kassa harakatlari: naqd kirim/chiqim, inkassatsiya (yaratish va o'chirish).</summary>
+    public const string CashMovements = "cash.movements";
 
     // Ombor / inventar
     public const string InventoryView   = "inventory.view";
@@ -74,9 +80,9 @@ public static class Permissions
         BranchesView,
         ProductsView, ProductsCreate, ProductsEdit,
         CategoriesView, CategoriesManage,
-        SalesView, SalesCreate, SalesRefund,
+        SalesView, SalesCreate, SalesRefund, SalesPriceOverride, SalesDiscount,
         ReportsView,
-        CashboxView,
+        CashboxView, CashMovements,
         InventoryView, InventoryManage,
         SuppliersView, SuppliersManage,
         CustomersView, CustomersManage,
@@ -88,7 +94,7 @@ public static class Permissions
     [
         ProductsView,
         CategoriesView,
-        SalesView, SalesCreate,
+        SalesView, SalesCreate, SalesRefund,
         CashboxView,
         CustomersView, CustomersManage,
         DebtorsView,
@@ -101,9 +107,9 @@ public static class Permissions
         BranchesView, BranchesCreate, BranchesEdit, BranchesDelete,
         ProductsView, ProductsCreate, ProductsEdit, ProductsDelete,
         CategoriesView, CategoriesManage,
-        SalesView, SalesCreate, SalesRefund,
+        SalesView, SalesCreate, SalesRefund, SalesPriceOverride, SalesDiscount,
         ReportsView,
-        CashboxView, CashboxManage,
+        CashboxView, CashboxManage, CashMovements,
         InventoryView, InventoryManage,
         SuppliersView, SuppliersManage,
         CustomersView, CustomersManage,

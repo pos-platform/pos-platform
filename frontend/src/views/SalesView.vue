@@ -768,7 +768,8 @@ function openReceiptWindow(sale) {
       </thead>
       <tbody>
         <tr v-for="s in shownSales" :key="s.id">
-          <td><a href="#" class="rcpt-link" title="Chek tafsiloti" @click.prevent="openDetail(s)"><strong>{{ s.receiptNumber }}</strong></a></td>
+          <td><a href="#" class="rcpt-link" title="Chek tafsiloti" @click.prevent="openDetail(s)"><strong>{{ s.receiptNumber }}</strong></a>
+            <span v-if="s.stockShortage" class="pill pill-amber" style="margin-left:6px" title="Kassa savdosi qoldiq yetmasa ham qabul qilindi — ombor manfiyga tushgan, kirim yoki inventarizatsiyani tekshiring">qoldiq yetmagan</span></td>
           <td>
             <span v-if="s.type === 'Refund'" class="pill pill-red">Qaytarish</span>
             <span v-else-if="s.status === 'Refunded'" class="pill pill-amber">Qaytarilgan</span>

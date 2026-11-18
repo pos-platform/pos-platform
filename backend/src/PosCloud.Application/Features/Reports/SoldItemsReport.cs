@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosCloud.Application.Common;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Features.Loyalty;
 using PosCloud.Application.Features.Reports.Dtos;
@@ -67,12 +68,12 @@ public partial class ReportService
         var query = _db.SaleItems.AsNoTracking()
             .Where(i => i.Sale!.Status != SaleStatus.Pending && i.Sale.Status != SaleStatus.Cancelled);
 
-        // Sana chegaralari UTC kalendar kuni; "to" kuni ham kiradi. Standart — bugun.
-        var fromUtc = DateTime.SpecifyKind((q.From ?? DateTime.UtcNow).Date, DateTimeKind.Utc);
-        var toUtc = DateTime.SpecifyKind((q.To ?? q.From ?? DateTime.UtcNow).Date.AddDays(1), DateTimeKind.Utc);
+        // Sana chegaralari — Toshkent kuni; "to" kuni ham kiradi. Standart — bugun.
+        var (fromUtc, toUtc) = BusinessTime.LocalRangeToUtc(
+            q.From ?? BusinessTime.TodayLocal, q.To ?? q.From ?? BusinessTime.TodayLocal);
         query = query.Where(i => i.Sale!.CreatedAt >= fromUtc && i.Sale.CreatedAt < toUtc);
 
-        if (q.BranchId is { } branchId) query = query.Where(i => i.Sale!.BranchId == branchId);
+        if (_currentUser.ForRead(q.BranchId) is { } branchId) query = query.Where(i => i.Sale!.BranchId == branchId);
         if (q.ProductId is { } productId) query = query.Where(i => i.ProductId == productId);
         if (q.CategoryId is { } categoryId) query = query.Where(i => i.Product!.CategoryId == categoryId);
         if (q.CashierId is { } cashierId) query = query.Where(i => i.Sale!.CashierId == cashierId);

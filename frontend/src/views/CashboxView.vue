@@ -1,4 +1,5 @@
 <script setup>
+import { localDateStr } from '../utils/date'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storesApi, shiftsApi, salesApi } from '../api/catalog'
@@ -18,12 +19,12 @@ const err = ref('')
 
 function fmt(n) { return Number(n || 0).toLocaleString() }
 function fmtDate(d) { return d ? new Date(d).toLocaleString('uz-UZ') : '—' }
-function today() { return new Date().toISOString().slice(0, 10) }
+function today() { return localDateStr() }
 
 const todaySales = computed(() => {
   const t = today()
   return sales.value.filter(
-    (s) => s.type !== 'Refund' && s.createdAt && s.createdAt.slice(0, 10) === t
+    (s) => s.type !== 'Refund' && s.createdAt && localDateStr(new Date(s.createdAt)) === t
   )
 })
 
@@ -32,8 +33,11 @@ const todayStats = computed(() => {
   return {
     count: list.length,
     total: list.reduce((s, x) => s + Number(x.totalAmount || 0), 0),
-    cash: list.filter((x) => x.paymentMethod === 'Cash').reduce((s, x) => s + Number(x.totalAmount || 0), 0),
-    card: list.filter((x) => x.paymentMethod === 'Card').reduce((s, x) => s + Number(x.totalAmount || 0), 0),
+    // Aralash to'lov: karta qismi — cardAmount, naqd — qolgani.
+    cash: list.reduce((s, x) => s + (x.paymentMethod === 'Cash' ? Number(x.totalAmount || 0)
+      : x.paymentMethod === 'Mixed' ? Number(x.totalAmount || 0) - Number(x.cardAmount || 0) : 0), 0),
+    card: list.reduce((s, x) => s + (x.paymentMethod === 'Card' ? Number(x.totalAmount || 0)
+      : x.paymentMethod === 'Mixed' ? Number(x.cardAmount || 0) : 0), 0),
     transfer: list.filter((x) => x.paymentMethod === 'Transfer').reduce((s, x) => s + Number(x.totalAmount || 0), 0),
     debt: list.filter((x) => x.paymentMethod === 'Debt').reduce((s, x) => s + Number(x.totalAmount || 0), 0)
   }

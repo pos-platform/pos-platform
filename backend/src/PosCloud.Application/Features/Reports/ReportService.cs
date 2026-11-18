@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosCloud.Application.Common;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.Reports.Dtos;
 using PosCloud.Domain.Enums;
@@ -9,11 +10,13 @@ public partial class ReportService : IReportService
 {
     private readonly IApplicationDbContext _db;
     private readonly IReportExcelService _excel;
+    private readonly ICurrentUser _currentUser;
 
-    public ReportService(IApplicationDbContext db, IReportExcelService excel)
+    public ReportService(IApplicationDbContext db, IReportExcelService excel, ICurrentUser currentUser)
     {
         _db    = db;
         _excel = excel;
+        _currentUser = currentUser;
     }
 
     // ─── Savdolar hisoboti ────────────────────────────────────────────────────
@@ -21,38 +24,57 @@ public partial class ReportService : IReportService
     public async Task<SalesReportDto> GetSalesReportAsync(
         DateTime from, DateTime to, Guid? branchId, CancellationToken ct = default)
     {
-        var fromUtc = DateTime.SpecifyKind(from.Date, DateTimeKind.Utc);
-        var toUtc   = DateTime.SpecifyKind(to.Date.AddDays(1), DateTimeKind.Utc);
+        // Sanalar — Toshkent kuni (00:00–05:00 savdolari oldingi kunga tushmasin).
+        var (fromUtc, toUtc) = BusinessTime.LocalRangeToUtc(from, to);
+        branchId = _currentUser.ForRead(branchId);
 
+        // Pending/Cancelled (yakunlanmagan/bekor) savdolar hisobotga kirmaydi.
         var sales = await _db.Sales
             .AsNoTracking()
-            .Where(s => s.CreatedAt >= fromUtc && s.CreatedAt < toUtc)
+            .Where(s => s.CreatedAt >= fromUtc && s.CreatedAt < toUtc
+                        && s.Status != SaleStatus.Pending && s.Status != SaleStatus.Cancelled)
             .Where(s => branchId == null || s.BranchId == branchId)
-            .Select(s => new { s.CreatedAt, s.Type, s.Status, s.PaymentMethod, s.TotalAmount })
+            .Select(s => new { s.CreatedAt, s.Type, s.PaymentMethod, s.TotalAmount, s.CardAmount })
             .ToListAsync(ct);
 
+        // Qaytarish qatorlari manfiy ishora bilan — tushum, tannarx va foyda SOF (net) hisoblanadi
+        // (sotilgan tovarlar logi bilan bir xil).
         var items = await _db.SaleItems
             .AsNoTracking()
             .Where(i => i.Sale!.CreatedAt >= fromUtc && i.Sale.CreatedAt < toUtc
-                        && i.Sale.Type == SaleType.Sale
+                        && i.Sale.Status != SaleStatus.Pending && i.Sale.Status != SaleStatus.Cancelled
                         && (branchId == null || i.Sale.BranchId == branchId))
-            .Select(i => new { i.ProductName, i.Quantity, i.LineTotal, i.CostPrice, i.Sale!.CreatedAt })
+            .Select(i => new
+            {
+                i.ProductName, i.Quantity, i.LineTotal, i.CostPrice, i.Sale!.CreatedAt,
+                Sign = i.Sale.Type == SaleType.Refund ? -1m : 1m
+            })
             .ToListAsync(ct);
 
-        var revenue      = sales.Where(s => s.Type == SaleType.Sale).Sum(s => s.TotalAmount);
+        static decimal Signed(SaleType type, decimal amount) => type == SaleType.Refund ? -amount : amount;
+
+        var grossRevenue = sales.Where(s => s.Type == SaleType.Sale).Sum(s => s.TotalAmount);
         var refundAmount = sales.Where(s => s.Type == SaleType.Refund).Sum(s => s.TotalAmount);
-        var cost         = items.Sum(i => i.CostPrice * i.Quantity);
+        var revenue      = grossRevenue - refundAmount;
+        var cost         = items.Sum(i => i.Sign * i.CostPrice * i.Quantity);
         var profit       = revenue - cost;
 
+        // To'lov turlari bo'yicha (sof, qaytarishlar ayirilgan). Aralash to'lov: karta qismi — CardAmount,
+        // naqd qismi — qolgani.
+        decimal CashPart(PaymentMethod m, decimal total, decimal card) =>
+            m == PaymentMethod.Cash ? total : m == PaymentMethod.Mixed ? total - card : 0m;
+        decimal CardPart(PaymentMethod m, decimal total, decimal card) =>
+            m == PaymentMethod.Card ? total : m == PaymentMethod.Mixed ? card : 0m;
+
         var days = items
-            .GroupBy(i => i.CreatedAt.Date)
+            .GroupBy(i => BusinessTime.LocalDate(i.CreatedAt))
             .Select(g => new SalesReportDayDto
             {
                 Date    = g.Key,
-                Count   = sales.Count(s => s.CreatedAt.Date == g.Key && s.Type == SaleType.Sale),
-                Revenue = g.Sum(i => i.LineTotal),
-                Cost    = g.Sum(i => i.CostPrice * i.Quantity),
-                Profit  = g.Sum(i => i.LineTotal) - g.Sum(i => i.CostPrice * i.Quantity)
+                Count   = sales.Count(s => BusinessTime.LocalDate(s.CreatedAt) == g.Key && s.Type == SaleType.Sale),
+                Revenue = g.Sum(i => i.Sign * i.LineTotal),
+                Cost    = Math.Round(g.Sum(i => i.Sign * i.CostPrice * i.Quantity), 2),
+                Profit  = Math.Round(g.Sum(i => i.Sign * (i.LineTotal - i.CostPrice * i.Quantity)), 2)
             })
             .OrderBy(d => d.Date)
             .ToList();
@@ -62,10 +84,10 @@ public partial class ReportService : IReportService
             .Select(g => new SalesReportProductDto
             {
                 ProductName = g.Key,
-                Quantity    = g.Sum(i => i.Quantity),
-                Revenue     = g.Sum(i => i.LineTotal),
-                Cost        = g.Sum(i => i.CostPrice * i.Quantity),
-                Profit      = g.Sum(i => i.LineTotal) - g.Sum(i => i.CostPrice * i.Quantity)
+                Quantity    = g.Sum(i => i.Sign * i.Quantity),
+                Revenue     = g.Sum(i => i.Sign * i.LineTotal),
+                Cost        = Math.Round(g.Sum(i => i.Sign * i.CostPrice * i.Quantity), 2),
+                Profit      = Math.Round(g.Sum(i => i.Sign * (i.LineTotal - i.CostPrice * i.Quantity)), 2)
             })
             .OrderByDescending(p => p.Revenue)
             .Take(20)
@@ -73,19 +95,21 @@ public partial class ReportService : IReportService
 
         return new SalesReportDto
         {
-            From          = from,
-            To            = to,
-            TotalCount    = sales.Count(s => s.Type == SaleType.Sale),
-            TotalRevenue  = revenue,
-            TotalCost     = Math.Round(cost, 2),
-            TotalProfit   = Math.Round(profit, 2),
-            MarginPercent = revenue > 0 ? Math.Round(profit / revenue * 100, 2) : 0,
-            CashAmount    = sales.Where(s => s.Type == SaleType.Sale && s.PaymentMethod == PaymentMethod.Cash).Sum(s => s.TotalAmount),
-            CardAmount    = sales.Where(s => s.Type == SaleType.Sale && s.PaymentMethod == PaymentMethod.Card).Sum(s => s.TotalAmount),
-            DebtAmount    = sales.Where(s => s.Type == SaleType.Sale && s.PaymentMethod == PaymentMethod.Debt).Sum(s => s.TotalAmount),
-            RefundAmount  = refundAmount,
-            Days          = days,
-            TopProducts   = topProducts
+            From           = from,
+            To             = to,
+            TotalCount     = sales.Count(s => s.Type == SaleType.Sale),
+            GrossRevenue   = grossRevenue,
+            TotalRevenue   = revenue,
+            TotalCost      = Math.Round(cost, 2),
+            TotalProfit    = Math.Round(profit, 2),
+            MarginPercent  = revenue > 0 ? Math.Round(profit / revenue * 100, 2) : 0,
+            CashAmount     = sales.Sum(s => Signed(s.Type, CashPart(s.PaymentMethod, s.TotalAmount, s.CardAmount))),
+            CardAmount     = sales.Sum(s => Signed(s.Type, CardPart(s.PaymentMethod, s.TotalAmount, s.CardAmount))),
+            DebtAmount     = sales.Where(s => s.PaymentMethod == PaymentMethod.Debt).Sum(s => Signed(s.Type, s.TotalAmount)),
+            TransferAmount = sales.Where(s => s.PaymentMethod == PaymentMethod.Transfer).Sum(s => Signed(s.Type, s.TotalAmount)),
+            RefundAmount   = refundAmount,
+            Days           = days,
+            TopProducts    = topProducts
         };
     }
 
@@ -100,6 +124,7 @@ public partial class ReportService : IReportService
 
     public async Task<StockReportDto> GetStockReportAsync(Guid? branchId = null, CancellationToken ct = default)
     {
+        branchId = _currentUser.ForRead(branchId);
         IQueryable<Domain.Entities.Product> query = _db.Products.Where(p => p.ProductType != Domain.Enums.ProductType.Service)
             .AsNoTracking()
             .Include(p => p.Category)

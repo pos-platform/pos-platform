@@ -12,6 +12,7 @@ public class CashMovementDto
     public string? Comment { get; set; }
     public Guid? BranchId { get; set; }
     public Guid? CashShiftId { get; set; }
+    public Guid? CreatedByUserId { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public static CashMovementDto FromEntity(CashMovement m) => new()
@@ -22,6 +23,7 @@ public class CashMovementDto
         Comment = m.Comment,
         BranchId = m.BranchId,
         CashShiftId = m.CashShiftId,
+        CreatedByUserId = m.CreatedByUserId,
         CreatedAt = m.CreatedAt
     };
 }

@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using PosCloud.Api.Authorization;
+using PosCloud.Application.Common.Authorization;
+using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Features.Sales;
 using PosCloud.Application.Features.Sales.Dtos;
 
@@ -48,12 +51,19 @@ public class SalesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SaleDto>> Create(CreateSaleRequest request, CancellationToken cancellationToken)
     {
+        // Narxni o'zgartirish va qo'lda chegirma — alohida ruxsat bilan (kassir o'zboshimchalik bilan arzonlashtirmasin).
+        if (request.Items.Any(i => i.UnitPriceOverride is not null) && !HasPermission(Permissions.SalesPriceOverride))
+            throw new ValidationException("Narxni qo'lda o'zgartirishga ruxsatingiz yo'q.");
+        if (request.Items.Any(i => i.DiscountAmount > 0) && !HasPermission(Permissions.SalesDiscount))
+            throw new ValidationException("Qo'lda chegirma berishga ruxsatingiz yo'q.");
+
         var sale = await _saleService.CreateWithRetryAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = sale.Id }, sale);
     }
 
     /// <summary>Savdoni qaytaradi (refund) — fiskal return cheki yaratiladi.</summary>
     [HttpPost("{id:guid}/refund")]
+    [HasPermission(Permissions.SalesRefund)]
     [ProducesResponseType(typeof(SaleDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -69,8 +79,12 @@ public class SalesController : ControllerBase
 
     /// <summary>Qaytarishdan oldin ko'rish (xuddi shu body): summa, ayiriladigan keshbek, ushlab qolinadigan va beriladigan pul.</summary>
     [HttpPost("{id:guid}/refund-preview")]
+    [HasPermission(Permissions.SalesRefund)]
     public async Task<ActionResult<RefundPreviewDto>> RefundPreview(Guid id,
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefundRequest? request,
         CancellationToken cancellationToken) =>
         Ok(await _saleService.PreviewRefundAsync(id, request, cancellationToken));
+
+    private bool HasPermission(string permission) =>
+        User.IsInRole("SuperAdmin") || User.FindAll("perm").Any(c => c.Value == permission);
 }

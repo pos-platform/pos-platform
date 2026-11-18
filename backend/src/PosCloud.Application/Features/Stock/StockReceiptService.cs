@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PosCloud.Application.Common;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
 using PosCloud.Application.Features.Stock.Dtos;
@@ -60,7 +61,8 @@ public class StockReceiptService : IStockReceiptService
         if (request.Items.Count == 0)
             throw new ValidationException("Kirimda kamida bitta tovar bo'lishi kerak.");
 
-        var branchId = request.BranchId ?? _currentUser.BranchId
+        // Filialga biriktirilgan foydalanuvchi faqat o'z filialiga kirim qiladi; filial shu tashkilotniki bo'lishi shart.
+        var branchId = await _currentUser.ResolveForWriteAsync(_db, request.BranchId, cancellationToken)
             ?? throw new ValidationException("Kirim uchun filial ko'rsatilmagan.");
 
         var supplier = await _db.Suppliers.FirstOrDefaultAsync(s => s.Id == request.SupplierId, cancellationToken)

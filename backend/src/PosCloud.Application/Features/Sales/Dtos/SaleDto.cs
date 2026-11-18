@@ -34,6 +34,9 @@ public class SaleDto
 
     /// <summary>Aralash to'lovda karta qismi (naqd = TotalAmount − CardAmount); boshqalarda 0.</summary>
     public decimal CardAmount { get; set; }
+
+    /// <summary>Qoldiq yetmasa ham qabul qilingan kassa savdosi (ombor manfiyga tushgan).</summary>
+    public bool StockShortage { get; set; }
     public Guid? CustomerId { get; set; }
     public decimal LoyaltyPointsEarned { get; set; }
 
@@ -80,6 +83,7 @@ public class SaleDto
         PaidAmount = s.PaidAmount,
         ChangeAmount = s.ChangeAmount,
         CardAmount = s.CardAmount,
+        StockShortage = s.StockShortage,
         CustomerId = s.CustomerId,
         LoyaltyPointsEarned = s.LoyaltyPointsEarned,
         LoyaltyPointsRedeemed = s.LoyaltyPointsRedeemed,

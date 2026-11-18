@@ -1,4 +1,5 @@
 <script setup>
+import { localDateStr } from '../utils/date'
 import { ref, reactive, watch, onMounted, onUnmounted } from 'vue'
 import { dashboardApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
@@ -7,7 +8,7 @@ import { useStoreFilterStore } from '../stores/storeFilter'
 const storeFilter = useStoreFilterStore()
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10)
+  return localDateStr()
 }
 
 const loading = ref(false)
@@ -25,7 +26,9 @@ function buildCards(s) {
     { label: 'Jami sotuv', value: s.totalSales, icon: '🧾', color: 'var(--primary)' },
     { label: 'Naqd kirim', value: s.cashIncome, icon: '💵', color: 'var(--success)' },
     { label: 'Karta kirim', value: s.cardIncome, icon: '💳', color: 'var(--primary)' },
+    { label: "O'tkazma", value: s.transferIncome, icon: '🔁', color: 'var(--primary)' },
     { label: 'Qaytarishlar', value: s.returns, icon: '↩️', color: 'var(--warning)' },
+    { label: 'Sof sotuv', value: s.netSales, icon: '📈', color: 'var(--success)' },
     { label: 'Qarzlar', value: s.debts, icon: '📕', color: 'var(--danger)' },
     { label: 'Xarajatlar', value: s.expenses, icon: '📉', color: 'var(--danger)' }
   ]

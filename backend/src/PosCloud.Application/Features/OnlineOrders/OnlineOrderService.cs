@@ -405,6 +405,7 @@ public class OnlineOrderService : IOnlineOrderService
                 var shiftId = await OpenShiftIdAsync(ct);
                 _db.CashMovements.Add(new CashMovement
                 {
+                    CreatedByUserId = _currentUser.UserId,
                     OrganizationId = order.OrganizationId,
                     Type = CashMovementType.Expense,
                     Amount = expectedTotal,
@@ -542,6 +543,7 @@ public class OnlineOrderService : IOnlineOrderService
         var amount = order.CourierCashCollected ?? order.TotalAmount;
         _db.CashMovements.Add(new CashMovement
         {
+            CreatedByUserId = _currentUser.UserId,
             OrganizationId = order.OrganizationId,
             Type = CashMovementType.Income,
             Amount = amount,
@@ -611,6 +613,7 @@ public class OnlineOrderService : IOnlineOrderService
         {
             _db.CashMovements.Add(new CashMovement
             {
+                CreatedByUserId = _currentUser.UserId,
                 OrganizationId = order.OrganizationId,
                 Type = CashMovementType.Income,
                 Amount = order.Sale?.TotalAmount ?? order.TotalAmount,

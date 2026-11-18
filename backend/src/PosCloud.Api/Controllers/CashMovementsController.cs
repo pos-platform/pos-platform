@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PosCloud.Api.Authorization;
+using PosCloud.Application.Common.Authorization;
 using PosCloud.Application.Features.CashMovements;
 using PosCloud.Application.Features.CashMovements.Dtos;
 
@@ -23,11 +25,12 @@ public class CashMovementsController : ControllerBase
         => Ok(await _service.GetAllAsync(branchId, shiftId, cancellationToken));
 
     [HttpPost]
+    [HasPermission(Permissions.CashMovements)]
     public async Task<ActionResult<CashMovementDto>> Create(CreateCashMovementRequest request, CancellationToken cancellationToken)
         => Ok(await _service.CreateAsync(request, cancellationToken));
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [HasPermission(Permissions.CashMovements)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await _service.DeleteAsync(id, cancellationToken);

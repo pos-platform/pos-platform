@@ -1,4 +1,5 @@
 <script setup>
+import { localDateStr } from '../utils/date'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { loyaltyApi, categoriesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
@@ -59,7 +60,7 @@ const availableCategories = computed(() => {
 function daysAgo(n) {
   const d = new Date()
   d.setDate(d.getDate() - n)
-  return d.toISOString().slice(0, 10)
+  return localDateStr(d)
 }
 const period = reactive({ from: daysAgo(29), to: daysAgo(0) })
 const report = ref(null)

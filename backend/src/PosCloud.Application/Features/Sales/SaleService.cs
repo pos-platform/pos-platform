@@ -20,12 +20,15 @@ public partial class SaleService : ISaleService
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
     private readonly IFiscalReceiptService _fiscal;
+    private readonly ISystemErrorRecorder _errors;
 
-    public SaleService(IApplicationDbContext db, ICurrentUser currentUser, IFiscalReceiptService fiscal)
+    public SaleService(IApplicationDbContext db, ICurrentUser currentUser, IFiscalReceiptService fiscal,
+        ISystemErrorRecorder errors)
     {
         _db = db;
         _currentUser = currentUser;
         _fiscal = fiscal;
+        _errors = errors;
     }
 
     /// <summary>
@@ -57,19 +60,21 @@ public partial class SaleService : ISaleService
             .Include(s => s.Cashier) // kassir bo'yicha hisobot uchun (kim sotgani)
             .AsQueryable();
 
+        // Filialga biriktirilgan foydalanuvchi faqat o'z filiali savdolarini ko'radi.
+        branchId = _currentUser.ForRead(branchId);
         if (branchId.HasValue)
             query = query.Where(s => s.BranchId == branchId);
 
-        // Sana chegaralari UTC kalendar kuni sifatida (ReportService bilan bir xil konvensiya).
+        // Sana chegaralari — Toshkent kuni: [from, to) (to — kirmaydigan kun).
         if (from.HasValue)
         {
-            var fromUtc = DateTime.SpecifyKind(from.Value.Date, DateTimeKind.Utc);
+            var fromUtc = BusinessTime.LocalDayStartUtc(from.Value);
             query = query.Where(s => s.CreatedAt >= fromUtc);
         }
 
         if (to.HasValue)
         {
-            var toUtc = DateTime.SpecifyKind(to.Value.Date, DateTimeKind.Utc);
+            var toUtc = BusinessTime.LocalDayStartUtc(to.Value);
             query = query.Where(s => s.CreatedAt < toUtc);
         }
 
@@ -104,10 +109,15 @@ public partial class SaleService : ISaleService
             {
                 return await CreateAsync(request, cancellationToken);
             }
-            catch (DbUpdateConcurrencyException) when (attempt < 3)
+            catch (DbUpdateConcurrencyException) when (attempt < 5)
             {
                 // Boshqa kassa shu tovar qoldig'ini ayni paytda o'zgartirdi — hech narsa saqlanmagan,
                 // eskirgan entitylarni unutib, yangi qoldiq bilan qaytadan hisoblaymiz.
+                _db.ClearChangeTracker();
+            }
+            catch (DbUpdateException ex) when (attempt < 5 && IsReceiptNumberConflict(ex))
+            {
+                // Parallel savdo xuddi shu chek raqamini oldi — keyingi raqam bilan qaytadan.
                 _db.ClearChangeTracker();
             }
         }
@@ -157,8 +167,21 @@ public partial class SaleService : ISaleService
             .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
-        var saleBranchId = request.BranchId ?? _currentUser.BranchId
+        // Kassir faqat o'z filialiga sota oladi; filial shu tashkilotniki bo'lishi shart.
+        var saleBranchId = await _currentUser.ResolveForWriteAsync(_db, request.BranchId, cancellationToken)
             ?? throw new ValidationException("Savdo uchun filial aniqlanmadi.");
+
+        // Savdo vaqti: oflayn navbatdan kelgan savdo — kassada yakunlangan haqiqiy vaqt (oqilona chegarada),
+        // aks holda server vaqti. Aksiyalar ham shu vaqt bo'yicha qo'llanadi (kassa ham shunday hisoblagan).
+        var nowUtc = DateTime.UtcNow;
+        var saleTimeUtc = ResolveSaleTime(request.ClientCreatedAt, nowUtc);
+
+        // Kassadan kelgan savdo (ClientSaleId, online buyurtma emas) qoldiq yetmasa ham qabul qilinadi:
+        // tovar mijozga berilgan, pul olingan — rad etsak savdo umuman yo'qoladi. Qoldiq manfiyga tushadi,
+        // savdo belgilanadi va administratorga ogohlantirish yoziladi.
+        var allowShortage = clientSaleId is not null
+            && !clientSaleId.StartsWith(LoyaltyRules.OnlineSalePrefix, StringComparison.Ordinal);
+        var shortages = new List<string>();
 
         var branchStocks = await _db.BranchStocks
             .Where(s => s.BranchId == saleBranchId && productIds.Contains(s.ProductId))
@@ -167,10 +190,9 @@ public partial class SaleService : ISaleService
         // FIFO tannarx qatlamlari — shu filialning qoldig'i bor kirim partiyalari, eng eski birinchi.
         var layersByProduct = await LoadCostLayersAsync(saleBranchId, productIds, cancellationToken);
 
-        // Amaldagi aksiyalar — chegirma server tomonida hisoblanadi (mijozga ishonmaymiz).
-        var nowUtc = DateTime.UtcNow;
+        // Amaldagi aksiyalar (savdo vaqtida) — chegirma server tomonida hisoblanadi.
         var activePromotions = await _db.Promotions
-            .Where(p => p.IsActive && p.StartDate <= nowUtc && p.EndDate >= nowUtc)
+            .Where(p => p.IsActive && p.StartDate <= saleTimeUtc && p.EndDate >= saleTimeUtc)
             .ToListAsync(cancellationToken);
 
         // Mijoz (sodiqlik dasturi, ixtiyoriy).
@@ -183,7 +205,8 @@ public partial class SaleService : ISaleService
         var sale = new Sale
         {
             ClientSaleId = clientSaleId,
-            BranchId = request.BranchId ?? _currentUser.BranchId,
+            BranchId = saleBranchId,
+            CreatedAt = saleTimeUtc,
             CashierId = cashierId,
             CashShiftId = shift.Id,
             TerminalId = ResolveTerminalId(request.TerminalId),
@@ -253,8 +276,14 @@ public partial class SaleService : ISaleService
             decimal costPrice;
             if (product.ProductType == ProductType.Good)
             {
-                if (!branchStocks.TryGetValue(product.Id, out var stock) || stock.Quantity < line.Quantity)
-                    throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {stock?.Quantity ?? 0}).");
+                var available = branchStocks.TryGetValue(product.Id, out var existingStock) ? existingStock.Quantity : 0m;
+                if (available < line.Quantity)
+                {
+                    if (!allowShortage)
+                        throw new ValidationException($"'{product.Name}' qoldig'i yetarli emas (mavjud: {available}).");
+                    shortages.Add($"{product.Name}: sotildi {line.Quantity}, qoldiq {available}");
+                }
+                var stock = StockLedger.GetOrCreate(_db, branchStocks, saleBranchId, product.Id);
 
                 layersByProduct.TryGetValue(product.Id, out var prodLayers);
                 costPrice = ConsumeFifoCost(prodLayers, line.Quantity, product.CostPrice);
@@ -352,7 +381,8 @@ public partial class SaleService : ISaleService
         }
         ApplyCardAmount(sale, request.PaymentMethod, request.CardAmount);
 
-        sale.ReceiptNumber = await GenerateReceiptNumberAsync("R", cancellationToken);
+        sale.StockShortage = shortages.Count > 0;
+        sale.ReceiptNumber = await GenerateReceiptNumberAsync("R", saleTimeUtc, cancellationToken);
         foreach (var m in stockMovements) m.DocumentNumber = sale.ReceiptNumber;
 
         sale.Receipt = new Receipt { FiscalStatus = FiscalStatus.NotSent };
@@ -414,6 +444,23 @@ public partial class SaleService : ISaleService
         await EnqueueFiscalIfNeededAsync(sale, request.Fiscalize, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
+        if (shortages.Count > 0)
+        {
+            await _errors.RecordAsync(new SystemErrorEntry
+            {
+                Source = SystemErrorSource.Desktop,
+                Level = SystemErrorLevel.Warning,
+                Message = $"Savdo {sale.ReceiptNumber} qoldiq yetmasa ham qabul qilindi (kassa savdosi) — qoldiq manfiy",
+                Details = string.Join("\n", shortages),
+                ErrorType = "StockShortage",
+                Location = "SaleService.CreateAsync",
+                OrganizationId = sale.OrganizationId,
+                BranchId = sale.BranchId,
+                UserId = cashierId,
+                UserName = _currentUser.Username
+            }, cancellationToken);
+        }
+
         return SaleDto.FromEntity(sale);
     }
 
@@ -468,20 +515,47 @@ public partial class SaleService : ISaleService
     private static decimal VatPercentFor(Product product) => product.IsVat ? DefaultVatPercent : 0m;
 
     /// <summary>
-    /// Chek raqami: {prefix}-yyyyMMdd-#### (kunlik ketma-ketlik, sotuv "R", refund "RR").
-    /// Hisoblagich kunlik barcha savdolarga umumiy — prefiks bilan birga noyob bo'ladi.
-    /// Eslatma: yuqori parallellikda poyga (race) bo'lishi mumkin — keyinroq DB ketma-ketligi
-    /// (sequence) yoki filialga bog'langan hisoblagich bilan almashtiriladi.
+    /// Chek raqami: {prefix}-yyyyMMdd-#### — tashkilot ichida, Toshkent kuni bo'yicha ketma-ket
+    /// (sotuv "R", qaytarish "RR"). Noyoblik (OrganizationId, ReceiptNumber) indeksi bilan
+    /// kafolatlanadi; parallel savdo bir xil raqam olsa CreateWithRetryAsync qaytadan urinadi.
     /// </summary>
-    private async Task<string> GenerateReceiptNumberAsync(string prefix, CancellationToken cancellationToken)
+    private async Task<string> GenerateReceiptNumberAsync(string prefix, DateTime atUtc, CancellationToken cancellationToken)
     {
-        var today = DateTime.UtcNow.Date;
-        var tomorrow = today.AddDays(1);
+        var stem = $"{prefix}-{BusinessTime.LocalDate(atUtc):yyyyMMdd}-";
 
-        var countToday = await _db.Sales
-            .CountAsync(s => s.CreatedAt >= today && s.CreatedAt < tomorrow, cancellationToken);
+        // Tenant filtri tufayli faqat joriy tashkilot cheklari ko'riladi.
+        var existing = await _db.Sales
+            .Where(s => s.ReceiptNumber.StartsWith(stem))
+            .Select(s => s.ReceiptNumber)
+            .ToListAsync(cancellationToken);
 
-        return $"{prefix}-{today:yyyyMMdd}-{countToday + 1:D4}";
+        var max = existing
+            .Select(n => int.TryParse(n.AsSpan(stem.Length), out var k) ? k : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return $"{stem}{max + 1:D4}";
+    }
+
+    /// <summary>Chek raqami noyoblik indeksi buzilganmi (parallel savdo bir xil raqam olgan).</summary>
+    private static bool IsReceiptNumberConflict(DbUpdateException ex) =>
+        (ex.InnerException?.Message ?? ex.Message).Contains("ReceiptNumber", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Kassa yuborgan savdo vaqti: kelajakda 5 daqiqadan ko'p yoki 30 kundan eski bo'lsa e'tiborga
+    /// olinmaydi (kassa soati noto'g'ri) — server vaqti olinadi.
+    /// </summary>
+    private static DateTime ResolveSaleTime(DateTime? clientCreatedAt, DateTime nowUtc)
+    {
+        if (clientCreatedAt is not { } t) return nowUtc;
+        var utc = t.Kind switch
+        {
+            DateTimeKind.Local => t.ToUniversalTime(),
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(t, DateTimeKind.Utc),
+            _ => t
+        };
+        if (utc > nowUtc.AddMinutes(5) || utc < nowUtc.AddDays(-30)) return nowUtc;
+        return utc;
     }
 
     private static decimal Round2(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);

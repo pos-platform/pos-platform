@@ -9,7 +9,8 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
     public void Configure(EntityTypeBuilder<Sale> builder)
     {
         builder.Property(s => s.ReceiptNumber).IsRequired().HasMaxLength(32);
-        builder.HasIndex(s => s.ReceiptNumber).IsUnique();
+        // Chek raqami tashkilot ichida noyob (har tashkilot o'z kunlik ketma-ketligi bilan).
+        builder.HasIndex(s => new { s.OrganizationId, s.ReceiptNumber }).IsUnique();
         builder.HasIndex(s => s.CreatedAt);
 
         // Idempotentlik kaliti: bir xil kalit bilan ikkinchi savdo yaratilmasligi uchun

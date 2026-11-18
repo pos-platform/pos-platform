@@ -1,4 +1,5 @@
 <script setup>
+import { localDateStr } from '../utils/date'
 import { ref, reactive, onMounted } from 'vue'
 import { promotionsApi, productsApi, categoriesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
@@ -12,12 +13,12 @@ const error = ref('')
 const success = ref('')
 
 function today() {
-  return new Date().toISOString().slice(0, 10)
+  return localDateStr()
 }
 function plusDays(n) {
   const d = new Date()
   d.setDate(d.getDate() + n)
-  return d.toISOString().slice(0, 10)
+  return localDateStr(d)
 }
 
 const blank = () => ({

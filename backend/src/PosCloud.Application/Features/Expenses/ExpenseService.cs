@@ -9,10 +9,12 @@ namespace PosCloud.Application.Features.Expenses;
 public class ExpenseService : IExpenseService
 {
     private readonly IApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
-    public ExpenseService(IApplicationDbContext db)
+    public ExpenseService(IApplicationDbContext db, ICurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<ExpenseDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -32,7 +34,8 @@ public class ExpenseService : IExpenseService
             Title = request.Title.Trim(),
             Amount = request.Amount,
             Comment = request.Comment?.Trim(),
-            BranchId = request.BranchId
+            BranchId = _currentUser.BranchId ?? request.BranchId,
+            CreatedByUserId = _currentUser.UserId
         };
 
         _db.Expenses.Add(expense);

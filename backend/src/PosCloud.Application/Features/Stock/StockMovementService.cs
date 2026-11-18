@@ -1,3 +1,4 @@
+using PosCloud.Application.Common;
 using Microsoft.EntityFrameworkCore;
 using PosCloud.Application.Common.Exceptions;
 using PosCloud.Application.Common.Interfaces;
@@ -18,9 +19,6 @@ public interface IStockMovementService
 
 public class StockMovementService : IStockMovementService
 {
-    // O'zbekiston vaqti (UTC+5, yozgi vaqt yo'q): hisobot kunlari mahalliy kun bo'yicha olinadi.
-    private static readonly TimeSpan LocalOffset = TimeSpan.FromHours(5);
-
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
 
@@ -159,13 +157,12 @@ public class StockMovementService : IStockMovementService
     /// <summary>Mahalliy kunlar oralig'ini [fromUtc, toUtc) UTC chegarasiga aylantiradi (standart: joriy oy).</summary>
     private static (DateTime FromDay, DateTime ToDay, DateTime FromUtc, DateTime ToUtc) Range(DateTime? from, DateTime? to)
     {
-        var today = (DateTime.UtcNow + LocalOffset).Date;
+        var today = BusinessTime.TodayLocal;
         var fromDay = (from ?? new DateTime(today.Year, today.Month, 1)).Date;
         var toDay = (to ?? today).Date;
         if (toDay < fromDay) throw new ValidationException("Sana oralig'i noto'g'ri: 'gacha' sanasi 'dan' sanasidan oldin.");
 
-        var fromUtc = DateTime.SpecifyKind(fromDay - LocalOffset, DateTimeKind.Utc);
-        var toUtc = DateTime.SpecifyKind(toDay.AddDays(1) - LocalOffset, DateTimeKind.Utc);
+        var (fromUtc, toUtc) = BusinessTime.LocalRangeToUtc(fromDay, toDay);
         return (fromDay, toDay, fromUtc, toUtc);
     }
 }

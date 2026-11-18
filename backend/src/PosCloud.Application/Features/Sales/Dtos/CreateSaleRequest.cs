@@ -67,6 +67,12 @@ public class CreateSaleRequest
     [JsonIgnore]
     public bool SkipPromotions { get; set; }
 
+    /// <summary>
+    /// Savdo kassada yakunlangan vaqt (UTC). Oflayn navbatdan kech kelgan savdo shu vaqt bilan yoziladi
+    /// (hisobot kuni, aksiya). Kelajakda 5 daqiqadan ko'p yoki 30 kundan eski bo'lsa server vaqti olinadi.
+    /// </summary>
+    public DateTime? ClientCreatedAt { get; set; }
+
     [Required]
     [MinLength(1)]
     public List<CreateSaleItemRequest> Items { get; set; } = new();
@@ -80,7 +86,8 @@ public class CreateSaleItemRequest
     [Range(0.001, double.MaxValue)]
     public decimal Quantity { get; set; }
 
-    /// <summary>Narxni qo'lda o'zgartirish (bo'sh bo'lsa mahsulot narxi olinadi).</summary>
+    /// <summary>Narxni qo'lda o'zgartirish (bo'sh bo'lsa mahsulot narxi olinadi). Ruxsat: sales.price_override.</summary>
+    [Range(0, double.MaxValue)]
     public decimal? UnitPriceOverride { get; set; }
 
     [Range(0, double.MaxValue)]

@@ -5,6 +5,9 @@ public class SalesReportDto
     public DateTime From { get; set; }
     public DateTime To { get; set; }
     public int TotalCount { get; set; }
+    /// <summary>Sotuvlar summasi (qaytarishlarsiz).</summary>
+    public decimal GrossRevenue { get; set; }
+    /// <summary>Sof tushum = sotuvlar − qaytarishlar.</summary>
     public decimal TotalRevenue { get; set; }
     public decimal TotalCost { get; set; }
     public decimal TotalProfit { get; set; }
@@ -12,6 +15,7 @@ public class SalesReportDto
     public decimal CashAmount { get; set; }
     public decimal CardAmount { get; set; }
     public decimal DebtAmount { get; set; }
+    public decimal TransferAmount { get; set; }
     public decimal RefundAmount { get; set; }
     public List<SalesReportDayDto> Days { get; set; } = new();
     public List<SalesReportProductDto> TopProducts { get; set; } = new();

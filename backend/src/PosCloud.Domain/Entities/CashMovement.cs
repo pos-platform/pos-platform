@@ -17,5 +17,8 @@ public class CashMovement : BaseEntity
 
     /// <summary>Qaysi smenada ro'y bergan (null = smena tashqarisida).</summary>
     public Guid? CashShiftId { get; set; }
+
+    /// <summary>Kim yaratgan (avtomatik harakatlarda — amalni bajargan foydalanuvchi; bo'lmasa null).</summary>
+    public Guid? CreatedByUserId { get; set; }
     public CashShift? CashShift { get; set; }
 }

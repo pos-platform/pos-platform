@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PosCloud.Api.Authorization;
+using PosCloud.Application.Common;
 using PosCloud.Application.Common.Authorization;
 using PosCloud.Application.Features.Reports;
 using PosCloud.Application.Features.Reports.Dtos;
@@ -16,6 +17,7 @@ public class ReportsController : ControllerBase
 
     public ReportsController(IReportService reports) => _reports = reports;
 
+    [HasPermission(Permissions.ReportsView)]
     [HttpGet("sales")]
     public async Task<IActionResult> GetSalesReport(
         [FromQuery] DateTime? from,
@@ -23,20 +25,21 @@ public class ReportsController : ControllerBase
         [FromQuery] Guid? branchId,
         CancellationToken ct)
     {
-        var f = (from ?? DateTime.Today).Date;
-        var t = (to   ?? DateTime.Today).Date;
+        var f = (from ?? BusinessTime.TodayLocal).Date;
+        var t = (to   ?? BusinessTime.TodayLocal).Date;
         return Ok(await _reports.GetSalesReportAsync(f, t, branchId, ct));
     }
 
     [HttpGet("sales/export")]
+    [HasPermission(Permissions.ReportsView)]
     public async Task<IActionResult> ExportSalesReport(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         [FromQuery] Guid? branchId,
         CancellationToken ct)
     {
-        var f    = (from ?? DateTime.Today).Date;
-        var t    = (to   ?? DateTime.Today).Date;
+        var f    = (from ?? BusinessTime.TodayLocal).Date;
+        var t    = (to   ?? BusinessTime.TodayLocal).Date;
         var bytes = await _reports.ExportSalesReportAsync(f, t, branchId, ct);
         var name  = $"savdolar-hisoboti-{f:yyyy-MM-dd}-{t:yyyy-MM-dd}.xlsx";
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name);
@@ -53,21 +56,23 @@ public class ReportsController : ControllerBase
     public async Task<IActionResult> ExportSoldItems([FromQuery] SoldItemsQuery query, CancellationToken ct)
     {
         var bytes = await _reports.ExportSoldItemsAsync(query, ct);
-        var f = (query.From ?? DateTime.UtcNow).Date;
-        var t = (query.To ?? query.From ?? DateTime.UtcNow).Date;
+        var f = (query.From ?? BusinessTime.TodayLocal).Date;
+        var t = (query.To ?? query.From ?? BusinessTime.TodayLocal).Date;
         var name = $"sotuvlar-logi-{f:yyyy-MM-dd}-{t:yyyy-MM-dd}.xlsx";
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name);
     }
 
     [HttpGet("stock")]
+    [HasPermission(Permissions.ReportsView)]
     public async Task<IActionResult> GetStockReport([FromQuery] Guid? branchId, CancellationToken ct)
         => Ok(await _reports.GetStockReportAsync(branchId, ct));
 
     [HttpGet("stock/export")]
+    [HasPermission(Permissions.ReportsView)]
     public async Task<IActionResult> ExportStockReport([FromQuery] Guid? branchId, CancellationToken ct)
     {
         var bytes = await _reports.ExportStockReportAsync(branchId, ct);
-        var name  = $"qoldiqlar-{DateTime.Today:yyyy-MM-dd}.xlsx";
+        var name  = $"qoldiqlar-{BusinessTime.TodayLocal:yyyy-MM-dd}.xlsx";
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", name);
     }
 }
