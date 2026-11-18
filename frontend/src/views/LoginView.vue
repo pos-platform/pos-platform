@@ -93,7 +93,7 @@ async function submit() {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: linear-gradient(135deg, #1B5E20 0%, #1565C0 50%, #2196F3 100%);
+  background: var(--bg);
   overflow: auto;
 }
 
@@ -101,9 +101,9 @@ async function submit() {
   width: 100%;
   max-width: 380px;
   background: #fff;
-  border-radius: 18px;
+  border-radius: 10px;
   padding: 36px 32px 26px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border);
 }
 
 .brand { text-align: center; margin-bottom: 24px; }
@@ -112,7 +112,7 @@ async function submit() {
   display: flex; align-items: center; justify-content: center;
 }
 .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
-.brand h1 { margin: 0; font-size: 26px; font-weight: 800; color: #1565C0; letter-spacing: -0.5px; }
+.brand h1 { margin: 0; font-size: 24px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
 .brand .sub { margin: 6px 0 0; color: #6b7480; font-size: 14px; }
 
 .field { margin-bottom: 16px; }

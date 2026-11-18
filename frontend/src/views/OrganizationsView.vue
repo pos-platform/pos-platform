@@ -785,7 +785,7 @@ onMounted(load)
 .stat-row { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
 .stat-card { flex: 1 1 140px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
 .stat-card-clickable { cursor: pointer; transition: box-shadow 0.15s, transform 0.1s; }
-.stat-card-clickable:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.10); transform: translateY(-1px); }
+.stat-card-clickable:hover { border-color: var(--border-strong); }
 .stat-card-warn { border-color: #fcd34d; background: #fffbeb; }
 .stat-card-danger { border-color: #fca5a5; background: #fff1f1; }
 .stat-label { font-size: 13px; color: var(--muted); font-weight: 600; }

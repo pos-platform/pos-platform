@@ -893,9 +893,25 @@ function printBarcode(product) {
     @blur="() => $nextTick(() => { if (!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) barcodeInput?.focus() })"
   />
 
+  <!-- Umumiy qiymatlar: filtrlangan ro'yxat bo'yicha -->
+  <div class="stats-strip">
+    <div class="stat-cell">
+      <div class="stat-label">Umumiy tannarx</div>
+      <div class="stat-val">{{ fmtSum(summary.cost) }} <span class="stat-unit">so'm</span></div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Sotuv qiymati</div>
+      <div class="stat-val">{{ fmtSum(summary.value) }} <span class="stat-unit">so'm</span></div>
+    </div>
+    <div class="stat-cell stat-profit">
+      <div class="stat-label">Kutilayotgan foyda</div>
+      <div class="stat-val">{{ fmtSum(summary.profit) }} <span class="stat-unit">so'm</span></div>
+    </div>
+  </div>
+
+  <div class="card flush">
   <!-- Filters -->
-  <div class="card" style="margin-bottom:12px; padding:12px 16px">
-    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+    <div class="card-toolbar">
       <div style="position:relative; flex:2; min-width:180px">
         <input
           v-model="searchName"
@@ -962,28 +978,9 @@ function printBarcode(product) {
         </svg>
       </button>
     </div>
-  </div>
-
-  <!-- Umumiy qiymatlar: filtrlangan ro'yxat bo'yicha -->
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="stat-label">Umumiy tannarx</div>
-      <div class="stat-val">{{ fmtSum(summary.cost) }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Umumiy qiymat (sotuv)</div>
-      <div class="stat-val">{{ fmtSum(summary.value) }}</div>
-    </div>
-    <div class="stat-card stat-profit">
-      <div class="stat-label">Kutilayotgan foyda</div>
-      <div class="stat-val">{{ fmtSum(summary.profit) }}</div>
-    </div>
-  </div>
-
-  <div class="card">
     <!-- Top bar: info + page size -->
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 4px 12px; border-bottom:1px solid var(--border)">
-      <div class="muted" style="font-size:13px">
+    <div class="card-meta">
+      <div>
         <template v-if="filteredProducts.length">
           {{ filteredProducts.length }} ta mahsulotdan
           {{ (currentPage - 1) * pageSize + 1 }}–{{ Math.min(currentPage * pageSize, filteredProducts.length) }}
@@ -992,8 +989,8 @@ function printBarcode(product) {
         <template v-else>Natija yo'q</template>
       </div>
       <div style="display:flex; align-items:center; gap:8px">
-        <span class="muted" style="font-size:13px">Sahifada:</span>
-        <select v-model.number="pageSize" class="select" style="width:76px">
+        <span>Sahifada</span>
+        <select v-model.number="pageSize" class="select" style="width:76px; min-height:30px">
           <option :value="25">25</option>
           <option :value="50">50</option>
           <option :value="100">100</option>
@@ -1037,7 +1034,7 @@ function printBarcode(product) {
           v-for="p in paginatedProducts"
           :key="p.id"
           :id="`product-row-${p.id}`"
-          :style="barcodeHighlight === p.id ? 'background:#FEF9C3; transition:background 0.3s' : ''"
+          :style="barcodeHighlight === p.id ? 'background:var(--primary-soft); transition:background 0.3s' : ''"
         >
           <td><input type="checkbox" :checked="selectedIds.has(p.id)" @change="toggleSelect(p.id)" /></td>
           <td><div class="thumb"><img v-if="p.imageUrl" :src="mediaUrl(p.imageUrl)" alt="" /></div></td>
@@ -1461,38 +1458,42 @@ function printBarcode(product) {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 10px 4px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border);
+  background: var(--primary-soft);
   font-size: 13px;
 }
 .bulk-ok { color: var(--success, #0b6b45); }
 .online-mark { display: inline-flex; vertical-align: -2px; margin-left: 4px; color: var(--muted-2); }
 
-/* Umumiy qiymat kartochkalari */
-.stats-row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-.stat-card {
-  flex: 1;
-  min-width: 160px;
-  padding: 12px 16px;
+/* Umumiy qiymatlar — bitta chiziq, bo'linmalar bilan */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-card);
+  border-radius: var(--radius);
 }
-.stat-label {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
+.stat-cell { padding: 14px 20px; min-width: 0; }
+.stat-cell + .stat-cell { border-left: 1px solid var(--border); }
+.stat-label { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 .stat-val {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.stat-profit .stat-val { color: #16a34a; }
+.stat-unit { font-size: 13px; font-weight: 400; color: var(--muted); letter-spacing: 0; }
+.stat-profit .stat-val { color: var(--accent); }
+@media (max-width: 900px) {
+  .stats-strip { grid-template-columns: 1fr; }
+  .stat-cell + .stat-cell { border-left: none; border-top: 1px solid var(--border); }
+  .stat-val { font-size: 20px; }
+}
 
 .btn-print {
   background: #16a34a;
@@ -1517,7 +1518,8 @@ function printBarcode(product) {
   justify-content: center;
   align-items: center;
   gap: 4px;
-  padding: 16px 0 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
   flex-wrap: wrap;
 }
 
@@ -1594,8 +1596,8 @@ function printBarcode(product) {
 /* Kvadrat icon tugma (barcode/PLU) */
 .icon-sq {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -1665,7 +1667,7 @@ function printBarcode(product) {
 .pm-body { padding: 18px 22px 6px; overflow-y: auto; }
 .pm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
 .pm-col + .pm-col { padding-left: 28px; border-left: 1px solid var(--border); }
-.pm-title { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-2); margin-bottom: 12px; }
+.pm-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
 .pm-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .pm-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .pm-inline { display: flex; align-items: center; gap: 16px; min-height: 42px; margin-bottom: 12px; }

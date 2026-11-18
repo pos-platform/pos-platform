@@ -166,7 +166,7 @@ onUnmounted(() => clearInterval(pollTimer))
 }
 .kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .kpi-label {
-  font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted);
+  font-size: 13px; font-weight: 500; color: var(--muted);
 }
 .kpi-icon {
   width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;

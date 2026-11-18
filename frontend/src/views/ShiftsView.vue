@@ -210,7 +210,7 @@ onMounted(load)
 .report-label {
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.06em;
   color: var(--muted, #888);
   margin-bottom: 4px;
