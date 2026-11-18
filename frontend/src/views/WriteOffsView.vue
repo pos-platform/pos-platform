@@ -1,17 +1,18 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { writeOffsApi, productsApi } from '../api/catalog'
+import { writeOffsApi, productsApi, storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const writeOffs = ref([])
 const products = ref([])
+const branches = ref([])
 const loading = ref(false)
 const err = ref('')
 const success = ref('')
 const saving = ref(false)
 
 const showForm = ref(false)
-const form = reactive({ reason: '' })
+const form = reactive({ reason: '', branchId: '' })
 const lines = ref([]) // { product, quantity }
 const productSearch = ref('')
 const expanded = ref(null)
@@ -41,9 +42,11 @@ async function load() {
   loading.value = true
   err.value = ''
   try {
-    const [w, p] = await Promise.all([writeOffsApi.list(), productsApi.list()])
+    const [w, p, s] = await Promise.all([writeOffsApi.list(), productsApi.list(), storesApi.list()])
     writeOffs.value = w
     products.value = p
+    branches.value = s
+    if (!form.branchId && s.length) form.branchId = s[0].id
   } catch (e) {
     err.value = errorMessage(e)
   } finally {
@@ -58,6 +61,7 @@ async function submit() {
   saving.value = true
   try {
     const w = await writeOffsApi.create({
+      branchId: form.branchId || null,
       reason: form.reason.trim() || null,
       items: lines.value.map((l) => ({ productId: l.product.id, quantity: Number(l.quantity) }))
     })
@@ -87,6 +91,12 @@ onMounted(load)
 
   <form v-if="showForm" class="card" style="margin-bottom:16px" @submit.prevent="submit">
     <h3 style="margin-top:0">Yangi hisobdan chiqarish</h3>
+    <div v-if="branches.length > 1" class="field" style="max-width:280px">
+      <label>Filial</label>
+      <select v-model="form.branchId" class="input">
+        <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+      </select>
+    </div>
     <div class="field" style="max-width:480px">
       <label>Sabab</label>
       <input v-model="form.reason" class="input" placeholder="Muddati o'tgan, buzilgan..." />

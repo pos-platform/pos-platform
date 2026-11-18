@@ -1,9 +1,10 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { stockReceiptsApi, suppliersApi, productsApi, labelsApi } from '../api/catalog'
+import { stockReceiptsApi, suppliersApi, productsApi, labelsApi, storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 
 const receipts = ref([])
+const branches = ref([])
 const suppliers = ref([])
 const products = ref([])
 const loading = ref(false)
@@ -12,7 +13,7 @@ const success = ref('')
 const saving = ref(false)
 
 const showForm = ref(false)
-const form = reactive({ supplierId: '', comment: '' })
+const form = reactive({ supplierId: '', comment: '', branchId: '' })
 const lines = ref([]) // { product, quantity, costPrice }
 const productSearch = ref('')
 const expanded = ref(null)
@@ -50,8 +51,10 @@ async function load() {
   loading.value = true
   err.value = ''
   try {
-    const [r, s, p] = await Promise.all([stockReceiptsApi.list(), suppliersApi.list(), productsApi.list()])
+    const [r, s, p, b] = await Promise.all([stockReceiptsApi.list(), suppliersApi.list(), productsApi.list(), storesApi.list()])
     receipts.value = r
+    branches.value = b
+    if (!form.branchId && b.length) form.branchId = b[0].id
     suppliers.value = s.filter((x) => x.isActive)
     products.value = p
   } catch (e) {
@@ -79,6 +82,7 @@ async function submit() {
   try {
     const r = await stockReceiptsApi.create({
       supplierId: form.supplierId,
+      branchId: form.branchId || null,
       comment: form.comment.trim() || null,
       items: lines.value.map((l) => ({
         productId: l.product.id,
@@ -116,6 +120,12 @@ onMounted(load)
   <!-- Yangi kirim formasi -->
   <form v-if="showForm" class="card" style="margin-bottom: 16px" @submit.prevent="submit">
     <h3 style="margin-top: 0">Yangi kirim</h3>
+    <div v-if="branches.length > 1" class="field" style="max-width:280px">
+      <label>Filial</label>
+      <select v-model="form.branchId" class="input">
+        <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+      </select>
+    </div>
     <div class="row">
       <div class="field">
         <label>Yetkazib beruvchi *</label>
