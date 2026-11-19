@@ -184,7 +184,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: AppColors.background,
                         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
                       ),
-                      padding: EdgeInsets.fromLTRB(24, 22, 24, 20 + MediaQuery.paddingOf(context).bottom - 30),
+                      padding: EdgeInsets.fromLTRB(24, 22, 24, (MediaQuery.paddingOf(context).bottom - 10).clamp(0.0, double.infinity)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
