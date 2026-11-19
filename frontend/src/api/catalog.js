@@ -1,4 +1,5 @@
 import http from './http'
+import { compressImage } from './compressImage'
 
 export const productsApi = {
   list: (params) => http.get('/api/products', { params }).then((r) => r.data),
@@ -6,9 +7,9 @@ export const productsApi = {
   create: (payload) => http.post('/api/products', payload).then((r) => r.data),
   update: (id, payload) => http.put(`/api/products/${id}`, payload).then((r) => r.data),
   remove: (id) => http.delete(`/api/products/${id}`).then((r) => r.data),
-  uploadImage: (file) => {
+  uploadImage: async (file) => {
     const fd = new FormData()
-    fd.append('file', file)
+    fd.append('file', await compressImage(file)) // kichraytirilgan WebP
     return http.post('/api/products/image', fd).then((r) => r.data) // { url }
   },
   generateBarcode: () => http.get('/api/products/generate-barcode').then((r) => r.data.barcode),

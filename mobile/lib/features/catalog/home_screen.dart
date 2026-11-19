@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -718,6 +720,8 @@ class _CategoryTile extends StatelessWidget {
   final Color tint;
   final VoidCallback onTap;
 
+  bool get hasImage => AppConfig.imageUrl(category.imageUrl) != null;
+
   @override
   Widget build(BuildContext context) => Material(
         color: tint,
@@ -726,33 +730,31 @@ class _CategoryTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: SizedBox(
-            height: 104,
+            height: hasImage ? 132 : 104,
             child: Stack(
               children: [
-                // Bo'lim rasmi (admin panel → Kategoriyalar) — pastki o'ng burchakda.
-                if (AppConfig.imageUrl(category.imageUrl) != null)
-                  Positioned(
-                    right: 6,
-                    bottom: 6,
-                    width: 64,
-                    height: 64,
-                    child: Image.network(
-                      AppConfig.imageUrl(category.imageUrl)!,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                    ),
-                  ),
+                // Bo'lim rasmi (admin panel → Kategoriyalar) — butun plitka foni; rasm foni plitka rangini almashtiradi.
+                if (hasImage) Positioned.fill(child: _TileImage(url: AppConfig.imageUrl(category.imageUrl)!)),
                 Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: EdgeInsets.all(hasImage ? 12 : 14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(category.name,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, height: 1.2)),
-                      if (category.productCount > 0)
+                      // Rasmli plitkada nom chap tomonda qoladi — rasm o'ngda ko'rinsin.
+                      FractionallySizedBox(
+                        widthFactor: hasImage ? 0.68 : 1,
+                        alignment: Alignment.centerLeft,
+                        child: Text(category.name,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: hasImage ? 13.5 : 14,
+                                fontWeight: hasImage ? FontWeight.w700 : FontWeight.w800,
+                                height: 1.25)),
+                      ),
+                      // Rasmli plitkada son ko'rsatilmaydi — rasm ustida yozuv chalkash bo'ladi.
+                      if (!hasImage && category.productCount > 0)
                         Text(AppLocalizations.of(context).homeProductsCount(category.productCount),
                             style: TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text.withValues(alpha: 0.5))),
@@ -764,6 +766,70 @@ class _CategoryTile extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Plitka rasmi: fon — rasm burchagidagi rang (rasm foni bilan uzluksiz), rasm o'zi pastki o'ng burchakda,
+/// chap yuqorida nom uchun bo'sh joy qoladi.
+class _TileImage extends StatefulWidget {
+  const _TileImage({required this.url});
+
+  final String url;
+
+  /// Bir marta aniqlangan fon ranglari (url → rang).
+  static final _bgCache = <String, Color>{};
+
+  @override
+  State<_TileImage> createState() => _TileImageState();
+}
+
+class _TileImageState extends State<_TileImage> {
+  ImageStream? _stream;
+  ImageStreamListener? _listener;
+
+  Color? get _bg => _TileImage._bgCache[widget.url];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_bg == null && _stream == null) {
+      _stream = NetworkImage(widget.url).resolve(createLocalImageConfiguration(context));
+      _listener = ImageStreamListener((info, _) => _sample(info.image), onError: (_, _) {});
+      _stream!.addListener(_listener!);
+    }
+  }
+
+  // Chap yuqori burchakdagi piksel — rasmning fon rangi.
+  Future<void> _sample(ui.Image image) async {
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (data == null || !mounted) return;
+    final i = (4 * image.width + 4) * 4;
+    final color = Color.fromARGB(data.getUint8(i + 3), data.getUint8(i), data.getUint8(i + 1), data.getUint8(i + 2));
+    setState(() => _TileImage._bgCache[widget.url] = color);
+  }
+
+  @override
+  void dispose() {
+    if (_listener != null) _stream?.removeListener(_listener!);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, c) {
+        // Katta rasm pastki o'ng chetdan chiqib turadi (kesiladi) — "jonli" ko'rinish.
+        final size = math.min(c.maxHeight * 1.5, c.maxWidth * 1.15);
+        return ColoredBox(
+          color: _bg ?? Colors.transparent,
+          child: Stack(clipBehavior: Clip.hardEdge, children: [
+            Positioned(
+              right: -size * 0.14,
+              bottom: -size * 0.2,
+              width: size,
+              height: size,
+              child: Image.network(widget.url, fit: BoxFit.contain, errorBuilder: (_, _, _) => const SizedBox.shrink()),
+            ),
+          ]),
+        );
+      });
 }
 
 /// Yashil banner: bepul yetkazish chegarasi. (Yetkazish vaqti "60–90 daqiqa" — do'kon sarlavhasida.)
