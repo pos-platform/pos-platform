@@ -830,14 +830,15 @@ class _TileImageState extends State<_TileImage> {
               child: Image.network(widget.url,
                   fit: BoxFit.cover,
                   alignment: Alignment.bottomRight,
+                  filterQuality: FilterQuality.high,
                   errorBuilder: (_, _, _) => const SizedBox.shrink()),
             ),
             if (wide)
               Positioned(
-                right: w * 0.6,
+                right: w * 0.82,
                 top: 0,
                 bottom: 0,
-                width: w * 0.4,
+                width: w * 0.18,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(colors: [bg, bg.withValues(alpha: 0)]),
@@ -850,8 +851,8 @@ class _TileImageState extends State<_TileImage> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [bg.withValues(alpha: 0.95), bg.withValues(alpha: 0.6), bg.withValues(alpha: 0)],
-                    stops: const [0, 0.3, 0.6],
+                    colors: [bg.withValues(alpha: 0.7), bg.withValues(alpha: 0)],
+                    stops: const [0, 0.3],
                   ),
                 ),
               ),

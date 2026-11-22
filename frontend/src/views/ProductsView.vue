@@ -1516,16 +1516,16 @@ function printBarcode(product) {
 .stats-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
-.stat-cell { padding: 14px 20px; min-width: 0; }
+.stat-cell { padding: 8px 16px; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .stat-cell + .stat-cell { border-left: 1px solid var(--border); }
-.stat-label { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.stat-label { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
 .stat-val {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
