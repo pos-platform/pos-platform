@@ -79,7 +79,7 @@ onMounted(load)
     <button class="btn">Saqlash</button>
   </form>
 
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead><tr><th>Nomi</th><th>Sana</th><th>Izoh</th><th class="text-right">Summa</th><th></th></tr></thead>
       <tbody>

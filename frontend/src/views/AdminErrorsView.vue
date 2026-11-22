@@ -215,7 +215,7 @@ onMounted(async () => {
     <button v-if="checked.size" class="btn btn-success btn-sm" :disabled="busy" @click="resolveBulk">✓ Hal qilindi ({{ checked.size }})</button>
   </div>
 
-  <div class="card" style="overflow:auto">
+  <div class="card tbl-main" style="overflow:auto">
     <table class="table">
       <thead>
         <tr>

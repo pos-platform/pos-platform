@@ -191,7 +191,7 @@ defineExpose({ load })
     <span v-if="storeFilter.selectedStore" class="muted small">Do'kon: {{ storeFilter.selectedStore.name }}</span>
   </div>
 
-  <div class="layout">
+  <div class="layout tbl-main">
     <div class="card" style="overflow:auto">
       <table class="table">
         <thead>

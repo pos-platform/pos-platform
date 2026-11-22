@@ -216,7 +216,7 @@ onMounted(load)
   </form>
 
   <!-- Kirimlar ro'yxati -->
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead>
         <tr><th>№</th><th>Yetkazib beruvchi</th><th>Sana</th><th class="text-right">Summa</th><th>Izoh</th><th></th></tr>

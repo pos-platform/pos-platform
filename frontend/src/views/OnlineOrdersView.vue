@@ -398,7 +398,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="card" style="overflow:auto">
+      <div class="card tbl-main" style="overflow:auto">
         <table class="table">
           <thead>
             <tr><th>#</th><th>Sana</th><th>Mijoz</th><th>Baho</th><th>Teglar</th><th>Izoh</th></tr>
@@ -455,7 +455,7 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div class="layout" :class="{ 'with-detail': selected }">
+  <div class="layout tbl-main" :class="{ 'with-detail': selected }">
     <div class="card" style="overflow:auto">
       <table class="table">
         <thead>

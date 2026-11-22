@@ -939,7 +939,7 @@ function printBarcode(product) {
     </div>
   </div>
 
-  <div class="card flush">
+  <div class="card flush tbl-main">
   <!-- Filters -->
     <div class="card-toolbar">
       <div style="position:relative; flex:2; min-width:180px">
@@ -1037,6 +1037,7 @@ function printBarcode(product) {
     </div>
     <div v-else-if="bulkMsg" class="bulk-bar bulk-ok">{{ bulkMsg }}</div>
 
+    <div class="tbl-scroll">
     <table class="table">
       <thead>
         <tr>
@@ -1102,6 +1103,7 @@ function printBarcode(product) {
         </tr>
       </tbody>
     </table>
+    </div>
 
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="pagination-row">

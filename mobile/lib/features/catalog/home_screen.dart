@@ -730,29 +730,25 @@ class _CategoryTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: SizedBox(
-            height: hasImage ? 132 : 104,
+            height: hasImage ? 124 : 104,
             child: Stack(
               children: [
                 // Bo'lim rasmi (admin panel → Kategoriyalar) — butun plitka foni; rasm foni plitka rangini almashtiradi.
-                if (hasImage) Positioned.fill(child: _TileImage(url: AppConfig.imageUrl(category.imageUrl)!)),
+                if (hasImage)
+                  Positioned.fill(child: _TileImage(url: AppConfig.imageUrl(category.imageUrl)!, fallback: tint)),
                 Padding(
-                  padding: EdgeInsets.all(hasImage ? 12 : 14),
+                  padding: EdgeInsets.fromLTRB(12, hasImage ? 10 : 14, 12, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Rasmli plitkada nom chap tomonda qoladi — rasm o'ngda ko'rinsin.
-                      FractionallySizedBox(
-                        widthFactor: hasImage ? 0.68 : 1,
-                        alignment: Alignment.centerLeft,
-                        child: Text(category.name,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: hasImage ? 13.5 : 14,
-                                fontWeight: hasImage ? FontWeight.w700 : FontWeight.w800,
-                                height: 1.25)),
-                      ),
+                      Text(category.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: hasImage ? 13.5 : 14,
+                              fontWeight: hasImage ? FontWeight.w700 : FontWeight.w800,
+                              height: 1.2)),
                       // Rasmli plitkada son ko'rsatilmaydi — rasm ustida yozuv chalkash bo'ladi.
                       if (!hasImage && category.productCount > 0)
                         Text(AppLocalizations.of(context).homeProductsCount(category.productCount),
@@ -771,9 +767,12 @@ class _CategoryTile extends StatelessWidget {
 /// Plitka rasmi: fon — rasm burchagidagi rang (rasm foni bilan uzluksiz), rasm o'zi pastki o'ng burchakda,
 /// chap yuqorida nom uchun bo'sh joy qoladi.
 class _TileImage extends StatefulWidget {
-  const _TileImage({required this.url});
+  const _TileImage({required this.url, required this.fallback});
 
   final String url;
+
+  /// Rasm foni aniqlanguncha ishlatiladigan rang (plitka rangi).
+  final Color fallback;
 
   /// Bir marta aniqlangan fon ranglari (url → rang).
   static final _bgCache = <String, Color>{};
@@ -815,17 +814,47 @@ class _TileImageState extends State<_TileImage> {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, c) {
-        // Katta rasm pastki o'ng chetdan chiqib turadi (kesiladi) — "jonli" ko'rinish.
-        final size = math.min(c.maxHeight * 1.5, c.maxWidth * 1.15);
+        // Rasm o'ng tomonda to'liq balandlikda (cover); chap cheti va tepasi fon rangiga silliq o'tadi —
+        // nom rasm ustida emas, "bo'sh" fonda o'qiladi.
+        final bg = _bg ?? widget.fallback;
+        final w = math.min(c.maxWidth, c.maxHeight * 1.25);
+        final wide = w < c.maxWidth;
         return ColoredBox(
-          color: _bg ?? Colors.transparent,
+          color: bg,
           child: Stack(clipBehavior: Clip.hardEdge, children: [
             Positioned(
-              right: -size * 0.14,
-              bottom: -size * 0.2,
-              width: size,
-              height: size,
-              child: Image.network(widget.url, fit: BoxFit.contain, errorBuilder: (_, _, _) => const SizedBox.shrink()),
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: w,
+              child: Image.network(widget.url,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.bottomRight,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink()),
+            ),
+            if (wide)
+              Positioned(
+                right: w * 0.6,
+                top: 0,
+                bottom: 0,
+                width: w * 0.4,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [bg, bg.withValues(alpha: 0)]),
+                  ),
+                ),
+              ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [bg.withValues(alpha: 0.95), bg.withValues(alpha: 0.6), bg.withValues(alpha: 0)],
+                    stops: const [0, 0.3, 0.6],
+                  ),
+                ),
+              ),
             ),
           ]),
         );

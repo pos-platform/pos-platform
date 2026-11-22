@@ -81,7 +81,7 @@ onMounted(load)
     <button class="btn btn-ghost" style="margin-left:8px" @click="showForm=false">Bekor</button>
   </div>
 
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead><tr><th>Turi</th><th>Izoh</th><th>Sana</th><th class="text-right">Summa</th><th></th></tr></thead>
       <tbody>

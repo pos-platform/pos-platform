@@ -129,7 +129,7 @@ onMounted(load)
 
   <div v-if="err" class="alert alert-error">{{ err }}</div>
 
-  <div class="card" style="overflow:auto">
+  <div class="card tbl-main" style="overflow:auto">
     <table class="table">
       <thead>
         <tr><th>Sana</th><th>Mijoz</th><th>Turi</th><th class="text-right">Ball</th><th class="text-right">Balans</th><th>Manba</th><th>Chek</th><th>Xodim</th><th>Izoh</th></tr>

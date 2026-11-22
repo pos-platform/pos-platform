@@ -133,7 +133,7 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div class="card" style="overflow-x:auto">
+  <div class="card tbl-main" style="overflow-x:auto">
     <table class="table turnover">
       <thead>
         <tr>

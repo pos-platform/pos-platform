@@ -77,7 +77,7 @@ onMounted(load)
   </div>
 
   <!-- Table -->
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead>
         <tr>

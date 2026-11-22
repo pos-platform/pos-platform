@@ -153,7 +153,7 @@ onMounted(load)
     </div>
   </form>
 
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead><tr><th>№</th><th>Sabab</th><th>Sana</th><th class="text-right">Tannarx</th><th></th></tr></thead>
       <tbody>

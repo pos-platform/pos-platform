@@ -141,7 +141,7 @@ onMounted(load)
     <input v-model="search" class="input" placeholder="Tashkilot nomi..." style="max-width:260px" />
   </div>
 
-  <div class="layout">
+  <div class="layout tbl-main">
     <div class="card" style="overflow:auto">
       <table class="table">
         <thead>

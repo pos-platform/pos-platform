@@ -148,7 +148,7 @@ onMounted(load)
     </div>
   </form>
 
-  <div class="layout">
+  <div class="layout tbl-main">
     <!-- Ro'yxat -->
     <div class="card list-card">
       <div class="list-search">

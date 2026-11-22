@@ -409,7 +409,7 @@ onMounted(load)
   <div v-if="err" class="alert alert-error">{{ err }}</div>
   <div v-if="success" class="alert alert-success">{{ success }}</div>
 
-  <div class="layout">
+  <div class="layout tbl-main">
     <!-- Tashkilotlar ro'yxati -->
     <div class="card list-card">
       <table class="table">

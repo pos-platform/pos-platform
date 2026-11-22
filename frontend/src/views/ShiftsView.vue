@@ -170,7 +170,7 @@ onMounted(load)
   </div>
 
   <!-- Tarix -->
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead>
         <tr>

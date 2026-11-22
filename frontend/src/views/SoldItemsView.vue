@@ -147,7 +147,7 @@ onMounted(async () => {
     <div class="card stat"><div class="stat-label">Qaytarishlar</div><div class="stat-value" style="color:var(--danger)">− {{ fmtNum(data.totals.refunds) }}</div></div>
   </div>
 
-  <div class="card" style="overflow:auto">
+  <div class="card tbl-main" style="overflow:auto">
     <table class="table">
       <thead>
         <tr>

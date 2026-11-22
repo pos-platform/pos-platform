@@ -105,7 +105,7 @@ onMounted(load)
   <div v-if="error" class="alert alert-error">{{ error }}</div>
   <div v-if="success" class="alert alert-success">{{ success }}</div>
 
-  <div class="row" style="align-items: flex-start">
+  <div class="row tbl-main" style="align-items: flex-start">
     <!-- Yangi kuryer (faqat mobil ilova; litsenziya/kassa ID yo'q) -->
     <form v-if="showCourierForm" class="card" style="flex: 1; min-width: 300px; max-width: 360px" @submit.prevent="createCourier">
       <h3 style="margin-top: 0">Yangi kuryer</h3>

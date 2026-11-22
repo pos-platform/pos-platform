@@ -188,7 +188,7 @@ onMounted(load)
     </div>
   </div>
 
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead><tr><th>Ism</th><th>Telefon</th><th class="text-right">Ball</th><th class="text-right">Chegirma</th><th>Sana</th><th></th></tr></thead>
       <tbody>

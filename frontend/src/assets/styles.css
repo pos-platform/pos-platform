@@ -83,9 +83,11 @@ body {
   background: var(--surface); border-radius: 8px; border: 1px solid var(--border);
 }
 .rail-groups {
-  flex: 1; width: 100%; overflow-y: auto;
+  flex: 1; width: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: none; -ms-overflow-style: none;
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0;
 }
+.rail-groups::-webkit-scrollbar { display: none; }
 .rail-btn {
   position: relative;
   width: 70px;
@@ -475,8 +477,35 @@ textarea.input { padding: 8px 10px; }
 .table td { font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .table th.text-right, .table td.text-right { text-align: right; }
 .table tbody tr { transition: background 0.12s ease; }
-.table tbody tr:hover { background: #f6f8fb; }
+/* Zebra: har ikkinchi qator foni ajralib turadi */
+.table tbody tr:nth-child(even) { background: #f3f5f9; }
+.table tbody tr:hover { background: #e9eef7; }
 .table tbody tr:last-child td { border-bottom: none; }
+
+/* ----- Jadvalli sahifa: tepa qism (sarlavha, filtrlar) qotgan, faqat jadval scroll -----
+   Foydalanish: asosiy jadval kartasiga `tbl-main` klassi (karta .content ning bevosita bolasi).
+   Karta ichida toolbar bo'lsa — jadvalni `<div class="tbl-scroll">` ga o'rash kerak. */
+.content:has(> .tbl-main) {
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* tepa qism juda baland bo'lsa kesilmasin */
+}
+.content:has(> .tbl-main) > * { flex-shrink: 0; }
+.content > .card.tbl-main { flex: 1 1 auto; min-height: 220px; overflow: auto; padding-top: 0; }
+.content > .card.tbl-main:has(> .tbl-scroll) { display: flex; flex-direction: column; overflow: hidden; }
+.card.tbl-main > * { flex-shrink: 0; }
+.tbl-main > .tbl-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+/* Ro'yxat + detal panel (.layout / .row): har bir karta o'zi scroll */
+.content > .tbl-main:not(.card) { flex: 1 1 auto; min-height: 260px; grid-template-rows: minmax(0, 1fr); }
+.content > .tbl-main:not(.card) > .card { max-height: 100%; overflow: auto; box-sizing: border-box; }
+.tbl-main > .table > thead th,
+.tbl-main > .tbl-scroll > .table > thead th,
+.tbl-main > .card > .table > thead th {
+  position: sticky; top: 0; z-index: 2;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
 .text-right { text-align: right; }
 .text-center { text-align: center; }
 .muted { color: var(--muted); }
@@ -664,6 +693,14 @@ textarea.input { padding: 8px 10px; }
 
 /* Desktopda sidebar ichidagi yopish tugmasi ko'rinmaydi */
 .sidebar-close { display: none; }
+
+@media (max-width: 880px) {
+  /* Mobil: oddiy sahifa scroll */
+  .content:has(> .tbl-main) { height: auto; display: block; overflow: visible; }
+  .content > .card.tbl-main, .content > .card.tbl-main:has(> .tbl-scroll) { display: block; overflow-x: auto; }
+  .content > .tbl-main:not(.card) > .card { max-height: none; }
+  .tbl-main > .tbl-scroll { overflow-x: auto; }
+}
 
 @media (max-width: 640px) {
   .content { padding: 12px 10px; }

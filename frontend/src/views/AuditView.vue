@@ -212,7 +212,7 @@ onMounted(load)
     <span class="muted count">{{ logs.length }} ta yozuv</span>
   </div>
 
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead>
         <tr><th>Vaqt</th><th>Hodisa</th><th>Foydalanuvchi</th><th>IP</th><th>Tafsilot</th><th></th></tr>

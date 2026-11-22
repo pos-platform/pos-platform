@@ -171,7 +171,7 @@ onMounted(load)
   <div v-if="error && !showModal" class="alert alert-error">{{ error }}</div>
   <div v-if="success" class="alert alert-success">{{ success }}</div>
 
-  <div class="card" style="overflow:auto">
+  <div class="card tbl-main" style="overflow:auto">
     <table class="table">
       <thead>
         <tr>

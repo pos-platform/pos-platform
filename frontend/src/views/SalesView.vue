@@ -752,7 +752,7 @@ function openReceiptWindow(sale) {
     <span class="muted count">{{ shownSales.length }} ta ko'rsatilmoqda</span>
   </div>
 
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead>
         <tr>

@@ -166,7 +166,7 @@ onMounted(load)
   <div v-if="error && !showModal" class="alert alert-error">{{ error }}</div>
   <div v-if="success" class="alert alert-success">{{ success }}</div>
 
-  <div class="card">
+  <div class="card tbl-main">
     <div v-if="loading" class="muted" style="padding:32px; text-align:center">Yuklanmoqda...</div>
     <table v-else class="table">
       <thead>

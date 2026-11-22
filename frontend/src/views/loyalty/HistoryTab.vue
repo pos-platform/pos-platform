@@ -49,7 +49,7 @@ defineExpose({ load })
 
 <template>
   <div v-if="err" class="alert alert-error">{{ err }}</div>
-  <div class="card" style="overflow:auto">
+  <div class="card tbl-main" style="overflow:auto">
     <table class="table">
       <thead><tr><th>Sana</th><th>Xodim</th><th>Maydon</th><th>Eski qiymat</th><th>Yangi qiymat</th></tr></thead>
       <tbody>

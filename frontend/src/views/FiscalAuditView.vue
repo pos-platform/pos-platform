@@ -231,7 +231,7 @@ onMounted(() => { load(); loadOptions() })
     <span class="muted count">{{ shown.length }} ta chek · {{ money(totalAmount) }} so'm</span>
   </div>
 
-  <div class="card">
+  <div class="card tbl-main">
     <table class="table">
       <thead>
         <tr>
