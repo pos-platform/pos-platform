@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { usersApi, storesApi } from '../api/catalog'
 import { errorMessage } from '../api/http'
 import { useAuthStore } from '../stores/auth'
@@ -22,6 +22,12 @@ async function load() {
     loading.value = false
   }
 }
+
+// Tablar: xodimlar (kassir/menejer/admin) va kuryerlar alohida
+const tab = ref('staff')
+const couriers = computed(() => users.value.filter((u) => u.role === 'Courier'))
+const staff = computed(() => users.value.filter((u) => u.role !== 'Courier'))
+const visibleUsers = computed(() => (tab.value === 'couriers' ? couriers.value : staff.value))
 
 // Rol nomlari (UserRole enum → o'zbekcha)
 const ROLE_LABEL = { Admin: 'Admin', Manager: 'Menejer', Cashier: 'Kassir', Courier: 'Kuryer', SuperAdmin: 'SuperAdmin' }
@@ -97,9 +103,22 @@ onMounted(load)
   <div class="page-head">
     <h1>Foydalanuvchilar</h1>
     <div style="display:flex; align-items:center; gap:12px">
-      <span class="muted">{{ users.length }} ta</span>
-      <button v-if="auth.hasPermission('users.create')" class="btn btn-sm" @click="showCourierForm = !showCourierForm">+ Kuryer</button>
+      <span class="muted">{{ visibleUsers.length }} ta</span>
+      <button
+        v-if="tab === 'couriers' && auth.hasPermission('users.create')"
+        class="btn btn-sm"
+        @click="showCourierForm = !showCourierForm"
+      >+ Kuryer</button>
     </div>
+  </div>
+
+  <div class="row" style="gap:8px; margin-bottom:12px">
+    <button class="btn btn-ghost btn-sm" :class="{ 'btn-active': tab === 'staff' }" @click="tab = 'staff'">
+      Xodimlar ({{ staff.length }})
+    </button>
+    <button class="btn btn-ghost btn-sm" :class="{ 'btn-active': tab === 'couriers' }" @click="tab = 'couriers'">
+      Kuryerlar ({{ couriers.length }})
+    </button>
   </div>
 
   <div v-if="error" class="alert alert-error">{{ error }}</div>
@@ -107,7 +126,7 @@ onMounted(load)
 
   <div class="row tbl-main" style="align-items: flex-start">
     <!-- Yangi kuryer (faqat mobil ilova; litsenziya/kassa ID yo'q) -->
-    <form v-if="showCourierForm" class="card" style="flex: 1; min-width: 300px; max-width: 360px" @submit.prevent="createCourier">
+    <form v-if="tab === 'couriers' && showCourierForm" class="card" style="flex: 1; min-width: 300px; max-width: 360px" @submit.prevent="createCourier">
       <h3 style="margin-top: 0">Yangi kuryer</h3>
       <p class="muted" style="font-size:12px; margin:0 0 10px">
         Kuryer mobil ilovadan login/parol bilan kiradi. Kassaga kira olmaydi, obuna (litsenziya) talab qilinmaydi.
@@ -143,6 +162,9 @@ onMounted(load)
     <!-- Ro'yxat -->
     <div class="card" style="flex: 1; min-width: 360px">
       <div v-if="loading" style="color: var(--text-muted); padding: 16px">Yuklanmoqda...</div>
+      <div v-else-if="!visibleUsers.length" class="muted" style="padding: 16px">
+        {{ tab === 'couriers' ? 'Hali kuryer qo\'shilmagan. "+ Kuryer" tugmasini bosing.' : 'Xodimlar yo\'q.' }}
+      </div>
       <table v-else class="table">
         <thead>
           <tr>
@@ -154,7 +176,7 @@ onMounted(load)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="u in users" :key="u.id">
+          <tr v-for="u in visibleUsers" :key="u.id">
             <td>
               <strong>{{ u.username }}</strong>
               <span v-if="u.username === auth.username" class="muted"> (siz)</span>

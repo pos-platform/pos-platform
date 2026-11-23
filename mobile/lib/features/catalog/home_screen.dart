@@ -438,13 +438,13 @@ class _CatalogState extends ConsumerState<_Catalog> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverGrid.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  mainAxisExtent: 262,
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  mainAxisExtent: 200,
                 ),
                 itemCount: _items.length,
-                itemBuilder: (_, i) => ProductCard(branchId: _branchId, product: _items[i]),
+                itemBuilder: (_, i) => ProductCard(branchId: _branchId, product: _items[i], compact: true),
               ),
             ),
             SliverToBoxAdapter(child: _footer(t)),

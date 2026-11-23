@@ -15,10 +15,10 @@ import 'data/marketing_repository.dart';
 import 'widgets/countdown.dart';
 
 const _gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
-  crossAxisCount: 2,
-  mainAxisSpacing: 10,
-  crossAxisSpacing: 10,
-  mainAxisExtent: 262,
+  crossAxisCount: 3,
+  mainAxisSpacing: 8,
+  crossAxisSpacing: 8,
+  mainAxisExtent: 200,
 );
 
 Widget _grid(String branchId, List<ShopProduct> items) => SliverPadding(
@@ -26,7 +26,7 @@ Widget _grid(String branchId, List<ShopProduct> items) => SliverPadding(
   sliver: SliverGrid.builder(
     gridDelegate: _gridDelegate,
     itemCount: items.length,
-    itemBuilder: (_, i) => ProductCard(branchId: branchId, product: items[i]),
+    itemBuilder: (_, i) => ProductCard(branchId: branchId, product: items[i], compact: true),
   ),
 );
 

@@ -62,8 +62,8 @@ class RailHeader extends StatelessWidget {
 class ProductRail extends StatelessWidget {
   const ProductRail({super.key, required this.branchId, required this.products, this.ranked = false});
 
-  static const cardWidth = 156.0;
-  static const height = 268.0;
+  static const cardWidth = 108.0;
+  static const height = 200.0;
 
   final String branchId;
   final List<ShopProduct> products;
@@ -76,12 +76,12 @@ class ProductRail extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: products.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 12),
+      separatorBuilder: (_, _) => const SizedBox(width: 8),
       itemBuilder: (_, i) {
         final p = products[i];
         final card = SizedBox(
           width: cardWidth,
-          child: ProductCard(branchId: branchId, product: p),
+          child: ProductCard(branchId: branchId, product: p, compact: true),
         );
         if (!ranked) return card;
         return _Ranked(rank: p.rank ?? i + 1, child: card);
@@ -101,13 +101,13 @@ class _Ranked extends StatelessWidget {
   Widget build(BuildContext context) {
     final wide = rank >= 10;
     return SizedBox(
-      width: ProductRail.cardWidth + (wide ? 50 : 30),
+      width: ProductRail.cardWidth + (wide ? 34 : 20),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Positioned(
             left: 0,
-            bottom: 52,
+            bottom: 44,
             child: Semantics(
               label: '#$rank',
               child: Stack(
@@ -115,23 +115,23 @@ class _Ranked extends StatelessWidget {
                   Text(
                     '$rank',
                     style: TextStyle(
-                      fontSize: 88,
+                      fontSize: 60,
                       height: 1,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: -6,
+                      letterSpacing: -4,
                       foreground: Paint()
                         ..style = PaintingStyle.stroke
-                        ..strokeWidth = 3
+                        ..strokeWidth = 2.5
                         ..color = AppColors.primary,
                     ),
                   ),
                   Text(
                     '$rank',
                     style: TextStyle(
-                      fontSize: 88,
+                      fontSize: 60,
                       height: 1,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: -6,
+                      letterSpacing: -4,
                       color: AppColors.primarySoft,
                     ),
                   ),
