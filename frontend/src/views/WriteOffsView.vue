@@ -40,6 +40,10 @@ function addLine(p) {
   lines.value.push({ product: p, quantity: 1 })
   productSearch.value = ''
 }
+// To'liq spisaniye: miqdorni tovarning butun qoldig'iga tenglash.
+function stockOf(p) { return Math.max(0, Number(p.quantity || 0)) }
+function setFull(l) { l.quantity = stockOf(l.product) }
+function setAllFull() { lines.value.forEach(setFull) }
 function removeLine(id) { lines.value = lines.value.filter((l) => l.product.id !== id) }
 
 async function load() {
@@ -134,12 +138,21 @@ onMounted(load)
       </div>
     </div>
 
+    <div v-if="lines.length" class="row" style="justify-content:flex-end; margin-top:12px">
+      <button type="button" class="btn btn-ghost btn-sm" @click="setAllFull">Hammasini to'liq qoldiq bo'yicha</button>
+    </div>
     <table class="table" style="margin:12px 0">
-      <thead><tr><th>Tovar</th><th style="width:120px">Miqdor</th><th class="text-right">Tannarx summa</th><th></th></tr></thead>
+      <thead><tr><th>Tovar</th><th style="width:200px">Miqdor</th><th class="text-right">Tannarx summa</th><th></th></tr></thead>
       <tbody>
         <tr v-for="l in lines" :key="l.product.id">
           <td>{{ l.product.name }} <span class="muted">(qoldiq {{ fmt(l.product.quantity) }})</span></td>
-          <td><input v-model="l.quantity" type="number" min="0" step="0.001" class="input" /></td>
+          <td>
+            <div class="row" style="gap:6px; flex-wrap:nowrap">
+              <input v-model="l.quantity" type="number" min="0" step="0.001" class="input" style="width:110px" />
+              <button type="button" class="btn btn-ghost btn-sm" title="Butun qoldiqni spisat qilish"
+                :disabled="stockOf(l.product) <= 0" @click="setFull(l)">Hammasi</button>
+            </div>
+          </td>
           <td class="text-right">{{ fmt(Number(l.quantity) * Number(l.product.costPrice)) }}</td>
           <td class="text-right"><button type="button" class="btn btn-icon danger" title="Olib tashlash" @click="removeLine(l.product.id)"><AppIcon name="x" :size="15" /></button></td>
         </tr>

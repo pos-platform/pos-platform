@@ -35,8 +35,10 @@ public class ProductService : IProductService
         // SQL proyeksiyasi: Include(Stocks) bilan butun entity'larni yuklash o'rniga faqat
         // kerakli ustunlar o'qiladi, qoldiq esa subquery orqali SQL'da yig'iladi —
         // o'n minglab mahsulotda bu ancha tez va kam xotira oladi.
+        // Yangi qo'shilgan mahsulotlar birinchi chiqadi.
         var list = await query
-            .OrderBy(p => p.Name)
+            .OrderByDescending(p => p.CreatedAt)
+            .ThenByDescending(p => p.Id)
             .Select(p => new ProductDto
             {
                 Id = p.Id,
@@ -87,11 +89,15 @@ public class ProductService : IProductService
         if (branchId is not null)
             query = query.Where(p => p.BranchId == branchId || p.BranchId == null);
 
+        // Qoldig'i 0 yoki minus bo'lgan tovar kassaga chiqmaydi (taom/ingredientlarga tegilmaydi).
+        query = query.Where(p => p.ProductType != ProductType.Good
+            || p.Stocks.Where(s => branchId == null || s.BranchId == branchId).Sum(s => s.Quantity) > 0);
+
         // SQL proyeksiyasi: faqat kerakli ustunlar o'qiladi, Supplier/Branch JOIN qilinmaydi,
         // qoldiq esa subquery orqali hisoblanadi (BranchStocks indeksidan foydalanadi).
         // branchId ko'rsatilsa — shu filial qoldig'i (unikal indeks tufayli bitta yozuv),
         // aks holda (admin) — barcha filiallar yig'indisi.
-        return await query
+        var list = await query
             .OrderBy(p => p.Name)
             .Select(p => new PosProductDto
             {
@@ -113,6 +119,26 @@ public class ProductService : IProductService
                 ImageUrl = p.ImageUrl
             })
             .ToListAsync(cancellationToken);
+
+        // Ommaboplik: oxirgi 90 kunda har bir tovar nechta savdo qatorida uchragan.
+        // Kassa ro'yxatni shu bo'yicha (ko'pi tepada) tartiblaydi.
+        var since = DateTime.UtcNow.AddDays(-90);
+        var sales = _db.SaleItems.AsNoTracking()
+            .Where(i => i.Sale!.Type == SaleType.Sale && i.Sale.CreatedAt >= since);
+        if (branchId is not null)
+            sales = sales.Where(i => i.Sale!.BranchId == branchId);
+        var counts = await sales
+            .GroupBy(i => i.ProductId)
+            .Select(g => new { ProductId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ProductId, x => x.Count, cancellationToken);
+
+        foreach (var p in list)
+            if (counts.TryGetValue(p.Id, out var c)) p.SoldCount = c;
+
+        return list
+            .OrderByDescending(p => p.SoldCount)
+            .ThenBy(p => p.Name)
+            .ToList();
     }
 
     public async Task<PosCatalogStampDto> GetPosStampAsync(CancellationToken cancellationToken = default)

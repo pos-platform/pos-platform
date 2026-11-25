@@ -296,6 +296,8 @@ public partial class ShopCatalogService : IShopCatalogService
                         && p.ShowOnline
                         && p.ProductType == ProductType.Good
                         && (p.BranchId == null || p.BranchId == branchId)
+                        // Qoldig'i 0 yoki minus bo'lgan tovar ilovada ko'rinmaydi.
+                        && p.Stocks.Any(s => s.BranchId == branchId && s.Quantity > 0)
                         && p.Category!.ShowOnline
                         && (p.Category.ParentId == null || p.Category.Parent!.ShowOnline));
 

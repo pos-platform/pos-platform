@@ -962,6 +962,11 @@ public partial class PosWindow : Window
         {
             if (!silent) LoadingOverlay.Visibility = Visibility.Collapsed;
         }
+        // Eng ko'p sotiladigan tovarlar tepada (alifbo — faqat teng bo'lganda).
+        _allProducts = _allProducts
+            .OrderByDescending(p => p.SoldCount)
+            .ThenBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
         ApplyFilter();
         if (scroll is double offset) RestoreProductsScrollOffset(offset);
         return loaded;
@@ -985,11 +990,11 @@ public partial class PosWindow : Window
 
     // ---------- Mahsulot ro'yxati / qidiruv ----------
 
-    private List<ProductDto> ComputeFiltered()
+    private List<ProductDto> ComputeFiltered(bool ignoreCategory = false)
     {
         var q = SearchBox.Text.Trim().ToLowerInvariant();
         IEnumerable<ProductDto> items = _allProducts;
-        if (_selectedCategoryId is Guid cid)
+        if (!ignoreCategory && _selectedCategoryId is Guid cid)
             items = items.Where(p => p.CategoryId == cid);
         if (!string.IsNullOrEmpty(q))
             items = items.Where(p =>
@@ -1090,6 +1095,16 @@ public partial class PosWindow : Window
             (p.Barcode != null && string.Equals(p.Barcode, code, StringComparison.OrdinalIgnoreCase)) ||
             string.Equals(p.MxikCode, code, StringComparison.OrdinalIgnoreCase));
 
+        // 2a) Boshidagi nollar farq qilsa ham (EAN-13 ↔ UPC/GTIN-14) — barcha tovarlardan.
+        if (product is null)
+        {
+            var trimmedCode = code.Trim().TrimStart('0');
+            if (trimmedCode.Length > 0)
+                product = _allProducts.FirstOrDefault(p =>
+                    !string.IsNullOrWhiteSpace(p.Barcode) &&
+                    string.Equals(p.Barcode.Trim().TrimStart('0'), trimmedCode, StringComparison.OrdinalIgnoreCase));
+        }
+
         // 2b) Markirovka (GS1 DataMatrix) kodi: "01" + 14 xonali GTIN + seriya, masalan
         //     "01089352708230852174...". Butun satr mahsulotga mos kelmaydi — GTIN'ni ajratib,
         //     shtrix-kod bo'yicha qidiramiz. Seriya qismi klaviatura layout'i (kirill) tufayli
@@ -1106,8 +1121,9 @@ public partial class PosWindow : Window
         // Qidiruv maydonida Enter bosilganda (skaner emas) ko'rinib turgan
         // birinchi mahsulotni ham qabul qilamiz — nom bo'yicha tez qo'shish uchun.
         // Qidiruv "debounce" bo'lgani uchun ro'yxatni shu yerda yangidan hisoblaymiz.
+        // Kod tanlangan kategoriyadan qat'i nazar BARCHA tovarlardan qidiriladi.
         if (product is null && !fromScanner)
-            product = ComputeFiltered().FirstOrDefault();
+            product = ComputeFiltered(ignoreCategory: true).FirstOrDefault();
 
         if (product is not null)
         {

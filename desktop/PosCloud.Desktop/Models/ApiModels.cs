@@ -61,6 +61,9 @@ public class ProductDto
 
     public string? ImageUrl { get; set; }
 
+    /// <summary>Oxirgi 90 kundagi sotuvlar soni (server hisoblaydi) — ro'yxat shu bo'yicha tartiblanadi.</summary>
+    public int SoldCount { get; set; }
+
     public string UnitLabel => Unit == "Kilogram" ? "kg" : "dona";
     public string PriceLabel => Price.ToString("N0");
     public string QtyLabel => Quantity.ToString("N0");
