@@ -32,6 +32,9 @@ const filterUnit = ref('') // '' = hammasi, 'Kilogram' = kg, 'Piece' = dona
 const filterOnline = ref('') // '' = hammasi, 'yes' = ilovada, 'no' = ilovada emas
 const filterMxik = ref('') // '' = hammasi, 'check' = MXIK yaroqsiz (hammasi), 'suggest' = taklif bor, 'none' = taklif ham yo'q
 const filterImage = ref('') // '' = hammasi, 'yes' = rasmli, 'no' = rasmsiz
+// Qoldiq tabi: '' = hammasi, 'low' = kam qolgan (0 < qoldiq ≤ chegara), 'negative' = tugagan/minusda (≤ 0)
+const stockTab = ref('')
+const lowStockLimit = ref(Number(localStorage.getItem('lowStockLimit')) || 5)
 const mxikValid = (code) => /^\d{17}$/.test(code || '')
 // Kategoriya filtri daraxt ko'rinishida: asosiy bo'lim, ostida ichki bo'limlari.
 const categoryOptions = computed(() => {
@@ -422,8 +425,35 @@ function editDuplicate() {
   if (p) openEdit(p)
 }
 
+// Faqat tovar (Good) qoldiq bilan yuradi — taom/xizmat hisobga olinmaydi.
+function isStockItem(p) { return !p.productType || p.productType === 'Good' || p.productType === 0 }
+function isLowStock(p) {
+  const q = Number(p.quantity) || 0
+  return isStockItem(p) && q > 0 && q <= (Number(lowStockLimit.value) || 0)
+}
+function isNegativeStock(p) { return isStockItem(p) && (Number(p.quantity) || 0) <= 0 }
+
+const stockCounts = computed(() => {
+  let low = 0, negative = 0
+  for (const p of products.value) {
+    if (filterBranch.value && p.branchId !== filterBranch.value) continue
+    if (isLowStock(p)) low++
+    else if (isNegativeStock(p)) negative++
+  }
+  return { low, negative }
+})
+
+watch(lowStockLimit, (v) => localStorage.setItem('lowStockLimit', String(v ?? '')))
+
 const filteredProducts = computed(() => {
   let list = products.value
+
+  if (stockTab.value === 'low') {
+    list = list.filter(isLowStock).sort((a, b) => Number(a.quantity) - Number(b.quantity))
+  } else if (stockTab.value === 'negative') {
+    // Eng katta minus tepada — birinchi to'g'rilanadi.
+    list = list.filter(isNegativeStock).sort((a, b) => Number(a.quantity) - Number(b.quantity))
+  }
 
   if (filterBranch.value) {
     list = list.filter((p) => p.branchId === filterBranch.value)
@@ -532,7 +562,7 @@ function setPage(p) {
   if (typeof p === 'number') currentPage.value = Math.min(Math.max(1, p), totalPages.value)
 }
 
-watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit, filterOnline, filterMxik, filterImage], () => {
+watch([searchName, filterCategory, filterBranch, filterQtyOp, filterQtyVal, filterUnit, filterOnline, filterMxik, filterImage, stockTab, lowStockLimit], () => {
   currentPage.value = 1
 })
 
@@ -1021,6 +1051,19 @@ function printBarcode(product) {
   </div>
 
   <div class="card flush tbl-main">
+  <!-- Qoldiq bo'yicha tablar: hammasi / kam qolgan / minusda -->
+    <div class="stock-tabs">
+      <button type="button" class="stock-tab" :class="{ active: stockTab === '' }" @click="stockTab = ''">Hammasi</button>
+      <button type="button" class="stock-tab" :class="{ active: stockTab === 'low' }" @click="stockTab = 'low'">
+        Kam qolgan <span class="stock-badge warn">{{ stockCounts.low }}</span>
+      </button>
+      <button type="button" class="stock-tab" :class="{ active: stockTab === 'negative' }" @click="stockTab = 'negative'">
+        Minusda / tugagan <span class="stock-badge danger">{{ stockCounts.negative }}</span>
+      </button>
+      <label v-if="stockTab === 'low'" class="stock-threshold">
+        Chegara: ≤ <input v-model.number="lowStockLimit" type="number" min="0" step="1" class="input" style="width:70px" />
+      </label>
+    </div>
   <!-- Filters -->
     <div class="card-toolbar">
       <div style="position:relative; flex:2; min-width:180px">
@@ -1619,6 +1662,22 @@ function printBarcode(product) {
 </template>
 
 <style scoped>
+
+.stock-tabs {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  padding: 8px 12px 0; border-bottom: 1px solid var(--border, #e5e7eb);
+}
+.stock-tab {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  padding: 8px 12px; cursor: pointer; font: inherit; color: var(--muted, #6b7280);
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: -1px;
+}
+.stock-tab:hover { color: inherit; }
+.stock-tab.active { color: var(--primary, #2563eb); border-bottom-color: var(--primary, #2563eb); font-weight: 600; }
+.stock-badge { font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 600; }
+.stock-badge.warn { background: #fef3c7; color: #92400e; }
+.stock-badge.danger { background: #fee2e2; color: #b91c1c; }
+.stock-threshold { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding-bottom: 6px; }
 
 .dup-warn {
   display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;

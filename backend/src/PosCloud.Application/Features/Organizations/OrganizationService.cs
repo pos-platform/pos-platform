@@ -160,6 +160,7 @@ public class OrganizationService : IOrganizationService
         org.Stir = request.Stir?.Trim();
         org.Note = request.Note?.Trim();
         org.BusinessType = BusinessType.Store; // faqat do'kon
+        if (request.AllowNegativeStock is bool neg) org.AllowNegativeStock = neg;
         await _db.SaveChangesAsync(ct);
         return await ToDtoWithStats(org, ct);
     }

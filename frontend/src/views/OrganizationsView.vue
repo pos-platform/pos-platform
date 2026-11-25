@@ -132,6 +132,30 @@ async function saveStir() {
   }
 }
 
+const savingNegative = ref(false)
+async function toggleNegative(e) {
+  if (!selected.value) return
+  savingNegative.value = true
+  err.value = ''
+  try {
+    await organizationsApi.update(selected.value.id, {
+      name: selected.value.name,
+      phone: selected.value.phone || null,
+      stir: selected.value.stir || null,
+      note: selected.value.note || null,
+      businessType: selected.value.businessType,
+      allowNegativeStock: e.target.checked
+    })
+    notify(e.target.checked ? 'Minusga sotish yoqildi' : 'Minusga sotish o\'chirildi')
+    await refreshSelected()
+  } catch (ex) {
+    e.target.checked = !e.target.checked
+    err.value = errorMessage(ex)
+  } finally {
+    savingNegative.value = false
+  }
+}
+
 async function createOrg() {
   err.value = ''
   try {
@@ -478,6 +502,18 @@ onMounted(load)
             {{ savingStir ? '...' : 'Saqlash' }}
           </button>
         </div>
+      </div>
+
+      <!-- Minusga sotish — qoldig'i 0/manfiy tovar ham kassada sotiladi -->
+      <div class="panel-section">
+        <div class="panel-section-head">
+          <span class="panel-label">Minusga sotish</span>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" :checked="selected.allowNegativeStock" :disabled="savingNegative" @change="toggleNegative" />
+          <span>Qoldiq tugagan tovar ham kassada sotilsin (qoldiq minusga tushadi)</span>
+        </label>
+        <p class="panel-hint">Minusdagi tovarlar "Mahsulotlar" bo'limidagi "Minusda" filtrida ko'rinadi — kirim qilib to'g'rilanadi.</p>
       </div>
 
       <!-- Admin panel logini -->

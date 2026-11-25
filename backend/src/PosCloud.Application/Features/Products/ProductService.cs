@@ -91,8 +91,13 @@ public class ProductService : IProductService
             query = query.Where(p => p.BranchId == branchId || p.BranchId == null);
 
         // Qoldig'i 0 yoki minus bo'lgan tovar kassaga chiqmaydi (taom/ingredientlarga tegilmaydi).
-        query = query.Where(p => p.ProductType != ProductType.Good
-            || p.Stocks.Where(s => branchId == null || s.BranchId == branchId).Sum(s => s.Quantity) > 0);
+        // Tashkilotda "Minusga sotish" yoqilgan bo'lsa — hammasi chiqadi, qoldiq manfiyga tushadi.
+        var orgId = _currentUser.OrganizationId;
+        var allowNegative = orgId is not null && await _db.Organizations.AsNoTracking()
+            .AnyAsync(o => o.Id == orgId && o.AllowNegativeStock, cancellationToken);
+        if (!allowNegative)
+            query = query.Where(p => p.ProductType != ProductType.Good
+                || p.Stocks.Where(s => branchId == null || s.BranchId == branchId).Sum(s => s.Quantity) > 0);
 
         // SQL proyeksiyasi: faqat kerakli ustunlar o'qiladi, Supplier/Branch JOIN qilinmaydi,
         // qoldiq esa subquery orqali hisoblanadi (BranchStocks indeksidan foydalanadi).

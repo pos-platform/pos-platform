@@ -26,6 +26,10 @@ public class Organization : BaseEntity
     /// <summary>Tashkilot bloklanmaganmi. Bloklansa — ichidagi barcha foydalanuvchilar kira olmaydi.</summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>Minusga sotish: qoldig'i 0 yoki manfiy tovar ham kassaga chiqadi va sotiladi
+    /// (qoldiq manfiyga tushadi, keyin kirim bilan to'g'rilanadi).</summary>
+    public bool AllowNegativeStock { get; set; }
+
     public ICollection<User> Users { get; set; } = new List<User>();
 
     public ICollection<Branch> Branches { get; set; } = new List<Branch>();

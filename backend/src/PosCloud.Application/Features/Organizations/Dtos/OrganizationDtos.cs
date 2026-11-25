@@ -13,6 +13,7 @@ public class OrganizationDto
     public string? Note { get; set; }
     public bool IsActive { get; set; }
     public BusinessType BusinessType { get; set; }
+    public bool AllowNegativeStock { get; set; }
     public DateTime CreatedAt { get; set; }
 
     /// <summary>Tashkilotdagi jami foydalanuvchilar (SuperAdmin'dan tashqari).</summary>
@@ -118,6 +119,7 @@ public class OrganizationDetailDto : OrganizationDto
             Note = o.Note,
             IsActive = o.IsActive,
             BusinessType = o.BusinessType,
+            AllowNegativeStock = o.AllowNegativeStock,
             CreatedAt = o.CreatedAt,
             UserCount = desktop.Count,
             LicensedCount = desktop.Count(u => u.IsLifetime || (u.LicensedUntil is not null && u.LicensedUntil.Value.Date >= today)),
@@ -267,6 +269,9 @@ public class UpdateOrganizationRequest
 
     public string? Note { get; set; }
     public BusinessType BusinessType { get; set; } = BusinessType.Store;
+
+    /// <summary>Minusga sotish (qoldiq 0/manfiy tovar ham kassada sotiladi). null = o'zgarmaydi.</summary>
+    public bool? AllowNegativeStock { get; set; }
 }
 
 public class OrgRoleDto

@@ -1921,6 +1921,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("AllowNegativeStock")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("BusinessType")
                         .HasColumnType("integer");
 
