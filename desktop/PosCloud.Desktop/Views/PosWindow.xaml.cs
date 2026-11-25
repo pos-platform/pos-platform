@@ -870,7 +870,9 @@ public partial class PosWindow : Window
     {
         CategoryBar.Children.Clear();
         AddChip("Barchasi", null);
-        foreach (var c in _categories.Where(c => c.ProductCount is null or > 0).OrderBy(c => c.Name))
+        // Admin "Tartib" (SortOrder) bo'yicha, teng bo'lsa alifbo — katta tartibli kategoriyalar oxirida.
+        foreach (var c in _categories.Where(c => c.ProductCount is null or > 0)
+                     .OrderBy(c => c.SortOrder).ThenBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase))
             AddChip(c.Name, c.Id);
         RefreshChipStyles();
     }

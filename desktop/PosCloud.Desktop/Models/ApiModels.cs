@@ -92,6 +92,9 @@ public class CategoryDto
 
     /// <summary>To'g'ridan-to'g'ri mahsulotlar soni (bo'sh ota bo'limlar kassada ko'rsatilmaydi). Eski keshda null.</summary>
     public int? ProductCount { get; set; }
+
+    /// <summary>Admin belgilagan tartib (kichigi oldinda) — kassadagi kategoriya tablari shu bo'yicha.</summary>
+    public int SortOrder { get; set; }
 }
 
 /// <summary>
