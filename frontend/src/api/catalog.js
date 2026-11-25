@@ -25,6 +25,9 @@ export const productsApi = {
   // Ommaviy "ilovada ko'rsatish/yashirish" → { updated }
   setShowOnline: (productIds, showOnline) =>
     http.put('/api/products/show-online', { productIds, showOnline }).then((r) => r.data),
+  // Kassada ro'yxat boshiga qadash/olib tashlash → { updated }
+  setPinned: (productIds, isPinned) =>
+    http.put('/api/products/pin', { productIds, isPinned }).then((r) => r.data),
   exportExcel: () => http.get('/api/products/export', { responseType: 'blob' }).then((r) => r.data),
   importTemplate: () => http.get('/api/products/import-template', { responseType: 'blob' }).then((r) => r.data),
   importTemplateTxt: () =>

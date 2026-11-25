@@ -64,6 +64,9 @@ public class ProductDto
     /// <summary>Oxirgi 90 kundagi sotuvlar soni (server hisoblaydi) — ro'yxat shu bo'yicha tartiblanadi.</summary>
     public int SoldCount { get; set; }
 
+    /// <summary>Admin "kassada tepada" deb qadagan tovar — ro'yxatning eng boshida turadi.</summary>
+    public bool IsPinned { get; set; }
+
     public string UnitLabel => Unit == "Kilogram" ? "kg" : "dona";
     public string PriceLabel => Price.ToString("N0");
     public string QtyLabel => Quantity.ToString("N0");

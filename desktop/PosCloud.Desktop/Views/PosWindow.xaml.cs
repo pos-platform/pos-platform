@@ -962,9 +962,10 @@ public partial class PosWindow : Window
         {
             if (!silent) LoadingOverlay.Visibility = Visibility.Collapsed;
         }
-        // Eng ko'p sotiladigan tovarlar tepada (alifbo — faqat teng bo'lganda).
+        // Qadalgan tovarlar eng tepada, keyin eng ko'p sotiladiganlar (alifbo — faqat teng bo'lganda).
         _allProducts = _allProducts
-            .OrderByDescending(p => p.SoldCount)
+            .OrderByDescending(p => p.IsPinned)
+            .ThenByDescending(p => p.SoldCount)
             .ThenBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
         ApplyFilter();

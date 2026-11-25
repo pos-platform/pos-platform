@@ -74,6 +74,9 @@ public class Product : BaseEntity
     /// <summary>Mobil ilovada ko'rinsinmi.</summary>
     public bool ShowOnline { get; set; } = true;
 
+    /// <summary>Kassada ro'yxat boshiga qadab qo'yilganmi.</summary>
+    public bool IsPinned { get; set; }
+
     public Unit Unit { get; set; } = Unit.Piece;
 
     /// <summary>Tarozida tortib sotiladigan mahsulotmi.</summary>

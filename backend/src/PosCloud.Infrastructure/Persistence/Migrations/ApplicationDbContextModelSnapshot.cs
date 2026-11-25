@@ -2020,6 +2020,9 @@ namespace PosCloud.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsMarked")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsVat")
                         .HasColumnType("boolean");
 

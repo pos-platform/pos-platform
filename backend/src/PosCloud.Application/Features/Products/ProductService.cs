@@ -56,6 +56,7 @@ public class ProductService : IProductService
                     .Sum(s => s.Quantity),
                 ImageUrl = p.ImageUrl,
                 ShowOnline = p.ShowOnline,
+                IsPinned = p.IsPinned,
                 Description = p.Description,
                 IsVat = p.IsVat,
                 IsMarked = p.IsMarked,
@@ -116,7 +117,8 @@ public class ProductService : IProductService
                 IsWeighed = p.IsWeighed,
                 PluNumber = p.PluNumber,
                 CategoryId = p.CategoryId,
-                ImageUrl = p.ImageUrl
+                ImageUrl = p.ImageUrl,
+                IsPinned = p.IsPinned
             })
             .ToListAsync(cancellationToken);
 
@@ -135,8 +137,10 @@ public class ProductService : IProductService
         foreach (var p in list)
             if (counts.TryGetValue(p.Id, out var c)) p.SoldCount = c;
 
+        // Qadalgan tovarlar eng tepada, keyin ommaboplik bo'yicha.
         return list
-            .OrderByDescending(p => p.SoldCount)
+            .OrderByDescending(p => p.IsPinned)
+            .ThenByDescending(p => p.SoldCount)
             .ThenBy(p => p.Name)
             .ToList();
     }
@@ -264,6 +268,27 @@ public class ProductService : IProductService
         if (products.Count > 0)
             await _db.SaveChangesAsync(cancellationToken);
 
+        return new BulkShowOnlineResult(products.Count);
+    }
+
+    public async Task<BulkShowOnlineResult> SetPinnedAsync(BulkPinRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = request.ProductIds.Distinct().ToList();
+        if (ids.Count == 0) return new BulkShowOnlineResult(0);
+        if (ids.Count > 1000)
+            throw new ValidationException("Bir so'rovda ko'pi bilan 1000 ta mahsulot.");
+
+        // SaveChanges UpdatedAt'ni yangilaydi — kassa katalog tamg'asi o'zgarishni sezadi.
+        var pin = request.IsPinned;
+        var products = await _db.Products
+            .Where(p => ids.Contains(p.Id) && p.IsPinned != pin)
+            .ToListAsync(cancellationToken);
+        foreach (var p in products)
+            p.IsPinned = pin;
+
+        if (products.Count > 0)
+            await _db.SaveChangesAsync(cancellationToken);
         return new BulkShowOnlineResult(products.Count);
     }
 

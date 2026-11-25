@@ -12,6 +12,16 @@ public class BulkShowOnlineRequest
     public bool ShowOnline { get; set; }
 }
 
+/// <summary>Bir nechta mahsulotni kassada ro'yxat boshiga qadash/olib tashlash.</summary>
+public class BulkPinRequest
+{
+    [Required]
+    [MaxLength(1000)]
+    public List<Guid> ProductIds { get; set; } = [];
+
+    public bool IsPinned { get; set; }
+}
+
 /// <summary>Haqiqatan o'zgargan mahsulotlar soni.</summary>
 public record BulkShowOnlineResult(int Updated);
 

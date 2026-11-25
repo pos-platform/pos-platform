@@ -25,6 +25,7 @@ public class ProductDto
     public decimal MarkupPercent { get; set; }
     public string? ImageUrl { get; set; }
     public bool ShowOnline { get; set; }
+    public bool IsPinned { get; set; }
     public string? Description { get; set; }
     public bool IsVat { get; set; }
     public bool IsMarked { get; set; }
@@ -67,6 +68,7 @@ public class ProductDto
             : 0m,
         ImageUrl = p.ImageUrl,
         ShowOnline = p.ShowOnline,
+        IsPinned = p.IsPinned,
         Description = p.Description,
         IsVat = p.IsVat,
         IsMarked = p.IsMarked,

@@ -26,6 +26,9 @@ public interface IProductService
     /// <summary>Mahsulotlarni ommaviy ilovada ko'rsatish/yashirish (joriy tashkilot ichida).</summary>
     Task<BulkShowOnlineResult> SetShowOnlineAsync(BulkShowOnlineRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Mahsulotlarni kassada ro'yxat boshiga qadash/olib tashlash.</summary>
+    Task<BulkShowOnlineResult> SetPinnedAsync(BulkPinRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Mahsulotlarni ommaviy boshqa kategoriyaga ko'chiradi (qoldiq va boshqa maydonlarga tegmaydi).</summary>
     Task<BulkShowOnlineResult> SetCategoryAsync(BulkCategoryRequest request, CancellationToken cancellationToken = default);
 

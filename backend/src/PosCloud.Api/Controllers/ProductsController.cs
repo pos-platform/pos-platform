@@ -82,6 +82,14 @@ public class ProductsController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _productService.SetShowOnlineAsync(request, cancellationToken));
 
+    /// <summary>Mahsulotlarni kassada ro'yxat boshiga qadash/olib tashlash. Javob: { updated: n }.</summary>
+    [HttpPut("pin")]
+    [HasPermission(Permissions.ProductsEdit)]
+    [ProducesResponseType(typeof(BulkShowOnlineResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BulkShowOnlineResult>> SetPinned(BulkPinRequest request,
+        CancellationToken cancellationToken)
+        => Ok(await _productService.SetPinnedAsync(request, cancellationToken));
+
     /// <summary>Mahsulotlarni ommaviy boshqa kategoriyaga ko'chiradi. Javob: { updated: n }.</summary>
     [HttpPut("bulk-category")]
     [HasPermission(Permissions.ProductsEdit)]

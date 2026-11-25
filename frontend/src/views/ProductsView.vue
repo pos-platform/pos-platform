@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, computed, watch, nextTick } from 'vue'
-import { productsApi, categoriesApi, suppliersApi, storesApi, stockReceiptsApi, newRequestId, downloadBlob } from '../api/catalog'
+import { productsApi, categoriesApi, suppliersApi, storesApi, stockReceiptsApi, writeOffsApi, newRequestId, downloadBlob } from '../api/catalog'
 import { errorMessage, mediaUrl } from '../api/http'
 import { useAuthStore } from '../stores/auth'
 import JsBarcode from 'jsbarcode'
@@ -337,6 +337,68 @@ async function submitRestock() {
   }
 }
 
+// ───── Hisobdan chiqarish (spisaniye) — bitta yoki tanlangan tovarlar ─────
+const writeOffLines = ref(null) // null = modal yopiq; aks holda [{ product, quantity }]
+const writeOff = reactive({ reason: '', branchId: '' })
+const writeOffSaving = ref(false)
+const writeOffError = ref('')
+let writeOffRequestId = newRequestId()
+
+function stockOf(p) { return Math.max(0, Number(p.quantity || 0)) }
+
+function openWriteOff(list) {
+  if (!list.length) return
+  writeOffLines.value = list.map((p) => ({ product: p, quantity: '' }))
+  writeOffError.value = ''
+  writeOffRequestId = newRequestId()
+  Object.assign(writeOff, { reason: '', branchId: defaultBranchFor(list.length === 1 ? list[0] : null) })
+}
+
+function openWriteOffSelected() {
+  openWriteOff(products.value.filter((p) => selectedIds.value.has(p.id)))
+}
+
+function closeWriteOff() {
+  if (writeOffSaving.value) return
+  writeOffLines.value = null
+}
+
+function setWriteOffFull(l) { l.quantity = stockOf(l.product) }
+function setWriteOffAllFull() { writeOffLines.value.forEach(setWriteOffFull) }
+function removeWriteOffLine(l) {
+  writeOffLines.value = writeOffLines.value.filter((x) => x !== l)
+  if (!writeOffLines.value.length) writeOffLines.value = null
+}
+
+const writeOffTotal = computed(() => (writeOffLines.value || [])
+  .reduce((s, l) => s + Number(l.quantity || 0) * Number(l.product.costPrice || 0), 0))
+
+async function submitWriteOff() {
+  const items = writeOffLines.value
+    .filter((l) => Number(l.quantity) > 0)
+    .map((l) => ({ productId: l.product.id, quantity: Number(l.quantity) }))
+  if (!items.length) { writeOffError.value = 'Spisat qilinadigan sonni kiriting'; return }
+  if (stores.value.length > 1 && !writeOff.branchId) { writeOffError.value = 'Do\'konni tanlang'; return }
+  writeOffSaving.value = true
+  writeOffError.value = ''
+  try {
+    const w = await writeOffsApi.create({
+      branchId: writeOff.branchId || null,
+      reason: writeOff.reason.trim() || null,
+      clientRequestId: writeOffRequestId,
+      items
+    })
+    success.value = `${w.number} — ${items.length} ta tovar hisobdan chiqarildi`
+    writeOffLines.value = null
+    clearSelection()
+    await loadAll()
+  } catch (e) {
+    writeOffError.value = errorMessage(e)
+  } finally {
+    writeOffSaving.value = false
+  }
+}
+
 // ───── Takrorni aniqlash (yangi mahsulot qo'shishda) ─────
 const duplicateProduct = computed(() => {
   if (!showModal.value || editId.value) return null
@@ -512,6 +574,25 @@ async function bulkShowOnline(show) {
     const set = new Set(ids)
     for (const p of products.value) if (set.has(p.id)) p.showOnline = show
     bulkMsg.value = `${res?.updated ?? ids.length} ta mahsulot ${show ? 'ilovada ko\'rsatildi' : 'ilovadan yashirildi'}.`
+    clearSelection()
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    bulkBusy.value = false
+  }
+}
+
+async function bulkPin(pin) {
+  const ids = [...selectedIds.value]
+  if (!ids.length || bulkBusy.value) return
+  bulkBusy.value = true
+  bulkMsg.value = ''
+  error.value = ''
+  try {
+    const res = await productsApi.setPinned(ids, pin)
+    const set = new Set(ids)
+    for (const p of products.value) if (set.has(p.id)) p.isPinned = pin
+    bulkMsg.value = `${res?.updated ?? ids.length} ta mahsulot ${pin ? 'kassada ro\'yxat boshiga qo\'yildi' : 'ro\'yxat boshidan olindi'}.`
     clearSelection()
   } catch (e) {
     error.value = errorMessage(e)
@@ -1033,6 +1114,9 @@ function printBarcode(product) {
       <span>Tanlandi: <b>{{ selectedIds.size }}</b></span>
       <button class="btn btn-sm" :disabled="bulkBusy" @click="bulkShowOnline(true)"><AppIcon name="phone" :size="15" />Ilovada ko'rsatish</button>
       <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="bulkShowOnline(false)">Ilovadan yashirish</button>
+      <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="bulkPin(true)"><AppIcon name="star" :size="15" />Kassada boshiga</button>
+      <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="bulkPin(false)">Boshidan olish</button>
+      <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="openWriteOffSelected"><AppIcon name="minus" :size="15" />Spisat qilish</button>
       <button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="clearSelection">Tanlovni bekor qilish</button>
     </div>
     <div v-else-if="bulkMsg" class="bulk-bar bulk-ok">{{ bulkMsg }}</div>
@@ -1073,6 +1157,7 @@ function printBarcode(product) {
             <div style="font-weight:500">
               {{ p.name }}
               <span v-if="p.showOnline !== false" class="online-mark" title="Mobil ilovada ko'rinadi"><AppIcon name="phone" :size="13" /></span>
+              <span v-if="p.isPinned" class="online-mark" title="Kassada ro'yxat boshida"><AppIcon name="star" :size="13" /></span>
             </div>
             <div v-if="p.mxikCode && p.mxikCode !== '00000000'" class="muted" style="font-size:12px">MXIK: {{ p.mxikCode }}</div>
             <span v-if="!mxikValid(p.mxikCode)" class="pill pill-red" style="margin-top:2px; display:inline-block">MXIK yo'q</span>
@@ -1093,6 +1178,7 @@ function printBarcode(product) {
             <div class="row-actions">
               <button class="btn btn-icon" title="Barcode chop etish" @click="printBarcode(p)"><AppIcon name="printer" :size="15" /></button>
               <button class="btn btn-icon" title="Kirim qilish (qoldiq qo'shish)" @click="openRestock(p)"><AppIcon name="plus" :size="15" /></button>
+              <button class="btn btn-icon" title="Hisobdan chiqarish (spisaniye)" @click="openWriteOff([p])"><AppIcon name="minus" :size="15" /></button>
               <button class="btn btn-icon" title="Tahrirlash" @click="openEdit(p)"><AppIcon name="edit" :size="15" /></button>
               <button class="btn btn-icon danger" title="O'chirish" @click="removeProduct(p)"><AppIcon name="trash" :size="15" /></button>
             </div>
@@ -1450,6 +1536,57 @@ function printBarcode(product) {
         <div class="del-actions">
           <button type="button" class="btn btn-ghost" :disabled="restockSaving" @click="closeRestock">Bekor qilish</button>
           <button class="btn" :disabled="restockSaving">{{ restockSaving ? 'Saqlanmoqda...' : 'Kirim qilish' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hisobdan chiqarish (spisaniye) modali -->
+  <div v-if="writeOffLines" class="modal-overlay" @click.self="closeWriteOff">
+    <div class="modal-box" style="max-width:640px">
+      <div class="modal-head">
+        <h3>Hisobdan chiqarish</h3>
+        <button class="modal-x" @click="closeWriteOff">×</button>
+      </div>
+      <form class="modal-body" @submit.prevent="submitWriteOff">
+        <div v-if="writeOffError" class="alert alert-error">{{ writeOffError }}</div>
+        <div class="field">
+          <label>Sabab</label>
+          <input v-model="writeOff.reason" class="input" placeholder="Muddati o'tgan, buzilgan, tugagan..." />
+        </div>
+        <div v-if="stores.length > 1" class="field">
+          <label>Do'kon <span class="req-star">*</span></label>
+          <select v-model="writeOff.branchId" class="select" required>
+            <option value="" disabled>Do'kon tanlang</option>
+            <option v-for="s in stores" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:6px">
+          <button type="button" class="btn btn-ghost btn-sm" @click="setWriteOffAllFull">Hammasini to'liq qoldiq bo'yicha</button>
+        </div>
+        <div style="max-height:320px; overflow:auto">
+          <table class="table">
+            <thead><tr><th>Tovar</th><th style="width:190px">Soni</th><th class="text-right">Tannarx</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="l in writeOffLines" :key="l.product.id">
+                <td>{{ l.product.name }}<div class="muted" style="font-size:12px">qoldiq {{ Number(l.product.quantity).toLocaleString() }}</div></td>
+                <td>
+                  <div style="display:flex; gap:6px">
+                    <input v-model="l.quantity" type="number" min="0" step="0.001" class="input" style="width:100px" />
+                    <button type="button" class="btn btn-ghost btn-sm" :disabled="stockOf(l.product) <= 0"
+                      title="Butun qoldiqni spisat qilish" @click="setWriteOffFull(l)">Hammasi</button>
+                  </div>
+                </td>
+                <td class="text-right">{{ (Number(l.quantity || 0) * Number(l.product.costPrice || 0)).toLocaleString() }}</td>
+                <td class="text-right"><button type="button" class="btn btn-icon danger" title="Olib tashlash" @click="removeWriteOffLine(l)"><AppIcon name="x" :size="14" /></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="del-actions" style="align-items:center">
+          <strong style="margin-right:auto">Jami tannarx: {{ writeOffTotal.toLocaleString() }} so'm</strong>
+          <button type="button" class="btn btn-ghost" :disabled="writeOffSaving" @click="closeWriteOff">Bekor qilish</button>
+          <button class="btn btn-danger" :disabled="writeOffSaving">{{ writeOffSaving ? 'Saqlanmoqda...' : 'Hisobdan chiqarish' }}</button>
         </div>
       </form>
     </div>

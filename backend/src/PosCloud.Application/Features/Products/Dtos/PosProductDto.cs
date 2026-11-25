@@ -34,4 +34,7 @@ public class PosProductDto
 
     /// <summary>Oxirgi 90 kunda necha marta sotilgan (chek qatorlari soni) — kassada ommabop tovarlar tepada turadi.</summary>
     public int SoldCount { get; set; }
+
+    /// <summary>Kassada ro'yxat boshiga qadab qo'yilgan.</summary>
+    public bool IsPinned { get; set; }
 }
