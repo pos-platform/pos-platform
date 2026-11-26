@@ -23,14 +23,14 @@ if (hasReleaseKeystore) {
 }
 
 // Do'kon (white-label) ilovasi: android/store.properties (tool/store.ps1 yozadi, repoga KIRMAYDI).
-// Bo'lmasa — standart "PosCloud Market" (uz.poscloud.poscloud_market). Batafsil: mobile/docs/WHITE_LABEL.md.
+// Bo'lmasa — standart Xoja Market (uz.xojamarket.app). Batafsil: mobile/docs/WHITE_LABEL.md.
 val storePropertiesFile = rootProject.file("store.properties")
 val storeProperties = Properties()
 if (storePropertiesFile.exists()) {
     FileInputStream(storePropertiesFile).use { storeProperties.load(it) }
 }
 val storeApplicationId: String = storeProperties.getProperty("applicationId")?.trim()?.takeIf { it.isNotEmpty() }
-    ?: "uz.poscloud.poscloud_market"
+    ?: "uz.xojamarket.app"
 val storeAppLabel: String = storeProperties.getProperty("appLabel")?.trim()?.takeIf { it.isNotEmpty() }
     ?: "Xo‘ja Market"
 

@@ -14,7 +14,7 @@ import '../data/geocoding_repository.dart';
 
 /// OpenStreetMap plitkalari (foydalanish qoidasi: User-Agent va atributsiya shart).
 const osmTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const osmUserAgentPackage = 'uz.poscloud.poscloud_market';
+const osmUserAgentPackage = 'uz.xojamarket.app';
 
 /// Standart markaz — Nurota (do'kon joylashgan shahar).
 const defaultMapCenter = LatLng(40.5636, 65.6886);

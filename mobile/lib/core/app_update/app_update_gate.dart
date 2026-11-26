@@ -65,7 +65,7 @@ class _AppUpdateGateState extends ConsumerState<AppUpdateGate> {
 Future<void> _openStore(String? storeUrl) async {
   final url = storeUrl ??
       (defaultTargetPlatform == TargetPlatform.android
-          ? 'https://play.google.com/store/apps/details?id=uz.poscloud.poscloud_market'
+          ? 'https://play.google.com/store/apps/details?id=uz.xojamarket.app'
           : null);
   if (url == null) return;
   final uri = Uri.tryParse(url);

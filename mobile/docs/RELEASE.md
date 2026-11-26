@@ -2,7 +2,7 @@
 
 > Har do'konga alohida ilova (white-label): `docs/WHITE_LABEL.md` (`tool/store.ps1`).
 
-Ilova ID: `uz.poscloud.poscloud_market` (Android `applicationId` va iOS bundle id).
+Ilova ID: `uz.xojamarket.app` (Android `applicationId` va iOS bundle id).
 
 > **DIQQAT:** Play Market'ga birinchi marta yuklangandan keyin ilova ID'sini **o'zgartirib bo'lmaydi**.
 > O'zgartirilsa, bu Play uchun butunlay boshqa ilova bo'ladi (reyting, foydalanuvchilar, yangilanishlar yo'qoladi).
@@ -87,6 +87,6 @@ kerak bo'lsa `minSupportedBuild` (eski versiyalarni majburan yangilatish uchun).
 ## 6. iOS (5.3, qisqacha)
 
 iOS build faqat macOS'da (Xcode) yoki **Codemagic** kabi bulutli CI'da yig'iladi.
-Kerak: Apple Developer hisobi ($99/yil), bundle id `uz.poscloud.poscloud_market`, sertifikat va provisioning profile
+Kerak: Apple Developer hisobi ($99/yil), bundle id `uz.xojamarket.app`, sertifikat va provisioning profile
 (Codemagic avtomatik boshqara oladi), App Store Connect'da ilova → **TestFlight** orqali test.
 Build buyrug'i: `flutter build ipa --release --dart-define=...` (yuqoridagi bilan bir xil define'lar).

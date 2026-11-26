@@ -8,7 +8,7 @@ Ilova kodi tayyor (`lib/core/push/push_service.dart`). Firebase fayllari qo'shil
 ## 1. Firebase loyihasi
 
 1. https://console.firebase.google.com → loyiha yarating (yoki mavjudini oching).
-2. **Android ilova** qo'shing: package name `uz.poscloud.poscloud_market`.
+2. **Android ilova** qo'shing: package name `uz.xojamarket.app`.
    Debug/release SHA-1 shart emas (faqat FCM uchun).
 3. **iOS ilova** qo'shing: Bundle ID — Xcode'dagi `PRODUCT_BUNDLE_IDENTIFIER` (Runner target).
 

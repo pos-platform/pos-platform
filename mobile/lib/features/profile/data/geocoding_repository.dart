@@ -28,7 +28,7 @@ class GeocodingRepository {
               headers: {'User-Agent': userAgent},
             ));
 
-  static const userAgent = 'PosCloudMarket/1.0 (uz.poscloud.poscloud_market)';
+  static const userAgent = 'PosCloudMarket/1.0 (uz.xojamarket.app)';
   static const _minInterval = Duration(milliseconds: 1100);
 
   final Dio _dio;
