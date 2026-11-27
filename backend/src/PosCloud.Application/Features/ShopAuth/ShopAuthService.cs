@@ -30,7 +30,7 @@ public class ShopAuthService : IShopAuthService
 {
     public const int CodeLength = 5;
     public const int CodeTtlSeconds = 300;
-    public const int ResendCooldownSeconds = 60;
+    public const int ResendCooldownSeconds = 120;
     public const int MaxAttempts = 5;
     public const int MaxCodesPerPhonePerHour = 5;
     public const int MaxCodesPerIpPerHour = 20;

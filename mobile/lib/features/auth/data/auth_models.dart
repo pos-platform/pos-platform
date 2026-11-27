@@ -59,7 +59,7 @@ class OtpSent {
         channel: json['channel'] as String? ?? 'sms',
         codeLength: json['codeLength'] as int? ?? 5,
         expiresInSeconds: json['expiresInSeconds'] as int? ?? 300,
-        resendAfterSeconds: json['resendAfterSeconds'] as int? ?? 60,
+        resendAfterSeconds: json['resendAfterSeconds'] as int? ?? 120,
       );
 }
 
